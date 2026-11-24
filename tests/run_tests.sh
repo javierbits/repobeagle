@@ -32,6 +32,10 @@ RULES="third-party-cdn insecure-endpoint cookie-write browser-storage consent-ma
   check tests/fixtures/trap-privacy "YELLOW|RED" $L
 check tests/fixtures/trap-gha RED $L --strict
 check tests/fixtures/control-clean GREEN $L --strict   # pinned actions, dist bundle, normal README, real deps
+check tests/fixtures/ignore-suppressed GREEN $L   # .repobeagleignore suppresses the curl|sh finding
+j=$(mktemp); $RG scan tests/fixtures/ignore-suppressed --no-color --json "$j" $L >/dev/null 2>&1
+python3 -c "import json,sys;d=json.load(open('$j'));s=[f for f in d['findings'] if f.get('suppressed')];print('PASS suppressed findings kept in JSON' if s else 'FAIL suppressed findings missing');sys.exit(0 if s else 1)" || fail=1
+rm -f "$j"
 python3 tests/test_trust.py || fail=1
 python3 tests/test_banner.py || fail=1
 tests/test_cleanup.sh || fail=1
