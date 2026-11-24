@@ -28,7 +28,7 @@ RULES="magic-mismatch typosquat-dep high-entropy-blob minified-outside-dist" \
   check tests/fixtures/trap-binary "YELLOW|RED" $L
 RULES="telemetry-session-replay telemetry-analytics telemetry-crash telemetry-apm" \
   check tests/fixtures/trap-telemetry "YELLOW|RED" $L
-RULES="third-party-cdn insecure-endpoint cookie-write browser-storage consent-manager android-permission extension-permission cookie-flags fingerprint pii-log pii-email pii-phone import-time-network ip-logging tracking-params privacy-doc browser-capability macos-entitlement client-id telemetry-crash telemetry-analytics telemetry-session-replay" \
+RULES="third-party-cdn insecure-endpoint cookie-write browser-storage consent-manager android-permission extension-permission cookie-flags fingerprint pii-log pii-email pii-phone pii-address import-time-network ip-logging tracking-params privacy-doc browser-capability macos-entitlement client-id ios-tracking ios-data-type dnt-respect telemetry-crash telemetry-analytics telemetry-session-replay" \
   check tests/fixtures/trap-privacy "YELLOW|RED" $L
 check tests/fixtures/trap-gha RED $L --strict
 check tests/fixtures/control-clean GREEN $L --strict   # pinned actions, dist bundle, normal README, real deps

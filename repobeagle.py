@@ -986,6 +986,19 @@ BROWSER_CAPABILITIES = [
 ]
 CLIENT_ID_RE = re.compile(r"(?i)\b(client_?id|device_?id|visitor_?id|anonymous_?id|distinct_?id|installation_?id)\b")
 CLIENT_ID_CONTEXT_RE = re.compile(r"(?i)(localStorage|sessionStorage|document\.cookie|cookie|uuid|randomUUID|nanoid|v4\s*\(|guid)")
+ADDRESS_RE = re.compile(r"(?i)\b\d{1,6}[A-Za-z]?\s+[A-Z][\w.'-]*(?:\s+[A-Z][\w.'-]*){0,4}\s+"
+                        r"(?:street|st|road|rd|avenue|ave|boulevard|blvd|lane|ln|drive|dr|way|court|ct|place|pl|square|sq)\b")
+IOS_DATA_TYPE_RE = re.compile(r"NSPrivacyCollectedDataType([A-Z][A-Za-z]+)")
+IOS_DATA_TYPE_NAMES = {
+    "Name": "name", "EmailAddress": "email", "PhoneNumber": "phone number", "PhysicalAddress": "postal address",
+    "Health": "health data", "PaymentInfo": "payment info", "CreditInfo": "credit info", "PreciseLocation": "precise location",
+    "CoarseLocation": "coarse location", "SensitiveInfo": "sensitive info", "Contacts": "contacts", "Photos": "photos",
+    "AudioData": "audio", "Messages": "messages", "SearchHistory": "search history", "BrowsingHistory": "browsing history",
+    "DeviceID": "device ID", "UserID": "user ID", "PurchaseHistory": "purchase history", "ProductInteraction": "product interaction",
+    "AdvertisingData": "advertising data", "OtherUsageData": "usage data", "CrashData": "crash data",
+    "PerformanceData": "performance data", "OtherDiagnosticData": "diagnostic data", "Fitness": "fitness",
+    "GameplayContent": "gameplay content", "CustomerSupport": "customer support", "FitnessData": "fitness data",
+}
 
 def check_privacy_signals(root, p, text, privacy):
     """Fingerprinting, PII in logs/source, import-time network, IP logging, tracking params. Static only."""
@@ -1018,6 +1031,10 @@ def check_privacy_signals(root, p, text, privacy):
             if m:
                 _priv_add(privacy, "pii-phone", "low", m.group(0).strip(), r, i, line,
                           "Hardcoded phone number in source/config (personal data); check it is intentional.")
+            m = ADDRESS_RE.search(line)
+            if m:
+                _priv_add(privacy, "pii-address", "low", m.group(0).strip(), r, i, line,
+                          "Postal address in source/config (personal data); check it is intended to be public.")
     # import-time network and IP logging: line-scoped, cheap enough to do in one more pass
     for i, line in enumerate(text.split("\n"), 1):
         if not line or line[0] in " \t" or _is_comment(line):
@@ -1033,13 +1050,23 @@ def check_privacy_signals(root, p, text, privacy):
     if p.name.lower() in PRIVACY_DOC_NAMES:
         _priv_add(privacy, "privacy-doc", "info", p.name.lower(), r, 1, p.name,
                   "Privacy policy/manifest is present in the repo.")
+    if ext == ".xcprivacy" or p.name.endswith(".xcprivacy"):
+        if re.search(r"<key>NSPrivacyTracking</key>\s*<true\s*/>", text):
+            _priv_add(privacy, "ios-tracking", "low", "NSPrivacyTracking", r, _line_of(text, "NSPrivacyTracking"), "NSPrivacyTracking",
+                      "The app's privacy manifest declares that it tracks users (Apple's definition: linking data to identity/location/ads).")
+        for m in IOS_DATA_TYPE_RE.finditer(text):
+            name = m.group(1)
+            human = IOS_DATA_TYPE_NAMES.get(name, name.replace("Data", " data").lower())
+            _priv_add(privacy, "ios-data-type", "info", human, r, text[:m.start()].count("\n") + 1, f"NSPrivacyCollectedDataType{name}",
+                      "Declared in PrivacyInfo.xcprivacy: this data category is collected and linked to the user.")
 
 def privacy_findings(privacy):
     order = {"fingerprint": 0, "import-time-network": 1, "ip-logging": 2, "pii-log": 3, "pii-email": 4,
-             "browser-capability": 5, "macos-entitlement": 6, "client-id": 7,
-             "tracking-params": 8, "insecure-endpoint": 9, "android-permission": 10, "extension-permission": 11,
-             "cookie-flags": 12, "cookie-write": 13, "third-party-cdn": 14, "external-endpoint": 15,
-             "browser-storage": 16, "consent-manager": 17, "privacy-doc": 18}
+             "pii-phone": 5, "pii-address": 6, "browser-capability": 7, "macos-entitlement": 8, "client-id": 9,
+             "ios-tracking": 10, "ios-data-type": 11, "dnt-respect": 12, "consent-gating": 13,
+             "tracking-params": 14, "insecure-endpoint": 15, "android-permission": 16, "extension-permission": 17,
+             "cookie-flags": 18, "cookie-write": 19, "third-party-cdn": 20, "external-endpoint": 21,
+             "browser-storage": 22, "consent-manager": 23, "privacy-doc": 24}
     down = {"high": "medium", "medium": "low", "low": "info"}
     fs = []
     for (rule, key), t in sorted(privacy.items(), key=lambda kv: (order.get(kv[1]["rule"], 9), kv[1]["key"])):
@@ -1164,13 +1191,30 @@ def run_agent_checks(root):
     tf = telemetry_findings(telemetry, optouts)
     pf = privacy_findings(privacy)
     findings += tf + pf
+    tracking_kinds = {"telemetry-analytics", "telemetry-ads", "telemetry-session-replay", "telemetry-crash", "telemetry-apm"}
+    tracked = {f["title"].split(":")[0] for f in tf} & tracking_kinds
+    dnt = any(o == "Do-Not-Track" or o.startswith("DO_NOT_TRACK") for o in optouts)
+    if tracked:
+        if dnt:
+            findings.append(finding("privacy", "info", "(repo)", 0, "dnt-respect: Do-Not-Track / opt-out is referenced",
+                                     ", ".join(sorted(optouts)[:3]),
+                                     "Telemetry exists and the repo references a Do-Not-Track/opt-out switch, so the signal can be honoured."))
+        else:
+            findings.append(finding("privacy", "low", "(repo)", 0, "dnt-respect: trackers but no Do-Not-Track/opt-out reference",
+                                     "no DO_NOT_TRACK / navigator.doNotTrack found",
+                                     "Browsers send Do-Not-Track and DO_NOT_TRACK is a de-facto standard; without a reference these signals are ignored."))
+        if not any(f["title"].startswith("consent-manager") for f in pf) and \
+           tracked & {"telemetry-analytics", "telemetry-ads", "telemetry-session-replay"}:
+            findings.append(finding("privacy", "low", "(repo)", 0, "consent-gating: trackers with no consent manager detected",
+                                     "no CMP found",
+                                     "Analytics/ads/session replay are present but no OneTrust/Cookiebot/Osano/… was detected; verify tracking waits for consent."))
     if privacy_doc:
         findings.append(finding("privacy", "info", privacy_doc, 1, "privacy-doc: privacy policy present", privacy_doc,
                                  "The repo ships a privacy policy/manifest; read it to see what it admits to collecting."))
     elif any(f["severity"] in ("high", "medium", "low") for f in tf + pf):
         findings.append(finding("privacy", "low", "(repo)", 0, "privacy-doc: no privacy policy file",
                                  "expected PRIVACY.md or PrivacyInfo.xcprivacy",
-                                 "The repo collects/transmits data but has no privacy policy file at the root."))
+                                 "The repo collects/transmits data but ships no privacy policy/manifest file."))
     return findings, nfiles
 
 # ----------------------------------------------------------------------------
