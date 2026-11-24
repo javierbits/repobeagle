@@ -816,6 +816,7 @@ def check_privacy(root, p, text, privacy):
     if LOCKFILE_RE.search(r) or ext in PROSE_EXT:
         return
     scan_endpoints = ext in ENDPOINT_EXT or p.name in ENDPOINT_NAMES or p.name.startswith(".env")
+    web = ext in (".js", ".mjs", ".cjs", ".ts", ".tsx", ".jsx", ".vue", ".svelte", ".astro", ".html", ".htm")
     is_manifest = p.name == "manifest.json"
     manifest = None
     if is_manifest:
@@ -865,11 +866,28 @@ def check_privacy(root, p, text, privacy):
             _priv_add(privacy, "consent-manager", "info", m.group(1).lower(), r, i, line,
                       "A consent manager (CMP) is present, so tracking should be gated on consent; verify it covers every vendor found.")
         if IP_LOG_RE.search(line) and IP_LOG_SINK_RE.search(line):
-            _priv_add(privacy, "ip-logging", "low", "IP address in logs/data", r, i, line,
-                      "Request IP is logged or persisted: IPs are personal data in the EU/UK; consider truncating or hashing.")
+            masked = re.search(r"(?i)(mask|anonymi[sz]|truncat|hash|redact|pseudonym)", " ".join(lines[i - 1:i + 2]))
+            _priv_add(privacy, "ip-logging", "info" if masked else "low", "IP address in logs/data", r, i, line,
+                      ("The IP is masked/hashed here, which is good." if masked else
+                       "Request IP is logged or persisted: IPs are personal data in the EU/UK; consider truncating or hashing."))
+        if web:
+            for key, sev, rx, meaning in BROWSER_CAPABILITIES:
+                if re.search(rx, line):
+                    _priv_add(privacy, "browser-capability", sev, key, r, i, line, meaning)
+        if ext in (".entitlements", ".plist") or p.name.endswith(".entitlements"):
+            for m in re.finditer(r"<key>(com\.apple\.security\.[\w.-]+)</key>", line):
+                ent = m.group(1)
+                if ent in MACOS_ENTITLEMENTS:
+                    sev, what = MACOS_ENTITLEMENTS[ent]
+                    _priv_add(privacy, "macos-entitlement", sev, ent, r, i, line,
+                              f"macOS app entitlement grants {what} ({ent}) without a per-use prompt.")
         if TRACKING_PARAM_RE.search(line):
             _priv_add(privacy, "tracking-params", "low", "utm/campaign parameters", r, i, line,
                       "URL carries campaign/tracking parameters (utm_*, fbclid, gclid, …): links leak referrer and campaign identity.")
+        m = CLIENT_ID_RE.search(line)
+        if m and CLIENT_ID_CONTEXT_RE.search(line):
+            _priv_add(privacy, "client-id", "low", m.group(0).lower(), r, i, line,
+                      "Named persistent client identifier: links sessions or devices without relying on a login.")
         if p.name == "AndroidManifest.xml":
             for m in re.finditer(r'<uses-permission[^>]*android:name="android\.permission\.([A-Z_0-9]+)"', line):
                 perm = m.group(1)
@@ -930,6 +948,45 @@ PROTO_REL_RE = re.compile(r"(?<![:/\w])//([a-z0-9][a-z0-9.-]*[a-z0-9])/")
 COOKIE_API_RE = re.compile(r"(?i)(\bset_cookie\s*\(|\bres\.cookie\s*\(|\bsetcookie\s*\(|\bsetCookie\s*\()")
 COOKIE_FLAG_WORDS = re.compile(r"(?i)(httponly|secure|samesite|same_site|samesite_)")
 
+MACOS_ENTITLEMENTS = {
+    "com.apple.security.personal-information.location": ("high", "location"),
+    "com.apple.security.personal-information.calendars": ("medium", "calendars"),
+    "com.apple.security.personal-information.contacts": ("medium", "contacts"),
+    "com.apple.security.personal-information.photos-library": ("high", "photo library"),
+    "com.apple.security.device.camera": ("high", "camera"),
+    "com.apple.security.device.microphone": ("high", "microphone"),
+    "com.apple.security.device.bluetooth": ("medium", "Bluetooth devices"),
+    "com.apple.security.device.usb": ("low", "USB devices"),
+    "com.apple.security.network.client": ("low", "outgoing network"),
+    "com.apple.security.network.server": ("low", "incoming network"),
+    "com.apple.security.files.user-selected.read-write": ("low", "user-selected files"),
+    "com.apple.security.files.downloads.read-write": ("low", "Downloads folder"),
+    "com.apple.security.files.all": ("medium", "all files"),
+    "com.apple.security.automation.apple-events": ("medium", "Apple Events automation"),
+    "com.apple.security.cs.disable-library-validation": ("low", "library validation disabled"),
+}
+
+BROWSER_CAPABILITIES = [
+    ("clipboard", "medium", r"navigator\.clipboard\.(read|readText)|clipboard\.read\b",
+     "Reads the system clipboard: whatever the user copied, including passwords."),
+    ("geolocation", "medium", r"navigator\.geolocation|getCurrentPosition\s*\(|watchPosition\s*\(",
+     "Asks for precise device location."),
+    ("camera/microphone", "medium", r"getUserMedia\s*\(|MediaDevices|enumerateDevices\s*\(",
+     "Opens camera/microphone or enumerates local media devices."),
+    ("screen capture", "medium", r"getDisplayMedia\s*\(|MediaRecorder\s*\(",
+     "Records or streams screen/window content."),
+    ("notifications", "low", r"Notification\.requestPermission|new Notification\s*\(",
+     "Asks to send notifications (can be used to re-engage the user)."),
+    ("browsing history", "low", r"window\.history|history\.(push|replace)State|history\.length",
+     "Reads or influences browser history."),
+    ("usb/serial/bluetooth", "low", r"navigator\.(usb|serial|bluetooth)\b|BluetoothDevice",
+     "Talks to local devices over USB/serial/Bluetooth."),
+    ("storage access", "low", r"document\.hasStorageAccess|requestStorageAccess\s*\(",
+     "Cross-site cookie/storage access."),
+]
+CLIENT_ID_RE = re.compile(r"(?i)\b(client_?id|device_?id|visitor_?id|anonymous_?id|distinct_?id|installation_?id)\b")
+CLIENT_ID_CONTEXT_RE = re.compile(r"(?i)(localStorage|sessionStorage|document\.cookie|cookie|uuid|randomUUID|nanoid|v4\s*\(|guid)")
+
 def check_privacy_signals(root, p, text, privacy):
     """Fingerprinting, PII in logs/source, import-time network, IP logging, tracking params. Static only."""
     r, ext = rel(root, p), p.suffix.lower()
@@ -979,9 +1036,10 @@ def check_privacy_signals(root, p, text, privacy):
 
 def privacy_findings(privacy):
     order = {"fingerprint": 0, "import-time-network": 1, "ip-logging": 2, "pii-log": 3, "pii-email": 4,
-             "tracking-params": 5, "insecure-endpoint": 6, "android-permission": 7, "extension-permission": 8,
-             "cookie-flags": 9, "cookie-write": 10, "third-party-cdn": 11, "external-endpoint": 12,
-             "browser-storage": 13, "consent-manager": 14, "privacy-doc": 15}
+             "browser-capability": 5, "macos-entitlement": 6, "client-id": 7,
+             "tracking-params": 8, "insecure-endpoint": 9, "android-permission": 10, "extension-permission": 11,
+             "cookie-flags": 12, "cookie-write": 13, "third-party-cdn": 14, "external-endpoint": 15,
+             "browser-storage": 16, "consent-manager": 17, "privacy-doc": 18}
     down = {"high": "medium", "medium": "low", "low": "info"}
     fs = []
     for (rule, key), t in sorted(privacy.items(), key=lambda kv: (order.get(kv[1]["rule"], 9), kv[1]["key"])):
