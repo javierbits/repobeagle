@@ -1224,7 +1224,7 @@ def privacy_findings(privacy):
              "tracking-params": 22, "insecure-endpoint": 23, "android-permission": 24, "extension-permission": 25,
              "cookie-flags": 26, "cookie-write": 27, "third-party-cdn": 28, "external-endpoint": 29,
              "browser-storage": 30, "consent-manager": 31, "referrer-policy": 32, "permissions-policy": 33,
-             "privacy-doc": 34}
+             "undisclosed-vendor": 34, "privacy-doc": 35}
     down = {"high": "medium", "medium": "low", "low": "info"}
     fs = []
     for (rule, key), t in sorted(privacy.items(), key=lambda kv: (order.get(kv[1]["rule"], 9), kv[1]["key"])):
@@ -1307,6 +1307,7 @@ def run_agent_checks(root):
     findings = []
     telemetry, optouts, privacy = {}, set(), {}
     privacy_doc = None
+    prose = []
     nfiles = 0
     for p in iter_files(root):
         nfiles += 1
@@ -1332,6 +1333,9 @@ def run_agent_checks(root):
         text = read_text(p)
         if text is None:
             continue
+        if p.suffix.lower() in PROSE_EXT or low.startswith(("readme", "privacy", "security", "notice")):
+            if sum(map(len, prose)) < 800_000:
+                prose.append(text)
         check_unicode(root, p, text, findings)
         check_agent_text(root, p, text, findings)
         check_exfil(root, p, text, findings)
@@ -1349,6 +1353,14 @@ def run_agent_checks(root):
     tf = telemetry_findings(telemetry, optouts)
     pf = privacy_findings(privacy)
     findings += tf + pf
+    vendor_names = {f["title"].split(": ", 1)[1].replace(" (transitive)", "") for f in tf if f["title"].startswith("telemetry-")}
+    if privacy_doc and vendor_names and prose:
+        doc_text = " ".join(prose).casefold()
+        missing = sorted(v for v in vendor_names if v.casefold() not in doc_text)
+        if missing:
+            findings.append(finding("privacy", "info", "(repo)", 0, "undisclosed-vendor: trackers not named in any doc",
+                                     ", ".join(missing[:6]) + (" …" if len(missing) > 6 else ""),
+                                     "The repo has a privacy doc/README but these detected vendors are not named there; check the policy discloses them."))
     tracking_kinds = {"telemetry-analytics", "telemetry-ads", "telemetry-session-replay", "telemetry-crash", "telemetry-apm"}
     tracked = {f["title"].split(":")[0] for f in tf} & tracking_kinds
     dnt = any(o == "Do-Not-Track" or o.startswith("DO_NOT_TRACK") for o in optouts)
@@ -1899,6 +1911,26 @@ def _install_cleanup():
 
 SUPPRESS_FILE = ".repobeagleignore"
 
+REDACT_EMAIL_RE = re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}")
+REDACT_CARD_RE = re.compile(r"(?<![\d.])(?:\d{4}[ -]?){3}\d{3,4}(?![\d.])")
+REDACT_PHONE_RE = re.compile(r"(?<![A-Za-z0-9+])\+\d[\d ().-]{6,14}\d")
+
+def redact_pii(s):
+    """Masks emails, phones, card numbers and US SSNs in a report line, so badges don't republish the PII they found."""
+    if not s:
+        return s
+    def email(m):
+        local, _, domain = m.group(0).partition("@")
+        return (local[:1] + "***@" + domain) if len(local) > 1 else "***@" + domain
+    s = REDACT_EMAIL_RE.sub(email, s)
+    s = re.sub(r"\b\d{3}-\d{2}-(\d{4})\b", r"***-**-\1", s)
+    def card(m):
+        d = re.sub(r"\D", "", m.group(0))
+        return f"{d[:4]} **** **** {d[-4:]}" if len(d) >= 15 else f"{d[:2]}****{d[-2:]}"
+    s = REDACT_CARD_RE.sub(card, s)
+    s = REDACT_PHONE_RE.sub(lambda m: m.group(0)[:4] + "****" + m.group(0)[-3:], s)
+    return s
+
 def load_suppressions(src):
     """Reads <repo>/.repobeagleignore: one rule id or glob per line ('#' comments). Never executes anything."""
     try:
@@ -1968,6 +2000,10 @@ def cmd_scan(a):
             if note: notes.append(note)
         raw_count = len(findings)
         findings = collapse(dedupe(findings))
+        if not a.no_redact:
+            for f in findings:
+                if f["tool"] in ("privacy", "telemetry"):
+                    f["snippet"] = redact_pii(f["snippet"])
         ignored = load_suppressions(src)
         active, suppressed = apply_suppressions(findings, ignored) if ignored else (findings, [])
         if suppressed:
@@ -1978,7 +2014,7 @@ def cmd_scan(a):
         v, why, counts = verdict(active, profile, ai)
         meta = {"target": a.target, "fetched_via": how, "mode": "docker (--network none, read-only)" if use_docker else "local (no docker)",
                 "profile": profile, "files": tools.get("agent-checks", {}).get("files"), "seconds": round(time.time() - t0, 1),
-                "tools": tools, "suppressed": len(suppressed)}
+                "tools": tools, "suppressed": len(suppressed), "pii_redacted": not a.no_redact}
         summary = privacy_summary(active)
         if summary:
             meta["privacy_summary"] = summary
@@ -2153,6 +2189,7 @@ def main():
     s.add_argument("--verify-deps", action="store_true", help="GuardDog-verify deps from requirements.txt/package.json (downloads packages, static only)")
     s.add_argument("--no-trust", action="store_true", help="skip GitHub trust signals (unauthenticated public API)")
     s.add_argument("--all", action="store_true", help="print all findings")
+    s.add_argument("--no-redact", action="store_true", help="show raw emails/phones/cards in privacy finding snippets")
     s.add_argument("--no-color", action="store_true")
     v = sp.add_parser("verify", help="verify a published repobeagle badge (signature + freshness); exit 0 valid/current, 1 invalid, 2 stale")
     v.add_argument("target", nargs="?", help="github repo slug or URL whose repobeagle branch holds the badge")
