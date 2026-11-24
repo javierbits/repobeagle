@@ -8,3 +8,6 @@ navigator.geolocation.getCurrentPosition(showMap);
 const visitorId = localStorage.setItem("client_id", uuidv4());
 if (!navigator.doNotTrack) track();
 console.log(user);
+const consent = "_ga=GA1.2; _fbp=fb.1";
+const CARD = "4111 1111 1111 1111";
+const SSN = "123-45-6789";

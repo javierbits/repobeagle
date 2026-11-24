@@ -581,6 +581,11 @@ TELEMETRY_RULES = [
     ("analytics", "medium", "Yandex Metrica", _telem_rx(r"mc\.yandex\.ru|\bym\s*\(\s*\d")),
     ("analytics", "medium", "Baidu Tongji", _telem_rx(r"hm\.baidu\.com")),
     ("analytics", "medium", "WordPress Stats", _telem_rx(r"stats\.wp\.com")),
+    ("analytics", "medium", "Snowplow", _telem_rx(r"\bsnowplow\b|@snowplow/")),
+    ("analytics", "medium", "RudderStack", _telem_rx(r"rudderstack|@rudderstack/")),
+    ("analytics", "medium", "Pendo", _telem_rx(r"\bpendo\b")),
+    ("analytics", "medium", "Optimizely", _telem_rx(r"\boptimizely\b")),
+    ("analytics", "medium", "VWO", _telem_rx(r"vwo\.com|visualwebsiteoptimizer|_vwo_code")),
     ("analytics", "low", "Tracking pixel", _telem_rx(r"1x1\.(gif|png)|pixel\.gif|\btracking[ -]pixel\b")),
     # crash / error reporting
     ("crash", "medium", "Sentry", _telem_rx(r"sentry\.io|@sentry/|sentry_sdk|\bsentry[-_]")),
@@ -593,6 +598,8 @@ TELEMETRY_RULES = [
     ("crash", "medium", "Firebase Crashlytics", _telem_rx(r"crashlytics|firebase[_-]crash")),
     ("crash", "medium", "Application Insights", _telem_rx(r"applicationinsights|application-insights|appinsights|azure-monitor")),
     ("crash", "medium", "Backtrace", _telem_rx(r"\bbacktrace\.io|@backtrace/")),
+    ("crash", "medium", "TrackJS", _telem_rx(r"\btrackjs\b")),
+    ("crash", "medium", "Bugsplat", _telem_rx(r"\bbugsplat\b")),
     # APM / tracing
     ("apm", "medium", "OpenTelemetry (OTEL)", _telem_rx(r"opentelemetry|\botel\b|\botel[._/-]|\botlp\b")),
     ("apm", "low", "Datadog (APM)", _telem_rx(r"datadoghq|dd-trace|\bddtrace\b|datadog-agent|@datadog/")),
@@ -630,7 +637,7 @@ TELEMETRY_OPTOUT_RE = re.compile(
     r"TURBO_TELEMETRY_DISABLED|DOTNET_CLI_TELEMETRY_OPTOUT|HOMEBREW_NO_ANALYTICS|CHECKPOINT_DISABLE|"
     r"NG_CLI_ANALYTICS\s*[=:]\s*(false|off)|telemetry\s*[=:]\s*(false|off)|disable[_-]?telemetry|no[_-]?telemetry|"
     r"analytics\s*[=:]\s*(false|off))")
-DNT_RE = re.compile(r"(?i)(navigator\.doNotTrack|\bdoNotTrack\b|\bDNT\b)")
+DNT_RE = re.compile(r"(?i)(navigator\.doNotTrack|\bdoNotTrack\b|globalPrivacyControl|\bGPC\b|\bDNT\b|Sec-GPC)")
 
 TELEMETRY_PACKAGES = [
     ("crash", "Sentry", ("sentry", "sentry-sdk", "sentry-go", "@sentry/")),
@@ -1053,6 +1060,52 @@ CMP_LOAD_RE = re.compile(r"(?i)(cookiebot|onetrust|optanon|osano|cookieyes|klaro
                          r"didomi|usercentrics|iubenda|axeptio|cookiehub)")
 PII_OBJECT_RE = re.compile(r"(?i)\b(user|users|account|customer|profile|session|member|subscriber|person|lead|contact)\b")
 
+TRACKING_COOKIE_RE = re.compile(r"(?i)(?<![\w.-])(_ga|_gid|_gat|_gcl_au|_gcl_aw|_fbp|_fbc|_hjid|_hjsession\w*|ajs_\w*|"
+                                r"__hstc|hubspotutk|intercom-[\w-]+|mp_\w+|amplitude_id\w*|ph_\w+|"
+                                r"_clck|_clsk|_uetvid|_uetsid|_ttp|_rdt_uuid|li_sugr|bcookie|lidc|_pin_unauth|IDE|NID)"
+                                r"(?=[=;'\"\s,)]|$)")
+TRACKING_COOKIE_VENDORS = [
+    ("_ga", "Google Analytics"), ("_gid", "Google Analytics"), ("_gat", "Google Analytics"),
+    ("_gcl_au", "Google Ads"), ("_gcl_aw", "Google Ads"), ("IDE", "Google DoubleClick"), ("NID", "Google"),
+    ("_fbp", "Meta Pixel"), ("_fbc", "Meta Pixel"), ("_hjid", "Hotjar"), ("_hjsession", "Hotjar"),
+    ("ajs_", "Segment"), ("__hstc", "HubSpot"), ("hubspotutk", "HubSpot"), ("intercom-", "Intercom"),
+    ("mp_", "Mixpanel"), ("amplitude_id", "Amplitude"), ("ph_", "PostHog"), ("_clck", "Microsoft Clarity"),
+    ("_clsk", "Microsoft Clarity"), ("_uetvid", "Microsoft Ads"), ("_uetsid", "Microsoft Ads"), ("_ttp", "TikTok"),
+    ("_rdt_uuid", "Reddit"), ("li_sugr", "LinkedIn"), ("bcookie", "LinkedIn"), ("lidc", "LinkedIn"),
+    ("_pin_unauth", "Pinterest"),
+]
+SSN_RE = re.compile(r"\b\d{3}-\d{2}-\d{4}\b")
+CARD_RE = re.compile(r"(?<![\d.])(?:\d{13,19}|\d{4}(?:[ ]\d{4}){3}|\d{4}[ -]\d{4}[ -]\d{4}[ -]\d{4}|\d{4}[ -]\d{6}[ -]\d{5})(?![\d.])")
+HASHY_RE = re.compile(r"(?i)(sha\d*|md5|hash|uuid|commit|0x[0-9a-f]+)")
+PII_SKIP_EXT = {".svg", ".sfd", ".glif", ".css", ".scss", ".map", ".lock", ".woff", ".woff2"}
+
+def _luhn_ok(s):
+    ds = [int(c) for c in s if c.isdigit()]
+    if not 13 <= len(ds) <= 19:
+        return False
+    total = 0
+    for i, d in enumerate(reversed(ds)):
+        if i % 2:
+            d *= 2
+            if d > 9:
+                d -= 9
+        total += d
+    return total % 10 == 0
+
+CARD_IIN_RE = re.compile(r"^(4|5[1-5]|2[2-7]|3[47]|3[0689]|6011|64|65|62)")
+
+def _card_number_ok(s):
+    """Luhn plus an issued card IIN prefix: excludes timestamps, IDs and arbitrary digit runs."""
+    ds = re.sub(r"\D", "", s)
+    return bool(CARD_IIN_RE.match(ds)) and _luhn_ok(ds)
+
+def _tracking_cookie_vendor(name):
+    lname = name.lower()
+    for prefix, vendor in TRACKING_COOKIE_VENDORS:
+        if lname.startswith(prefix.lower()):
+            return vendor
+    return None
+
 def check_privacy_signals(root, p, text, privacy):
     """Fingerprinting, PII in logs/source, import-time network, IP logging, tracking params. Static only."""
     r, ext = rel(root, p), p.suffix.lower()
@@ -1087,6 +1140,21 @@ def check_privacy_signals(root, p, text, privacy):
                 _priv_add(privacy, "pii-log", "low", "logged object likely containing PII", r, i, line,
                           "The logged argument name suggests personal data (user/account/profile/…); verify the destination and retention.")
         if not comment:
+            for m in TRACKING_COOKIE_RE.finditer(line):
+                vendor = _tracking_cookie_vendor(m.group(1))
+                if vendor:
+                    _priv_add(privacy, "tracking-cookie", "low", vendor, r, i, line,
+                              f"Cookie '{m.group(1)}' belongs to {vendor}: it persists an identifier on the device.")
+            m = SSN_RE.search(line)
+            if m and ext not in PII_SKIP_EXT:
+                _priv_add(privacy, "pii-ssn", "low", m.group(0), r, i, line,
+                          "US Social Security number in source/config (personal data).")
+            if not HASHY_RE.search(line) and ext not in PII_SKIP_EXT:
+                for m in CARD_RE.finditer(line):
+                    if _card_number_ok(m.group(0)):
+                        _priv_add(privacy, "pii-card", "low", m.group(0).strip(), r, i, line,
+                                  "Payment card number that passes the Luhn check: personal data in source/config.")
+                        break
             for m in EMAIL_RE.finditer(line):
                 addr = m.group(0)
                 if addr.lower() in EMAIL_IGNORE or addr.lower().endswith((".example", ".invalid", ".local")):
@@ -1145,13 +1213,14 @@ def check_privacy_signals(root, p, text, privacy):
 
 def privacy_findings(privacy):
     order = {"fingerprint": 0, "import-time-network": 1, "ip-logging": 2, "pii-log": 3, "pii-email": 4,
-             "pii-phone": 5, "pii-address": 6, "browser-capability": 7, "macos-entitlement": 8, "client-id": 9,
-             "ios-tracking": 10, "ios-data-type": 11, "dnt-respect": 12, "consent-gating": 13, "consent-order": 14,
-             "data-retention": 15, "upload-surface": 16, "upload-limit": 17, "store-disclosure": 18,
-             "tracking-params": 19, "insecure-endpoint": 20, "android-permission": 21, "extension-permission": 22,
-             "cookie-flags": 23, "cookie-write": 24, "third-party-cdn": 25, "external-endpoint": 26,
-             "browser-storage": 27, "consent-manager": 28, "referrer-policy": 29, "permissions-policy": 30,
-             "privacy-doc": 31}
+             "pii-phone": 5, "pii-address": 6, "pii-ssn": 7, "pii-card": 8, "tracking-cookie": 9,
+             "browser-capability": 10, "macos-entitlement": 11, "client-id": 12,
+             "ios-tracking": 13, "ios-data-type": 14, "dnt-respect": 15, "consent-gating": 16, "consent-order": 17,
+             "data-retention": 18, "upload-surface": 19, "upload-limit": 20, "store-disclosure": 21,
+             "tracking-params": 22, "insecure-endpoint": 23, "android-permission": 24, "extension-permission": 25,
+             "cookie-flags": 26, "cookie-write": 27, "third-party-cdn": 28, "external-endpoint": 29,
+             "browser-storage": 30, "consent-manager": 31, "referrer-policy": 32, "permissions-policy": 33,
+             "privacy-doc": 34}
     down = {"high": "medium", "medium": "low", "low": "info"}
     fs = []
     for (rule, key), t in sorted(privacy.items(), key=lambda kv: (order.get(kv[1]["rule"], 9), kv[1]["key"])):
