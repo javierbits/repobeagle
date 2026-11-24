@@ -1648,6 +1648,8 @@ def report(meta, findings, v, why, counts, notes, ai, use_color, maxn=40):
     print(f"tools: " + ", ".join(f"{k}({t['findings']}{'' if t['ok'] else ' !'})" for k, t in meta["tools"].items()))
     print("\n" + C(vc, f"  VERDICT: {v}  ") + "  " + why)
     print(f"  critical {counts['critical']}  high {counts['high']}  medium {counts['medium']}  low {counts['low']}\n")
+    if meta.get("suppressed"):
+        print(C("2", f"  suppressed {meta['suppressed']} finding(s) via {SUPPRESS_FILE} (kept in --json with suppressed=true)"))
     if ai:
         print(C("1", "AI review: ") + f"intent={ai.get('intent')} confidence={ai.get('confidence')}\n  {ai.get('summary', '')}")
         for k in ai.get("key_concerns", [])[:5]: print(f"   - {k}")
@@ -1710,6 +1712,35 @@ def _install_cleanup():
             try: signal.signal(sig, _on_signal)
             except (ValueError, OSError): pass   # not in main thread
 
+SUPPRESS_FILE = ".repobeagleignore"
+
+def load_suppressions(src):
+    """Reads <repo>/.repobeagleignore: one rule id or glob per line ('#' comments). Never executes anything."""
+    try:
+        raw = (Path(src) / SUPPRESS_FILE).read_text(errors="replace")
+    except OSError:
+        return []
+    out = []
+    for line in raw.splitlines():
+        line = line.split("#", 1)[0].strip()
+        if line:
+            out.append(line)
+    return out
+
+def apply_suppressions(findings, patterns):
+    """Marks findings whose rule id (or full title) matches, so they stay in the JSON but not in the verdict."""
+    from fnmatch import fnmatchcase
+    active, suppressed = [], []
+    for f in findings:
+        rule = f["title"].split(":")[0]
+        short = rule.split(" (")[0]           # older titles have no "rule: detail" prefix
+        if any(fnmatchcase(rule, p) or fnmatchcase(short, p) or fnmatchcase(f["title"], p) for p in patterns):
+            f["suppressed"] = True
+            suppressed.append(f)
+        else:
+            active.append(f)
+    return active, suppressed
+
 def cmd_scan(a):
     print(banner(color_enabled(sys.stderr) and not a.no_color), file=sys.stderr)   # stderr keeps stdout reports clean
     t0 = time.time()
@@ -1752,15 +1783,21 @@ def cmd_scan(a):
             if note: notes.append(note)
         raw_count = len(findings)
         findings = collapse(dedupe(findings))
-        ai, note = ai_review(src, findings)
+        ignored = load_suppressions(src)
+        active, suppressed = apply_suppressions(findings, ignored) if ignored else (findings, [])
+        if suppressed:
+            notes.append(f"suppressed {len(suppressed)} finding(s) via {SUPPRESS_FILE}: " +
+                         ", ".join(sorted({f['title'].split(':')[0] for f in suppressed})))
+        ai, note = ai_review(src, active)
         if note: notes.append(note)
-        v, why, counts = verdict(findings, profile, ai)
+        v, why, counts = verdict(active, profile, ai)
         meta = {"target": a.target, "fetched_via": how, "mode": "docker (--network none, read-only)" if use_docker else "local (no docker)",
-                "profile": profile, "files": tools.get("agent-checks", {}).get("files"), "seconds": round(time.time() - t0, 1), "tools": tools}
-        report(meta, findings, v, why, counts, notes, ai, color_enabled() and not a.no_color, 10**6 if a.all else 40)
+                "profile": profile, "files": tools.get("agent-checks", {}).get("files"), "seconds": round(time.time() - t0, 1),
+                "tools": tools, "suppressed": len(suppressed)}
+        report(meta, active, v, why, counts, notes, ai, color_enabled() and not a.no_color, 10**6 if a.all else 40)
         if a.json:
             Path(a.json).write_text(json.dumps({"version": VERSION, "verdict": v, "why": why, "counts": counts, "meta": meta,
-                                                "ai_review": ai, "findings": findings, "raw_findings_count": raw_count, "notes": notes,
+                                                "ai_review": ai, "findings": active + suppressed, "raw_findings_count": raw_count, "notes": notes,
                                                 "recommended_actions": ACTIONS[v]}, indent=2))
             print(f"[repobeagle] JSON written to {a.json}", file=sys.stderr)
         if a.keep:
