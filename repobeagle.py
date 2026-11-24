@@ -823,12 +823,14 @@ def check_privacy(root, p, text, privacy):
         except Exception: manifest = None
         if not isinstance(manifest, dict) or "manifest_version" not in manifest:
             manifest = None
-    for i, line in enumerate(text.split("\n"), 1):
+    lines = text.split("\n")
+    for i, line in enumerate(lines, 1):
         if len(line) > 2000:
             continue
         if scan_endpoints:
-            for m in URL_HOST_RE.finditer(line):
-                scheme, host = m.group(1).lower(), m.group(2).lower()
+            hosts = [(m.group(1).lower(), m.group(2).lower()) for m in URL_HOST_RE.finditer(line)]
+            hosts += [("https", m.group(1).lower()) for m in PROTO_REL_RE.finditer(line)]
+            for scheme, host in hosts:
                 if host in NON_NET_HOSTS or _endpoint_noise(host):
                     continue
                 if any(rx.search(host) for _, _, _, rx in TELEMETRY_RULES):
@@ -853,6 +855,11 @@ def check_privacy(root, p, text, privacy):
         if SET_COOKIE_RE.search(line) and not all(s in line for s in ("HttpOnly", "Secure", "SameSite")):
             _priv_add(privacy, "cookie-flags", "low", "Set-Cookie", r, i, line,
                       "Set-Cookie header without all of HttpOnly/Secure/SameSite: readable by scripts, sent in clear or cross-site.")
+        elif COOKIE_API_RE.search(line):
+            window = " ".join(lines[i - 1:i + 3])
+            if not COOKIE_FLAG_WORDS.search(window):
+                _priv_add(privacy, "cookie-flags", "low", "set_cookie() without flags", r, i, line,
+                          "Framework cookie setter without HttpOnly/Secure/SameSite: readable by scripts, sent in clear or cross-site.")
         m = CONSENT_RE.search(line)
         if m:
             _priv_add(privacy, "consent-manager", "info", m.group(1).lower(), r, i, line,
@@ -918,6 +925,10 @@ IP_LOG_SINK_RE = re.compile(r"(?i)(log|logger|print|puts|console|info|warn|debug
 TRACKING_PARAM_RE = re.compile(r"[?&](utm_[a-z_]+|fbclid|gclid|dclid|msclkid|mc_eid|_hsenc|_hsmi|igshid|si)=")
 PRIVACY_DOC_NAMES = {"privacy.md", "privacy.txt", "privacy.rst", "privacy.markdown", "privacy-policy.md",
                       "privacy_policy.md", "privacy_policy.txt", "privacyinfo.xcprivacy"}
+PRIVACY_DOC_RE = re.compile(r"(?i)(^|/)(privacy|privacy[-_.]?policy)(\.(md|markdown|txt|rst|html|adoc))?$|\.xcprivacy$")
+PROTO_REL_RE = re.compile(r"(?<![:/\w])//([a-z0-9][a-z0-9.-]*[a-z0-9])/")
+COOKIE_API_RE = re.compile(r"(?i)(\bset_cookie\s*\(|\bres\.cookie\s*\(|\bsetcookie\s*\(|\bsetCookie\s*\()")
+COOKIE_FLAG_WORDS = re.compile(r"(?i)(httponly|secure|samesite|same_site|samesite_)")
 
 def check_privacy_signals(root, p, text, privacy):
     """Fingerprinting, PII in logs/source, import-time network, IP logging, tracking params. Static only."""
@@ -1060,7 +1071,7 @@ def run_agent_checks(root):
             break
         r = rel(root, p)
         low = p.name.lower()
-        if low in PRIVACY_DOC_NAMES:
+        if low in PRIVACY_DOC_NAMES or PRIVACY_DOC_RE.search(r):
             privacy_doc = privacy_doc or r
         if low.endswith(ARCHIVE_EXT):
             enc = zip_encrypted(p)
