@@ -610,10 +610,81 @@ TELEMETRY_OPTOUT_RE = re.compile(
     r"analytics\s*[=:]\s*(false|off))")
 DNT_RE = re.compile(r"(?i)(navigator\.doNotTrack|\bdoNotTrack\b|\bDNT\b)")
 
+TELEMETRY_PACKAGES = [
+    ("crash", "Sentry", ("sentry", "sentry-sdk", "sentry-go", "@sentry/")),
+    ("apm", "OpenTelemetry (OTEL)", ("opentelemetry", "opentelemetry-", "@opentelemetry/", "go.opentelemetry.io/otel")),
+    ("analytics", "PostHog", ("posthog", "posthog-js", "posthog-python")),
+    ("analytics", "Segment", ("@segment/", "analytics-node", "segment")),
+    ("analytics", "Mixpanel", ("mixpanel", "mixpanel-")),
+    ("analytics", "Amplitude", ("amplitude", "@amplitude/")),
+    ("analytics", "Google Analytics", ("react-ga", "react-ga4", "ga-", "@google-analytics/", "gtag")),
+    ("analytics", "Plausible", ("plausible", "plausible-", "@plausible/")),
+    ("analytics", "Umami", ("umami", "umami-")),
+    ("session-replay", "Hotjar", ("hotjar", "react-hotjar", "@hotjar/")),
+    ("session-replay", "FullStory", ("fullstory", "@fullstory/")),
+    ("session-replay", "LogRocket", ("logrocket", "logrocket-")),
+    ("session-replay", "Smartlook", ("smartlook",)),
+    ("session-replay", "Microsoft Clarity", ("@microsoft/clarity", "clarity-js")),
+    ("crash", "Bugsnag", ("bugsnag", "@bugsnag/")),
+    ("crash", "Rollbar", ("rollbar", "rollbar-")),
+    ("crash", "Firebase Crashlytics", ("@react-native-firebase/crashlytics", "firebase-crashlytics", "crashlytics")),
+    ("apm", "Datadog", ("ddtrace", "dd-trace", "@datadog/", "datadog")),
+    ("apm", "New Relic", ("newrelic", "@newrelic/", "newrelic-")),
+    ("apm", "Elastic APM", ("elastic-apm", "@elastic/apm-rum")),
+    ("apm", "Honeycomb", ("libhoney", "honeycomb", "@honeycombio/")),
+    ("apm", "Dynatrace", ("@dynatrace/", "dynatrace", "ruxit")),
+]
+
+def _pkg_is(name, pat):
+    return name == pat or (pat.endswith(("/", "-")) and name.startswith(pat))
+
+def lockfile_packages(p, text):
+    """Package names only. Reads the manifest text; never resolves or downloads anything."""
+    out, name = set(), p.name
+    try:
+        if name == "package-lock.json":
+            d = json.loads(text)
+            for k in (d.get("packages") or {}):
+                out.add(k[len("node_modules/"):] if k.startswith("node_modules/") else k)
+            for sec in ("dependencies", "devDependencies", "optionalDependencies"):
+                out.update((d.get(sec) or {}).keys())
+        elif name == "yarn.lock":
+            for m in re.finditer(r'(?m)^"?(@?[A-Za-z0-9._/-]+)@[^:\s]+:', text):
+                out.add(m.group(1))
+        elif name == "pnpm-lock.yaml":
+            for m in re.finditer(r"(?m)^\s{2,}/?(@?[A-Za-z0-9._/-]+?)(?:@[^:\s]+)?:", text):
+                out.add(m.group(1))
+        elif name in ("Cargo.lock", "poetry.lock", "uv.lock"):
+            out.update(re.findall(r'(?m)^name = "([^"]+)"', text))
+        elif name == "go.sum":
+            for line in text.split("\n"):
+                parts = line.split()
+                if len(parts) >= 2:
+                    out.add(parts[0])
+        elif name == "composer.lock":
+            d = json.loads(text)
+            for sec in ("packages", "packages-dev"):
+                for pkg in d.get(sec) or []:
+                    if isinstance(pkg, dict) and pkg.get("name"):
+                        out.add(pkg["name"])
+    except Exception:
+        return out
+    return out
+
 def check_telemetry(root, p, text, telemetry, optouts):
     """Collects one entry per vendor, first seen (file:line). No network, no code execution."""
     r = rel(root, p)
     if LOCKFILE_RE.search(r):          # transitive deps are not evidence of this repo phoning home
+        for dep in lockfile_packages(p, text):
+            for kind, vendor, pats in TELEMETRY_PACKAGES:
+                if any(_pkg_is(dep, pat) for pat in pats):
+                    key = (kind, vendor, "lockfile")
+                    t = telemetry.get(key)
+                    if t:
+                        t["count"] += 1
+                    else:
+                        telemetry[key] = {"kind": kind, "sev": "low", "vendor": vendor, "file": r,
+                                          "line": _line_of(text, dep), "snippet": dep, "count": 1, "src": "lockfile"}
         return
     # Prose mentions vendors without using them ("alternative to Sentry"), so only opt-outs count there.
     prose = p.suffix.lower() in PROSE_EXT
@@ -627,19 +698,25 @@ def check_telemetry(root, p, text, telemetry, optouts):
         if prose:
             continue
         for kind, sev, vendor, rx in TELEMETRY_RULES:
-            key = (kind, vendor)
+            key = (kind, vendor, "direct")
             if key in telemetry:
                 if rx.search(line):
                     telemetry[key]["count"] += 1
                 continue
             if rx.search(line):
-                telemetry[key] = {"kind": kind, "sev": sev, "vendor": vendor, "file": r, "line": i, "snippet": line, "count": 1}
+                telemetry[key] = {"kind": kind, "sev": sev, "vendor": vendor, "file": r, "line": i,
+                                  "snippet": line, "count": 1, "src": "direct"}
 
 def telemetry_findings(telemetry, optouts):
     order = {"ads": 0, "session-replay": 1, "analytics": 2, "crash": 3, "apm": 4, "devtool": 5}
+    direct = {vendor for (_, vendor, src) in telemetry if src == "direct"}
     fs = []
-    for (kind, vendor), t in sorted(telemetry.items(), key=lambda kv: (order.get(kv[1]["kind"], 9), kv[1]["vendor"])):
-        if t["count"] > 1:
+    for (kind, vendor, src), t in sorted(telemetry.items(), key=lambda kv: (order.get(kv[1]["kind"], 9), kv[1]["vendor"])):
+        if src == "lockfile" and vendor in direct:
+            continue              # already reported where the repo itself uses it
+        if src == "lockfile":
+            meaning = f"Transitive dependency pinned in {t['file']}: the repo ships this telemetry without importing it itself."
+        elif t["count"] > 1:
             meaning = f"Seen {t['count']} times; first at {t['file']}:{t['line']}."
         else:
             meaning = "Detected in this file."
@@ -649,7 +726,8 @@ def telemetry_findings(telemetry, optouts):
             meaning += " Disable with the env var named in the rule."
         else:
             meaning += " No opt-out / disable flag found in the repo."
-        fs.append(finding("telemetry", t["sev"], t["file"], t["line"], f"telemetry-{kind}: {vendor}", t["snippet"],
+        title = f"telemetry-{kind}: {vendor}" + (" (transitive)" if src == "lockfile" else "")
+        fs.append(finding("telemetry", t["sev"], t["file"], t["line"], title, t["snippet"],
                           TELEMETRY_MEANING[kind] + " " + meaning))
     return fs
 
@@ -760,6 +838,12 @@ def check_privacy(root, p, text, privacy):
         if m:
             _priv_add(privacy, "consent-manager", "info", m.group(1).lower(), r, i, line,
                       "A consent manager (CMP) is present, so tracking should be gated on consent; verify it covers every vendor found.")
+        if IP_LOG_RE.search(line) and IP_LOG_SINK_RE.search(line):
+            _priv_add(privacy, "ip-logging", "low", "IP address in logs/data", r, i, line,
+                      "Request IP is logged or persisted: IPs are personal data in the EU/UK; consider truncating or hashing.")
+        if TRACKING_PARAM_RE.search(line):
+            _priv_add(privacy, "tracking-params", "low", "utm/campaign parameters", r, i, line,
+                      "URL carries campaign/tracking parameters (utm_*, fbclid, gclid, …): links leak referrer and campaign identity.")
         if p.name == "AndroidManifest.xml":
             for m in re.finditer(r'<uses-permission[^>]*android:name="android\.permission\.([A-Z_0-9]+)"', line):
                 perm = m.group(1)
@@ -787,9 +871,85 @@ def check_privacy(root, p, text, privacy):
                     _priv_add(privacy, "extension-permission", "high", "content_scripts:<all_urls>", r, _line_of(text, v), v,
                               "Content script runs on every page; it can read page content and inject into it.")
 
+FINGERPRINT_RULES = [
+    ("fingerprintjs", "high", r"@?fingerprintjs|clientjs|\bbotd\b|@sparticuz/", "Dedicated fingerprinting library: builds a stable ID from device attributes."),
+    ("canvas", "medium", r"toDataURL|getImageData|canvas\.getContext\(|textBaseline|WEBGL_debug_renderer_info", "Canvas/WebGL rendering: tiny rendering differences identify GPU, drivers and fonts."),
+    ("webgl", "medium", r"WEBGL_debug_renderer_info|getSupportedExtensions\(|getParameter\(gl\.", "WebGL renderer/extension probing: GPU and driver fingerprint."),
+    ("audio", "medium", r"AudioContext|OfflineAudioContext|OscillatorNode|AudioBuffer", "Audio stack fingerprint: sample-rate/oscillator quirks are device-specific."),
+    ("fonts", "medium", r"measureText|document\.fonts|FontFace\(|font-family.*local\(", "Font metrics/measuring: installed-font sets are device-specific."),
+    ("screen", "low", r"screen\.(width|height|colorDepth|pixelDepth)|devicePixelRatio|screen\.avail", "Screen geometry/color depth: display fingerprint."),
+    ("user-agent", "low", r"navigator\.userAgent|navigator\.platform|navigator\.hardwareConcurrency|navigator\.deviceMemory|navigator\.plugins|navigator\.languages", "Browser/device capabilities: UA, cores, memory, plugins, languages."),
+    ("timezone", "low", r"resolvedOptions\(\)\.timeZone|Intl\.DateTimeFormat|toLocaleString\(", "Timezone/locale: narrows down the user's location and language."),
+]
+FINGERPRINT_MEANING = "Device-fingerprinting signal: combine several and a browser can be recognized without cookies."
+PII_LOG_RE = re.compile(r"(?i)(console\.(log|info|warn|error|debug)|log(ger)?\.(info|warn|error|debug|exception|critical)|"
+                        r"\bprint|printf|puts|fmt\.Print|tracing::(info|warn|error|debug)|log\.\w+)")
+PII_WORD_RE = re.compile(r"(?i)\b(e-?mail|phone|mobile|ssn|social security|address|street|zip|postal|passport|iban|"
+                         r"credit ?card|card_?number|dob|birthday|birth_?date|full_?name|first_?name|last_?name|"
+                         r"ip_?address|remote_addr|user_?agent|geo|latitude|longitude)"
+                         r"\b")
+EMAIL_RE = re.compile(r"[\w.+-]+@[a-z0-9-]+(?:\.[a-z0-9-]+)+", re.I)
+EMAIL_IGNORE = {"git@github.com", "noreply@github.com", "users.noreply.github.com", "actions@github.com"}
+PHONE_RE = re.compile(r"(?<![A-Za-z0-9+])\+\d[\d ().-]{6,14}\d")
+IMPORT_NET_PY = re.compile(r"(requests\.|urllib\.request|urllib3\.|httpx\.|aiohttp\.|socket\.|http\.client)")
+IMPORT_NET_JS = re.compile(r"(\bfetch\s*\(|\baxios[.(]|\$\.ajax\s*\(|navigator\.geolocation)")
+IP_LOG_RE = re.compile(r"(?i)(req\.ip\b|request\.remote_addr|remote_addr|REMOTE_ADDR|RemoteAddr|X-Forwarded-For|"
+                       r"CF-Connecting-IP|client_ip|\bip_address\b)")
+IP_LOG_SINK_RE = re.compile(r"(?i)(log|logger|print|puts|console|info|warn|debug|write|store|save|insert|persist|db|audit)")
+TRACKING_PARAM_RE = re.compile(r"[?&](utm_[a-z_]+|fbclid|gclid|dclid|msclkid|mc_eid|_hsenc|_hsmi|igshid|si)=")
+PRIVACY_DOC_NAMES = {"privacy.md", "privacy.txt", "privacy.rst", "privacy.markdown", "privacy-policy.md",
+                      "privacy_policy.md", "privacy_policy.txt", "privacyinfo.xcprivacy"}
+
+def check_privacy_signals(root, p, text, privacy):
+    """Fingerprinting, PII in logs/source, import-time network, IP logging, tracking params. Static only."""
+    r, ext = rel(root, p), p.suffix.lower()
+    if LOCKFILE_RE.search(r) or ext in PROSE_EXT:
+        return
+    is_js = ext in (".js", ".mjs", ".cjs", ".ts", ".tsx", ".jsx", ".html", ".htm", ".vue", ".svelte", ".astro")
+    for i, line in enumerate(text.split("\n"), 1):
+        if len(line) > 2000:
+            continue
+        comment = _is_comment(line)
+        if is_js:
+            for key, sev, rx, meaning in FINGERPRINT_RULES:
+                if re.search(rx, line):
+                    _priv_add(privacy, "fingerprint", sev, key, r, i, line, FINGERPRINT_MEANING)
+        if PII_LOG_RE.search(line) and PII_WORD_RE.search(line):
+            _priv_add(privacy, "pii-log", "low", "log line with PII", r, i, line,
+                      "A log/print statement names personal data: it can end up in log files, log shippers and crash reports.")
+        if not comment:
+            for m in EMAIL_RE.finditer(line):
+                addr = m.group(0)
+                if addr.lower() in EMAIL_IGNORE or addr.lower().endswith((".example", ".invalid", ".local")):
+                    continue
+                if re.search(r"(?i)@(example\.(com|org|net)|sentry\.io|ingest\.sentry\.io)$", addr):
+                    continue
+                _priv_add(privacy, "pii-email", "low", addr.lower(), r, i, line,
+                          "Hardcoded email address (a person's PII or a DSN); check it is intended to be public.")
+                break
+            m = PHONE_RE.search(line)
+            if m:
+                _priv_add(privacy, "pii-phone", "low", m.group(0).strip(), r, i, line,
+                          "Hardcoded phone number in source/config (personal data); check it is intentional.")
+    # import-time network and IP logging: line-scoped, cheap enough to do in one more pass
+    for i, line in enumerate(text.split("\n"), 1):
+        if not line or line[0] in " \t" or _is_comment(line):
+            continue
+        if ext == ".py" and IMPORT_NET_PY.search(line):
+            _priv_add(privacy, "import-time-network", "medium", "python module scope", r, i, line,
+                      "Network call at module scope: importing this library already contacts a server, before you call anything.")
+        elif is_js and IMPORT_NET_JS.search(line) and not line.lstrip().startswith(("import ", "export ")):
+            _priv_add(privacy, "import-time-network", "low", "javascript module scope", r, i, line,
+                      "Network call at module top level: runs when the module loads (startup page views, update checks).")
+    if p.name.lower() in PRIVACY_DOC_NAMES:
+        _priv_add(privacy, "privacy-doc", "info", p.name.lower(), r, 1, p.name,
+                  "Privacy policy/manifest is present in the repo.")
+
 def privacy_findings(privacy):
-    order = {"insecure-endpoint": 0, "android-permission": 1, "extension-permission": 2, "cookie-flags": 3,
-             "cookie-write": 4, "third-party-cdn": 5, "external-endpoint": 6, "browser-storage": 7, "consent-manager": 8}
+    order = {"fingerprint": 0, "import-time-network": 1, "ip-logging": 2, "pii-log": 3, "pii-email": 4,
+             "tracking-params": 5, "insecure-endpoint": 6, "android-permission": 7, "extension-permission": 8,
+             "cookie-flags": 9, "cookie-write": 10, "third-party-cdn": 11, "external-endpoint": 12,
+             "browser-storage": 13, "consent-manager": 14, "privacy-doc": 15}
     down = {"high": "medium", "medium": "low", "low": "info"}
     fs = []
     for (rule, key), t in sorted(privacy.items(), key=lambda kv: (order.get(kv[1]["rule"], 9), kv[1]["key"])):
@@ -871,6 +1031,7 @@ def zip_encrypted(p):
 def run_agent_checks(root):
     findings = []
     telemetry, optouts, privacy = {}, set(), {}
+    privacy_doc = None
     nfiles = 0
     for p in iter_files(root):
         nfiles += 1
@@ -878,6 +1039,8 @@ def run_agent_checks(root):
             break
         r = rel(root, p)
         low = p.name.lower()
+        if low in PRIVACY_DOC_NAMES:
+            privacy_doc = privacy_doc or r
         if low.endswith(ARCHIVE_EXT):
             enc = zip_encrypted(p)
             if enc:
@@ -907,8 +1070,17 @@ def run_agent_checks(root):
         check_obfuscation_deps(root, p, text, findings)
         check_telemetry(root, p, text, telemetry, optouts)
         check_privacy(root, p, text, privacy)
-    findings += telemetry_findings(telemetry, optouts)
-    findings += privacy_findings(privacy)
+        check_privacy_signals(root, p, text, privacy)
+    tf = telemetry_findings(telemetry, optouts)
+    pf = privacy_findings(privacy)
+    findings += tf + pf
+    if privacy_doc:
+        findings.append(finding("privacy", "info", privacy_doc, 1, "privacy-doc: privacy policy present", privacy_doc,
+                                 "The repo ships a privacy policy/manifest; read it to see what it admits to collecting."))
+    elif any(f["severity"] in ("high", "medium", "low") for f in tf + pf):
+        findings.append(finding("privacy", "low", "(repo)", 0, "privacy-doc: no privacy policy file",
+                                 "expected PRIVACY.md or PrivacyInfo.xcprivacy",
+                                 "The repo collects/transmits data but has no privacy policy file at the root."))
     return findings, nfiles
 
 # ----------------------------------------------------------------------------
