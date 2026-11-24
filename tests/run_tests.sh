@@ -26,6 +26,8 @@ RULES="go-generate-fetch rust-build-rs node-gyp-action pip-build-hook install-ti
   check tests/fixtures/trap-build "YELLOW|RED" $L
 RULES="magic-mismatch typosquat-dep high-entropy-blob minified-outside-dist" \
   check tests/fixtures/trap-binary "YELLOW|RED" $L
+RULES="telemetry-session-replay telemetry-analytics telemetry-crash telemetry-apm" \
+  check tests/fixtures/trap-telemetry "YELLOW|RED" $L
 check tests/fixtures/trap-gha RED $L --strict
 check tests/fixtures/control-clean GREEN $L --strict   # pinned actions, dist bundle, normal README, real deps
 python3 tests/test_trust.py || fail=1
