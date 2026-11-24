@@ -30,6 +30,9 @@ RULES="telemetry-session-replay telemetry-analytics telemetry-crash telemetry-ap
   check tests/fixtures/trap-telemetry "YELLOW|RED" $L
 RULES="third-party-cdn insecure-endpoint cookie-write browser-storage consent-manager android-permission extension-permission cookie-flags fingerprint pii-log pii-email pii-phone pii-address import-time-network ip-logging tracking-params privacy-doc browser-capability macos-entitlement client-id ios-tracking ios-data-type dnt-respect consent-order data-retention upload-surface upload-limit store-disclosure referrer-policy permissions-policy tracking-cookie pii-ssn pii-card telemetry-crash telemetry-analytics telemetry-session-replay" \
   check tests/fixtures/trap-privacy "YELLOW|RED" $L
+j=$(mktemp); $RG scan tests/fixtures/trap-privacy --no-color --json "$j" $L >/dev/null 2>&1
+python3 -c "import json,sys;d=json.load(open('$j'));s=d.get('privacy_summary') or {};ok=bool(s.get('trackers',{}).get('session-replay')) and bool(s.get('pii'));print('PASS privacy summary' if ok else 'FAIL privacy summary');sys.exit(0 if ok else 1)" || fail=1
+rm -f "$j"
 check tests/fixtures/trap-gha RED $L --strict
 check tests/fixtures/control-clean GREEN $L --strict   # pinned actions, dist bundle, normal README, real deps
 check tests/fixtures/ignore-suppressed GREEN $L   # .repobeagleignore suppresses the curl|sh finding
