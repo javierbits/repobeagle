@@ -777,7 +777,8 @@ THIRD_PARTY_CDN = {"fonts.googleapis.com", "fonts.gstatic.com", "use.typekit.net
 COOKIE_WRITE_RE = re.compile(r"document\.cookie\s*=")
 STORAGE_RE = re.compile(r"(?i)(localStorage|sessionStorage)\.(setItem|removeItem)|\bindexedDB\b")
 CONSENT_RE = re.compile(r"(?i)(onetrust|optanon|cookiebot|osano|cookieyes|klaro|tarteaucitron|cookieconsent|"
-                        r"consent-manager|quantcast|didomi|usercentrics|borlabs|iubenda|complianz|axeptio|cookiehub)")
+                        r"consent-manager|quantcast|didomi|usercentrics|borlabs|iubenda|complianz|axeptio|cookiehub|"
+                        r"cookieinformation|termly|consentmanager|sirdata|civic|usercentrics\.eu)")
 SET_COOKIE_RE = re.compile(r"(?i)['\"]set-cookie['\"]")
 
 ANDROID_PERMS = {
@@ -1141,10 +1142,13 @@ def check_privacy_signals(root, p, text, privacy):
                           "The logged argument name suggests personal data (user/account/profile/…); verify the destination and retention.")
         if not comment:
             for m in TRACKING_COOKIE_RE.finditer(line):
-                vendor = _tracking_cookie_vendor(m.group(1))
+                name = m.group(1)
+                if name.upper() in ("IDE", "NID") and not re.search(r"(?i)cookie", line):
+                    continue      # IDE/NID are words on their own; require cookie context
+                vendor = _tracking_cookie_vendor(name)
                 if vendor:
                     _priv_add(privacy, "tracking-cookie", "low", vendor, r, i, line,
-                              f"Cookie '{m.group(1)}' belongs to {vendor}: it persists an identifier on the device.")
+                              f"Cookie '{name}' belongs to {vendor}: it persists an identifier on the device.")
             m = SSN_RE.search(line)
             if m and ext not in PII_SKIP_EXT:
                 _priv_add(privacy, "pii-ssn", "low", m.group(0), r, i, line,
@@ -1704,6 +1708,45 @@ def run_in_docker(src, out):
     except Exception:
         raise SystemExit("container scan failed: " + (r.stderr or r.stdout)[-600:])
 
+def privacy_summary(findings):
+    """Structured 'what kind' overview of privacy findings, for the report and JSON."""
+    groups = {"trackers": {}, "pii": [], "permissions": [], "fingerprinting": [], "storage": [],
+              "consent": [], "network": [], "retention": [], "uploads": [], "transparency": []}
+
+    def add(group, value):
+        if value and value not in groups[group]:
+            groups[group].append(value)
+
+    for f in findings:
+        if f.get("tool") not in ("telemetry", "privacy"):
+            continue
+        rule, _, key = f["title"].partition(": ")
+        key = (key or rule).replace(" (transitive)", "")
+        if rule.startswith("telemetry-"):
+            kind = rule[len("telemetry-"):]
+            vals = groups["trackers"].setdefault(kind, [])
+            if key not in vals:
+                vals.append(key)
+        elif rule.startswith("pii-"):
+            add("pii", key)
+        elif rule in ("android-permission", "extension-permission", "macos-entitlement", "ios-data-type", "ios-tracking"):
+            add("permissions", key)
+        elif rule == "fingerprint":
+            add("fingerprinting", key)
+        elif rule in ("cookie-write", "cookie-flags", "browser-storage", "tracking-cookie", "client-id"):
+            add("storage", key)
+        elif rule in ("consent-manager", "consent-gating", "consent-order", "dnt-respect"):
+            add("consent", key)
+        elif rule in ("insecure-endpoint", "external-endpoint", "third-party-cdn", "referrer-policy", "permissions-policy"):
+            add("network", key)
+        elif rule == "data-retention":
+            add("retention", key)
+        elif rule.startswith("upload-"):
+            add("uploads", key)
+        elif rule in ("privacy-doc", "store-disclosure"):
+            add("transparency", key)
+    return {k: v for k, v in groups.items() if v}
+
 def verdict(findings, profile, ai):
     prof = PROFILES[profile]
     counts = {s: sum(1 for f in findings if f["severity"] == s) for s in SEV_ORDER}
@@ -1784,6 +1827,14 @@ def report(meta, findings, v, why, counts, notes, ai, use_color, maxn=40):
     print(f"  critical {counts['critical']}  high {counts['high']}  medium {counts['medium']}  low {counts['low']}\n")
     if meta.get("suppressed"):
         print(C("2", f"  suppressed {meta['suppressed']} finding(s) via {SUPPRESS_FILE} (kept in --json with suppressed=true)"))
+    if meta.get("privacy_summary"):
+        print(C("1", "Privacy summary:"))
+        for group, vals in meta["privacy_summary"].items():
+            if isinstance(vals, dict):
+                line = "; ".join(f"{k}: {', '.join(v[:5])}" + (" …" if len(v) > 5 else "") for k, v in vals.items())
+            else:
+                line = ", ".join(vals[:8]) + (" …" if len(vals) > 8 else "")
+            print(f"  {group}: {line}")
     if ai:
         print(C("1", "AI review: ") + f"intent={ai.get('intent')} confidence={ai.get('confidence')}\n  {ai.get('summary', '')}")
         for k in ai.get("key_concerns", [])[:5]: print(f"   - {k}")
@@ -1928,9 +1979,13 @@ def cmd_scan(a):
         meta = {"target": a.target, "fetched_via": how, "mode": "docker (--network none, read-only)" if use_docker else "local (no docker)",
                 "profile": profile, "files": tools.get("agent-checks", {}).get("files"), "seconds": round(time.time() - t0, 1),
                 "tools": tools, "suppressed": len(suppressed)}
+        summary = privacy_summary(active)
+        if summary:
+            meta["privacy_summary"] = summary
         report(meta, active, v, why, counts, notes, ai, color_enabled() and not a.no_color, 10**6 if a.all else 40)
         if a.json:
             Path(a.json).write_text(json.dumps({"version": VERSION, "verdict": v, "why": why, "counts": counts, "meta": meta,
+                                                "privacy_summary": summary,
                                                 "ai_review": ai, "findings": active + suppressed, "raw_findings_count": raw_count, "notes": notes,
                                                 "recommended_actions": ACTIONS[v]}, indent=2))
             print(f"[repobeagle] JSON written to {a.json}", file=sys.stderr)
