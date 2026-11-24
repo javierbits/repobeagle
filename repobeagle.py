@@ -20,7 +20,7 @@ def _read_version():
         return "v1.0.0"
 RELEASE = _read_version()                 # e.g. v1.0.0 (image tag)
 VERSION = RELEASE.lstrip("v")             # e.g. 1.0.0 (display / JSON)
-IMAGE = os.environ.get("BEAGLE_IMAGE", f"ghcr.io/jvr0x/repobeagle:{RELEASE}")
+IMAGE = os.environ.get("BEAGLE_IMAGE", f"ghcr.io/javierbits/repobeagle:{RELEASE}")
 SEV_ORDER = {"critical": 4, "high": 3, "medium": 2, "low": 1, "info": 0}
 MAX_FILE = 1_500_000
 SKIP_DIRS = {".git", "node_modules", ".venv", "venv", "__pycache__", ".tox", "dist", "build", ".mypy_cache"}
@@ -1133,7 +1133,7 @@ def cmd_scan(a):
 # ----------------------------------------------------------------------------
 # Verify a published badge report: repobeagle verify <github-repo>
 # ----------------------------------------------------------------------------
-VERIFY_IDENTITY = (r"^https://github\.com/jvr0x/repobeagle/\.github/workflows/scan\.yml"
+VERIFY_IDENTITY = (r"^https://github\.com/javierbits/repobeagle/\.github/workflows/scan\.yml"
                    r"@refs/(heads/main|tags/v[0-9]+\.[0-9]+\.[0-9]+)$")
 VERIFY_ISSUER = "https://token.actions.githubusercontent.com"
 GITHUB_REPO_RE = re.compile(r"^(?:https?://|git@|ssh://git@)github\.com[/:]([^/]+)/([^/#?]+?)(?:\.git)?/?$")

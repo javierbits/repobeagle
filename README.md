@@ -12,10 +12,10 @@ You give it a git URL or a local folder and get a **GREEN / YELLOW / RED** verdi
 **RepoBeagle never runs repo code.** It never runs installs or builds, and it never extracts archives.
 
 ## Install (DGX Spark / any Linux, arm64 or x86_64)
-The scanners ship as a prebuilt **public** multi-arch image (no login needed), `ghcr.io/jvr0x/repobeagle` (linux/amd64 + linux/arm64). It's built by `.github/workflows/image.yml` on every push to main, on `v*` release tags, weekly, and on manual dispatch. Release tags get `v1.1.0`-style and `stable` tags; main also gets `latest`, `sha-<commit>` and the ISO week (e.g. `2026-W42`). `install.sh` and `repobeagle` default to the image matching the `VERSION` file (currently `v1.1.0`).
+The scanners ship as a prebuilt **public** multi-arch image (no login needed), `ghcr.io/javierbits/repobeagle` (linux/amd64 + linux/arm64). It's built by `.github/workflows/image.yml` on every push to main, on `v*` release tags, weekly, and on manual dispatch. Release tags get `v1.1.0`-style and `stable` tags; main also gets `latest`, `sha-<commit>` and the ISO week (e.g. `2026-W42`). `install.sh` and `repobeagle` default to the image matching the `VERSION` file (currently `v1.1.0`).
 ```bash
-git clone https://github.com/jvr0x/repobeagle && cd repobeagle
-./install.sh                   # docker pull ghcr.io/jvr0x/repobeagle:v1.1.0 + install the repobeagle wrapper
+git clone https://github.com/javierbits/repobeagle && cd repobeagle
+./install.sh                   # docker pull ghcr.io/javierbits/repobeagle:v1.1.0 + install the repobeagle wrapper
 ./install.sh --build-local     # fallback: build the same image locally from the Dockerfile
 ./install.sh --local-tools     # also install gitleaks/semgrep/guarddog/bandit on the host for --no-docker
 ```
@@ -31,7 +31,7 @@ How a scan is split up:
 - **Scan (container):** `docker run --rm --network none --read-only --cap-drop ALL`, non-root, with the clone mounted read-only.
 - **OSV (host):** lockfiles only.
 
-Set `BEAGLE_IMAGE` to use a different tag (e.g. `ghcr.io/jvr0x/repobeagle:latest` for the newest main build).
+Set `BEAGLE_IMAGE` to use a different tag (e.g. `ghcr.io/javierbits/repobeagle:latest` for the newest main build).
 
 ## Usage
 ```bash
@@ -64,7 +64,7 @@ jobs:
     permissions:
       contents: write   # publishes the repobeagle badge branch (optional)
       statuses: write   # sets the repobeagle/scan commit status (optional)
-    uses: jvr0x/repobeagle/.github/workflows/scan.yml@main
+    uses: javierbits/repobeagle/.github/workflows/scan.yml@main
     with:
       profile: balanced   # strict | balanced | relaxed
       fail-on-red: false  # true = the job fails on a RED verdict (PR gate)
@@ -81,13 +81,13 @@ The workflow publishes a `repobeagle` branch containing `badge.json` (shields.io
 
 ### Verifying a badge (public repos)
 
-The badge is produced by the author's own CI, so on its own it is self-attested. The workflow therefore signs the report with Sigstore keyless signing and publishes the bundle as `report.sigstore.json` next to `report.json` on the badge branch. The signing certificate's identity is this repo's own reusable workflow (`jvr0x/repobeagle/.github/workflows/scan.yml`), which callers cannot edit, so a valid signature means the official pipeline scanned that commit and the report was not swapped afterwards. To verify a badge: `verify` installs cosign to `~/.local/bin` on first use if it is missing (`./install.sh` also installs it).
+The badge is produced by the author's own CI, so on its own it is self-attested. The workflow therefore signs the report with Sigstore keyless signing and publishes the bundle as `report.sigstore.json` next to `report.json` on the badge branch. The signing certificate's identity is this repo's own reusable workflow (`javierbits/repobeagle/.github/workflows/scan.yml`), which callers cannot edit, so a valid signature means the official pipeline scanned that commit and the report was not swapped afterwards. To verify a badge: `verify` installs cosign to `~/.local/bin` on first use if it is missing (`./install.sh` also installs it).
 
 ```bash
-repobeagle verify jvr0x/jvr0x.github.io
+repobeagle verify javierbits/javierbits.github.io
 #   signature: VALID  policy: official scan.yml (main or v* tag)
 #   report:    YELLOW  0 critical / 6 high / 1 medium / 56 low
-#   scanned:   a7cb435002de at jvr0x/jvr0x.github.io (image ghcr.io/jvr0x/repobeagle:v1.1.0)
+#   scanned:   a7cb435002de at javierbits/javierbits.github.io (image ghcr.io/javierbits/repobeagle:v1.1.0)
 #   freshness: UP TO DATE (HEAD a7cb435002de)
 ```
 
@@ -96,7 +96,7 @@ Exit codes: 0 = signature valid and report covers HEAD, 1 = invalid signature or
 ```bash
 cosign verify-blob \
   --bundle report.sigstore.json \
-  --certificate-identity-regexp '^https://github\.com/jvr0x/repobeagle/\.github/workflows/scan\.yml@refs/(heads/main|tags/v[0-9]+\.[0-9]+\.[0-9]+)$' \
+  --certificate-identity-regexp '^https://github\.com/javierbits/repobeagle/\.github/workflows/scan\.yml@refs/(heads/main|tags/v[0-9]+\.[0-9]+\.[0-9]+)$' \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com \
   report.json
 ```

@@ -3,7 +3,7 @@
 cd "$(dirname "$0")/.." || exit 1
 fail=0; T=$(mktemp -d); export TMPDIR=$T
 left(){ ls -d "$T"/repobeagle-* 2>/dev/null | wc -l; }
-./repobeagle scan https://github.com/jvr0x/this-repo-does-not-exist-404 --no-docker --no-osv --no-trust >/dev/null 2>&1
+./repobeagle scan https://github.com/javierbits/this-repo-does-not-exist-404 --no-docker --no-osv --no-trust >/dev/null 2>&1
 [[ $(left) == 0 ]] && echo "PASS cleanup after failing fetch" || { echo "FAIL $(left) temp dir(s) left after failing fetch"; fail=1; }
 ./repobeagle scan refusing:bad-target --no-docker >/dev/null 2>&1
 [[ $(left) == 0 ]] && echo "PASS cleanup after rejected target" || { echo "FAIL temp dir left after rejected target"; fail=1; }

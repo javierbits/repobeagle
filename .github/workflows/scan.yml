@@ -12,14 +12,14 @@
 #         contents: write   # publishes the badge branch (optional)
 #         statuses: write   # sets the repobeagle/scan commit status (optional)
 #         id-token: write   # keyless-signs the report with Sigstore (optional)
-#       uses: jvr0x/repobeagle/.github/workflows/scan.yml@main
+#       uses: javierbits/repobeagle/.github/workflows/scan.yml@main
 #       with:
 #         profile: balanced   # strict | balanced | relaxed
 #         fail-on-red: false  # true = the job fails on a RED verdict (PR gate)
 #
 # The badge is self-attested: it lives in this repository. The report is signed
 # with Sigstore keyless signing; the signing identity is THIS workflow file in
-# the jvr0x/repobeagle repo, which callers cannot edit, so a valid signature
+# the javierbits/repobeagle repo, which callers cannot edit, so a valid signature
 # proves the official pipeline produced the report. See the README.
 name: repobeagle-scan
 on:
@@ -69,7 +69,7 @@ jobs:
       - name: Check out the repobeagle toolchain
         uses: actions/checkout@v4
         with:
-          repository: jvr0x/repobeagle
+          repository: javierbits/repobeagle
           ref: ${{ inputs.tools-ref }}
           path: .repobeagle-tools
 
@@ -80,9 +80,9 @@ jobs:
         run: |
           set -euo pipefail
           V="$(cat .repobeagle-tools/VERSION)"
-          D="$(docker image inspect "ghcr.io/jvr0x/repobeagle:$V" --format '{{index .RepoDigests 0}}' 2>/dev/null || echo unavailable)"
+          D="$(docker image inspect "ghcr.io/javierbits/repobeagle:$V" --format '{{index .RepoDigests 0}}' 2>/dev/null || echo unavailable)"
           {
-            echo "IMAGE_REF=ghcr.io/jvr0x/repobeagle:$V"
+            echo "IMAGE_REF=ghcr.io/javierbits/repobeagle:$V"
             echo "IMAGE_DIGEST=$D"
           } >> "$GITHUB_ENV"
 
