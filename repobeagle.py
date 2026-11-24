@@ -64,6 +64,9 @@ def read_text(p):
 def rel(root, p):
     return str(Path(p).relative_to(root))
 
+def _is_comment(line):
+    return line.lstrip().startswith(("//", "#", "*", "/*", "<!--", ";", "--"))
+
 # ----------------------------------------------------------------------------
 # Agent-specific checks (pure Python)
 # ----------------------------------------------------------------------------
@@ -180,19 +183,32 @@ def check_exfil(root, p, text, findings):
     is_code = ext in CODE_EXT or p.name in ("Makefile", "Dockerfile") or ext == ""
     lines = strip_invisible(text).split("\n")
     for i, line in enumerate(lines, 1):
-        if len(line) > 2000 or not SENS_RE.search(line):
+        if len(line) > 2000 or _is_comment(line):
+            continue
+        m = SENS_RE.search(line)
+        if not m:
             continue
         window = " ".join(lines[max(0, i - 4): i + 3])
         reads = READ_RE.search(line) or READ_RE.search(window)
         sink = SINK_RE.search(window)
         if not reads:
             continue
+        # .env is the project's own config: expected to be read by its own scripts.
+        # Only the other targets (SSH keys, wallets, cookies, cloud creds) are a theft signal.
+        toks = {re.sub(r"^[\s'\"/=(]+", "", t.group(0)).strip() for t in SENS_RE.finditer(line)}
+        env_only = bool(toks) and all(t.startswith(".env") for t in toks)
         if is_code:
-            if sink:
+            if sink and not env_only:
                 sev, title = "critical", "Code reads secrets/credentials near a network call"
+            elif sink:
+                sev, title = "medium", "Code reads .env config next to a network call"
+            elif env_only:
+                sev, title = "low", "Code reads .env (project config, not a credential store)"
             else:
                 sev, title = "high", "Code reads sensitive credential files"
-            meaning = "Accessing SSH keys, .env, tokens, cookies or wallets is a hallmark of credential stealers."
+            meaning = "Accessing SSH keys, wallets, cookies or cloud creds is a hallmark of credential stealers."
+            if env_only:
+                meaning = "Reading the repo's own .env is normal; review only that the values are not sent somewhere unexpected."
             if TEST_PATH.search(r):
                 sev = "medium"; meaning += " (test path: often benign fixtures)"
         elif agent or ext in DOC_EXT:
@@ -352,9 +368,15 @@ def check_markdown_hidden(root, p, text, findings):
     if not AGENT_FILE_RE.search(r):
         for m in re.finditer(r"<!--(.*?)-->", clean, re.S):
             body = m.group(1)[:600]
-            if len(body.strip()) > 15 and re.search(r"(?i)" + AG_RE, body):
-                findings.append(finding("agent-checks", "medium", r, ln(m.start()), "md-comment-instruction: hidden HTML comment with agent/exfil wording",
-                                        body.strip(), "Not visible when the markdown is rendered, but read by agents."))
+            if not (len(body.strip()) > 15 and re.search(r"(?i)" + AG_RE, body)):
+                continue
+            # Boilerplate under .github/ (issue/PR templates) is written for humans, not agents.
+            sev = "info" if r.startswith(".github/") else "medium"
+            if sev == "medium" and not re.search(r"(?i)(\bagents?\b|\bAI\b|\bLLM\b|assistant|copilot|claude|"
+                                                 r"ignore (all |any )?(previous|prior)|do not tell|exfiltrat)", body):
+                sev = "low"      # only generic wording (upload/curl/.env) -> weaker signal
+            findings.append(finding("agent-checks", sev, r, ln(m.start()), "md-comment-instruction: hidden HTML comment with agent/exfil wording",
+                                    body.strip(), "Not visible when the markdown is rendered, but read by agents."))
     for rule, rx, title, meaning in MD_RULES:
         for m in rx.finditer(clean):
             findings.append(finding("agent-checks", "medium", r, ln(m.start()), f"{rule}: {title}", m.group(0)[:200], meaning))
@@ -788,9 +810,6 @@ def _endpoint_noise(host):
     """Local/LAN hosts and single-label names are not third parties and have nothing to leak."""
     return bool(PRIVATE_HOST_RE.search(host)) or "." not in host
 
-def _is_comment(line):
-    return line.lstrip().startswith(("//", "#", "*", "/*", "<!--", ";", "--"))
-
 def check_privacy(root, p, text, privacy):
     """Third-party hosts, cookie/storage writes, consent managers and platform permissions. Static only."""
     r, ext = rel(root, p), p.suffix.lower()
@@ -891,7 +910,7 @@ PII_WORD_RE = re.compile(r"(?i)\b(e-?mail|phone|mobile|ssn|social security|addre
 EMAIL_RE = re.compile(r"[\w.+-]+@[a-z0-9-]+(?:\.[a-z0-9-]+)+", re.I)
 EMAIL_IGNORE = {"git@github.com", "noreply@github.com", "users.noreply.github.com", "actions@github.com"}
 PHONE_RE = re.compile(r"(?<![A-Za-z0-9+])\+\d[\d ().-]{6,14}\d")
-IMPORT_NET_PY = re.compile(r"(requests\.|urllib\.request|urllib3\.|httpx\.|aiohttp\.|socket\.|http\.client)")
+IMPORT_NET_PY = re.compile(r"\b(requests|httpx|aiohttp|urllib3)\.\w+\s*\(|\burlopen\s*\(|socket\.socket\s*\(|\bhttp\.client\.")
 IMPORT_NET_JS = re.compile(r"(\bfetch\s*\(|\baxios[.(]|\$\.ajax\s*\(|navigator\.geolocation)")
 IP_LOG_RE = re.compile(r"(?i)(req\.ip\b|request\.remote_addr|remote_addr|REMOTE_ADDR|RemoteAddr|X-Forwarded-For|"
                        r"CF-Connecting-IP|client_ip|\bip_address\b)")
@@ -934,6 +953,8 @@ def check_privacy_signals(root, p, text, privacy):
     # import-time network and IP logging: line-scoped, cheap enough to do in one more pass
     for i, line in enumerate(text.split("\n"), 1):
         if not line or line[0] in " \t" or _is_comment(line):
+            continue
+        if line.lstrip().startswith(("import ", "from ", "export ")):
             continue
         if ext == ".py" and IMPORT_NET_PY.search(line):
             _priv_add(privacy, "import-time-network", "medium", "python module scope", r, i, line,
