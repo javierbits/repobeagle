@@ -1017,13 +1017,27 @@ IOS_DATA_TYPE_NAMES = {
     "GameplayContent": "gameplay content", "CustomerSupport": "customer support", "FitnessData": "fitness data",
 }
 
+TRACKER_INIT_RE = re.compile(r"(?i)(\bgtag\s*\(|\bfbq\s*\(|posthog\.init|\b_paq\.|\bym\s*\(|mixpanel\.init|"
+                            r"amplitude\.getInstance|hotjar\.|\bclarity\s*\(|Sentry\.init|datadogRum\.init)")
+CMP_LOAD_RE = re.compile(r"(?i)(cookiebot|onetrust|optanon|osano|cookieyes|klaro|tarteaucitron|cookieconsent|"
+                         r"didomi|usercentrics|iubenda|axeptio|cookiehub)")
+PII_OBJECT_RE = re.compile(r"(?i)\b(user|users|account|customer|profile|session|member|subscriber|person|lead|contact)\b")
+
 def check_privacy_signals(root, p, text, privacy):
     """Fingerprinting, PII in logs/source, import-time network, IP logging, tracking params. Static only."""
     r, ext = rel(root, p), p.suffix.lower()
-    if LOCKFILE_RE.search(r) or ext in PROSE_EXT:
+    if LOCKFILE_RE.search(r):
+        return
+    if ext in PROSE_EXT:                 # docs links can carry campaign tags, but are not requests
+        for i, line in enumerate(text.split("\n"), 1):
+            if TRACKING_PARAM_RE.search(line):
+                _priv_add(privacy, "tracking-params", "info", "utm/campaign parameters", r, i, line,
+                          "Link carries campaign/tracking parameters (utm_*, fbclid, gclid, …).")
         return
     is_js = ext in (".js", ".mjs", ".cjs", ".ts", ".tsx", ".jsx", ".html", ".htm", ".vue", ".svelte", ".astro")
-    for i, line in enumerate(text.split("\n"), 1):
+    lines = text.split("\n")
+    tracker_at = cmp_at = None
+    for i, line in enumerate(lines, 1):
         if len(line) > 2000:
             continue
         comment = _is_comment(line)
@@ -1031,9 +1045,17 @@ def check_privacy_signals(root, p, text, privacy):
             for key, sev, rx, meaning in FINGERPRINT_RULES:
                 if re.search(rx, line):
                     _priv_add(privacy, "fingerprint", sev, key, r, i, line, FINGERPRINT_MEANING)
-        if PII_LOG_RE.search(line) and PII_WORD_RE.search(line):
-            _priv_add(privacy, "pii-log", "low", "log line with PII", r, i, line,
-                      "A log/print statement names personal data: it can end up in log files, log shippers and crash reports.")
+            if TRACKER_INIT_RE.search(line) and tracker_at is None:
+                tracker_at = i
+            if CMP_LOAD_RE.search(line) and cmp_at is None:
+                cmp_at = i
+        if PII_LOG_RE.search(line):
+            if PII_WORD_RE.search(line):
+                _priv_add(privacy, "pii-log", "low", "log line with PII", r, i, line,
+                          "A log/print statement names personal data: it can end up in log files, log shippers and crash reports.")
+            elif PII_OBJECT_RE.search(line):
+                _priv_add(privacy, "pii-log", "low", "logged object likely containing PII", r, i, line,
+                          "The logged argument name suggests personal data (user/account/profile/…); verify the destination and retention.")
         if not comment:
             for m in EMAIL_RE.finditer(line):
                 addr = m.group(0)
@@ -1075,6 +1097,9 @@ def check_privacy_signals(root, p, text, privacy):
         elif is_js and IMPORT_NET_JS.search(line) and not line.lstrip().startswith(("import ", "export ")):
             _priv_add(privacy, "import-time-network", "low", "javascript module scope", r, i, line,
                       "Network call at module top level: runs when the module loads (startup page views, update checks).")
+    if tracker_at and cmp_at and tracker_at < cmp_at:
+        _priv_add(privacy, "consent-order", "low", "tracker before consent manager", r, tracker_at, lines[tracker_at - 1],
+                  "A tracker initialises before the consent manager in this file; verify it does not fire before consent.")
     if p.name.lower() in PRIVACY_DOC_NAMES:
         _priv_add(privacy, "privacy-doc", "info", p.name.lower(), r, 1, p.name,
                   "Privacy policy/manifest is present in the repo.")
@@ -1091,11 +1116,11 @@ def check_privacy_signals(root, p, text, privacy):
 def privacy_findings(privacy):
     order = {"fingerprint": 0, "import-time-network": 1, "ip-logging": 2, "pii-log": 3, "pii-email": 4,
              "pii-phone": 5, "pii-address": 6, "browser-capability": 7, "macos-entitlement": 8, "client-id": 9,
-             "ios-tracking": 10, "ios-data-type": 11, "dnt-respect": 12, "consent-gating": 13,
-             "data-retention": 14, "upload-surface": 15, "upload-limit": 16, "store-disclosure": 17,
-             "tracking-params": 18, "insecure-endpoint": 19, "android-permission": 20, "extension-permission": 21,
-             "cookie-flags": 22, "cookie-write": 23, "third-party-cdn": 24, "external-endpoint": 25,
-             "browser-storage": 26, "consent-manager": 27, "privacy-doc": 28}
+             "ios-tracking": 10, "ios-data-type": 11, "dnt-respect": 12, "consent-gating": 13, "consent-order": 14,
+             "data-retention": 15, "upload-surface": 16, "upload-limit": 17, "store-disclosure": 18,
+             "tracking-params": 19, "insecure-endpoint": 20, "android-permission": 21, "extension-permission": 22,
+             "cookie-flags": 23, "cookie-write": 24, "third-party-cdn": 25, "external-endpoint": 26,
+             "browser-storage": 27, "consent-manager": 28, "privacy-doc": 29}
     down = {"high": "medium", "medium": "low", "low": "info"}
     fs = []
     for (rule, key), t in sorted(privacy.items(), key=lambda kv: (order.get(kv[1]["rule"], 9), kv[1]["key"])):

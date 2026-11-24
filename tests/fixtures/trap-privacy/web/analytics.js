@@ -7,3 +7,4 @@ navigator.clipboard.readText().then(console.log);
 navigator.geolocation.getCurrentPosition(showMap);
 const visitorId = localStorage.setItem("client_id", uuidv4());
 if (!navigator.doNotTrack) track();
+console.log(user);
