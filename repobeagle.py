@@ -810,6 +810,27 @@ def _endpoint_noise(host):
     """Local/LAN hosts and single-label names are not third parties and have nothing to leak."""
     return bool(PRIVATE_HOST_RE.search(host)) or "." not in host
 
+KNOWN_HOSTS = {
+    "github.com", "gitlab.com", "bitbucket.org", "raw.githubusercontent.com", "gist.github.com",
+    "pypi.org", "files.pythonhosted.org", "npmjs.com", "registry.npmjs.org", "crates.io", "static.crates.io",
+    "rubygems.org", "packagist.org", "huggingface.co", "cdn-lfs.huggingface.co", "docker.com", "docker.io",
+    "ghcr.io", "quay.io", "google.com", "googleapis.com", "gstatic.com", "cloudflare.com", "amazonaws.com",
+    "aws.amazon.com", "azure.com", "microsoft.com", "apple.com", "mozilla.org", "w3.org", "schema.org",
+    "json-schema.org", "opensource.org", "spdx.org", "unicode.org", "rfc-editor.org", "python.org", "nodejs.org",
+    "rust-lang.org", "go.dev", "golang.org", "shields.io", "img.shields.io", "badgen.net", "doi.org", "arxiv.org",
+    "wikipedia.org", "x.com", "twitter.com", "linkedin.com", "youtube.com", "discord.gg", "discord.com", "slack.com",
+    "stripe.com", "paypal.com", "sentry.io", "ingest.sentry.io", "githubusercontent.com",
+}
+KNOWN_SUFFIXES = (".githubusercontent.com", ".googleapis.com", ".gstatic.com", ".amazonaws.com", ".cloudfront.net",
+                  ".azureedge.net", ".cloudflare.com", ".huggingface.co", ".pythonhosted.org", ".npmjs.org",
+                  ".stripe.com", ".paypal.com", ".sentry.io")
+
+def _known_host(host):
+    return host in KNOWN_HOSTS or host.endswith(KNOWN_SUFFIXES)
+
+REFERRER_POLICY_RE = re.compile(r"(?i)(referrer-?policy|<meta[^>]+name\s*=\s*[\"']referrer|rel\s*=\s*[\"'][^\"']*noreferrer)")
+PERMISSIONS_POLICY_RE = re.compile(r"(?i)(permissions-?policy)")
+
 def check_privacy(root, p, text, privacy):
     """Third-party hosts, cookie/storage writes, consent managers and platform permissions. Static only."""
     r, ext = rel(root, p), p.suffix.lower()
@@ -844,9 +865,12 @@ def check_privacy(root, p, text, privacy):
                         continue      # a reference URL in a comment is not a request
                     _priv_add(privacy, "insecure-endpoint", "medium", host, r, i, line,
                               f"Plaintext http:// to {host}: requests and metadata are not encrypted in transit.")
-                else:
+                elif _known_host(host):
                     _priv_add(privacy, "external-endpoint", "info", host, r, i, line,
-                              f"Network destination {host}: anything sent here leaves the machine/network.")
+                              f"Network destination {host} (known platform/infrastructure).")
+                else:
+                    _priv_add(privacy, "external-endpoint", "low", host, r, i, line,
+                              f"Unknown third-party host {host}: verify what it receives and whether it sets cookies/tracks.")
         if COOKIE_WRITE_RE.search(line):
             _priv_add(privacy, "cookie-write", "low", "document.cookie", r, i, line,
                       "JavaScript writes a cookie (persistent client-side identifier; check lifetime and consent).")
@@ -888,6 +912,12 @@ def check_privacy(root, p, text, privacy):
         if m and CLIENT_ID_CONTEXT_RE.search(line):
             _priv_add(privacy, "client-id", "low", m.group(0).lower(), r, i, line,
                       "Named persistent client identifier: links sessions or devices without relying on a login.")
+        if REFERRER_POLICY_RE.search(line):
+            _priv_add(privacy, "referrer-policy", "info", "policy", r, i, line,
+                      "Referrer policy present: third parties see a reduced URL instead of the full one.")
+        if PERMISSIONS_POLICY_RE.search(line):
+            _priv_add(privacy, "permissions-policy", "info", "policy", r, i, line,
+                      "Permissions-Policy present: browser features can be denied to third parties/iframes.")
         if p.name == "AndroidManifest.xml":
             for m in re.finditer(r'<uses-permission[^>]*android:name="android\.permission\.([A-Z_0-9]+)"', line):
                 perm = m.group(1)
@@ -1120,7 +1150,8 @@ def privacy_findings(privacy):
              "data-retention": 15, "upload-surface": 16, "upload-limit": 17, "store-disclosure": 18,
              "tracking-params": 19, "insecure-endpoint": 20, "android-permission": 21, "extension-permission": 22,
              "cookie-flags": 23, "cookie-write": 24, "third-party-cdn": 25, "external-endpoint": 26,
-             "browser-storage": 27, "consent-manager": 28, "privacy-doc": 29}
+             "browser-storage": 27, "consent-manager": 28, "referrer-policy": 29, "permissions-policy": 30,
+             "privacy-doc": 31}
     down = {"high": "medium", "medium": "low", "low": "info"}
     fs = []
     for (rule, key), t in sorted(privacy.items(), key=lambda kv: (order.get(kv[1]["rule"], 9), kv[1]["key"])):
@@ -1272,6 +1303,15 @@ def run_agent_checks(root):
         findings.append(finding("privacy", "low", "(repo)", 0, "upload-limit: uploads accepted with no size cap found",
                                  "no max file/body size setting in the repo",
                                  "Unbounded request bodies can carry more data than intended; check the server/framework default."))
+    if rules & {"external-endpoint", "third-party-cdn", "insecure-endpoint"} and "referrer-policy" not in rules:
+        findings.append(finding("privacy", "low", "(repo)", 0, "referrer-policy: third-party requests with no Referrer-Policy",
+                                 "no Referrer-Policy header or <meta name=referrer>",
+                                 "By default the full page URL (including path and query) is sent as Referer to third parties."))
+    cap_keys = {f["title"].split(": ", 1)[1] for f in pf if f["title"].startswith("browser-capability: ")}
+    if cap_keys & {"camera/microphone", "geolocation", "screen capture", "clipboard"} and "permissions-policy" not in rules:
+        findings.append(finding("privacy", "low", "(repo)", 0, "permissions-policy: sensor APIs used with no Permissions-Policy",
+                                 ", ".join(sorted(cap_keys & {"camera/microphone", "geolocation", "screen capture", "clipboard"})),
+                                 "A Permissions-Policy header lets you keep camera/microphone/geolocation off for third-party iframes."))
     if privacy_doc:
         findings.append(finding("privacy", "info", privacy_doc, 1, "privacy-doc: privacy policy present", privacy_doc,
                                  "The repo ships a privacy policy/manifest; read it to see what it admits to collecting."))
