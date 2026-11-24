@@ -510,6 +510,150 @@ def check_obfuscation_deps(root, p, text, findings):
                                     "Name is one edit away from a popular package: a common way to slip in malware. Check the registry page before installing."))
 
 # ----------------------------------------------------------------------------
+# Privacy: telemetry, analytics, crash reporting, OTEL exporters
+# ----------------------------------------------------------------------------
+LOCKFILE_RE = re.compile(r"(?i)(^|/)(package-lock\.json|npm-shrinkwrap\.json|yarn\.lock|pnpm-lock\.yaml|bun\.lockb?|"
+                         r"Cargo\.lock|poetry\.lock|Pipfile\.lock|uv\.lock|go\.sum|composer\.lock|Gemfile\.lock|gradle\.lockfile)$")
+
+def _telem_rx(p): return re.compile(p, re.I)
+
+# (kind, severity, vendor, regex). kind is the rule id in the finding title.
+# Severity is privacy impact: session replay and ad pixels see what you do; analytics and
+# crash reporting ship identifiers/payloads; APM/tracing reports timings; dev tools report usage.
+TELEMETRY_RULES = [
+    # advertising / attribution pixels
+    ("ads", "high", "Meta (Facebook) Pixel", _telem_rx(r"connect\.facebook\.net|\bfbq\s*\(|\bfacebook-pixel\b")),
+    ("ads", "high", "TikTok Pixel", _telem_rx(r"analytics\.tiktok\.com|\bttq\.(load|page)\b|tiktok-pixel")),
+    ("ads", "high", "LinkedIn Insight Tag", _telem_rx(r"snap\.licdn\.com|linkedin\.com/li|_linkedin_partner_id")),
+    ("ads", "high", "X/Twitter Pixel", _telem_rx(r"static\.ads-twitter\.com|\btwq\s*\(")),
+    ("ads", "high", "Pinterest Tag", _telem_rx(r"ct\.pinterest\.com|\bpintrk\s*\(|\bpinterest-tag\b")),
+    ("ads", "high", "Reddit Pixel", _telem_rx(r"redditstatic\.com|\brdt\s*\(")),
+    # session replay / recording
+    ("session-replay", "high", "Microsoft Clarity", _telem_rx(r"clarity\.ms|@microsoft/clarity|clarity-analytics")),
+    ("session-replay", "high", "Hotjar", _telem_rx(r"\bhotjar\b")),
+    ("session-replay", "high", "FullStory", _telem_rx(r"\bfullstory\b")),
+    ("session-replay", "high", "LogRocket", _telem_rx(r"\blogrocket\b")),
+    ("session-replay", "high", "Smartlook", _telem_rx(r"\bsmartlook\b")),
+    ("session-replay", "high", "Mouseflow", _telem_rx(r"\bmouseflow\b")),
+    ("session-replay", "high", "Lucky Orange", _telem_rx(r"\bluckyorange\b")),
+    ("session-replay", "high", "Highlight.io", _telem_rx(r"highlight\.io|highlight-run")),
+    ("session-replay", "high", "OpenReplay", _telem_rx(r"\bopenreplay\b")),
+    ("session-replay", "high", "Datadog RUM/Replay", _telem_rx(r"@datadog/browser|datadoghq\.com|datadog-rum|\bdd-rum\b")),
+    # product / web analytics
+    ("analytics", "medium", "Google Analytics", _telem_rx(r"google-analytics\.com|googletagmanager\.com|\bgtag\s*\(|\bUA-\d{4,}-\d+\b")),
+    ("analytics", "medium", "Plausible", _telem_rx(r"plausible\.io|@plausible/|plausible-analytics")),
+    ("analytics", "medium", "Umami", _telem_rx(r"umami\.is|umami-analytics|data-website-id")),
+    ("analytics", "medium", "Matomo/Piwik", _telem_rx(r"matomo|piwik|\b_paq\b")),
+    ("analytics", "medium", "Fathom", _telem_rx(r"usefathom|fathom\.com|fathom-analytics")),
+    ("analytics", "medium", "GoatCounter", _telem_rx(r"goatcounter")),
+    ("analytics", "medium", "Simple Analytics", _telem_rx(r"simpleanalytics")),
+    ("analytics", "medium", "Cloudflare Web Analytics", _telem_rx(r"static\.cloudflareinsights|cloudflareinsights")),
+    ("analytics", "medium", "Vercel Analytics", _telem_rx(r"@vercel/analytics|vercel/analytics")),
+    ("analytics", "medium", "Segment", _telem_rx(r"segment\.io|@segment/analytics|analytics-node|cdn\.segment\.com")),
+    ("analytics", "medium", "Mixpanel", _telem_rx(r"\bmixpanel\b")),
+    ("analytics", "medium", "Amplitude", _telem_rx(r"api2?\.amplitude|\bamplitude\.(init|getInstance|track)|@amplitude/")),
+    ("analytics", "medium", "PostHog", _telem_rx(r"\bposthog\b")),
+    ("analytics", "medium", "Heap Analytics", _telem_rx(r"heap\.io|heap-analytics|\bheap\.track\(")),
+    ("analytics", "medium", "Countly", _telem_rx(r"\bcountly\b")),
+    ("analytics", "medium", "Adobe Analytics", _telem_rx(r"omtrdc\.net|adobedtm|\bappmeasurement\b")),
+    ("analytics", "medium", "Yandex Metrica", _telem_rx(r"mc\.yandex\.ru|\bym\s*\(\s*\d")),
+    ("analytics", "medium", "Baidu Tongji", _telem_rx(r"hm\.baidu\.com")),
+    ("analytics", "medium", "WordPress Stats", _telem_rx(r"stats\.wp\.com")),
+    ("analytics", "low", "Tracking pixel", _telem_rx(r"1x1\.(gif|png)|pixel\.gif|\btracking[ -]pixel\b")),
+    # crash / error reporting
+    ("crash", "medium", "Sentry", _telem_rx(r"sentry\.io|@sentry/|sentry_sdk|\bsentry[-_]")),
+    ("crash", "medium", "Bugsnag", _telem_rx(r"\bbugsnag\b")),
+    ("crash", "medium", "Rollbar", _telem_rx(r"\brollbar\b")),
+    ("crash", "medium", "Raygun", _telem_rx(r"\braygun\b")),
+    ("crash", "medium", "Honeybadger", _telem_rx(r"\bhoneybadger\b")),
+    ("crash", "medium", "Airbrake", _telem_rx(r"\bairbrake\b")),
+    ("crash", "medium", "Exceptionless", _telem_rx(r"exceptionless")),
+    ("crash", "medium", "Firebase Crashlytics", _telem_rx(r"crashlytics|firebase[_-]crash")),
+    ("crash", "medium", "Application Insights", _telem_rx(r"applicationinsights|application-insights|appinsights|azure-monitor")),
+    ("crash", "medium", "Backtrace", _telem_rx(r"\bbacktrace\.io|@backtrace/")),
+    # APM / tracing
+    ("apm", "medium", "OpenTelemetry (OTEL)", _telem_rx(r"opentelemetry|\botel\b|\botel[._/-]|\botlp\b")),
+    ("apm", "low", "Datadog (APM)", _telem_rx(r"datadoghq|dd-trace|\bddtrace\b|datadog-agent|@datadog/")),
+    ("apm", "low", "New Relic", _telem_rx(r"newrelic|new-relic|nr-data\.net")),
+    ("apm", "low", "Elastic APM", _telem_rx(r"elastic-apm|@elastic/apm|elastic_apm")),
+    ("apm", "low", "Honeycomb", _telem_rx(r"honeycomb\.io|honeycombio|libhoney")),
+    ("apm", "low", "Dynatrace", _telem_rx(r"dynatrace|ruxit")),
+    ("apm", "low", "Instana", _telem_rx(r"\binstana\b")),
+    ("apm", "low", "AppSignal", _telem_rx(r"appsignal")),
+    ("apm", "low", "Grafana Faro", _telem_rx(r"@grafana/faro|grafana.*faro")),
+    # developer-tool / CLI telemetry
+    ("devtool", "low", "Next.js telemetry", _telem_rx(r"NEXT_TELEMETRY_DISABLED|next telemetry")),
+    ("devtool", "low", "Nuxt telemetry", _telem_rx(r"NUXT_TELEMETRY_DISABLED")),
+    ("devtool", "low", "Astro telemetry", _telem_rx(r"ASTRO_TELEMETRY_DISABLED")),
+    ("devtool", "low", "Gatsby telemetry", _telem_rx(r"GATSBY_TELEMETRY_DISABLED")),
+    ("devtool", "low", "Turbo telemetry", _telem_rx(r"TURBO_TELEMETRY_DISABLED|turbo telemetry")),
+    ("devtool", "low", "Angular CLI analytics", _telem_rx(r"NG_CLI_ANALYTICS")),
+    ("devtool", "low", ".NET CLI telemetry", _telem_rx(r"DOTNET_CLI_TELEMETRY_OPTOUT|dotnet telemetry")),
+    ("devtool", "low", "Homebrew analytics", _telem_rx(r"HOMEBREW_NO_ANALYTICS|brew analytics")),
+    ("devtool", "low", "HashiCorp checkpoint", _telem_rx(r"CHECKPOINT_DISABLE")),
+    ("devtool", "low", "Scarf package analytics", _telem_rx(r"scarf\.sh|\bscarf\b")),
+]
+
+TELEMETRY_MEANING = {
+    "ads": "Advertising/attribution pixel: reports page views and a per-browser/session ID to the vendor.",
+    "session-replay": "Session replay: can record clicks, keystrokes, forms and page content, not just counts.",
+    "analytics": "Product/web analytics: page views, events and a persistent identifier leave the device.",
+    "crash": "Crash/error reporting: stack traces and payloads (often file paths, env and request data) are uploaded.",
+    "apm": "APM/tracing: spans, logs or metrics are exported; OTEL only sends if an exporter endpoint is configured.",
+    "devtool": "Developer-tool telemetry: the CLI/build tool reports usage; usually disabled with an env var.",
+}
+
+TELEMETRY_OPTOUT_RE = re.compile(
+    r"(?i)(DO_NOT_TRACK|NEXT_TELEMETRY_DISABLED|NUXT_TELEMETRY_DISABLED|ASTRO_TELEMETRY_DISABLED|GATSBY_TELEMETRY_DISABLED|"
+    r"TURBO_TELEMETRY_DISABLED|DOTNET_CLI_TELEMETRY_OPTOUT|HOMEBREW_NO_ANALYTICS|CHECKPOINT_DISABLE|"
+    r"NG_CLI_ANALYTICS\s*[=:]\s*(false|off)|telemetry\s*[=:]\s*(false|off)|disable[_-]?telemetry|no[_-]?telemetry|"
+    r"analytics\s*[=:]\s*(false|off))")
+DNT_RE = re.compile(r"(?i)(navigator\.doNotTrack|\bdoNotTrack\b|\bDNT\b)")
+
+def check_telemetry(root, p, text, telemetry, optouts):
+    """Collects one entry per vendor, first seen (file:line). No network, no code execution."""
+    r = rel(root, p)
+    if LOCKFILE_RE.search(r):          # transitive deps are not evidence of this repo phoning home
+        return
+    # Prose mentions vendors without using them ("alternative to Sentry"), so only opt-outs count there.
+    prose = p.suffix.lower() in (".md", ".mdx", ".markdown", ".rst", ".adoc")
+    for i, line in enumerate(text.split("\n"), 1):
+        if len(line) > 2000:
+            continue
+        for m in TELEMETRY_OPTOUT_RE.finditer(line):
+            optouts.add(m.group(1))
+        if DNT_RE.search(line):
+            optouts.add("Do-Not-Track")
+        if prose:
+            continue
+        for kind, sev, vendor, rx in TELEMETRY_RULES:
+            key = (kind, vendor)
+            if key in telemetry:
+                if rx.search(line):
+                    telemetry[key]["count"] += 1
+                continue
+            if rx.search(line):
+                telemetry[key] = {"kind": kind, "sev": sev, "vendor": vendor, "file": r, "line": i, "snippet": line, "count": 1}
+
+def telemetry_findings(telemetry, optouts):
+    order = {"ads": 0, "session-replay": 1, "analytics": 2, "crash": 3, "apm": 4, "devtool": 5}
+    fs = []
+    for (kind, vendor), t in sorted(telemetry.items(), key=lambda kv: (order.get(kv[1]["kind"], 9), kv[1]["vendor"])):
+        if t["count"] > 1:
+            meaning = f"Seen {t['count']} times; first at {t['file']}:{t['line']}."
+        else:
+            meaning = "Detected in this file."
+        if optouts:
+            meaning += " Opt-out mentioned in the repo: " + ", ".join(sorted(optouts)[:4]) + "."
+        elif kind == "devtool":
+            meaning += " Disable with the env var named in the rule."
+        else:
+            meaning += " No opt-out / disable flag found in the repo."
+        fs.append(finding("telemetry", t["sev"], t["file"], t["line"], f"telemetry-{kind}: {vendor}", t["snippet"],
+                          TELEMETRY_MEANING[kind] + " " + meaning))
+    return fs
+
+# ----------------------------------------------------------------------------
 # Repo trust signals (host only, unauthenticated GitHub API; LOW/INFO only)
 # ----------------------------------------------------------------------------
 def trust_findings(requested, repo, owner, contributors, now=None):
@@ -579,6 +723,7 @@ def zip_encrypted(p):
 
 def run_agent_checks(root):
     findings = []
+    telemetry, optouts = {}, set()
     nfiles = 0
     for p in iter_files(root):
         nfiles += 1
@@ -613,6 +758,8 @@ def run_agent_checks(root):
         check_build_hooks(root, p, text, findings)
         check_workflows(root, p, text, findings)
         check_obfuscation_deps(root, p, text, findings)
+        check_telemetry(root, p, text, telemetry, optouts)
+    findings += telemetry_findings(telemetry, optouts)
     return findings, nfiles
 
 # ----------------------------------------------------------------------------

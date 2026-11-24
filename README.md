@@ -127,6 +127,7 @@ What this does and does not prove:
      - GitHub Actions: pwn-request (`pull_request_target`/`workflow_run` + PR head checkout), other privileged triggers, secrets echoed, `curl|sh`, write permissions, actions not pinned to a commit SHA.
      - Executables disguised by extension (magic-byte mismatch, e.g. an ELF named `.png`), high-entropy blobs (Shannon > 5.2), minified JS outside build/dist paths.
      - Typosquatted dependencies (npm, PyPI, crates) one edit away from popular packages.
+     - **Telemetry/privacy**: known analytics, session-replay, ad-pixel, crash-reporting, APM and OTEL vendors (endpoints and SDK imports) with the kind in the rule name (`telemetry-analytics`, `telemetry-session-replay`, `telemetry-ads`, `telemetry-crash`, `telemetry-apm`, `telemetry-devtool`). Lockfiles are skipped; one finding per vendor with the first `file:line` and hit count, plus whether the repo mentions an opt-out (`DO_NOT_TRACK`, `NEXT_TELEMETRY_DISABLED`, `telemetry: false`, …).
 3. **OSV-Scanner** runs **on the host, outside the sandbox**, because the vulnerability DB is online. It only reads lockfiles and manifests from the clone and sends package names and versions to osv.dev. `--no-osv` skips it. (Offline mode `--offline-vulnerabilities --download-offline-databases` is a possible later improvement.) It also catches `MAL-` malicious-package advisories.
 4. **Trust signals** (host, unauthenticated public GitHub API, `--no-trust` skips): repo younger than 30 days, owner younger than 90 days, ≥500 stars in <60 days, ≥200 stars with one contributor, renamed/transferred repos. LOW/INFO only, so they never make a repo RED on their own; offline or rate-limited runs just note it.
 5. **`--verify-deps`** (optional, host, network): GuardDog downloads each dependency from requirements.txt or package.json and statically scans it. Nothing is installed.
@@ -158,7 +159,7 @@ Run `tests/run_tests.sh`, or `tests/run_tests.sh --offline` for the fixtures onl
 |---|---|
 | tests/fixtures/trap-npm (postinstall `curl\|sh`, reads ~/.ssh/id_rsa and POSTs it) | RED |
 | tests/fixtures/trap-skill (SKILL.md with zero-width and tag-char hidden "upload .env" instruction, over-broad mcp.json) | RED |
-| tests/fixtures/trap-gha, trap-markdown, trap-build, trap-binary (one trap per check family; each rule name must fire) | YELLOW/RED |
+| tests/fixtures/trap-gha, trap-markdown, trap-build, trap-binary, trap-telemetry (one trap per check family; each rule name must fire) | YELLOW/RED |
 | tests/fixtures/control-clean (pinned actions, minified bundle in `public/`, normal README with comment/details/alt text, real deps), `--strict` | GREEN |
 | tests/test_trust.py (offline trust-signal unit tests) | pass |
 | psf/requests, tj/commander.js | GREEN/YELLOW |
@@ -167,7 +168,7 @@ Run `tests/run_tests.sh`, or `tests/run_tests.sh --offline` for the fixtures onl
 | DataDog/malicious-software-packages-dataset | YELLOW: about 29.7k malware-sample zips are listed via ls-tree and flagged as uninspectable. They are never downloaded or extracted. |
 
 ## What it catches, and what it doesn't
-**Catches**: obvious install-time payloads, credential theft patterns, hidden or invisible agent instructions, MCP tool poisoning, over-privileged agent configs, committed secrets, known-vulnerable or known-malicious dependencies, obfuscated loaders, dangerous C APIs, and weak Go crypto or injectable SQL built by concatenation.
+**Catches**: obvious install-time payloads, credential theft patterns, hidden or invisible agent instructions, MCP tool poisoning, over-privileged agent configs, committed secrets, known-vulnerable or known-malicious dependencies, obfuscated loaders, dangerous C APIs, and weak Go crypto or injectable SQL built by concatenation. Also flags **telemetry and trackers** (analytics, session replay, ad pixels, crash reporting, APM/OTEL, dev-tool telemetry) so you know what a repo reports and whether it documents an opt-out.
 
 **Misses**:
 - Well-obfuscated or novel logic, and payloads fetched at runtime from innocent-looking URLs.

@@ -1,0 +1,11 @@
+{
+  "name": "widget",
+  "version": "1.0.0",
+  "dependencies": {
+    "@opentelemetry/sdk-node": "^0.50.0",
+    "@sentry/browser": "^8.0.0",
+    "fullstory": "^1.0.0",
+    "posthog-js": "^1.100.0",
+    "react": "^18.0.0"
+  }
+}
