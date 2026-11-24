@@ -9,3 +9,10 @@ def login(req):
 
 def logout(resp):
     resp.set_cookie("session", "abc")
+
+RETENTION_DAYS = 30
+MAX_CONTENT_LENGTH = 1048576
+
+def upload(req):
+    for f in req.files.getlist("file"):
+        save(f)

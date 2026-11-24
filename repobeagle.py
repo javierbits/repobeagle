@@ -914,6 +914,16 @@ def check_privacy(root, p, text, privacy):
                 if v in ("<all_urls>", "*://*/*"):
                     _priv_add(privacy, "extension-permission", "high", "content_scripts:<all_urls>", r, _line_of(text, v), v,
                               "Content script runs on every page; it can read page content and inject into it.")
+        gecko = ((manifest.get("browser_specific_settings") or {}).get("gecko") or {})
+        dcp = gecko.get("data_collection_permissions")
+        if dcp:
+            _priv_add(privacy, "store-disclosure", "info", "data_collection_permissions", r,
+                      _line_of(text, "data_collection_permissions"), json.dumps(dcp)[:140],
+                      "Machine-readable data-collection declaration in the extension manifest.")
+        else:
+            _priv_add(privacy, "store-disclosure", "info", "store-only disclosures", r, _line_of(text, '"permissions"'),
+                      "manifest.json without data_collection_permissions", 
+                      "No machine-readable data-collection declaration; Chrome Web Store data disclosures live outside the repo.")
 
 FINGERPRINT_RULES = [
     ("fingerprintjs", "high", r"@?fingerprintjs|clientjs|\bbotd\b|@sparticuz/", "Dedicated fingerprinting library: builds a stable ID from device attributes."),
@@ -988,6 +998,13 @@ CLIENT_ID_RE = re.compile(r"(?i)\b(client_?id|device_?id|visitor_?id|anonymous_?
 CLIENT_ID_CONTEXT_RE = re.compile(r"(?i)(localStorage|sessionStorage|document\.cookie|cookie|uuid|randomUUID|nanoid|v4\s*\(|guid)")
 ADDRESS_RE = re.compile(r"(?i)\b\d{1,6}[A-Za-z]?\s+[A-Z][\w.'-]*(?:\s+[A-Z][\w.'-]*){0,4}\s+"
                         r"(?:street|st|road|rd|avenue|ave|boulevard|blvd|lane|ln|drive|dr|way|court|ct|place|pl|square|sq)\b")
+RETENTION_RE = re.compile(r"(?i)\b(data[_-]?retention|retention[_-]?(?:days|period|policy)?|log[_-]?retention|retain(?:ed)?|"
+                           r"ttl[_-]?(?:seconds|secs|days)?|expir(?:y|es|ation)|purge[_-]?after|delete[_-]?after)\b"
+                           r"\s*[:=]?\s*\d")
+UPLOAD_SINK_RE = re.compile(r"(?i)(multipart/form-data|UploadFile|FileUpload|req\.files\b|request\.FILES|multer|"
+                            r"formidable|busboy|\bupload\b|files\[\])")
+UPLOAD_LIMIT_RE = re.compile(r"(?i)(max[_-]?(?:file|upload|content|body)[_-]?(?:size|length)?|client_max_body_size|"
+                             r"MAX_CONTENT_LENGTH|limits\s*[:=]|fileSizeLimit|maxBytes|sizeLimit|body[_-]?limit)")
 IOS_DATA_TYPE_RE = re.compile(r"NSPrivacyCollectedDataType([A-Z][A-Za-z]+)")
 IOS_DATA_TYPE_NAMES = {
     "Name": "name", "EmailAddress": "email", "PhoneNumber": "phone number", "PhysicalAddress": "postal address",
@@ -1035,6 +1052,17 @@ def check_privacy_signals(root, p, text, privacy):
             if m:
                 _priv_add(privacy, "pii-address", "low", m.group(0).strip(), r, i, line,
                           "Postal address in source/config (personal data); check it is intended to be public.")
+            m = RETENTION_RE.search(line)
+            if m:
+                _priv_add(privacy, "data-retention", "info", m.group(1).lower(), r, i, line,
+                          "A retention/expiry window is configured; verify it applies to the collected data.")
+            if ext in CODE_EXT or ext in (".yml", ".yaml", ".toml", ".json", ".env", ".ini", ".conf", ".tf"):
+                if UPLOAD_SINK_RE.search(line):
+                    _priv_add(privacy, "upload-surface", "info", "file upload", r, i, line,
+                              "Accepts user-supplied files or request bodies: data enters the service.")
+                if UPLOAD_LIMIT_RE.search(line):
+                    _priv_add(privacy, "upload-limit", "info", "size cap", r, i, line,
+                              "A request/upload size cap is set (data-minimization guard).")
     # import-time network and IP logging: line-scoped, cheap enough to do in one more pass
     for i, line in enumerate(text.split("\n"), 1):
         if not line or line[0] in " \t" or _is_comment(line):
@@ -1064,9 +1092,10 @@ def privacy_findings(privacy):
     order = {"fingerprint": 0, "import-time-network": 1, "ip-logging": 2, "pii-log": 3, "pii-email": 4,
              "pii-phone": 5, "pii-address": 6, "browser-capability": 7, "macos-entitlement": 8, "client-id": 9,
              "ios-tracking": 10, "ios-data-type": 11, "dnt-respect": 12, "consent-gating": 13,
-             "tracking-params": 14, "insecure-endpoint": 15, "android-permission": 16, "extension-permission": 17,
-             "cookie-flags": 18, "cookie-write": 19, "third-party-cdn": 20, "external-endpoint": 21,
-             "browser-storage": 22, "consent-manager": 23, "privacy-doc": 24}
+             "data-retention": 14, "upload-surface": 15, "upload-limit": 16, "store-disclosure": 17,
+             "tracking-params": 18, "insecure-endpoint": 19, "android-permission": 20, "extension-permission": 21,
+             "cookie-flags": 22, "cookie-write": 23, "third-party-cdn": 24, "external-endpoint": 25,
+             "browser-storage": 26, "consent-manager": 27, "privacy-doc": 28}
     down = {"high": "medium", "medium": "low", "low": "info"}
     fs = []
     for (rule, key), t in sorted(privacy.items(), key=lambda kv: (order.get(kv[1]["rule"], 9), kv[1]["key"])):
@@ -1208,6 +1237,16 @@ def run_agent_checks(root):
             findings.append(finding("privacy", "low", "(repo)", 0, "consent-gating: trackers with no consent manager detected",
                                      "no CMP found",
                                      "Analytics/ads/session replay are present but no OneTrust/Cookiebot/Osano/… was detected; verify tracking waits for consent."))
+    rules = {f["title"].split(":")[0] for f in pf}
+    collects = bool(tracked) or bool(rules & {"pii-log", "pii-email", "pii-phone", "pii-address", "client-id"})
+    if collects and "data-retention" not in rules:
+        findings.append(finding("privacy", "low", "(repo)", 0, "data-retention: data collected but no retention/expiry setting found",
+                                 "no retention/ttl/expiry/delete_after value in the repo",
+                                 "Personal data is collected but nothing says when it is deleted; check the privacy policy."))
+    if "upload-surface" in rules and "upload-limit" not in rules:
+        findings.append(finding("privacy", "low", "(repo)", 0, "upload-limit: uploads accepted with no size cap found",
+                                 "no max file/body size setting in the repo",
+                                 "Unbounded request bodies can carry more data than intended; check the server/framework default."))
     if privacy_doc:
         findings.append(finding("privacy", "info", privacy_doc, 1, "privacy-doc: privacy policy present", privacy_doc,
                                  "The repo ships a privacy policy/manifest; read it to see what it admits to collecting."))
