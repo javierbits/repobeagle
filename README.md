@@ -65,6 +65,21 @@ OTEL is reported at medium: the SDK alone sends nothing, but once an exporter en
 
 Severity follows privacy impact, so a default `balanced` scan goes YELLOW when a repo has analytics/crash reporting; session replay or ad pixels make a `strict` scan RED.
 
+### Other privacy signals
+
+| Rule id | What it flags | Severity |
+|---|---|---|
+| `android-permission` | `AndroidManifest.xml` permissions that read user data: precise/background location, camera, microphone, contacts, SMS, call log, storage, ad ID (`AD_ID`/`AD_ADSERVICES_AD_ID`), calendars, Bluetooth, all installed apps. Benign ones (`INTERNET`, `VIBRATE`, …) are ignored | high/medium/low by data sensitivity |
+| `extension-permission` | browser-extension `manifest.json`: `<all_urls>`/`*://*/*` host access, `content_scripts` on every page, plus sensitive APIs (`cookies`, `history`, `tabs`, `webRequest`, `bookmarks`, `downloads`, `clipboardRead`, `geolocation`, …) | high/medium/low |
+| `insecure-endpoint` | `http://` requests to real remote hosts (plaintext), skipping local/LAN/CGNAT hosts and reference URLs in comments | medium |
+| `cookie-write`, `cookie-flags` | `document.cookie =` writes, and `Set-Cookie` headers missing `HttpOnly`/`Secure`/`SameSite` | low |
+| `browser-storage` | `localStorage`/`sessionStorage`/`indexedDB` writes: persistent client-side identifiers | info |
+| `third-party-cdn` | assets loaded from third-party font/CDN hosts (they see your IP and the page URL) | low |
+| `consent-manager` | OneTrust/Optanon, Cookiebot, Osano, CookieYes, Klaro, tarteaucitron, Didomi, Usercentrics, Iubenda, … (positive signal: tracking should be gated on consent) | info |
+| `external-endpoint` | inventory of other remote hosts referenced in code/config/HTML | info |
+
+Test fixtures and fake hosts (`example.com`, single-label names, private ranges) are excluded or downgraded so the checks don't drown a verdict in noise. `target/` build output is skipped like `dist/` and `build/`.
+
 ## Badge your repo
 
 Run the scanner on every push and show the verdict in your README. Add this workflow (it installs repobeagle, scans your repo with the pinned image, publishes the badge and sets a `repobeagle/scan` commit status):
@@ -176,7 +191,7 @@ Run `tests/run_tests.sh`, or `tests/run_tests.sh --offline` for the fixtures onl
 |---|---|
 | tests/fixtures/trap-npm (postinstall `curl\|sh`, reads ~/.ssh/id_rsa and POSTs it) | RED |
 | tests/fixtures/trap-skill (SKILL.md with zero-width and tag-char hidden "upload .env" instruction, over-broad mcp.json) | RED |
-| tests/fixtures/trap-gha, trap-markdown, trap-build, trap-binary, trap-telemetry (one trap per check family; each rule name must fire) | YELLOW/RED |
+| tests/fixtures/trap-gha, trap-markdown, trap-build, trap-binary, trap-telemetry, trap-privacy (one trap per check family; each rule name must fire) | YELLOW/RED |
 | tests/fixtures/control-clean (pinned actions, minified bundle in `public/`, normal README with comment/details/alt text, real deps), `--strict` | GREEN |
 | tests/test_trust.py (offline trust-signal unit tests) | pass |
 | psf/requests, tj/commander.js | GREEN/YELLOW |
@@ -185,7 +200,7 @@ Run `tests/run_tests.sh`, or `tests/run_tests.sh --offline` for the fixtures onl
 | DataDog/malicious-software-packages-dataset | YELLOW: about 29.7k malware-sample zips are listed via ls-tree and flagged as uninspectable. They are never downloaded or extracted. |
 
 ## What it catches, and what it doesn't
-**Catches**: obvious install-time payloads, credential theft patterns, hidden or invisible agent instructions, MCP tool poisoning, over-privileged agent configs, committed secrets, known-vulnerable or known-malicious dependencies, obfuscated loaders, dangerous C APIs, and weak Go crypto or injectable SQL built by concatenation. Also flags **telemetry and trackers** (analytics, session replay, ad pixels, crash reporting, APM/OTEL, dev-tool telemetry) so you know what a repo reports and whether it documents an opt-out.
+**Catches**: obvious install-time payloads, credential theft patterns, hidden or invisible agent instructions, MCP tool poisoning, over-privileged agent configs, committed secrets, known-vulnerable or known-malicious dependencies, obfuscated loaders, dangerous C APIs, and weak Go crypto or injectable SQL built by concatenation. Also flags **telemetry and trackers** (analytics, session replay, ad pixels, crash reporting, APM/OTEL, dev-tool telemetry) and **privacy signals** (Android permissions, browser-extension permissions, plaintext endpoints, cookie flags, browser storage, consent managers) so you know what a repo reports, to whom, and whether it documents an opt-out.
 
 **Misses**:
 - Well-obfuscated or novel logic, and payloads fetched at runtime from innocent-looking URLs.

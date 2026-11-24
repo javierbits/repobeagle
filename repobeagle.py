@@ -23,7 +23,7 @@ VERSION = RELEASE.lstrip("v")             # e.g. 1.0.0 (display / JSON)
 IMAGE = os.environ.get("BEAGLE_IMAGE", f"ghcr.io/javierbits/repobeagle:{RELEASE}")
 SEV_ORDER = {"critical": 4, "high": 3, "medium": 2, "low": 1, "info": 0}
 MAX_FILE = 1_500_000
-SKIP_DIRS = {".git", "node_modules", ".venv", "venv", "__pycache__", ".tox", "dist", "build", ".mypy_cache"}
+SKIP_DIRS = {".git", "node_modules", ".venv", "venv", "__pycache__", ".tox", "dist", "build", "target", ".mypy_cache"}
 
 # strictness: verdict thresholds
 PROFILES = {
@@ -616,7 +616,7 @@ def check_telemetry(root, p, text, telemetry, optouts):
     if LOCKFILE_RE.search(r):          # transitive deps are not evidence of this repo phoning home
         return
     # Prose mentions vendors without using them ("alternative to Sentry"), so only opt-outs count there.
-    prose = p.suffix.lower() in (".md", ".mdx", ".markdown", ".rst", ".adoc")
+    prose = p.suffix.lower() in PROSE_EXT
     for i, line in enumerate(text.split("\n"), 1):
         if len(line) > 2000:
             continue
@@ -651,6 +651,153 @@ def telemetry_findings(telemetry, optouts):
             meaning += " No opt-out / disable flag found in the repo."
         fs.append(finding("telemetry", t["sev"], t["file"], t["line"], f"telemetry-{kind}: {vendor}", t["snippet"],
                           TELEMETRY_MEANING[kind] + " " + meaning))
+    return fs
+
+# ----------------------------------------------------------------------------
+# Privacy: third-party endpoints, browser storage/cookies, platform permissions
+# ----------------------------------------------------------------------------
+PROSE_EXT = {".md", ".mdx", ".markdown", ".rst", ".adoc"}
+
+URL_HOST_RE = re.compile(r"(?i)\b(https?)://([a-z0-9][a-z0-9.-]*[a-z0-9])")
+NON_NET_HOSTS = {"localhost", "127.0.0.1", "0.0.0.0", "::1", "example.com", "example.org", "www.w3.org", "w3.org",
+                 "purl.org", "schema.org", "json-schema.org", "creativecommons.org", "opensource.org", "spdx.org",
+                 "xmlns.com", "unicode.org", "ietf.org", "rfc-editor.org", "python.org", "nodejs.org",
+                 "schemas.android.com", "schemas.xmlsoap.org"}
+THIRD_PARTY_CDN = {"fonts.googleapis.com", "fonts.gstatic.com", "use.typekit.net", "cdn.jsdelivr.net", "unpkg.com",
+                   "cdnjs.cloudflare.com", "esm.sh", "cdn.skypack.dev", "code.jquery.com", "ajax.googleapis.com",
+                   "cdn.tailwindcss.com", "static.cloudflareinsights.com"}
+
+COOKIE_WRITE_RE = re.compile(r"document\.cookie\s*=")
+STORAGE_RE = re.compile(r"(?i)(localStorage|sessionStorage)\.(setItem|removeItem)|\bindexedDB\b")
+CONSENT_RE = re.compile(r"(?i)(onetrust|optanon|cookiebot|osano|cookieyes|klaro|tarteaucitron|cookieconsent|"
+                        r"consent-manager|quantcast|didomi|usercentrics|borlabs|iubenda|complianz|axeptio|cookiehub)")
+SET_COOKIE_RE = re.compile(r"(?i)['\"]set-cookie['\"]")
+
+ANDROID_PERMS = {
+    "ACCESS_FINE_LOCATION": ("high", "precise location"), "ACCESS_BACKGROUND_LOCATION": ("high", "location in the background"),
+    "ACCESS_COARSE_LOCATION": ("medium", "approximate location"), "CAMERA": ("high", "camera"),
+    "RECORD_AUDIO": ("high", "microphone"), "READ_CONTACTS": ("high", "contacts"),
+    "WRITE_CONTACTS": ("medium", "contacts"), "READ_SMS": ("high", "SMS"), "SEND_SMS": ("medium", "SMS"),
+    "RECEIVE_SMS": ("medium", "SMS"), "READ_CALL_LOG": ("high", "call log"), "READ_PHONE_STATE": ("medium", "phone state / identifiers"),
+    "READ_EXTERNAL_STORAGE": ("medium", "shared storage"), "WRITE_EXTERNAL_STORAGE": ("medium", "shared storage"),
+    "READ_MEDIA_IMAGES": ("medium", "photos"), "READ_MEDIA_VIDEO": ("medium", "videos"), "READ_MEDIA_AUDIO": ("medium", "audio files"),
+    "ACCESS_MEDIA_LOCATION": ("high", "photo location metadata"), "BODY_SENSORS": ("medium", "body sensors"),
+    "ACTIVITY_RECOGNITION": ("medium", "physical activity"), "GET_ACCOUNTS": ("medium", "accounts on the device"),
+    "READ_CALENDAR": ("medium", "calendar"), "QUERY_ALL_PACKAGES": ("medium", "all installed apps"),
+    "BLUETOOTH_SCAN": ("medium", "nearby Bluetooth devices"), "BLUETOOTH_CONNECT": ("low", "Bluetooth devices"),
+    "POST_NOTIFICATIONS": ("low", "notifications"), "ACCESS_ADSERVICES_AD_ID": ("high", "advertising ID"),
+    "AD_ID": ("high", "advertising ID"), "READ_PHONE_NUMBERS": ("medium", "phone number"),
+}
+EXT_HIGH = {"tabs", "history", "cookies", "webRequest", "bookmarks", "downloads", "management", "clipboardRead",
+            "geolocation", "nativeMessaging", "declarativeNetRequest", "topSites", "sessions", "readingList"}
+ANDROID_IGNORE = {"INTERNET", "ACCESS_NETWORK_STATE", "ACCESS_WIFI_STATE", "VIBRATE", "WAKE_LOCK", "FOREGROUND_SERVICE"}
+
+def _priv_add(privacy, rule, sev, key, r, line_no, line, meaning):
+    k = (rule, key)
+    t = privacy.get(k)
+    if t:
+        t["count"] += 1
+        return
+    privacy[k] = {"rule": rule, "sev": sev, "key": key, "file": r, "line": line_no, "snippet": line, "count": 1, "meaning": meaning}
+
+ENDPOINT_EXT = CODE_EXT | {".html", ".htm", ".css", ".scss", ".json", ".yml", ".yaml", ".toml", ".xml", ".cfg", ".ini", ".conf", ".env", ".tf"}
+ENDPOINT_NAMES = {"Dockerfile", "Makefile", "GNUmakefile", "Justfile", "justfile", "Caddyfile", "Procfile", "Brewfile", "go.mod", "go.sum"}
+PRIVATE_HOST_RE = re.compile(r"(?i)(^10\.|^192\.168\.|^127\.|^169\.254\.|^172\.(1[6-9]|2\d|3[01])\.|"
+                             r"^100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\.|\.local$|\.lan$|\.internal$|\.localhost$|"
+                             r"^\[?fe80:|^\[?fc|^\[?fd)")
+
+def _endpoint_noise(host):
+    """Local/LAN hosts and single-label names are not third parties and have nothing to leak."""
+    return bool(PRIVATE_HOST_RE.search(host)) or "." not in host
+
+def _is_comment(line):
+    return line.lstrip().startswith(("//", "#", "*", "/*", "<!--", ";", "--"))
+
+def check_privacy(root, p, text, privacy):
+    """Third-party hosts, cookie/storage writes, consent managers and platform permissions. Static only."""
+    r, ext = rel(root, p), p.suffix.lower()
+    if LOCKFILE_RE.search(r) or ext in PROSE_EXT:
+        return
+    scan_endpoints = ext in ENDPOINT_EXT or p.name in ENDPOINT_NAMES or p.name.startswith(".env")
+    is_manifest = p.name == "manifest.json"
+    manifest = None
+    if is_manifest:
+        try: manifest = json.loads(text)
+        except Exception: manifest = None
+        if not isinstance(manifest, dict) or "manifest_version" not in manifest:
+            manifest = None
+    for i, line in enumerate(text.split("\n"), 1):
+        if len(line) > 2000:
+            continue
+        if scan_endpoints:
+            for m in URL_HOST_RE.finditer(line):
+                scheme, host = m.group(1).lower(), m.group(2).lower()
+                if host in NON_NET_HOSTS or _endpoint_noise(host):
+                    continue
+                if any(rx.search(host) for _, _, _, rx in TELEMETRY_RULES):
+                    continue          # already reported by the telemetry check
+                if host in THIRD_PARTY_CDN:
+                    _priv_add(privacy, "third-party-cdn", "low", host, r, i, line,
+                              f"Asset requested from {host}: it sees your IP and the page URL (third-party font/CDN).")
+                elif scheme == "http":
+                    if _is_comment(line):
+                        continue      # a reference URL in a comment is not a request
+                    _priv_add(privacy, "insecure-endpoint", "medium", host, r, i, line,
+                              f"Plaintext http:// to {host}: requests and metadata are not encrypted in transit.")
+                else:
+                    _priv_add(privacy, "external-endpoint", "info", host, r, i, line,
+                              f"Network destination {host}: anything sent here leaves the machine/network.")
+        if COOKIE_WRITE_RE.search(line):
+            _priv_add(privacy, "cookie-write", "low", "document.cookie", r, i, line,
+                      "JavaScript writes a cookie (persistent client-side identifier; check lifetime and consent).")
+        if STORAGE_RE.search(line):
+            _priv_add(privacy, "browser-storage", "info", "localStorage/sessionStorage", r, i, line,
+                      "Data stored in the browser: survives reloads (localStorage) and can be used to track the user.")
+        if SET_COOKIE_RE.search(line) and not all(s in line for s in ("HttpOnly", "Secure", "SameSite")):
+            _priv_add(privacy, "cookie-flags", "low", "Set-Cookie", r, i, line,
+                      "Set-Cookie header without all of HttpOnly/Secure/SameSite: readable by scripts, sent in clear or cross-site.")
+        m = CONSENT_RE.search(line)
+        if m:
+            _priv_add(privacy, "consent-manager", "info", m.group(1).lower(), r, i, line,
+                      "A consent manager (CMP) is present, so tracking should be gated on consent; verify it covers every vendor found.")
+        if p.name == "AndroidManifest.xml":
+            for m in re.finditer(r'<uses-permission[^>]*android:name="android\.permission\.([A-Z_0-9]+)"', line):
+                perm = m.group(1)
+                if perm in ANDROID_IGNORE:
+                    continue
+                sev, what = ANDROID_PERMS.get(perm, ("low", perm.replace("_", " ").lower()))
+                _priv_add(privacy, "android-permission", sev, perm, r, i, line,
+                          f"Android app requests {what} ({perm}); the user must grant it and the app can read it.")
+    if manifest:
+        groups = {"permissions": "permission", "optional_permissions": "permission", "host_permissions": "host access"}
+        for field, label in groups.items():
+            vals = manifest.get(field) or []
+            if not isinstance(vals, list):
+                continue
+            for v in vals:
+                if not isinstance(v, str):
+                    continue
+                broad = v in ("<all_urls>", "*://*/*")
+                sev = "high" if broad else ("medium" if v in EXT_HIGH else "low")
+                _priv_add(privacy, "extension-permission", sev, v, r, _line_of(text, f'"{v}"'), f'"{v}" ({label})',
+                          f"Browser extension requests '{v}': " + ("reads every page you visit." if broad else "access to this browser capability."))
+        for cs in manifest.get("content_scripts") or []:
+            for v in (cs.get("matches") or []) if isinstance(cs, dict) else []:
+                if v in ("<all_urls>", "*://*/*"):
+                    _priv_add(privacy, "extension-permission", "high", "content_scripts:<all_urls>", r, _line_of(text, v), v,
+                              "Content script runs on every page; it can read page content and inject into it.")
+
+def privacy_findings(privacy):
+    order = {"insecure-endpoint": 0, "android-permission": 1, "extension-permission": 2, "cookie-flags": 3,
+             "cookie-write": 4, "third-party-cdn": 5, "external-endpoint": 6, "browser-storage": 7, "consent-manager": 8}
+    down = {"high": "medium", "medium": "low", "low": "info"}
+    fs = []
+    for (rule, key), t in sorted(privacy.items(), key=lambda kv: (order.get(kv[1]["rule"], 9), kv[1]["key"])):
+        sev = t["sev"]
+        if TEST_PATH.search(t["file"]):    # fixtures contain fake hosts and deliberately bad cookies
+            sev = down.get(sev, sev)
+        meaning = t["meaning"] + (f" Seen {t['count']} times." if t["count"] > 1 else "")
+        fs.append(finding("privacy", sev, t["file"], t["line"], f"{rule}: {t['key']}", t["snippet"], meaning))
     return fs
 
 # ----------------------------------------------------------------------------
@@ -723,7 +870,7 @@ def zip_encrypted(p):
 
 def run_agent_checks(root):
     findings = []
-    telemetry, optouts = {}, set()
+    telemetry, optouts, privacy = {}, set(), {}
     nfiles = 0
     for p in iter_files(root):
         nfiles += 1
@@ -759,7 +906,9 @@ def run_agent_checks(root):
         check_workflows(root, p, text, findings)
         check_obfuscation_deps(root, p, text, findings)
         check_telemetry(root, p, text, telemetry, optouts)
+        check_privacy(root, p, text, privacy)
     findings += telemetry_findings(telemetry, optouts)
+    findings += privacy_findings(privacy)
     return findings, nfiles
 
 # ----------------------------------------------------------------------------

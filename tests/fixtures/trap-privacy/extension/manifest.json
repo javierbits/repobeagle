@@ -1,0 +1,7 @@
+{
+  "manifest_version": 3,
+  "name": "widget-helper",
+  "permissions": ["cookies", "history", "storage"],
+  "host_permissions": ["<all_urls>"],
+  "content_scripts": [{"matches": ["https://*/*"], "js": ["content.js"]}]
+}
