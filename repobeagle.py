@@ -850,6 +850,19 @@ ALLOW_ATTR_RE = re.compile(r"(?i)\ballow\s*=\s*[\"']([^\"']*)")
 SANDBOX_RE = re.compile(r"(?i)\bsandbox\b")
 SCRIPT_RE = re.compile(r"(?i)<script[^>]+src\s*=\s*[\"']((?:https?:)?//[^\"']+)")
 COOKIE_MAXAGE_RE = re.compile(r"(?i)max-age\s*=\s*(\d+)")
+COOKIE_EXPIRES_RE = re.compile(r"(?i)expires\s*=\s*([^;\"']+)")
+
+def _expiry_days(value):
+    """Days until a cookie Expires date (RFC 1123); None when unparsable."""
+    import datetime as dt
+    from email.utils import parsedate_to_datetime
+    try:
+        when = parsedate_to_datetime(value.strip())
+    except (TypeError, ValueError):
+        return None
+    if when.tzinfo is None:
+        when = when.replace(tzinfo=dt.timezone.utc)
+    return (when - dt.datetime.now(dt.timezone.utc)).days
 FORM_RE = re.compile(r"(?i)<form[^>]+action\s*=\s*[\"']((?:https?:)?//[^\"']+)")
 
 def _host_of(url):
@@ -915,13 +928,26 @@ def check_privacy(root, p, text, privacy):
                 _priv_add(privacy, "cookie-flags", "low", "set_cookie() without flags", r, i, line,
                           "Framework cookie setter without HttpOnly/Secure/SameSite: readable by scripts, sent in clear or cross-site.")
         if SET_COOKIE_RE.search(line) or COOKIE_WRITE_RE.search(line) or COOKIE_API_RE.search(line):
+            days = None
             m = COOKIE_MAXAGE_RE.search(line)
-            if m and int(m.group(1)) > 31536000:
-                _priv_add(privacy, "cookie-lifetime", "low", "cookie max-age > 1 year", r, i, line,
-                          f"Cookie lives {int(m.group(1)) // 86400} days: long-lived identifiers outlive their purpose; shorten where possible.")
-            elif not m and not re.search(r"(?i)expires\s*=", line):
+            if m:
+                days = int(m.group(1)) // 86400
+            else:
+                em = COOKIE_EXPIRES_RE.search(line)
+                if em:
+                    days = _expiry_days(em.group(1))
+            if days is None:
                 _priv_add(privacy, "cookie-lifetime", "info", "session cookie", r, i, line,
-                          "Cookie without Max-Age/Expires: session-scoped (better for privacy).")
+                          "Cookie without a usable Max-Age/Expires: session-scoped (better for privacy).")
+            elif days > 365:
+                _priv_add(privacy, "cookie-lifetime", "low", "cookie lifetime > 1 year", r, i, line,
+                          f"Cookie lives {days} days: long-lived identifiers outlive their purpose; shorten where possible.")
+            elif days >= 0:
+                _priv_add(privacy, "cookie-lifetime", "info", "short-lived cookie", r, i, line,
+                          f"Cookie expires in {days} days (under a year).")
+        if COOKIE_WRITE_RE.search(line) and not re.search(r"(?i)(;\s*secure|;\s*samesite)", line):
+            _priv_add(privacy, "cookie-flags", "low", "document.cookie without Secure/SameSite", r, i, line,
+                      "JavaScript cookie without Secure/SameSite: sent in clear or cross-site (HttpOnly cannot be set from JS).")
         m = CONSENT_RE.search(line)
         if m:
             _priv_add(privacy, "consent-manager", "info", m.group(1).lower(), r, i, line,
@@ -1055,7 +1081,7 @@ PHONE_RE = re.compile(r"(?<![A-Za-z0-9+])\+\d[\d ().-]{6,14}\d")
 IMPORT_NET_PY = re.compile(r"\b(requests|httpx|aiohttp|urllib3)\.\w+\s*\(|\burlopen\s*\(|socket\.socket\s*\(|\bhttp\.client\.")
 IMPORT_NET_JS = re.compile(r"(\bfetch\s*\(|\baxios[.(]|\$\.ajax\s*\(|navigator\.geolocation)")
 IP_LOG_RE = re.compile(r"(?i)(req\.ip\b|request\.remote_addr|remote_addr|REMOTE_ADDR|RemoteAddr|X-Forwarded-For|"
-                       r"CF-Connecting-IP|client_ip|\bip_address\b)")
+                       r"HTTP_X_FORWARDED_FOR|X_FORWARDED_FOR|True-Client-IP|CF-Connecting-IP|client_ip|\bip_address\b)")
 IP_LOG_SINK_RE = re.compile(r"(?i)(log|logger|print|puts|console|info|warn|debug|write|store|save|insert|persist|db|audit)")
 TRACKING_PARAM_RE = re.compile(r"[?&](utm_[a-z_]+|gclid|dclid|gbraid|wbraid|fbclid|msclkid|twclid|mc_cid|mc_eid|"
                                r"mkt_tok|vero_id|oly_enc_id|_hsenc|_hsmi|srsltid|igshid|si|_ga|_gl|gclsrc|dclsrc)=")

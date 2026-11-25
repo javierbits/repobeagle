@@ -15,3 +15,4 @@ const ga4 = "_ga_ABC123=GS1.1";
 document.cookie = "uid=1; max-age=63072000; path=/";
 const legacy = "__utmz=123.456; _gac_ABC=1";
 fetch("https://widget.dev/?_gl=1*abc&gclsrc=aw.ds");
+document.cookie = "promo=1; expires=Wed, 21 Oct 2037 07:28:00 GMT; path=/";
