@@ -873,7 +873,48 @@ REFERRER_POLICY_RE = re.compile(r"(?i)(referrer-?policy|referrerpolicy\s*=|rel\s
                              r"<meta[^>]+name\s*=\s*[\"']referrer)")
 PERMISSIONS_POLICY_RE = re.compile(r"(?i)(permissions-?policy)")
 
-def check_privacy(root, p, text, privacy):
+DOMAIN_URL_RE = re.compile(r"(?i)https?://([a-z0-9][a-z0-9.-]*[a-z0-9])")
+
+def own_domains(root):
+    """Best-effort first-party domains from CNAME/package.json/pyproject/composer/setup.cfg (never executes anything)."""
+    root = Path(root)
+    found = set()
+    def add(*values):
+        for v in values:
+            if not v:
+                continue
+            m = DOMAIN_URL_RE.search(str(v))
+            host = m.group(1) if m else (str(v).strip() if "." in str(v) and " " not in str(v) else None)
+            if host:
+                found.add(host.lower().removeprefix("www."))
+    try:
+        add((root / "CNAME").read_text(errors="replace").strip())
+    except OSError:
+        pass
+    for name in ("package.json",):
+        try:
+            d = json.loads((root / name).read_text(errors="replace"))
+            repo = d.get("repository")
+            add(d.get("homepage"), repo.get("url") if isinstance(repo, dict) else repo)
+        except (OSError, ValueError):
+            pass
+    try:
+        text = (root / "pyproject.toml").read_text(errors="replace")
+        for m in re.finditer(r'(?m)^\s*(?:homepage|repository|documentation|url)\s*=\s*[\"\']([^\"\']+)', text):
+            add(m.group(1))
+    except OSError:
+        pass
+    try:
+        d = json.loads((root / "composer.json").read_text(errors="replace"))
+        add(d.get("homepage"))
+    except (OSError, ValueError):
+        pass
+    return found
+
+def _is_own(host, own):
+    return any(host == d or host.endswith("." + d) for d in own)
+
+def check_privacy(root, p, text, privacy, own=()):
     """Third-party hosts, cookie/storage writes, consent managers and platform permissions. Static only."""
     r, ext = rel(root, p), p.suffix.lower()
     if LOCKFILE_RE.search(r) or ext in PROSE_EXT:
@@ -899,14 +940,17 @@ def check_privacy(root, p, text, privacy):
                     continue
                 if any(rx.search(host) for _, _, _, rx in TELEMETRY_RULES):
                     continue          # already reported by the telemetry check
-                if host in THIRD_PARTY_CDN:
-                    _priv_add(privacy, "third-party-cdn", "low", host, r, i, line,
-                              f"Asset requested from {host}: it sees your IP and the page URL (third-party font/CDN).")
-                elif scheme == "http":
+                if scheme == "http":
                     if _is_comment(line):
                         continue      # a reference URL in a comment is not a request
                     _priv_add(privacy, "insecure-endpoint", "medium", host, r, i, line,
                               f"Plaintext http:// to {host}: requests and metadata are not encrypted in transit.")
+                elif _is_own(host, own):
+                    _priv_add(privacy, "first-party-endpoint", "info", host, r, i, line,
+                              f"Own/related domain {host}: first-party traffic, not a third party.")
+                elif host in THIRD_PARTY_CDN:
+                    _priv_add(privacy, "third-party-cdn", "low", host, r, i, line,
+                              f"Asset requested from {host}: it sees your IP and the page URL (third-party font/CDN).")
                 elif _known_host(host):
                     _priv_add(privacy, "external-endpoint", "info", host, r, i, line,
                               f"Network destination {host} (known platform/infrastructure).")
@@ -986,7 +1030,7 @@ def check_privacy(root, p, text, privacy):
                 attrs = m.group(2)
                 sm = SRC_ATTR_RE.search(attrs)
                 host = _host_of(sm.group(1)) if sm else None
-                if not host or _endpoint_noise(host) or host in NON_NET_HOSTS:
+                if not host or _endpoint_noise(host) or host in NON_NET_HOSTS or _is_own(host, own):
                     continue
                 sandboxed = bool(SANDBOX_RE.search(attrs))
                 _priv_add(privacy, "third-party-embed", "info" if sandboxed else "low", host, r, i, line,
@@ -1003,7 +1047,7 @@ def check_privacy(root, p, text, privacy):
                                   f"iframe delegates {', '.join(risky)} to {host}: the embedded page can use that capability.")
             for m in SCRIPT_RE.finditer(line):
                 host = _host_of(m.group(1))
-                if host and not _endpoint_noise(host) and host not in NON_NET_HOSTS:
+                if host and not _endpoint_noise(host) and host not in NON_NET_HOSTS and not _is_own(host, own):
                     cdn = host in THIRD_PARTY_CDN
                     _priv_add(privacy, "third-party-script", "info" if cdn else "low", host, r, i, line,
                               f"Loads executable script from {host}: it runs with page privileges and can read cookies/DOM and beacon data.")
@@ -1378,7 +1422,8 @@ def privacy_findings(privacy):
              "consent-gating": 18, "consent-order": 19, "data-retention": 20, "upload-surface": 21,
              "upload-limit": 22, "store-disclosure": 23, "tracking-params": 24, "insecure-endpoint": 25,
              "android-permission": 26, "extension-permission": 27, "cookie-flags": 28, "cookie-write": 29,
-             "third-party-cdn": 30, "third-party-embed": 31, "third-party-form": 32, "third-party-script": 33, "cookie-lifetime": 34, "external-endpoint": 35,
+             "third-party-cdn": 30, "third-party-embed": 31, "third-party-form": 32, "first-party-endpoint": 33,
+             "third-party-script": 34, "cookie-lifetime": 35, "external-endpoint": 35,
              "browser-storage": 36, "consent-manager": 37, "consent-mode": 38, "consent-state": 39,
              "referrer-policy": 40, "permissions-policy": 41,
              "iframe-allow": 42,
@@ -1465,6 +1510,7 @@ def run_agent_checks(root):
     findings = []
     telemetry, optouts, privacy = {}, set(), {}
     privacy_doc = None
+    own = own_domains(root)
     prose = []
     nfiles = 0
     for p in iter_files(root):
@@ -1506,7 +1552,7 @@ def run_agent_checks(root):
         check_workflows(root, p, text, findings)
         check_obfuscation_deps(root, p, text, findings)
         check_telemetry(root, p, text, telemetry, optouts)
-        check_privacy(root, p, text, privacy)
+        check_privacy(root, p, text, privacy, own)
         check_privacy_signals(root, p, text, privacy)
     tf = telemetry_findings(telemetry, optouts)
     pf = privacy_findings(privacy)
