@@ -1603,6 +1603,8 @@ def check_privacy_signals(root, p, text, privacy, masks):
                 domain = addr.rsplit("@", 1)[-1]
                 if re.fullmatch(r"\d{1,3}(?:\.\d{1,3}){3}", domain):
                     continue
+                if re.search(r"(?i)\.(png|jpe?g|gif|svg|webp|pdf|ico|icns)$", domain):
+                    continue          # Xcode asset names like "Icon@2x.png", not emails
                 if addr.lower().endswith((".example", ".invalid", ".local")):
                     continue
                 if line[max(0, m.start() - 7):m.start()].lower() == "mailto:":
@@ -1710,6 +1712,8 @@ def check_privacy_signals(root, p, text, privacy, masks):
                 domain = addr.rsplit("@", 1)[-1]
                 if re.fullmatch(r"\d{1,3}(?:\.\d{1,3}){3}", domain):
                     continue          # user@10.0.0.2 is an SSH login, not an email
+                if re.search(r"(?i)\.(png|jpe?g|gif|svg|webp|pdf|ico|icns)$", domain):
+                    continue          # Xcode asset names like "Icon@2x.png", not emails
                 if m.end() < len(line) and line[m.end()] == ":" and addr.split("@", 1)[0].lower() in ("git", "ssh", "hg"):
                     continue          # git@host:repo scp syntax
                 if addr.lower().endswith((".example", ".invalid", ".local")):
