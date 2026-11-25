@@ -1051,7 +1051,7 @@ def check_privacy(root, p, text, privacy, own=()):
     r, ext = rel(root, p), p.suffix.lower()
     if LOCKFILE_RE.search(r) or ext in PROSE_EXT:
         return
-    is_doc = ext in DOC_EXT or bool(re.search(r"(?i)(^|/)docs?/", r))
+    is_doc = (ext in DOC_EXT and ext not in (".html", ".htm")) or bool(re.search(r"(?i)(^|/)docs?/", r))
     is_i18n = bool(I18N_FILE_RE.search(r))
     test_path = bool(TEST_PATH.search(r) or TEST_FILE_RE.search(r))
     scan_endpoints = ext in ENDPOINT_EXT or p.name in ENDPOINT_NAMES or p.name.startswith(".env")
@@ -1083,6 +1083,16 @@ def check_privacy(root, p, text, privacy, own=()):
                 xml_ref = re.search(r"(?i)(xmlns|schemaLocation|setFeature|DOCTYPE|noNamespaceSchemaLocation)", line)
                 archived = "web.archive.org/web/" in line[:pos]
                 url_value = bool(re.search(r"(?i)\bnew\s+URL\(|\bURL\((?:string:)?[\"']|\bURL\s*=\s*[\"']", line))
+                tag_ctx = None
+                if not re.search(r"(?i)<(img|video|source|audio|picture|script|iframe)\b", line) and \
+                        re.search(r"(?i)\b(?:src|href)\s*=", line):
+                    back = "\n".join(lines[max(0, i - 6):i])
+                    if re.search(r"(?i)<(img|video|source|audio|picture)\b", back):
+                        tag_ctx = "media"
+                    elif re.search(r"(?i)<script\b", back):
+                        tag_ctx = "script"
+                    elif re.search(r"(?i)<iframe\b", back):
+                        tag_ctx = "embed"
                 if scheme in ("http", "ws"):
                     requested = re.search(r"(?i)(fetch\s*\(|curl|wget|requests\.|urlopen|src\s*=|href\s*=|action\s*=|XMLHttpRequest|axios|WebSocket|\.get\s*\()", line)
                     _priv_add(privacy, "insecure-endpoint",
@@ -1106,6 +1116,18 @@ def check_privacy(root, p, text, privacy, own=()):
                               "info" if (host in THIRD_PARTY_CDN or _known_host(host) or is_doc or test_path) else "low",
                               host, r, i, line,
                               f"CSS url() asset from {host}: it sees your IP and the page URL.")
+                elif tag_ctx == "media":
+                    _priv_add(privacy, "third-party-media",
+                              "info" if (host in THIRD_PARTY_CDN or _known_host(host) or is_doc or test_path) else "low",
+                              host, r, i, line,
+                              f"Media attribute on a tag opened above loads from {host}: it sees your IP and the page URL.")
+                elif tag_ctx == "script":
+                    _priv_add(privacy, "third-party-script", "info" if host in THIRD_PARTY_CDN else "low",
+                              host, r, i, line,
+                              f"Script attribute on a tag opened above loads executable code from {host}.")
+                elif tag_ctx == "embed":
+                    _priv_add(privacy, "third-party-embed", "low", host, r, i, line,
+                              f"Embed attribute on a tag opened above includes content/code from {host}.")
                 elif host in THIRD_PARTY_CDN:
                     _priv_add(privacy, "third-party-cdn", "info" if (is_doc or test_path) else "low", host, r, i, line,
                               f"Asset requested from {host}: it sees your IP and the page URL (third-party font/CDN)"
