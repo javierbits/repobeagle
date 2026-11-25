@@ -18,3 +18,4 @@ const replay = { maskAllInputs: true };
 document.cookie = "usprivacy=1YNN; path=/";
 document.cookie = "__hssc=1; path=/";
 const replayConfig = { replaysSessionSampleRate: 0.1 };
+const tracingConfig = { tracesSampleRate: 0.2 };

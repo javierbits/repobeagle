@@ -635,6 +635,7 @@ TELEMETRY_RULES = [
                                                         r"width:\s*1px[^\"']*height:\s*1px")),
     # crash / error reporting
     ("crash", "medium", "Sentry", _telem_rx(r"sentry\.io|@sentry/|sentry_sdk|sentry\.properties|\bsentry\b")),
+    ("apm", "medium", "Sentry Tracing", _telem_rx(r"tracesSampleRate|tracesSampler|@sentry/tracing")),
     ("crash", "medium", "Bugsnag", _telem_rx(r"\bbugsnag\b")),
     ("crash", "medium", "Rollbar", _telem_rx(r"\brollbar\b")),
     ("crash", "medium", "Raygun", _telem_rx(r"\braygun\b")),
@@ -1465,7 +1466,8 @@ RETENTION_RE = re.compile(r"(?i)\b(data[_-]?retention|retention[_-]?(?:days|peri
 UPLOAD_SINK_RE = re.compile(r"(?i)(multipart/form-data|UploadFile|FileUpload|req\.files\b|request\.FILES|multer|"
                             r"formidable|busboy|\bupload\b|files\[\])")
 UPLOAD_LIMIT_RE = re.compile(r"(?i)(max[_-]?(?:file|upload|content|body)[_-]?(?:size|length)?|client_max_body_size|"
-                             r"MAX_CONTENT_LENGTH|limits\s*[:=]|fileSizeLimit|maxBytes|sizeLimit|body[_-]?limit)")
+                             r"MAX_CONTENT_LENGTH|limits\s*[:=]|fileSizeLimit|maxBytes|sizeLimit|body[_-]?limit|"
+                             r"LimitRequestBody)")
 IOS_DATA_TYPE_RE = re.compile(r"NSPrivacyCollectedDataType([A-Z][A-Za-z]+)")
 IOS_DATA_TYPE_NAMES = {
     "Name": "name", "EmailAddress": "email", "PhoneNumber": "phone number", "PhysicalAddress": "postal address",

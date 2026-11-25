@@ -62,7 +62,7 @@ A repo that is safe to run is not necessarily safe to *use*. The `telemetry` che
 | `telemetry-ads` | advertising/attribution pixels and SDKs with per-device IDs: Meta, TikTok, LinkedIn, X/Twitter, Pinterest, Reddit, Microsoft UET, **Google AdSense/Ad Manager**, Criteo, Taboola, Outbrain, Amazon Ads, Snap, AppsFlyer, Adjust, Branch | high/medium |
 | `telemetry-crash` | uploads stack traces and payloads, often file paths, env and request data: Sentry, Bugsnag, Rollbar, Raygun, Honeybadger, Airbrake, Exceptionless, Crashlytics, Application Insights, Backtrace | medium |
 | `telemetry-analytics` | page views, events and persistent IDs: Google Tag Manager (`GTM-*`), Google Analytics/gtag, Firebase Analytics, tracking pixels (`1x1`, `width=1 height=1`), Plausible, Umami, Matomo/Piwik, Fathom, GoatCounter, Simple Analytics, Cloudflare/Vercel Analytics/Speed Insights, Segment, Mixpanel, Amplitude, PostHog, Heap, Countly, Adobe, Yandex Metrica, Baidu, WordPress Stats, Snowplow, RudderStack, Pendo, Optimizely, VWO, HubSpot, Klaviyo, Braze, OneSignal, Customer.io, Tealium, Mailchimp, Intercom, tracking pixels | medium/low |
-| `telemetry-apm` | spans, logs or metrics are exported: **OpenTelemetry (OTEL/OTLP)**, Datadog APM (incl. `datadog*.yml`), New Relic, Elastic APM, Honeycomb, Dynatrace, Instana, AppSignal, Grafana Faro | medium/low |
+| `telemetry-apm` | spans, logs or metrics are exported: **OpenTelemetry (OTEL/OTLP)**, Datadog APM (incl. `datadog*.yml`), New Relic, Elastic APM, Honeycomb, Dynatrace, Instana, AppSignal, Grafana Faro, **Sentry Tracing** (`tracesSampleRate`) | medium/low |
 | `telemetry-devtool` | build/CLI tools that report usage: Next.js, Nuxt, Astro, Gatsby, Turbo, Angular CLI, .NET CLI, Homebrew, HashiCorp checkpoint, Scarf | low |
 | `telemetry-identify` | SDK calls that attach a user identity/attributes: `.identify()`, `.alias()`, `setUserId`/`setUserEmail`/`setUserProperties` (and snake_case `set_user*`), `Sentry.setUser`/`sentry_sdk.set_user`; the vendor then links events to that person; only reported when a telemetry vendor is detected | low |
 
@@ -121,7 +121,7 @@ Severity follows privacy impact, so a default `balanced` scan goes YELLOW when a
 | `tracking-params` | URLs carrying `utm_*`, `fbclid`, `gclid`, `msclkid`, `ttclid`, `yclid`, `li_fat_id`, `s_kwcid`, `epik`, `mc_eid`, `_gl`, `gclsrc`, … campaign/linker parameters; `low` in code/config, `info` for links in docs | low/info |
 | `pii-in-url` | URLs with personal data in the query (`?email=`, `?phone=`, `?name=`, `?address=`, …): leaks via Referer, access logs, proxies and browser history; `low` in code, `info` for docs links | low/info |
 | `data-retention` | retention/expiry windows in config/code (`retention_days`, `ttl`, `expires`, `delete_after`, …); `low` when the repo collects data but no retention setting exists | info/low |
-| `upload-surface`, `upload-limit` | endpoints accepting files/request bodies, and size caps (`max_file_size`, `MAX_CONTENT_LENGTH`, `client_max_body_size`, `limits:`, …); `low` when uploads have no cap | info/low |
+| `upload-surface`, `upload-limit` | endpoints accepting files/request bodies, and size caps (`max_file_size`, `MAX_CONTENT_LENGTH`, `client_max_body_size`, `LimitRequestBody`, `limits:`, …); `low` when uploads have no cap | info/low |
 | `store-disclosure` | browser-extension data-collection declarations (Firefox `data_collection_permissions`); info when disclosures only exist on the store | info |
 | `referrer-policy` | `Referrer-Policy` header, `<meta name="referrer">`, `referrerpolicy=` attributes, `fetch(..., {referrerPolicy})` or `rel="noreferrer"`; `low` when third-party requests exist without one or with `unsafe-url` (the full URL leaks in `Referer`) | info/low |
 | `permissions-policy` | `Permissions-Policy` header; `low` when camera/microphone/geolocation/screen/clipboard APIs are used without one | info/low |
@@ -242,7 +242,7 @@ Apart from the clone, OSV/GuardDog-verify, the GitHub trust lookup and your own 
 
 ## Example output (abridged)
 ```
-repobeagle 1.107.0  |  tests/fixtures/trap-npm
+repobeagle 1.108.0  |  tests/fixtures/trap-npm
   VERDICT: RED    2 critical / 2 high findings, e.g. npm lifecycle script 'postinstall' runs automatically on install (package.json:8)
   CRITICAL [agent-checks] package.json:8
            npm lifecycle script 'postinstall' runs automatically on install
