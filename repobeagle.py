@@ -1301,7 +1301,8 @@ FINGERPRINT_RULES = [
     ("timezone", "low", r"resolvedOptions\(\)\.timeZone|Intl\.DateTimeFormat|toLocaleString\(", "Timezone/locale: narrows down the user's location and language."),
 ]
 FINGERPRINT_MEANING = "Device-fingerprinting signal: combine several and a browser can be recognized without cookies."
-IDENTIFY_RE = re.compile(r"(?i)\.(identify|setUser(?:Id|Email|Properties)?|alias)\s*\(|\bSentry\.setUser\b")
+IDENTIFY_RE = re.compile(r"(?i)\.(identify|setUser(?:Id|Email|Properties)?|set_user(?:_id|_email|_properties)?|alias)\s*\("
+                        r"|\b(Sentry\.setUser|sentry_sdk\.set_user)\b")
 PII_LOG_RE = re.compile(r"(?i)(console\.(log|info|warn|error|debug|trace|table|dir)|log(ger)?\.(info|warn|error|debug|exception|critical)|"
                         r"\bprint|printf|puts|fmt\.Print|tracing::(info|warn|error|debug)|log\.\w+|"
                         r"println!|eprintln!|log::(?:info|warn|error|debug)|System\.out\.print|Log\.[dviwe]\s*\(|"
@@ -1566,8 +1567,9 @@ def check_privacy_signals(root, p, text, privacy):
                            "The logged argument name suggests personal data (user/account/profile/…); verify the destination and retention."))
         if not comment:
             for m in IDENTIFY_RE.finditer(line):
-                _priv_add(privacy, "telemetry-identify", "low", m.group(1), r, i, line,
-                          f"Call to {m.group(1)}() sends a user identifier/attributes to the analytics or crash SDK; "
+                name = m.group(1) or m.group(2).split(".")[-1]
+                _priv_add(privacy, "telemetry-identify", "low", name, r, i, line,
+                          f"Call to {name}() sends a user identifier/attributes to the analytics or crash SDK; "
                           "check what the payload includes and whether the user can opt out.")
         if not comment and not re.match(r"\s*\(", line):
             for m in TRACKING_COOKIE_RE.finditer(line):
