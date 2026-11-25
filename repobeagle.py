@@ -1191,6 +1191,7 @@ TRACKING_COOKIE_VENDORS = [
     ("_pin_unauth", "Pinterest"),
 ]
 SSN_RE = re.compile(r"\b\d{3}-\d{2}-\d{4}\b")
+TEL_LINK_RE = re.compile(r"(?i)href\s*=\s*[\"']tel:([+0-9 ().-]+)")
 CARD_RE = re.compile(r"(?<![\d.])(?:\d{13,19}|\d{4}(?:[ ]\d{4}){3}|\d{4}[ -]\d{4}[ -]\d{4}[ -]\d{4}|\d{4}[ -]\d{6}[ -]\d{5})(?![\d.])")
 HASHY_RE = re.compile(r"(?i)(sha\d*|md5|hash|uuid|commit|0x[0-9a-f]+)")
 PII_SKIP_EXT = {".svg", ".sfd", ".glif", ".css", ".scss", ".map", ".lock", ".woff", ".woff2"}
@@ -1298,6 +1299,10 @@ def check_privacy_signals(root, p, text, privacy):
                           ("Role mailbox (support@, noreply@, …): not personal data." if role else
                            "Hardcoded email address (a person's PII or a DSN); check it is intended to be public."))
                 break
+            m = TEL_LINK_RE.search(line)
+            if m:
+                _priv_add(privacy, "pii-phone", "info", "tel:" + m.group(1).strip(), r, i, line,
+                          "tel: link exposes a phone number by design (contact info, not a leak).")
             m = PHONE_RE.search(line)
             if m:
                 _priv_add(privacy, "pii-phone", "low", m.group(0).strip(), r, i, line,

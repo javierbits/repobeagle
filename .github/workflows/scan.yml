@@ -16,6 +16,7 @@
 #       with:
 #         profile: balanced   # strict | balanced | relaxed
 #         fail-on-red: false  # true = the job fails on a RED verdict (PR gate)
+#         privacy-only: false # true = badge only privacy/telemetry findings
 #
 # The badge is self-attested: it lives in this repository. The report is signed
 # with Sigstore keyless signing; the signing identity is THIS workflow file in
@@ -32,6 +33,11 @@ on:
         type: string
       fail-on-red:
         description: "Fail the job when the verdict is RED"
+        required: false
+        default: false
+        type: boolean
+      privacy-only:
+        description: "Publish a privacy-only verdict (only privacy/telemetry findings)"
         required: false
         default: false
         type: boolean
@@ -110,6 +116,7 @@ jobs:
             relaxed)  S=--relaxed ;;
             *)        S=--balanced ;;
           esac
+          if [ "$PRIVACY_ONLY" = "true" ]; then S="$S --privacy-only"; fi
           set +e
           python3 "$TOOLS/repobeagle.py" scan . $S --json "$OUT/beagle.json" --no-color
           rc=$?
@@ -122,6 +129,7 @@ jobs:
           python3 -c 'import json,sys;d=json.load(open(sys.argv[1]));print("verdict:",d["verdict"],d["counts"])' "$OUT/beagle.json"
         env:
           PROFILE: ${{ inputs.profile }}
+          PRIVACY_ONLY: ${{ inputs.privacy-only }}
 
       - name: Attach provenance to the report
         run: |
