@@ -909,6 +909,25 @@ def own_domains(root):
         add(d.get("homepage"))
     except (OSError, ValueError):
         pass
+    try:
+        text = (root / "setup.cfg").read_text(errors="replace")
+        for m in re.finditer(r"(?mi)^\s*url\s*=\s*(\S+)", text):
+            add(m.group(1))
+    except OSError:
+        pass
+    try:
+        text = (root / "Cargo.toml").read_text(errors="replace")
+        for m in re.finditer(r'(?m)^\s*(?:homepage|repository|documentation)\s*=\s*"([^"]+)"', text):
+            add(m.group(1))
+    except OSError:
+        pass
+    try:
+        text = (root / "pubspec.yaml").read_text(errors="replace")
+        m = re.search(r"(?m)^\s*homepage:\s*(\S+)", text)
+        if m:
+            add(m.group(1))
+    except OSError:
+        pass
     return found
 
 def _is_own(host, own):
@@ -1065,7 +1084,8 @@ def check_privacy(root, p, text, privacy, own=()):
                 _priv_add(privacy, "android-permission", sev, perm, r, i, line,
                           f"Android app requests {what} ({perm}); the user must grant it and the app can read it.")
     if manifest:
-        groups = {"permissions": "permission", "optional_permissions": "permission", "host_permissions": "host access"}
+        groups = {"permissions": "permission", "optional_permissions": "permission",
+                  "host_permissions": "host access", "optional_host_permissions": "optional host access"}
         for field, label in groups.items():
             vals = manifest.get(field) or []
             if not isinstance(vals, list):
@@ -1073,7 +1093,7 @@ def check_privacy(root, p, text, privacy, own=()):
             for v in vals:
                 if not isinstance(v, str):
                     continue
-                broad = v in ("<all_urls>", "*://*/*")
+                broad = v in ("<all_urls>", "*://*/*") or re.match(r"^[a-z*]+://\*/", v) is not None
                 sev = "high" if broad else ("medium" if v in EXT_HIGH else "low")
                 _priv_add(privacy, "extension-permission", sev, v, r, _line_of(text, f'"{v}"'), f'"{v}" ({label})',
                           f"Browser extension requests '{v}': " + ("reads every page you visit." if broad else "access to this browser capability."))
@@ -1219,7 +1239,7 @@ TRACKING_COOKIE_RE = re.compile(r"(?i)(?<![\w.-])(_ga_[A-Z0-9]+|_gac_[A-Za-z0-9]
                                 r"_fbp|_fbc|_hj\w*|ajs_\w*|__utm[a-z]|__hstc|hubspotutk|intercom-[\w-]+|mp_\w+|"
                                 r"amplitude_id\w*|ph_\w+|_clck|_clsk|_uetvid|_uetsid|_ttp|_rdt_uuid|li_sugr|"
                                 r"bcookie|lidc|_pin_unauth|IDE|NID)(?=[=;'\"\s,)]|$)")
-PII_ROLE_RE = re.compile(r"(?i)^(no-?reply|do-?not-?reply|support|info|hello|hi|hey|team|security|admin|contact|"
+PII_ROLE_RE = re.compile(r"(?i)^(no-?_?reply|do-?not-?reply|bounce|notifications?|news|events|hr|recruiting|partners|support|info|hello|hi|hey|team|security|admin|contact|"
                          r"sales|press|jobs|careers|billing|legal|privacy|dpo|abuse|postmaster|webmaster|mail|"
                          r"office|help|feedback|newsletter|marketing|dev|developers)([+._-].*)?$")
 TRACKING_COOKIE_VENDORS = [
