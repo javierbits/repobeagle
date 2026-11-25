@@ -1064,6 +1064,11 @@ def check_privacy(root, p, text, privacy, own=()):
             _priv_add(privacy, "tracking-params", "low", "utm/campaign parameters", r, i, line,
                       "URL carries campaign/tracking parameters (utm_*, fbclid, gclid, …): links leak referrer and campaign identity.")
         if not _is_comment(line):
+            m = VENDOR_PII_RE.search(line)
+            if m:
+                _priv_add(privacy, "vendor-pii", "low", m.group(0).split(":")[0].strip(), r, i, line,
+                          "SDK configured to attach personal data (IP, user profiles) to its telemetry; check the vendor's defaults.")
+        if not _is_comment(line):
             m = PII_URL_RE.search(line)
             if m:
                 _priv_add(privacy, "pii-in-url", "low", m.group(1).lower(), r, i, line,
@@ -1321,6 +1326,8 @@ TRACKING_COOKIE_RE = re.compile(r"(?i)(?<![\w.-])(_ga_[A-Z0-9]+|_gac_[A-Za-z0-9]
                                 r"_fbp|_fbc|_hj\w*|ajs_\w*|__utm[a-z]|__hstc|hubspotutk|intercom-[\w-]+|mp_\w+|"
                                 r"amplitude_id\w*|ph_\w+|_clck|_clsk|_uetvid|_uetsid|_ttp|_rdt_uuid|li_sugr|"
                                 r"bcookie|lidc|_pin_unauth|IDE|NID)(?=[=;'\"\s,)]|$)")
+VENDOR_PII_RE = re.compile(r"(?i)(send_?default_?pii\s*[:=]\s*true|person_?profiles\s*[:=]\s*[\"']always[\"']|"
+                            r"anonymize_?ip\s*[:=]\s*false|store_?ip\s*[:=]\s*true|track_?ip\s*[:=]\s*true)")
 ZIP_CONTEXT_RE = re.compile(r"(?i)\b(zip|zip[_-]?code|postal|postcode|postleitzahl|plz)\b")
 ZIP_RE = re.compile(r"\b(\d{5}(?:-\d{4})?|[A-Z]{1,2}\d[A-Z\d]?\s?\d[A-Z]{2})\b")
 PII_ROLE_RE = re.compile(r"(?i)^(no-?_?reply|do-?not-?reply|bounce|notifications?|news|events|hr|recruiting|partners|support|info|hello|hi|hey|team|security|admin|contact|"
@@ -1460,8 +1467,8 @@ def check_privacy_signals(root, p, text, privacy):
                 addr = m.group(0)
                 if addr.lower() in EMAIL_IGNORE or addr.lower().endswith((".example", ".invalid", ".local")):
                     continue
-                if re.search(r"(?i)@(example\.(com|org|net)|sentry\.io|ingest\.sentry\.io)$", addr):
-                    continue
+                if re.search(r"(?i)@(example\.(com|org|net)|(?:[\w-]+\.)*sentry\.io)$", addr):
+                    continue          # example domains and Sentry DSNs are not personal emails
                 role = PII_ROLE_RE.match(addr.split("@", 1)[0])
                 _priv_add(privacy, "pii-email", "info" if role else "low", addr.lower(), r, i, line,
                           ("Role mailbox (support@, noreply@, …): not personal data." if role else
@@ -1565,7 +1572,7 @@ def privacy_findings(privacy):
         "pii-in-url": 10, "tracking-cookie": 11, "tracking-params": 12, "browser-capability": 13,
         "macos-entitlement": 14, "client-id": 15, "ios-tracking": 16, "ios-tracking-domain": 17,
         "ios-api-category": 18, "ios-data-type": 19, "ios-purpose-string": 20, "dnt-respect": 21,
-        "consent-gating": 22, "consent-order": 23, "consent-mode": 24, "consent-state": 25,
+        "consent-gating": 22, "consent-order": 23, "consent-mode": 24, "consent-state": 25, "vendor-pii": 26,
         "data-retention": 26, "upload-surface": 27, "upload-limit": 28, "store-disclosure": 29,
         "insecure-endpoint": 30, "external-endpoint": 31, "first-party-endpoint": 32, "third-party-cdn": 33,
         "third-party-script": 34, "third-party-stylesheet": 35, "third-party-media": 36,
