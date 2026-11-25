@@ -23,3 +23,4 @@ console.dir(user);
 fetch("https://widget.dev/ping", {referrerPolicy: "no-referrer"});
 fbq('init', '123');
 const criteo = 'https://static.criteo.net/js/ld/ld.js';
+document.querySelectorAll(".adsbygoogle");
