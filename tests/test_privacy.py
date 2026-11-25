@@ -144,4 +144,12 @@ with tempfile.TemporaryDirectory() as td:
     big_findings, _ = rb.run_agent_checks(Path(td))
     check("huge file skipped for telemetry", not any(f["title"].startswith("telemetry-analytics: PostHog") for f in big_findings))
 
+with tempfile.TemporaryDirectory() as td:
+    f = Path(td) / "alert.sh"
+    f.write_text('source "$(dirname "$0")/.env"\nHOST=$(hostname)\ncurl -fsS -X POST -d "host=$HOST" "$ALERT_WEBHOOK"\n')
+    ex = []
+    rb.check_exfil(Path(td), f, f.read_text(), ex)
+    check("env read near network is not critical", ex and all(x["severity"] != "critical" for x in ex))
+    check("env read is reported as medium", any(x["severity"] == "medium" for x in ex))
+
 sys.exit(fail)
