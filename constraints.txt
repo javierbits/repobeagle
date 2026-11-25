@@ -1,0 +1,6 @@
+# Exact versions of the scanners installed into the image. Bump deliberately:
+# a weekly image rebuild must not silently change what produced a report.
+# (Transitive dependencies of these packages are still resolved by pip.)
+semgrep==1.187.0
+guarddog==3.2.0
+bandit==1.9.4

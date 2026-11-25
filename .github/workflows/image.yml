@@ -4,11 +4,12 @@ on:
     branches: [main]
     tags: ["v*"]
   schedule:
-    - cron: "17 4 * * 1"   # weekly (Mon 04:17 UTC): refresh scanners
+    - cron: "17 4 * * 1"   # weekly: prove the pinned toolchain still builds (versions only move when bumped)
   workflow_dispatch:
 permissions:
   contents: read
   packages: write
+  id-token: write   # keyless signing of the pushed image
 concurrency:
   group: image-${{ github.ref }}
   cancel-in-progress: true
@@ -37,6 +38,7 @@ jobs:
             type=ref,event=tag
             type=raw,value=stable,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
       - uses: docker/build-push-action@v6
+        id: build
         with:
           context: .
           platforms: linux/amd64,linux/arm64
@@ -45,6 +47,10 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v3
+      - name: Sign the image by digest (keyless)
+        run: cosign sign --yes "ghcr.io/${{ github.repository_owner }}/repobeagle@${{ steps.build.outputs.digest }}"
       - name: Smoke test (amd64, offline, trap fixture must be RED)
         run: |
           mkdir -p /tmp/out
