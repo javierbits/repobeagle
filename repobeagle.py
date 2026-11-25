@@ -987,6 +987,15 @@ def check_privacy(root, p, text, privacy):
                 if v in ("<all_urls>", "*://*/*"):
                     _priv_add(privacy, "extension-permission", "high", "content_scripts:<all_urls>", r, _line_of(text, v), v,
                               "Content script runs on every page; it can read page content and inject into it.")
+        for war in manifest.get("web_accessible_resources") or []:
+            matches = (war.get("matches") if isinstance(war, dict) else None) or []
+            res = (war.get("resources") if isinstance(war, dict) else None) or []
+            broad = any(v in ("<all_urls>", "*://*/*") for v in matches)
+            _priv_add(privacy, "extension-resource", "low" if broad else "info",
+                      "web_accessible_resources" + (":<all_urls>" if broad else ""), r,
+                      _line_of(text, "web_accessible_resources"), f"{len(res)} resource(s), matches {matches}",
+                      "Extension files exposed to web pages: any site can load them and detect the extension (fingerprinting vector)."
+                      if broad else "Extension files exposed to specific sites; low risk.")
         gecko = ((manifest.get("browser_specific_settings") or {}).get("gecko") or {})
         dcp = gecko.get("data_collection_permissions")
         if dcp:
@@ -1101,20 +1110,22 @@ CMP_LOAD_RE = re.compile(r"(?i)(cookiebot|onetrust|optanon|osano|cookieyes|klaro
 PII_OBJECT_RE = re.compile(r"(?i)\b(user|users|account|customer|profile|session|member|subscriber|person|lead|contact|"
                            r"request|response|body|payload|form|form_?data|req)\b")
 
-TRACKING_COOKIE_RE = re.compile(r"(?i)(?<![\w.-])(_ga_[A-Z0-9]+|_ga|_gid|_gat|_gcl_au|_gcl_aw|_fbp|_fbc|_hjid|_hjsession\w*|ajs_\w*|"
-                                r"__hstc|hubspotutk|intercom-[\w-]+|mp_\w+|amplitude_id\w*|ph_\w+|"
-                                r"_clck|_clsk|_uetvid|_uetsid|_ttp|_rdt_uuid|li_sugr|bcookie|lidc|_pin_unauth|IDE|NID)"
-                                r"(?=[=;'\"\s,)]|$)")
+TRACKING_COOKIE_RE = re.compile(r"(?i)(?<![\w.-])(_ga_[A-Z0-9]+|_gac_[A-Za-z0-9]+|_ga|_gid|_gat|_gcl_au|_gcl_aw|"
+                                r"_fbp|_fbc|_hj\w*|ajs_\w*|__utm[a-z]|__hstc|hubspotutk|intercom-[\w-]+|mp_\w+|"
+                                r"amplitude_id\w*|ph_\w+|_clck|_clsk|_uetvid|_uetsid|_ttp|_rdt_uuid|li_sugr|"
+                                r"bcookie|lidc|_pin_unauth|IDE|NID)(?=[=;'\"\s,)]|$)")
 PII_ROLE_RE = re.compile(r"(?i)^(no-?reply|do-?not-?reply|support|info|hello|hi|hey|team|security|admin|contact|"
                          r"sales|press|jobs|careers|billing|legal|privacy|dpo|abuse|postmaster|webmaster|mail|"
                          r"office|help|feedback|newsletter|marketing|dev|developers)([+._-].*)?$")
 TRACKING_COOKIE_VENDORS = [
-    ("_ga", "Google Analytics"), ("_gid", "Google Analytics"), ("_gat", "Google Analytics"),
+    ("_ga_", "Google Analytics"), ("_gac_", "Google Ads"), ("_ga", "Google Analytics"),
+    ("_gid", "Google Analytics"), ("_gat", "Google Analytics"),
     ("_gcl_au", "Google Ads"), ("_gcl_aw", "Google Ads"), ("IDE", "Google DoubleClick"), ("NID", "Google"),
     ("_fbp", "Meta Pixel"), ("_fbc", "Meta Pixel"), ("_hjid", "Hotjar"), ("_hjsession", "Hotjar"),
     ("ajs_", "Segment"), ("__hstc", "HubSpot"), ("hubspotutk", "HubSpot"), ("intercom-", "Intercom"),
     ("mp_", "Mixpanel"), ("amplitude_id", "Amplitude"), ("ph_", "PostHog"), ("_clck", "Microsoft Clarity"),
     ("_clsk", "Microsoft Clarity"), ("_uetvid", "Microsoft Ads"), ("_uetsid", "Microsoft Ads"), ("_ttp", "TikTok"),
+    ("__utm", "Google Analytics (legacy)"), ("_hj", "Hotjar"),
     ("_rdt_uuid", "Reddit"), ("li_sugr", "LinkedIn"), ("bcookie", "LinkedIn"), ("lidc", "LinkedIn"),
     ("_pin_unauth", "Pinterest"),
 ]
@@ -1295,7 +1306,7 @@ def privacy_findings(privacy):
              "android-permission": 26, "extension-permission": 27, "cookie-flags": 28, "cookie-write": 29,
              "third-party-cdn": 30, "third-party-embed": 31, "third-party-form": 32, "third-party-script": 33, "cookie-lifetime": 34, "external-endpoint": 35,
              "browser-storage": 36, "consent-manager": 37, "referrer-policy": 38, "permissions-policy": 39,
-             "undisclosed-vendor": 40, "privacy-doc": 41}
+             "extension-resource": 40, "undisclosed-vendor": 41, "privacy-doc": 42}
     down = {"high": "medium", "medium": "low", "low": "info"}
     fs = []
     for (rule, key), t in sorted(privacy.items(), key=lambda kv: (order.get(kv[1]["rule"], 9), kv[1]["key"])):
