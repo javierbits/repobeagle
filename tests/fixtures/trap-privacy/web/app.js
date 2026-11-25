@@ -22,3 +22,6 @@ const tracingConfig = { tracesSampleRate: 0.2 };
 document.cookie = "seen=1; max-age=0";
 localStorage.theme = "dark";
 Cookies.set("seen", "1");
+const [picked] = await showOpenFilePicker();
+const pay = new PaymentRequest([{ supportedMethods: "basic-card" }], details);
+const touch = navigator.maxTouchPoints > 0;

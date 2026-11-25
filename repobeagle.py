@@ -1399,7 +1399,7 @@ FINGERPRINT_RULES = [
     ("audio", "medium", r"AudioContext|OfflineAudioContext|OscillatorNode|AudioBuffer", "Audio stack fingerprint: sample-rate/oscillator quirks are device-specific."),
     ("fonts", "medium", r"measureText|document\.fonts|FontFace\(|font-family.*local\(", "Font metrics/measuring: installed-font sets are device-specific."),
     ("screen", "low", r"screen\.(width|height|colorDepth|pixelDepth)|devicePixelRatio|screen\.avail", "Screen geometry/color depth: display fingerprint."),
-    ("user-agent", "low", r"navigator\.userAgent|navigator\.platform|navigator\.hardwareConcurrency|navigator\.deviceMemory|navigator\.plugins|navigator\.languages", "Browser/device capabilities: UA, cores, memory, plugins, languages."),
+    ("user-agent", "low", r"navigator\.userAgent|navigator\.platform|navigator\.hardwareConcurrency|navigator\.deviceMemory|navigator\.plugins|navigator\.languages|navigator\.maxTouchPoints", "Browser/device capabilities: UA, cores, memory, plugins, languages, touch points."),
     ("timezone", "low", r"resolvedOptions\(\)\.timeZone|Intl\.DateTimeFormat\(\s*\)|toLocale(?:String|DateString|TimeString)\(\s*\)", "Timezone/locale: narrows down the user's location and language."),
     ("webrtc", "medium", r"RTCPeerConnection|createDataChannel\s*\(", "WebRTC peers see your public IP and can probe NAT/firewall; connections may be made before consent."),
     ("battery/network", "low", r"navigator\.getBattery|navigator\.connection\b", "Battery/network state narrows the device and can be sampled repeatedly."),
@@ -1487,6 +1487,10 @@ BROWSER_CAPABILITIES = [
      "Talks to local devices over USB/serial/Bluetooth."),
     ("storage access", "low", r"document\.hasStorageAccess|requestStorageAccess\s*\(",
      "Cross-site cookie/storage access."),
+    ("file picking", "low", r"showOpenFilePicker|showSaveFilePicker|showDirectoryPicker",
+     "Asks the user for local files/directories (chosen files are read by the page)."),
+    ("payment", "medium", r"\bPaymentRequest\b|ApplePaySession|requestPayment\s*\(",
+     "Reads payment details/instrument data from the browser's autofill."),
 ]
 CLIENT_ID_RE = re.compile(r"(?i)\b(client_?id|device_?id|visitor_?id|anonymous_?id|distinct_?id|installation_?id)\b")
 CLIENT_ID_CONTEXT_RE = re.compile(r"(?i)(localStorage|sessionStorage|document\.cookie|cookie|uuid|randomUUID|nanoid|v4\s*\(|guid)")
