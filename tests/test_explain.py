@@ -27,6 +27,9 @@ cases = {
 }
 for prof, rows in cases.items():
     check(f"{prof} thresholds", all(rb.verdict(fs, prof, None)[0] == want for fs, want in rows))
+# an AI review can set RED with zero findings: the reason must not index an empty list
+v, why, _ = rb.verdict([], "balanced", {"intent": "malicious", "confidence": 0.9})
+check("AI-forced RED without findings", v == "RED" and "AI review" in why)
 
 # accepting rules: the count that remains is always available, and the verdict follows
 findings = [f("critical", "critical-rule"), f("high", "high-rule", 2), f("high", "high-rule", 3),
@@ -78,5 +81,12 @@ with tempfile.TemporaryDirectory() as td:
     check("--write without a selection rejected", run("--write").returncode == 1)
     check("plain explain on a good report exits 0", subprocess.run(
         base[:3] + [str(report)], capture_output=True).returncode == 0)
+    ai = Path(td) / "ai.json"
+    ai.write_text(json.dumps({
+        "version": "1.155.0", "verdict": "RED", "meta": {"profile": "balanced"}, "findings": findings,
+        "ai_review": {"intent": "malicious", "confidence": 0.9}}))
+    r = subprocess.run(base[:3] + [str(ai), "--target", "green"], capture_output=True, text=True, timeout=120)
+    check("AI-forced RED does not loop and says why", r.returncode == 0
+          and "target green: NOT reached" in r.stdout and "AI review sets the verdict" in r.stdout)
 
 sys.exit(fail)
