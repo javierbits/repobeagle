@@ -75,6 +75,7 @@ python3 tests/test_toolchain.py || fail=1
 python3 tests/test_explain.py || fail=1
 python3 tests/test_rule_fixtures.py || fail=1
 python3 tests/test_fuzz.py || fail=1
+python3 tests/test_determinism.py || fail=1
 tests/test_cleanup.sh || fail=1
 # Determinism: the same fixture must produce identical findings (timings excluded).
 d1=$(mktemp); d2=$(mktemp)

@@ -245,7 +245,7 @@ repobeagle verify javierbits/javierbits.github.io
 #   freshness: UP TO DATE (HEAD a7cb435002de)
 ```
 
-Exit codes: 0 = signature valid and report covers HEAD, 1 = invalid signature or missing report, 2 = valid but stale (report is older than HEAD). Local files work too: `repobeagle verify --report report.json --bundle report.sigstore.json`. What it runs under the hood:
+Exit codes: 0 = signature valid and report covers HEAD, 1 = invalid signature or missing report, 2 = valid but stale (report is older than HEAD), 3 = `--rescan` normalized findings differ from the signed report. Local files work too: `repobeagle verify --report report.json --bundle report.sigstore.json`. Add `--rescan` to re-scan the report's pinned commit with your install and compare the normalized core (timings and the host-side OSV/trust stages excluded, see [Determinism](#determinism)). What it runs under the hood:
 
 ```bash
 cosign verify-blob \
@@ -337,6 +337,7 @@ CI enforces all of it:
 |---|---|---|
 | `ci.yml` | every push / PR | `py_compile`, `ruff --select E9,F63,F7,F82`, `mypy`, and `tests/run_tests.sh --offline` (hermetic: no image, no network scanners) |
 | `toolchain.yml` | Dockerfile/constraints/lock/scanner changes | builds the image and asserts the pinned toolchain and identical `meta.tools` across runs |
+| `arch.yml` | scanner, Dockerfile, rule or fixture changes | builds the image for amd64 and arm64 (QEMU), scans the same fixture on both and fails unless the normalized core and `meta.tools` are equal |
 | `nightly.yml` | schedule / manual | `tests/run_tests.sh` against the real corpus (network, osv.dev, GitHub API); red is allowed, it never blocks a PR |
 | `image.yml` | tags / main / weekly | builds, signs and publishes the multi-arch image |
 
@@ -353,6 +354,7 @@ The rule-pair check is automatic: `tests/test_rule_fixtures.py` parses the `RULE
 | tests/test_privacy.py (redaction, card check, privacy summary, first-party inference, suppression units) | pass |
 | tests/test_toolchain.py (scanner pins, drift detection, lock/constraints consistency) | pass |
 | tests/test_explain.py (verdict arithmetic per profile, planner transitions, `--write`) | pass |
+| tests/test_determinism.py (normalization: order/timings/paths ignored, real changes caught) | pass |
 | tests/test_rule_fixtures.py (positive fixture fires every declared rule; control-clean fires none) | pass |
 | tests/test_fuzz.py (bounded Hypothesis targets: `decode_tags`, `redact_pii`, `check_unicode`, `check_markdown_hidden`) | pass |
 | psf/requests, tj/commander.js | GREEN/YELLOW |
@@ -373,6 +375,11 @@ To bump a scanner, do all of this in one PR:
    ```
 3. `./install.sh --build-local`, then scan `tests/fixtures/trap-npm`: it must stay RED and `meta.tools` must name the new versions.
 4. Bump `VERSION` and push the tag; `image.yml` builds amd64+arm64, signs the image and publishes it.
+
+## Determinism
+The same commit, scanned offline by the same image digest, produces the same normalized report core: findings (`tool`, `severity`, `rule`, `file`, `line`, `title`, `meaning`, `snippet`, suppression state, `remediation`), the scanner versions, capabilities and coverage, sorted by a total key and hashed with SHA-256. **Not** part of the comparison: timings, the scan target path, dict/list insertion order, and the host-side OSV/GitHub-trust stages (network, they change by day). This is what makes a signed report meaningful: `arch.yml` builds the image for amd64 and arm64, scans `tests/fixtures/trap-privacy` on both, and fails unless the normalized core and `meta.tools` are equal; `verify --rescan` re-scans the report's pinned commit with your install (offline stages only) and exits 3 when the core differs. A reordering is ignored by design, and `tests/test_determinism.py` proves the comparison stays order-insensitive while still catching field changes, added/removed findings and toolchain bumps.
+
+Scope: the guarantee covers the offline scanner stages on one commit and one image digest. It does not cover osv.dev or the GitHub trust API (network), a different commit/ref than the one recorded, or `--verify-deps` (it downloads dependency packages).
 
 ## What it catches, and what it doesn't
 **Catches**: obvious install-time payloads, credential theft patterns, hidden or invisible agent instructions, MCP tool poisoning, over-privileged agent configs, committed secrets, known-vulnerable or known-malicious dependencies, obfuscated loaders, dangerous C APIs, and weak Go crypto or injectable SQL built by concatenation. Also flags **telemetry and trackers** (analytics, session replay, ad pixels, crash reporting, APM/OTEL, dev-tool and transitive dependency telemetry) and **privacy signals** (device fingerprinting, Android/browser-extension/macOS permissions, plaintext endpoints, cookie flags, IP logging, PII in logs/source, tracking parameters, consent managers, Do-Not-Track handling, iOS/macOS privacy manifests, missing privacy policy) so you know what a repo reports, to whom, and whether it documents an opt-out.

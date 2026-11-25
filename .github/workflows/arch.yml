@@ -1,0 +1,77 @@
+# Cross-architecture determinism: the same fixture scanned by the same image built for
+# amd64 and arm64 must produce the same normalized core (findings, toolchain versions,
+# capabilities, coverage). Timings and the scan path are not compared; see README.md.
+name: arch-determinism
+on:
+  push:
+    branches: [main]
+    paths:
+      - Dockerfile
+      - constraints.txt
+      - requirements.lock
+      - repobeagle.py
+      - rules/**
+      - tests/fixtures/**
+      - tests/test_determinism.py
+      - .github/workflows/arch.yml
+  pull_request:
+    paths:
+      - Dockerfile
+      - constraints.txt
+      - requirements.lock
+      - repobeagle.py
+      - rules/**
+      - tests/fixtures/**
+      - tests/test_determinism.py
+      - .github/workflows/arch.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: arch-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+      - name: Build the scanner image for both architectures
+        run: |
+          docker buildx build --platform linux/amd64 --tag rb:amd64 --load .
+          docker buildx build --platform linux/arm64 --tag rb:arm64 --load .
+      - name: Scan the same fixture on amd64 and arm64
+        run: |
+          for arch in amd64 arm64; do
+            mkdir -p "/tmp/out-$arch"
+            docker run --rm --platform "linux/$arch" --network none --read-only --tmpfs /tmp \
+              -v "$PWD/tests/fixtures/trap-privacy:/src:ro" -v "/tmp/out-$arch:/out" \
+              --user 0 "rb:$arch" /src /out
+          done
+      - name: Compare the normalized core and the toolchain
+        run: |
+          python3 - <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+          sys.path.insert(0, ".")
+          import repobeagle as rb
+
+          runs = {a: json.loads(Path(f"/tmp/out-{a}/inner.json").read_text()) for a in ("amd64", "arm64")}
+          counts = {a: len(rb.normalize_findings(r.get("findings"))) for a, r in runs.items()}
+          versions = {a: {k: v.get("version") for k, v in (r.get("tools") or {}).items()}
+                      for a, r in runs.items()}
+          fingerprints = {a: rb.report_fingerprint(r) for a, r in runs.items()}
+          print("findings:", counts)
+          print("toolchain:", versions)
+          print("normalized core:", fingerprints)
+          if versions["amd64"] != versions["arm64"]:
+              print("MISMATCH: meta.tools versions differ between architectures")
+              sys.exit(1)
+          if fingerprints["amd64"] != fingerprints["arm64"]:
+              print("MISMATCH: normalized findings/capabilities/coverage differ between architectures")
+              sys.exit(1)
+          print("PASS deterministic across amd64 and arm64")
+          PY

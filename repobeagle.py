@@ -3201,6 +3201,56 @@ def gate_findings(old, new, min_severity):
     thr = SEV_ORDER.get(min_severity, SEV_ORDER["medium"])
     return [f for f in added if SEV_ORDER.get(f["severity"], 0) >= thr], added, removed, old_n, new_n
 
+# Normalized determinism comparison: see "Determinism" in README.md for the guarantee and
+# its exact scope. Only these finding fields are compared; timings, host paths, the scan
+# order and the OSV/trust network stages are deliberately not part of the normalized core.
+NORMALIZED_FINDING_FIELDS = ("tool", "severity", "rule", "file", "line", "title", "meaning",
+                             "snippet", "suppressed", "remediation")
+NETWORK_TOOLS = ("osv-scanner", "trust")
+
+def normalize_findings(findings, offline_only=False):
+    """Order-independent, stable view of findings: documented fields only, sorted by a total key."""
+    out = []
+    for f in findings or []:
+        if not isinstance(f, dict) or f.get("severity") not in SEV_ORDER:
+            continue
+        if offline_only and f.get("tool") in NETWORK_TOOLS:
+            continue
+        out.append({k: f[k] for k in NORMALIZED_FINDING_FIELDS if k in f})
+    key = lambda f: (str(f.get("tool") or ""), str(f.get("severity") or ""), str(f.get("rule") or ""),
+                     str(f.get("file") or ""), int(f.get("line") or 0), str(f.get("title") or ""),
+                     str(f.get("snippet") or ""), bool(f.get("suppressed")), str(f.get("meaning") or ""))
+    return sorted(out, key=key)
+
+def report_fingerprint(d, offline_only=False):
+    """SHA-256 of the normalized core; equal for equal reports on any host or architecture.
+
+    Excludes timings, the scan target path, and (with offline_only) the host-side OSV/trust stages.
+    """
+    meta = d.get("meta") if isinstance(d.get("meta"), dict) else {}
+    tools = d.get("tools") if isinstance(d.get("tools"), dict) else meta.get("tools") or {}
+    versions = {str(k): (v or {}).get("version") for k, v in tools.items()
+                if isinstance(v, dict) and not (offline_only and k in NETWORK_TOOLS)}
+    core = {
+        "findings": normalize_findings(d.get("findings"), offline_only=offline_only),
+        "ruleset": meta.get("ruleset"),
+        "profile": meta.get("profile"),
+        "privacy_mode": meta.get("privacy_mode"),
+        "tool_versions": versions,
+        "capabilities": d.get("capabilities") or meta.get("capabilities"),
+        "coverage": d.get("coverage") or meta.get("coverage"),
+    }
+    return hashlib.sha256(json.dumps(core, sort_keys=True, separators=(",", ":")).encode("utf-8")).hexdigest()
+
+def rescan_difference(signed, fresh, offline_only=True):
+    """(match, added, removed) between a signed report and a fresh scan of the same commit."""
+    if report_fingerprint(signed, offline_only=offline_only) == report_fingerprint(fresh, offline_only=offline_only):
+        return True, [], []
+    added, removed, _, _ = diff_reports(
+        {"findings": normalize_findings(signed.get("findings"), offline_only=offline_only)},
+        {"findings": normalize_findings(fresh.get("findings"), offline_only=offline_only)})
+    return False, added, removed
+
 def cmd_diff(a):
     """Compares two stored reports and fails when the change added findings at/above --min-severity. Never scans."""
     try:
@@ -4071,8 +4121,60 @@ def _ensure_cosign():
         return None
     return dest
 
+def _verify_rescan(a, d, slug, color):
+    """Re-scans the report's pinned commit with this install and compares the normalized core.
+
+    Returns an exit code (0 match, 1 failure, 3 mismatch) or None when the report has no pin.
+    """
+    meta = d.get("meta") or {}
+    sha = str(meta.get("scanned_sha") or "")
+    repo = slug or str(meta.get("scanned_repo") or "")
+    if not (re.fullmatch(r"[0-9a-f]{40}", sha) and re.fullmatch(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+", repo)):
+        print("  rescan:    SKIPPED (the report has no pinned commit/repo; produced by an older workflow)")
+        return None
+    work = tempfile.mkdtemp(prefix="repobeagle-rescan-")
+    try:
+        out = Path(work) / "report.json"
+        prof = str(meta.get("profile") or "balanced")
+        if prof not in PROFILES:
+            prof = "balanced"
+        args = [sys.executable, os.path.abspath(__file__), "scan", f"https://github.com/{repo}",
+                "--ref", sha, "--json", str(out), "--no-osv", "--no-trust", "--" + prof]
+        mode = meta.get("privacy_mode")
+        if mode == "only":
+            args.append("--privacy-only")
+        elif mode == "excluded":
+            args.append("--no-privacy")
+        if meta.get("scope"):
+            print("  rescan:    note: the report scanned only changed files; the whole commit is rescanned here")
+        print(f"  rescan:    scanning {repo}@{sha[:12]} with this install (offline stages only) ...")
+        r = subprocess.run(args, capture_output=True, text=True, timeout=3600)
+        try:
+            fresh = json.loads(out.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            tail = ((r.stderr or r.stdout).strip().splitlines() or [""])[-1]
+            print(f"  rescan:    FAILED (scan exited {r.returncode}): {tail[:200]}")
+            return 1
+        match, added, removed = rescan_difference(d, fresh)
+        signed_fp = report_fingerprint(d, offline_only=True)
+        fresh_fp = report_fingerprint(fresh, offline_only=True)
+        if match:
+            print(f"  rescan:    {color('1;42;30', 'MATCH')} (normalized core {fresh_fp[:16]})")
+            return 0
+        print(f"  rescan:    {color('1;43;30', 'DIFFERENT')} (signed {signed_fp[:16]} vs rescan {fresh_fp[:16]}; "
+              f"{len(added)} new, {len(removed)} fixed)")
+        for f in added[:10]:
+            print(f"               new  {str(f.get('severity')).upper()} {f.get('title')} "
+                  f"[{f.get('file')}:{f.get('line')}]")
+        for f in removed[:10]:
+            print(f"               gone {str(f.get('severity')).upper()} {f.get('title')} "
+                  f"[{f.get('file')}:{f.get('line')}]")
+        return 3
+    finally:
+        shutil.rmtree(work, ignore_errors=True)
+
 def cmd_verify(a):
-    """Check that a published badge report is authentic and current. Exits 0/1/2."""
+    """Check that a published badge report is authentic and current. Exits 0/1/2 (3 with --rescan mismatch)."""
     print(banner(color_enabled(sys.stderr) and not a.no_color), file=sys.stderr)   # stderr keeps stdout reports clean
     if not ((a.report and a.bundle) or a.target):
         print("verify: give a github repo (slug or URL), or local --report + --bundle files", file=sys.stderr)
@@ -4169,15 +4271,20 @@ def cmd_verify(a):
                 head = g.stdout.split()[0]
             else:
                 print(f"  freshness: UNKNOWN (could not read HEAD of {slug})")
+        fresh_rc = 0
         if head and scanned:
             if scanned[:12] == head[:12]:
                 print(f"  freshness: {C('1;42;30', 'UP TO DATE')} (HEAD {head[:12]})")
-                return 0
-            print(f"  freshness: {C('1;43;30', 'STALE')} (report is for {scanned[:12]}, HEAD is {head[:12]})")
-            return 2
-        if not scanned:
+            else:
+                print(f"  freshness: {C('1;43;30', 'STALE')} (report is for {scanned[:12]}, HEAD is {head[:12]})")
+                fresh_rc = 2
+        elif not scanned:
             print("  freshness: UNKNOWN (report has no meta.scanned_sha; produced by an older workflow)")
-        return 0
+        if getattr(a, "rescan", False):
+            rc = _verify_rescan(a, d, slug, C)
+            if rc is not None:
+                return rc
+        return fresh_rc
     finally:
         shutil.rmtree(work, ignore_errors=True)
 
@@ -4354,6 +4461,9 @@ def main():
     v.add_argument("--bundle", help="local report.sigstore.json instead of fetching")
     v.add_argument("--expect-sha", help="commit SHA the report must cover (default: HEAD of the target repo)")
     v.add_argument("--identity-regexp", default=VERIFY_IDENTITY, help="allowed signing workflow identity")
+    v.add_argument("--rescan", action="store_true",
+                   help="re-scan the report's pinned commit with this install and compare the normalized findings "
+                        "(offline stages; exit 3 when they differ)")
     v.add_argument("--no-color", action="store_true")
     ex = sp.add_parser("explain", help="explain how a stored report's verdict follows from its profile thresholds")
     ex.add_argument("report", help="report.json produced by 'scan --json'")
