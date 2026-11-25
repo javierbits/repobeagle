@@ -84,4 +84,10 @@ with tempfile.TemporaryDirectory() as td:
     check("packages.lock.json packages", "Sentry" in lock("packages.lock.json", '{"dependencies": {"net8.0": {"Sentry": {}}}}'))
     check("sentry gem matches", any(rb._pkg_is("sentry-ruby", pat) for pat in ("sentry-",)))
 
+fs = [{"tool": "privacy", "title": "pii-email: a@b.c", "severity": "low", "file": "x", "line": 1, "snippet": "", "meaning": ""}]
+summary = rb.privacy_summary(fs)
+check("summary consistent", rb.privacy_summary_consistent({"version": rb.VERSION, "findings": fs, "privacy_summary": summary}))
+check("summary mismatch", not rb.privacy_summary_consistent({"version": rb.VERSION, "findings": fs, "privacy_summary": {"trackers": {"ads": ["x"]}}}))
+check("summary older version skipped", rb.privacy_summary_consistent({"version": "v0.1.0", "findings": fs, "privacy_summary": {"trackers": {}}}))
+
 sys.exit(fail)

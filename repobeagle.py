@@ -2338,6 +2338,17 @@ def run_in_docker(src, out):
     except Exception:
         raise SystemExit("container scan failed: " + (r.stderr or r.stdout)[-600:])
 
+def privacy_summary_consistent(report):
+    """True when the stored privacy_summary matches what the findings imply (skipped for older tool versions)."""
+    stored = report.get("privacy_summary")
+    if not stored:
+        return True
+    ver = report.get("version")
+    if ver and ver != VERSION:
+        return True          # grouping rules may have changed since the report was produced
+    findings = [f for f in report.get("findings") or [] if isinstance(f, dict) and not f.get("suppressed")]
+    return privacy_summary(findings) == stored
+
 def privacy_mode_consistent(report):
     """True when findings match the declared meta.privacy_mode (only/excluded/full)."""
     mode = (report.get("meta") or {}).get("privacy_mode")
@@ -2853,6 +2864,8 @@ def cmd_verify(a):
                   f"  scope:     {mode} (privacy findings excluded)" if mode == "excluded" else "  scope:     full")
         if not privacy_mode_consistent(d):
             print(f"  warning:   findings do not match meta.privacy_mode={mode!r}")
+        if not privacy_summary_consistent(d):
+            print("  warning:   privacy_summary does not match the findings")
         summary = d.get("privacy_summary") or privacy_summary(d.get("findings") or [])
         if summary:
             parts = []
