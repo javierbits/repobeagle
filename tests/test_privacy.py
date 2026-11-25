@@ -16,6 +16,7 @@ check("redacts email", rb.redact_pii("mail support@example.dev") == "mail s***@e
 check("redacts card", rb.redact_pii("4111 1111 1111 1111") == "4111 **** **** 1111")
 check("redacts ssn", rb.redact_pii("123-45-6789") == "***-**-6789")
 check("redacts phone", "****" in rb.redact_pii("+46701234567"))
+check("redacts local phone", "****" in rb.redact_pii("call (415) 555-0132"))
 check("keeps text", rb.redact_pii("no pii here") == "no pii here")
 check("url userinfo is not email", rb._in_url_authority("http://user:pass@host/path", 12))
 check("email outside authority", not rb._in_url_authority("contact user@host now", 10))

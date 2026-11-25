@@ -1490,6 +1490,8 @@ EMAIL_RE = re.compile(r"[\w.+-]+@[a-z0-9-]+(?:\.[a-z0-9-]+)+", re.I)
 EMAIL_IGNORE = {"git@github.com", "noreply@github.com", "actions@github.com"}
 EMAIL_IGNORE_RE = re.compile(r"(?i)@users\.noreply\.github\.com$")
 PHONE_RE = re.compile(r"(?<![A-Za-z0-9+])\+\d[\d ().-]{6,14}\d")
+PHONE_CONTEXT_RE = re.compile(r"(?i)(?:phone|telephone|mobile|cell|fax)\b|(?<![a-z])tel\b")
+PHONE_LOCAL_RE = re.compile(r"(?<!\d)(?:\+?1[-. ]?)?\(?\d{3}\)?[-. ]\d{3}[-.]\d{4}(?!\d)")
 IMPORT_NET_PY = re.compile(r"\b(requests|httpx|urllib3)\.\w+\s*\(|"
                             r"\baiohttp\.(?!ClientTimeout|ClientSession|TCPConnector|FormData)\w+\s*\(|"
                             r"\burlopen\s*\(|socket\.socket\s*\(|\bhttp\.client\.")
@@ -1842,6 +1844,11 @@ def check_privacy_signals(root, p, text, privacy, masks):
             if m and ext not in (".css", ".scss", ".sass", ".less", ".map"):
                 _priv_add(privacy, "pii-phone", "low", m.group(0).strip(), r, i, line,
                           "Hardcoded phone number in source/config (personal data); check it is intentional.")
+            elif ext not in (".css", ".scss", ".sass", ".less", ".map") and PHONE_CONTEXT_RE.search(line):
+                lm = PHONE_LOCAL_RE.search(line)
+                if lm:
+                    _priv_add(privacy, "pii-phone", "low", lm.group(0).strip(), r, i, line,
+                              "Local-format phone number next to a phone/tel keyword (personal data); check it is intentional.")
             m = ADDRESS_RE.search(line) or ADDRESS_INTL_RE.search(line)
             if m:
                 _priv_add(privacy, "pii-address", "low", m.group(0).strip(), r, i, line,
@@ -2745,7 +2752,8 @@ SUPPRESS_FILE = ".repobeagleignore"
 
 REDACT_EMAIL_RE = re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}")
 REDACT_CARD_RE = re.compile(r"(?<![\d.])(?:\d{4}[ -]?){3}\d{3,4}(?![\d.])")
-REDACT_PHONE_RE = re.compile(r"(?<![A-Za-z0-9+])\+\d[\d ().-]{6,14}\d")
+REDACT_PHONE_RE = re.compile(r"(?<![A-Za-z0-9+])\+\d[\d ().-]{6,14}\d|"
+                        r"(?<!\d)(?:\(\d{3}\)\s?|\d{3}[-. ])\d{3}[-.]\d{4}(?!\d)")
 
 def redact_pii(s):
     """Masks emails, phones, card numbers and US SSNs in a report line, so badges don't republish the PII they found."""

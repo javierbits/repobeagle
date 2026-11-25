@@ -27,3 +27,4 @@ const pay = new PaymentRequest([{ supportedMethods: "basic-card" }], details);
 const touch = navigator.maxTouchPoints > 0;
 navigator.serviceWorker.register("/sw.js");
 await navigator.share({ url: location.href });
+const supportPhone = "(415) 555-0132";
