@@ -994,9 +994,9 @@ def check_privacy(root, p, text, privacy, own=()):
         if len(line) > 2000:
             continue
         if scan_endpoints:
-            hosts = [(m.group(1).lower(), m.group(2).lower()) for m in URL_HOST_RE.finditer(line)]
-            hosts += [("https", m.group(1).lower()) for m in PROTO_REL_RE.finditer(line)]
-            for scheme, host in hosts:
+            hosts = [(um.group(1).lower(), um.group(2).lower(), um.start()) for um in URL_HOST_RE.finditer(line)]
+            hosts += [("https", pm.group(1).lower(), pm.start()) for pm in PROTO_REL_RE.finditer(line)]
+            for scheme, host, pos in hosts:
                 if host in NON_NET_HOSTS or _endpoint_noise(host):
                     continue
                 if any(rx.search(host) for _, _, _, rx in TELEMETRY_RULES):
@@ -1009,6 +1009,10 @@ def check_privacy(root, p, text, privacy, own=()):
                               f"Plaintext http:// to {host}: "
                               + ("requests and metadata are not encrypted in transit." if requested else
                                  "reference URL, not a request in this line."))
+                elif re.search(r"(?i)url\(\s*[\"']?$", line[:pos]) and not re.match(r"\s*@import", line):
+                    _priv_add(privacy, "third-party-media", "info" if host in THIRD_PARTY_CDN or _known_host(host) else "low",
+                              host, r, i, line,
+                              f"CSS url() asset from {host}: it sees your IP and the page URL.")
                 elif _is_own(host, own):
                     _priv_add(privacy, "first-party-endpoint", "info", host, r, i, line,
                               f"Own/related domain {host}: first-party traffic, not a third party.")
