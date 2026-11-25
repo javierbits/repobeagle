@@ -1397,6 +1397,9 @@ def check_privacy(root, p, text, privacy, own=()):
                 feat = m.group(1)
                 _priv_add(privacy, "android-feature", "info", feat, r, i, line,
                           f"Manifest declares hardware feature {feat}: the app is expected to use that sensor/capability.")
+            for qm in re.finditer(r'<package[^>]*android:name="([^"]+)"', line):
+                _priv_add(privacy, "android-queries", "info", qm.group(1), r, i, line,
+                          "Manifest <queries> lists an installed app this app can see/discover (Android 11 package visibility).")
             if re.search(r'android:usesCleartextTraffic\s*=\s*"true"', line):
                 _priv_add(privacy, "android-cleartext", "medium", "usesCleartextTraffic", r, i, line,
                           "App allows plaintext HTTP: requests and metadata can be read or modified on the way.")
@@ -1959,6 +1962,7 @@ def privacy_findings(privacy):
         "android-permission": 52, "android-feature": 53, "undisclosed-vendor": 54, "privacy-doc": 55,
         "telemetry-identify": 56, "session-replay-mask": 57,
         "android-cleartext": 58, "ios-cleartext": 59, "ios-tracking-declaration": 60,
+        "android-queries": 61,
     }
     down = {"high": "medium", "medium": "low", "low": "info"}
     fs = []
@@ -2553,7 +2557,7 @@ def privacy_summary(findings):
     permissions = {"android-permission", "android-feature", "extension-permission", "extension-resource",
                    "extension-connectable", "macos-entitlement", "ios-tracking", "ios-tracking-domain",
                    "ios-api-category", "ios-data-type", "ios-purpose-string", "ios-tracking-declaration",
-                   "browser-capability"}
+                   "browser-capability", "android-queries"}
     storage = {"cookie-write", "cookie-flags", "cookie-lifetime", "browser-storage", "tracking-cookie", "client-id",
                "import-time-storage"}
     consent = {"consent-manager", "consent-gating", "consent-order", "consent-mode", "consent-state", "dnt-respect"}

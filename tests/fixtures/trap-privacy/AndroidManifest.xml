@@ -8,4 +8,7 @@
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.ACCESS_ADSERVICES_TOPICS" />
     <application android:usesCleartextTraffic="true" />
+    <queries>
+        <package android:name="com.example.partner" />
+    </queries>
 </manifest>
