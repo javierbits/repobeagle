@@ -965,9 +965,9 @@ MEDIA_RE = re.compile(r"(?i)<(?:img|source|video|audio|picture)\b[^>]*\bsrc\s*=\
 POSTER_RE = re.compile(r"(?i)<video\b[^>]*\bposter\s*=\s*[\"']((?:https?:)?//[^\"']+)")
 CSS_IMPORT_RE = re.compile(r"(?i)@import\s+(?:url\()?\s*[\"']?((?:https?:)?//[^\"')\s]+)")
 SRCSET_RE = re.compile(r"(?i)<(?:img|source)\b[^>]*\bsrcset\s*=\s*[\"']([^\"']+)")
-LINK_CSS_RE = re.compile(r"(?i)<link[^>]+rel\s*=\s*[\"']stylesheet[\"'][^>]+href\s*=\s*[\"']((?:https?:)?//[^\"']+)")
-PRELOAD_RE = re.compile(r"(?i)<link[^>]+rel\s*=\s*[\"'](?:preload|prefetch|modulepreload)[\"'][^>]+href\s*=\s*[\"']((?:https?:)?//[^\"']+)")
-PRECONNECT_RE = re.compile(r"(?i)<link[^>]+rel\s*=\s*[\"'](?:preconnect|dns-prefetch)[\"'][^>]+href\s*=\s*[\"']((?:https?:)?//[^\"']+)")
+LINK_TAG_RE = re.compile(r"(?is)<link\b([^>]*)>")
+REL_ATTR_RE = re.compile(r"(?i)\brel\s*=\s*[\"']([^\"']+)")
+HREF_ATTR_RE = re.compile(r"(?i)\bhref\s*=\s*[\"']([^\"']+)")
 COOKIE_MAXAGE_RE = re.compile(r"(?i)max-age\s*=\s*(\d+)")
 COOKIE_EXPIRES_RE = re.compile(r"(?i)expires\s*=\s*([^;\"']+)")
 
@@ -1376,21 +1376,24 @@ def check_privacy(root, p, text, privacy, own=()):
                     _priv_add(privacy, "third-party-media", "info" if host in THIRD_PARTY_CDN or _known_host(host) else "low",
                               host, r, i, line,
                               f"Video poster image loaded from {host}: it sees your IP and the page URL.")
-            for m in LINK_CSS_RE.finditer(line):
-                host = _host_of(m.group(1))
-                if host and not _endpoint_noise(host) and host not in NON_NET_HOSTS and not _is_own(host, own):
+            for m in LINK_TAG_RE.finditer(line):
+                attrs = m.group(1)
+                hm, rm_ = HREF_ATTR_RE.search(attrs), REL_ATTR_RE.search(attrs)
+                if not hm or not rm_:
+                    continue
+                host = _host_of(hm.group(1))
+                if not host or _endpoint_noise(host) or host in NON_NET_HOSTS or _is_own(host, own):
+                    continue
+                relv = rm_.group(1).lower()
+                if "stylesheet" in relv:
                     _priv_add(privacy, "third-party-stylesheet", "info" if host in THIRD_PARTY_CDN else "low",
                               host, r, i, line,
                               f"Stylesheet loaded from {host}: it sees your IP/referrer and can pull fonts/images from its own servers.")
-            for m in PRELOAD_RE.finditer(line):
-                host = _host_of(m.group(1))
-                if host and not _endpoint_noise(host) and host not in NON_NET_HOSTS and not _is_own(host, own):
+                elif "preload" in relv or "prefetch" in relv or "modulepreload" in relv:
                     _priv_add(privacy, "third-party-preload", "info" if host in THIRD_PARTY_CDN else "low",
                               host, r, i, line,
                               f"Resource preloaded/prefetched from {host}: fetched before it is needed, revealing your IP early.")
-            for m in PRECONNECT_RE.finditer(line):
-                host = _host_of(m.group(1))
-                if host and not _endpoint_noise(host) and host not in NON_NET_HOSTS and not _is_own(host, own):
+                elif "preconnect" in relv or "dns-prefetch" in relv:
                     _priv_add(privacy, "third-party-preconnect", "info" if host in THIRD_PARTY_CDN else "low", host, r, i, line,
                               f"Preconnect/DNS-prefetch to {host}: the browser opens a connection (IP, TLS) before any consent or request.")
             for m in FORM_RE.finditer(line):

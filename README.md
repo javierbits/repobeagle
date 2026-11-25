@@ -131,7 +131,7 @@ Severity follows privacy impact, so a default `balanced` scan goes YELLOW when a
 
 Findings from the `privacy`/`telemetry` checks have their snippets **and titles redacted by default** (emails `s***@domain`, cards `4111 **** **** 1111`, phones `+46 ***** 567` and `(415****132`, SSNs `***-**-6789`) so a published badge report does not republish the PII it found. The report prints a redaction notice when it applies, `verify` prints `snippets: redacted by scanner` (or `raw`), `--no-redact` shows raw values and `meta.pii_redacted` records the mode.
 
-Component sources (`.jsx`, `.tsx`, `.vue`, `.svelte`, `.astro`) are scanned like JavaScript for endpoints, scripts, media and imports; HTML pages count as runtime (only markdown/text docs, tests and translations are demoted). Tags split across lines (`<img\n src=…`, `<link\n rel=stylesheet href=…`) are attributed to the nearest opening tag. Test fixtures and fake hosts (`example.com`, single-label names, private ranges) are excluded or downgraded so the checks don't drown a verdict in noise. `target/` build output is skipped like `dist/` and `build/`.
+Component sources (`.jsx`, `.tsx`, `.vue`, `.svelte`, `.astro`) are scanned like JavaScript for endpoints, scripts, media and imports; HTML pages count as runtime (only markdown/text docs, tests and translations are demoted). Tags split across lines (`<img\n src=…`, `<link\n rel=stylesheet href=…`) are attributed to the nearest opening tag, and `<link>` rel/href are parsed in any attribute order. Test fixtures and fake hosts (`example.com`, single-label names, private ranges) are excluded or downgraded so the checks don't drown a verdict in noise. `target/` build output is skipped like `dist/` and `build/`.
 
 `repobeagle verify` prints the same counts line (`privacy: trackers N, pii N, …`) and the declared scope (`full`/`only`/`excluded`), warning if the findings contradict `meta.privacy_mode` or the stored `privacy_summary`, from the signed report, so a badge consumer sees the privacy profile without downloading the JSON. `badge.json` also carries a `privacy` object with those counts (extra keys are ignored by shields.io and available to any API consumer). The report prints a one-line `Privacy profile` (tracker vendors, third-party hosts, PII items, permission scopes, consent signals, identity-sharing calls) before the detailed summary. Report and `--json` output add a one-line `meta.privacy_profile` and a structured `privacy_summary` grouping what was found by kind (trackers by telemetry kind and vendor, PII incl. IP logging, permissions incl. browser capabilities, fingerprinting, storage/cookies incl. import-time writes, consent, vendor configs, first-party vs third-party network signals incl. import-time requests and tracking params, replay masking, identity, retention, uploads, transparency) so you can see *what kinds* a repo has without reading every finding. Suppressed findings are excluded from it and counted separately.
 
@@ -243,7 +243,7 @@ Apart from the clone, OSV/GuardDog-verify, the GitHub trust lookup and your own 
 
 ## Example output (abridged)
 ```
-repobeagle 1.143.0  |  tests/fixtures/trap-npm
+repobeagle 1.144.0  |  tests/fixtures/trap-npm
   VERDICT: RED    2 critical / 2 high findings, e.g. npm lifecycle script 'postinstall' runs automatically on install (package.json:8)
   CRITICAL [agent-checks] package.json:8
            npm lifecycle script 'postinstall' runs automatically on install
