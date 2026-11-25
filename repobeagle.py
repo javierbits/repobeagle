@@ -728,7 +728,7 @@ def lockfile_packages(p, text):
         return out
     return out
 
-def check_telemetry(root, p, text, telemetry, optouts):
+def check_telemetry(root, p, text, telemetry, optouts, optouts_code):
     """Collects one entry per vendor, first seen (file:line). No network, no code execution."""
     r = rel(root, p)
     if LOCKFILE_RE.search(r):          # transitive deps are not evidence of this repo phoning home
@@ -750,8 +750,12 @@ def check_telemetry(root, p, text, telemetry, optouts):
             continue
         for m in TELEMETRY_OPTOUT_RE.finditer(line):
             optouts.add(m.group(1))
+            if not prose:
+                optouts_code.add(m.group(1))
         if DNT_RE.search(line):
             optouts.add("Do-Not-Track")
+            if not prose:
+                optouts_code.add("Do-Not-Track")
         if prose or _is_comment(line):
             continue          # a comment mentioning a vendor is a note, not a request
         if re.match(r'\s*\("(?:ads|analytics|session-replay|crash|apm|devtool)",', line):
@@ -766,7 +770,7 @@ def check_telemetry(root, p, text, telemetry, optouts):
                 telemetry[key] = {"kind": kind, "sev": sev, "vendor": vendor, "file": r, "line": i,
                                   "snippet": line, "count": 1, "src": "direct"}
 
-def telemetry_findings(telemetry, optouts):
+def telemetry_findings(telemetry, optouts, optouts_code):
     order = {"ads": 0, "session-replay": 1, "analytics": 2, "crash": 3, "apm": 4, "devtool": 5}
     direct = {vendor for (_, vendor, src) in telemetry if src == "direct"}
     fs = []
@@ -779,8 +783,10 @@ def telemetry_findings(telemetry, optouts):
             meaning = f"Seen {t['count']} times; first at {t['file']}:{t['line']}."
         else:
             meaning = "Detected in this file."
-        if optouts:
-            meaning += " Opt-out mentioned in the repo: " + ", ".join(sorted(optouts)[:4]) + "."
+        if optouts_code:
+            meaning += " Opt-out handled in code: " + ", ".join(sorted(optouts_code)[:4]) + "."
+        elif optouts:
+            meaning += " Opt-out only documented, no code reference: " + ", ".join(sorted(optouts)[:4]) + "."
         elif kind == "devtool":
             meaning += " Disable with the env var named in the rule."
         else:
@@ -1754,7 +1760,7 @@ def zip_encrypted(p):
 
 def run_agent_checks(root):
     findings = []
-    telemetry, optouts, privacy = {}, set(), {}
+    telemetry, optouts, optouts_code, privacy = {}, set(), set(), {}
     privacy_doc = None
     own = own_domains(root)
     prose = []
@@ -1797,10 +1803,10 @@ def run_agent_checks(root):
         check_build_hooks(root, p, text, findings)
         check_workflows(root, p, text, findings)
         check_obfuscation_deps(root, p, text, findings)
-        check_telemetry(root, p, text, telemetry, optouts)
+        check_telemetry(root, p, text, telemetry, optouts, optouts_code)
         check_privacy(root, p, text, privacy, own)
         check_privacy_signals(root, p, text, privacy)
-    tf = telemetry_findings(telemetry, optouts)
+    tf = telemetry_findings(telemetry, optouts, optouts_code)
     pf = privacy_findings(privacy)
     findings += tf + pf
     vendor_names = {f["title"].split(": ", 1)[1].replace(" (transitive)", "") for f in tf if f["title"].startswith("telemetry-")}
@@ -1813,15 +1819,20 @@ def run_agent_checks(root):
                                      "The repo has a privacy doc/README but these detected vendors are not named there; check the policy discloses them."))
     tracking_kinds = {"telemetry-analytics", "telemetry-ads", "telemetry-session-replay", "telemetry-crash", "telemetry-apm"}
     tracked = {f["title"].split(":")[0] for f in tf} & tracking_kinds
-    dnt = any(o == "Do-Not-Track" or o.startswith("DO_NOT_TRACK") for o in optouts)
+    dnt = any(o == "Do-Not-Track" or o.startswith("DO_NOT_TRACK") for o in optouts_code)
+    dnt_documented = dnt or any(o == "Do-Not-Track" or o.startswith("DO_NOT_TRACK") for o in optouts)
     if tracked:
         if dnt:
             findings.append(finding("privacy", "info", "(repo)", 0, "dnt-respect: Do-Not-Track / opt-out is referenced",
                                      ", ".join(sorted(optouts)[:3]),
                                      "Telemetry exists and the repo references a Do-Not-Track/opt-out switch, so the signal can be honoured."))
         else:
-            findings.append(finding("privacy", "low", "(repo)", 0, "dnt-respect: trackers but no Do-Not-Track/opt-out reference",
-                                     "no DO_NOT_TRACK / navigator.doNotTrack found",
+            findings.append(finding("privacy", "low", "(repo)", 0,
+                                     "dnt-respect: Do-Not-Track only documented, not handled" if dnt_documented else
+                                     "dnt-respect: trackers but no Do-Not-Track/opt-out reference",
+                                     ", ".join(sorted(optouts)[:3]) if dnt_documented else "no DO_NOT_TRACK / navigator.doNotTrack found",
+                                     "The docs mention an opt-out but no code reads it, so the signal may be ignored."
+                                     if dnt_documented else
                                      "Browsers send Do-Not-Track and DO_NOT_TRACK is a de-facto standard; without a reference these signals are ignored."))
         if not any(f["title"].startswith("consent-manager") for f in pf) and \
            tracked & {"telemetry-analytics", "telemetry-ads", "telemetry-session-replay"}:

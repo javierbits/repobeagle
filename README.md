@@ -12,10 +12,10 @@ You give it a git URL or a local folder and get a **GREEN / YELLOW / RED** verdi
 **RepoBeagle never runs repo code.** It never runs installs or builds, and it never extracts archives.
 
 ## Install (DGX Spark / any Linux, arm64 or x86_64)
-The scanners ship as a prebuilt **public** multi-arch image (no login needed), `ghcr.io/javierbits/repobeagle` (linux/amd64 + linux/arm64). It's built by `.github/workflows/image.yml` on every push to main, on `v*` release tags, weekly, and on manual dispatch. Release tags get `v1.64.0`-style and `stable` tags; main also gets `latest`, `sha-<commit>` and the ISO week (e.g. `2026-W42`). `install.sh` and `repobeagle` default to the image matching the `VERSION` file (currently `v1.64.0`).
+The scanners ship as a prebuilt **public** multi-arch image (no login needed), `ghcr.io/javierbits/repobeagle` (linux/amd64 + linux/arm64). It's built by `.github/workflows/image.yml` on every push to main, on `v*` release tags, weekly, and on manual dispatch. Release tags get `v1.65.0`-style and `stable` tags; main also gets `latest`, `sha-<commit>` and the ISO week (e.g. `2026-W42`). `install.sh` and `repobeagle` default to the image matching the `VERSION` file (currently `v1.65.0`).
 ```bash
 git clone https://github.com/javierbits/repobeagle && cd repobeagle
-./install.sh                   # docker pull ghcr.io/javierbits/repobeagle:v1.64.0 + install the repobeagle wrapper
+./install.sh                   # docker pull ghcr.io/javierbits/repobeagle:v1.65.0 + install the repobeagle wrapper
 ./install.sh --build-local     # fallback: build the same image locally from the Dockerfile
 ./install.sh --local-tools     # also install gitleaks/semgrep/guarddog/bandit on the host for --no-docker
 ```
@@ -65,7 +65,7 @@ A repo that is safe to run is not necessarily safe to *use*. The `telemetry` che
 | `telemetry-apm` | spans, logs or metrics are exported: **OpenTelemetry (OTEL/OTLP)**, Datadog APM (incl. `datadog*.yml`), New Relic, Elastic APM, Honeycomb, Dynatrace, Instana, AppSignal, Grafana Faro | medium/low |
 | `telemetry-devtool` | build/CLI tools that report usage: Next.js, Nuxt, Astro, Gatsby, Turbo, Angular CLI, .NET CLI, Homebrew, HashiCorp checkpoint, Scarf | low |
 
-OTEL is reported at medium: the SDK alone sends nothing, but once an exporter endpoint (OTLP, HTTP, gRPC) is configured, traces/logs can leave the machine. Vendor names in code comments and in vendor-table definitions (tuples like `("analytics", "Plausible", …)`) are not counted as usage; prose is only scanned for opt-outs. Each finding also says whether the repo mentions an opt-out (`DO_NOT_TRACK`, `NEXT_TELEMETRY_DISABLED`, `TELEMETRY_OPTOUT`, `DISABLE_TELEMETRY`, `--no-telemetry`, `telemetry: false`, `navigator.doNotTrack`, `CHECKPOINT_DISABLE`, …) or nothing at all. Config files count too (`sentry.properties`, `datadog*.yml`). Lockfiles are read for **transitive** telemetry: a vendor pinned only as a dependency gets one `low` finding marked `(transitive)`, and is suppressed when the repo itself references it. Prose (`.md/.mdx/.rst/.adoc`) is only used to detect opt-outs, because "an alternative to Sentry" is not a dependency.
+OTEL is reported at medium: the SDK alone sends nothing, but once an exporter endpoint (OTLP, HTTP, gRPC) is configured, traces/logs can leave the machine. Vendor names in code comments and in vendor-table definitions (tuples like `("analytics", "Plausible", …)`) are not counted as usage; prose is only scanned for opt-outs. Each finding also distinguishes an opt-out **handled in code** from one only **documented** (which may be ignored) (`DO_NOT_TRACK`, `NEXT_TELEMETRY_DISABLED`, `TELEMETRY_OPTOUT`, `DISABLE_TELEMETRY`, `--no-telemetry`, `telemetry: false`, `navigator.doNotTrack`, `CHECKPOINT_DISABLE`, …) or nothing at all. Config files count too (`sentry.properties`, `datadog*.yml`). Lockfiles are read for **transitive** telemetry: a vendor pinned only as a dependency gets one `low` finding marked `(transitive)`, and is suppressed when the repo itself references it. Prose (`.md/.mdx/.rst/.adoc`) is only used to detect opt-outs, because "an alternative to Sentry" is not a dependency.
 
 Severity follows privacy impact, so a default `balanced` scan goes YELLOW when a repo has analytics/crash reporting; session replay or ad pixels make a `strict` scan RED.
 
@@ -107,7 +107,7 @@ Severity follows privacy impact, so a default `balanced` scan goes YELLOW when a
 | `ios-tracking`, `ios-tracking-domain`, `ios-data-type` | Apple privacy manifest (`PrivacyInfo.xcprivacy`): `NSPrivacyTracking`, declared tracking domains, and every `NSPrivacyCollectedDataType` with linked/tracking flags and declared purposes (analytics, advertising, app functionality, …) | low/info |
 | `ios-api-category` | Apple required-reason API categories declared in `PrivacyInfo.xcprivacy` (UserDefaults, FileTimestamp, SystemBootTime, DiskSpace, ActiveKeyboards, …) | info |
 | `ios-purpose-string` | Apple purpose strings in `Info.plist` (`NSCameraUsageDescription`, `NSLocationWhenInUseUsageDescription`, …): the user-facing reason shown when the capability is requested | info |
-| `dnt-respect` | repo has trackers and references (or never references) Do-Not-Track, Global Privacy Control / `Sec-GPC` or `DO_NOT_TRACK`; info when an opt-out is honoured, low when the signal is ignored | info/low |
+| `dnt-respect` | repo has trackers and references (or never references) Do-Not-Track, Global Privacy Control / `Sec-GPC` or `DO_NOT_TRACK`; info when an opt-out is handled in code, low when it is only documented or absent | info/low |
 | `consent-gating` | analytics/ads/session replay present but no consent manager (OneTrust, Cookiebot, Osano, CookieYes, Klaro, …) detected | low |
 | `consent-order` | in an HTML/JS file a tracker initialises (`gtag(`, `fbq(`, `posthog.init`, `_paq`, …) before the consent manager loads | low |
 | `consent-mode` | Google Consent Mode signals (`analytics_storage`, `ad_storage`, `ad_user_data`, …); `low` when Google Analytics runs with a CMP but no Consent Mode (EEA requirement) | info/low |
@@ -170,7 +170,7 @@ Then add the badge; after a tag push, a per-tag badge also exists:
 
 ```markdown
 ![RepoBeagle](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/OWNER/REPO/repobeagle/badge.json)
-![RepoBeagle v1.64.0](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/OWNER/REPO/repobeagle/badge-v1.64.0.json)
+![RepoBeagle v1.65.0](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/OWNER/REPO/repobeagle/badge-v1.65.0.json)
 ```
 
 The workflow publishes a `repobeagle` branch containing `badge.json` (shields.io endpoint), a self-hosted `badge.svg` fallback and the full `report.json` (plus `report-<sha>.json` per commit and per-tag copies), so every finding is one click away from the badge. Inputs: `profile`, `fail-on-red`, `privacy-only`, `badge-branch` (empty string disables publishing), `set-status` (default true) and `tools-ref` (toolchain ref, default `main`; the `VERSION` file there pins the scanned image).
@@ -183,7 +183,7 @@ The badge is produced by the author's own CI, so on its own it is self-attested.
 repobeagle verify javierbits/javierbits.github.io
 #   signature: VALID  policy: official scan.yml (main or v* tag)
 #   report:    YELLOW  0 critical / 6 high / 1 medium / 56 low
-#   scanned:   a7cb435002de at javierbits/javierbits.github.io (image ghcr.io/javierbits/repobeagle:v1.64.0)
+#   scanned:   a7cb435002de at javierbits/javierbits.github.io (image ghcr.io/javierbits/repobeagle:v1.65.0)
 #   snippets:  redacted by scanner
 #   scope:     full
 #   freshness: UP TO DATE (HEAD a7cb435002de)
@@ -237,7 +237,7 @@ Apart from the clone, OSV/GuardDog-verify, the GitHub trust lookup and your own 
 
 ## Example output (abridged)
 ```
-repobeagle 1.64.0  |  tests/fixtures/trap-npm
+repobeagle 1.65.0  |  tests/fixtures/trap-npm
   VERDICT: RED    2 critical / 2 high findings, e.g. npm lifecycle script 'postinstall' runs automatically on install (package.json:8)
   CRITICAL [agent-checks] package.json:8
            npm lifecycle script 'postinstall' runs automatically on install
