@@ -809,7 +809,7 @@ PROSE_EXT = {".md", ".mdx", ".markdown", ".rst", ".adoc"}
 AUTHORS_FILE_RE = re.compile(r"(?i)(^|/)(authors|contributors|credits|thanks)(\.\w+)?$")
 LICENSE_FILE_RE = re.compile(r"(?i)(^|/)(licen[cs]e|copying|notice)([.-][^/]*)?$")
 
-URL_HOST_RE = re.compile(r"(?i)\b(https?)://([a-z0-9][a-z0-9.-]*[a-z0-9])")
+URL_HOST_RE = re.compile(r"(?i)\b(https?|wss?)://([a-z0-9][a-z0-9.-]*[a-z0-9])")
 NON_NET_HOSTS = {"localhost", "127.0.0.1", "0.0.0.0", "::1", "example.com", "example.org", "www.w3.org", "w3.org",
                  "purl.org", "schema.org", "json-schema.org", "creativecommons.org", "opensource.org", "spdx.org",
                  "xmlns.com", "unicode.org", "ietf.org", "rfc-editor.org", "python.org", "nodejs.org",
@@ -1015,12 +1015,12 @@ def check_privacy(root, p, text, privacy, own=()):
                     continue          # already reported by the telemetry check
                 if _is_comment(line):
                     continue          # a reference URL in a comment is not a request
-                if scheme == "http":
-                    requested = re.search(r"(?i)(fetch\s*\(|curl|wget|requests\.|urlopen|src\s*=|href\s*=|action\s*=|XMLHttpRequest|axios|\.get\s*\()", line)
+                if scheme in ("http", "ws"):
+                    requested = re.search(r"(?i)(fetch\s*\(|curl|wget|requests\.|urlopen|src\s*=|href\s*=|action\s*=|XMLHttpRequest|axios|WebSocket|\.get\s*\()", line)
                     _priv_add(privacy, "insecure-endpoint",
                               "info" if test_path or (is_doc and not requested) else ("medium" if requested else "low"),
                               host, r, i, line,
-                              f"Plaintext http:// to {host}: "
+                              f"Plaintext {scheme}:// to {host}: "
                               + ("requests and metadata are not encrypted in transit." if requested else
                                  "reference URL in docs, not a request." if is_doc else
                                  "test fixture URL, not a runtime request." if test_path else
