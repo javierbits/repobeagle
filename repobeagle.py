@@ -1077,6 +1077,10 @@ def check_privacy(root, p, text, privacy, own=()):
                     _priv_add(privacy, "third-party-form", "low", host, r, i, line,
                               f"Form action posts user data to {host}; verify what it collects and its policy.")
         if p.name == "AndroidManifest.xml":
+            for m in re.finditer(r'<uses-feature[^>]*android:name="(android\.hardware\.[A-Za-z0-9_.]+)"', line):
+                feat = m.group(1)
+                _priv_add(privacy, "android-feature", "info", feat, r, i, line,
+                          f"Manifest declares hardware feature {feat}: the app is expected to use that sensor/capability.")
             for m in re.finditer(r'<uses-permission(?:-sdk-23)?[^>]*android:name="android\.permission\.([A-Z_0-9]+)"', line):
                 perm = m.group(1)
                 if perm in ANDROID_IGNORE:
@@ -1143,8 +1147,10 @@ FINGERPRINT_RULES = [
 ]
 FINGERPRINT_MEANING = "Device-fingerprinting signal: combine several and a browser can be recognized without cookies."
 PII_LOG_RE = re.compile(r"(?i)(console\.(log|info|warn|error|debug)|log(ger)?\.(info|warn|error|debug|exception|critical)|"
-                        r"\bprint|printf|puts|fmt\.Print|tracing::(info|warn|error|debug)|log\.\w+)")
-PII_WORD_RE = re.compile(r"(?i)\b(e-?mail|phone|mobile|ssn|social security|address|street|zip|postal|passport|iban|"
+                        r"\bprint|printf|puts|fmt\.Print|tracing::(info|warn|error|debug)|log\.\w+|"
+                        r"println!|eprintln!|log::(?:info|warn|error|debug)|System\.out\.print|Log\.[dviwe]\s*\()")
+PII_WORD_RE = re.compile(r"(?i)\b(e-?mail|phone|mobile|mobile_?number|phone_?number|ssn|social security|address|street|zip|zip_?code|postal|"
+                         r"username|user_?name|nickname|passport|iban|"
                          r"credit ?card|card_?number|dob|birthday|birth_?date|full_?name|first_?name|last_?name|"
                          r"ip_?address|remote_addr|user_?agent|geo|latitude|longitude)"
                          r"\b")
@@ -1445,7 +1451,7 @@ def privacy_findings(privacy):
              "ios-tracking-domain": 14, "ios-data-type": 15, "ios-purpose-string": 16, "dnt-respect": 17,
              "consent-gating": 18, "consent-order": 19, "data-retention": 20, "upload-surface": 21,
              "upload-limit": 22, "store-disclosure": 23, "tracking-params": 24, "insecure-endpoint": 25,
-             "android-permission": 26, "extension-permission": 27, "cookie-flags": 28, "cookie-write": 29,
+             "android-permission": 26, "android-feature": 27, "extension-permission": 28, "cookie-flags": 28, "cookie-write": 29,
              "third-party-cdn": 30, "third-party-embed": 31, "third-party-form": 32, "first-party-endpoint": 33,
              "third-party-script": 34, "cookie-lifetime": 35, "external-endpoint": 36,
              "browser-storage": 36, "consent-manager": 37, "consent-mode": 38, "consent-state": 39,
