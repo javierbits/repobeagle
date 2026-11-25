@@ -27,6 +27,8 @@ check("address PO box", bool(rb.ADDRESS_INTL_RE.search("P.O. Box 42")))
 
 check("luhn visa", rb._card_number_ok("4111 1111 1111 1111"))
 check("rejects timestamp", not rb._card_number_ok("1700000000000"))
+check("rejects 14-digit int", not rb._card_number_ok("42424242424242"))
+check("accepts amex", rb._card_number_ok("378282246310005"))
 check("rejects decimal", not rb._card_number_ok("435.258435754"))
 
 findings = [

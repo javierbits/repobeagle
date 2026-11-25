@@ -811,6 +811,7 @@ CONSENT_RE = re.compile(r"(?i)(onetrust|optanon|cookiebot|osano|cookieyes|klaro|
                         r"consent-manager|quantcast|didomi|usercentrics|borlabs|iubenda|complianz|axeptio|cookiehub|"
                         r"cookieinformation|termly|consentmanager|sirdata|civic|usercentrics\.eu)")
 SET_COOKIE_RE = re.compile(r"(?i)['\"]set-cookie['\"]")
+SET_COOKIE_READ_RE = re.compile(r"(?i)(\.get|\.getheader|header\(\)\.get)\([^)]*['\"]set-cookie")
 
 ANDROID_PERMS = {
     "ACCESS_FINE_LOCATION": ("high", "precise location"), "ACCESS_BACKGROUND_LOCATION": ("high", "location in the background"),
@@ -1019,7 +1020,7 @@ def check_privacy(root, p, text, privacy, own=()):
         if STORAGE_RE.search(line):
             _priv_add(privacy, "browser-storage", "info", "localStorage/sessionStorage", r, i, line,
                       "Data stored in the browser: survives reloads (localStorage) and can be used to track the user.")
-        if re.search(r"(?i)\bpartitioned\b", line):
+        if not _is_comment(line) and re.search(r"(?i)\bpartitioned\b", line):
             _priv_add(privacy, "cookie-flags", "info", "Partitioned (CHIPS)", r, i, line,
                       "Partitioned cookie (CHIPS): stored per top-level site, which limits cross-site tracking.")
         if "__Host-" in line or "__Secure-" in line:
@@ -1028,13 +1029,17 @@ def check_privacy(root, p, text, privacy, own=()):
                 if prefix in line and not all(x.lower() in line.lower() for x in reqs):
                     _priv_add(privacy, "cookie-flags", "low", prefix + " prefix without required flags", r, i, line,
                               f"Cookie name {prefix} requires {' and '.join(reqs)}; without them browsers may reject it or it is sent insecurely.")
-        if SET_COOKIE_RE.search(line) and not all(s in line for s in ("HttpOnly", "Secure", "SameSite")):
+        if SET_COOKIE_RE.search(line) and not SET_COOKIE_READ_RE.search(line) and not all(s in line for s in ("HttpOnly", "Secure", "SameSite")):
             _priv_add(privacy, "cookie-flags", "low", "Set-Cookie", r, i, line,
                       "Set-Cookie header without all of HttpOnly/Secure/SameSite: readable by scripts, sent in clear or cross-site.")
         elif COOKIE_API_RE.search(line):
-            window = " ".join(lines[i - 1:i + 3])
+            window = " ".join(lines[max(0, i - 5):i + 10])
             if not COOKIE_FLAG_WORDS.search(window):
-                _priv_add(privacy, "cookie-flags", "low", "set_cookie() without flags", r, i, line,
+                var_arg = COOKIE_VAR_ARG_RE.search(line)
+                _priv_add(privacy, "cookie-flags", "info" if var_arg else "low",
+                          "set_cookie() flags not visible" if var_arg else "set_cookie() without flags", r, i, line,
+                          "Cookie flag arguments are set on the cookie object, not visible here; verify them."
+                          if var_arg else
                           "Framework cookie setter without HttpOnly/Secure/SameSite: readable by scripts, sent in clear or cross-site.")
         if SET_COOKIE_RE.search(line) or COOKIE_WRITE_RE.search(line) or COOKIE_API_RE.search(line):
             days = None
@@ -1284,6 +1289,7 @@ PRIVACY_LINK_RE = re.compile(r"(?i)\[(?:privacy|data[- ]protection)[^\]]*\]\((ht
 PURPOSE_STR_RE = re.compile(r"<key>(NS[A-Za-z]+?(?:UsageDescription|AlwaysUsageDescription|WhenInUseUsageDescription))</key>\s*<string>(.*?)</string>", re.S)
 PROTO_REL_RE = re.compile(r"(?<![:/\w])//([a-z0-9][a-z0-9.-]*[a-z0-9])/")
 COOKIE_API_RE = re.compile(r"(?i)(\bset_cookie\s*\(|\bres\.cookie\s*\(|\bsetcookie\s*\(|\bsetCookie\s*\()")
+COOKIE_VAR_ARG_RE = re.compile(r"(?i)set_?cookie\s*\([^)]*,\s*[A-Za-z_]\w*\s*\)")
 COOKIE_FLAG_WORDS = re.compile(r"(?i)(httponly|secure|samesite|same_site|samesite_)")
 
 MACOS_ENTITLEMENTS = {
@@ -1414,11 +1420,18 @@ def _luhn_ok(s):
         total += d
     return total % 10 == 0
 
-CARD_IIN_RE = re.compile(r"^(4|5[1-5]|2[2-7]|3[47]|3[0689]|6011|64|65|62)")
+CARD_IIN_RE = re.compile(r"^(4|5[1-5]|2[2-7]|3[0-9]|6[0245]|62)")
 
 def _card_number_ok(s):
-    """Luhn plus an issued card IIN prefix: excludes timestamps, IDs and arbitrary digit runs."""
+    """Luhn plus an issued card IIN prefix/length: excludes timestamps, IDs and arbitrary digit runs."""
     ds = re.sub(r"\D", "", s)
+    n = len(ds)
+    if n == 15:                       # Amex
+        return ds[:2] in ("34", "37") and _luhn_ok(ds)
+    if n == 14:                       # Diners
+        return ds[:2] in ("30", "36", "38", "39") and _luhn_ok(ds)
+    if n not in (13, 16, 19):
+        return False
     return bool(CARD_IIN_RE.match(ds)) and _luhn_ok(ds)
 
 def _tracking_cookie_vendor(name):
@@ -1495,7 +1508,7 @@ def check_privacy_signals(root, p, text, privacy):
                 cmp_at = i
             if (COOKIE_WRITE_RE.search(line) or STORAGE_RE.search(line)) and storage_at is None:
                 storage_at = i
-        if PII_LOG_RE.search(line):
+        if not comment and PII_LOG_RE.search(line):
             masked = re.search(r"(?i)(redact|mask|scrub|hash|anonymi[sz]|truncat|partial)", line)
             if PII_WORD_RE.search(line):
                 _priv_add(privacy, "pii-log", "info" if masked else "low", "log line with PII", r, i, line,
