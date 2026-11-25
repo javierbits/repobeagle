@@ -12,3 +12,4 @@ const consent = "_ga=GA1.2; _fbp=fb.1";
 const CARD = "4111 1111 1111 1111";
 const SSN = "123-45-6789";
 const ga4 = "_ga_ABC123=GS1.1";
+document.cookie = "uid=1; max-age=63072000; path=/";

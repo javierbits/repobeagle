@@ -837,6 +837,8 @@ def _known_host(host):
     return host in KNOWN_HOSTS or host.endswith(KNOWN_SUFFIXES)
 
 EMBED_RE = re.compile(r"(?i)<(?:iframe|embed|object|video)[^>]+src\s*=\s*[\"']((?:https?:)?//[^\"']+)")
+SCRIPT_RE = re.compile(r"(?i)<script[^>]+src\s*=\s*[\"']((?:https?:)?//[^\"']+)")
+COOKIE_MAXAGE_RE = re.compile(r"(?i)max-age\s*=\s*(\d+)")
 FORM_RE = re.compile(r"(?i)<form[^>]+action\s*=\s*[\"']((?:https?:)?//[^\"']+)")
 
 def _host_of(url):
@@ -901,6 +903,14 @@ def check_privacy(root, p, text, privacy):
             if not COOKIE_FLAG_WORDS.search(window):
                 _priv_add(privacy, "cookie-flags", "low", "set_cookie() without flags", r, i, line,
                           "Framework cookie setter without HttpOnly/Secure/SameSite: readable by scripts, sent in clear or cross-site.")
+        if SET_COOKIE_RE.search(line) or COOKIE_WRITE_RE.search(line) or COOKIE_API_RE.search(line):
+            m = COOKIE_MAXAGE_RE.search(line)
+            if m and int(m.group(1)) > 31536000:
+                _priv_add(privacy, "cookie-lifetime", "low", "cookie max-age > 1 year", r, i, line,
+                          f"Cookie lives {int(m.group(1)) // 86400} days: long-lived identifiers outlive their purpose; shorten where possible.")
+            elif not m and not re.search(r"(?i)expires\s*=", line):
+                _priv_add(privacy, "cookie-lifetime", "info", "session cookie", r, i, line,
+                          "Cookie without Max-Age/Expires: session-scoped (better for privacy).")
         m = CONSENT_RE.search(line)
         if m:
             _priv_add(privacy, "consent-manager", "info", m.group(1).lower(), r, i, line,
@@ -940,6 +950,12 @@ def check_privacy(root, p, text, privacy):
                 if host and not _endpoint_noise(host) and host not in NON_NET_HOSTS:
                     _priv_add(privacy, "third-party-embed", "low", host, r, i, line,
                               f"Embeds content from {host}: it runs third-party code, sees your IP and can set its own cookies.")
+            for m in SCRIPT_RE.finditer(line):
+                host = _host_of(m.group(1))
+                if host and not _endpoint_noise(host) and host not in NON_NET_HOSTS:
+                    cdn = host in THIRD_PARTY_CDN
+                    _priv_add(privacy, "third-party-script", "info" if cdn else "low", host, r, i, line,
+                              f"Loads executable script from {host}: it runs with page privileges and can read cookies/DOM and beacon data.")
             for m in FORM_RE.finditer(line):
                 host = _host_of(m.group(1))
                 if host and not _endpoint_noise(host) and host not in NON_NET_HOSTS:
@@ -1277,9 +1293,9 @@ def privacy_findings(privacy):
              "consent-gating": 18, "consent-order": 19, "data-retention": 20, "upload-surface": 21,
              "upload-limit": 22, "store-disclosure": 23, "tracking-params": 24, "insecure-endpoint": 25,
              "android-permission": 26, "extension-permission": 27, "cookie-flags": 28, "cookie-write": 29,
-             "third-party-cdn": 30, "third-party-embed": 31, "third-party-form": 32, "external-endpoint": 33,
-             "browser-storage": 34, "consent-manager": 35, "referrer-policy": 36, "permissions-policy": 37,
-             "undisclosed-vendor": 38, "privacy-doc": 39}
+             "third-party-cdn": 30, "third-party-embed": 31, "third-party-form": 32, "third-party-script": 33, "cookie-lifetime": 34, "external-endpoint": 35,
+             "browser-storage": 36, "consent-manager": 37, "referrer-policy": 38, "permissions-policy": 39,
+             "undisclosed-vendor": 40, "privacy-doc": 41}
     down = {"high": "medium", "medium": "low", "low": "info"}
     fs = []
     for (rule, key), t in sorted(privacy.items(), key=lambda kv: (order.get(kv[1]["rule"], 9), kv[1]["key"])):
