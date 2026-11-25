@@ -23,3 +23,7 @@ def audit(req):
 
 def remember(resp):
     resp.headers["Set-Cookie"] = "__Host-session=abc; Path=/; SameSite=Lax"
+
+
+def chip(resp):
+    resp.headers["Set-Cookie"] = "pref=1; Secure; Partitioned; SameSite=None"

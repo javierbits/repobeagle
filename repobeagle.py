@@ -1010,6 +1010,9 @@ def check_privacy(root, p, text, privacy, own=()):
         if STORAGE_RE.search(line):
             _priv_add(privacy, "browser-storage", "info", "localStorage/sessionStorage", r, i, line,
                       "Data stored in the browser: survives reloads (localStorage) and can be used to track the user.")
+        if re.search(r"(?i)\bpartitioned\b", line):
+            _priv_add(privacy, "cookie-flags", "info", "Partitioned (CHIPS)", r, i, line,
+                      "Partitioned cookie (CHIPS): stored per top-level site, which limits cross-site tracking.")
         if "__Host-" in line or "__Secure-" in line:
             needs = {"__Host-": ("Secure", "Path=/"), "__Secure-": ("Secure",)}
             for prefix, reqs in needs.items():
@@ -2132,6 +2135,23 @@ def privacy_mode_consistent(report):
         return not (tools & {"privacy", "telemetry"})
     return True
 
+def privacy_profile(summary):
+    """One-line counts for the report header; details stay in privacy_summary."""
+    if not summary:
+        return ""
+    tr = summary.get("trackers") or {}
+    trackers = sum(len(v) for v in tr.values())
+    hosts = [h for h in (summary.get("network") or []) if "." in h]
+    pii = len(summary.get("pii") or [])
+    perms = len(summary.get("permissions") or [])
+    consent = len(summary.get("consent") or [])
+    bits = [f"{trackers} tracker vendor(s)", f"{len(hosts)} third-party host(s)", f"{pii} PII item(s)"]
+    if perms:
+        bits.append(f"{perms} permission scope(s)")
+    if consent:
+        bits.append(f"{consent} consent signal(s)")
+    return "Privacy profile: " + ", ".join(bits)
+
 def privacy_summary(findings):
     """Structured 'what kind' overview of privacy findings, for the report and JSON."""
     groups = {"trackers": {}, "pii": [], "permissions": [], "fingerprinting": [], "storage": [],
@@ -2252,6 +2272,9 @@ def report(meta, findings, v, why, counts, notes, ai, use_color, maxn=40):
     if meta.get("suppressed"):
         print(C("2", f"  suppressed {meta['suppressed']} finding(s) via {SUPPRESS_FILE} (kept in --json with suppressed=true)"))
     if meta.get("privacy_summary"):
+        prof = privacy_profile(meta["privacy_summary"])
+        if prof:
+            print(C("1", prof))
         if meta.get("pii_redacted") and any(f["tool"] in ("privacy", "telemetry") for f in findings):
             print(C("2", "  PII in snippets/titles is redacted; use --no-redact to show raw values."))
         print(C("1", "Privacy summary:"))

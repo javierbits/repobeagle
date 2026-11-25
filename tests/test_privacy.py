@@ -32,6 +32,7 @@ findings = [
 s = rb.privacy_summary(findings)
 check("summary groups trackers", s.get("trackers", {}).get("session-replay") == ["Hotjar"])
 check("summary groups pii", s.get("pii") == ["a***@x.dev"])
+check("profile line", rb.privacy_profile(s).startswith("Privacy profile: 1 tracker"))
 
 with tempfile.TemporaryDirectory() as d:
     Path(d, "CNAME").write_text("widget.dev\n")
