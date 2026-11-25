@@ -1524,6 +1524,7 @@ IMPORT_NET_PY = re.compile(r"\b(requests|httpx|urllib3)\.\w+\s*\(|"
                             r"\burlopen\s*\(|socket\.socket\s*\(|\bhttp\.client\.")
 IMPORT_NET_JS = re.compile(r"(\bfetch\s*\(|\baxios[.(]|\$\.ajax\s*\(|navigator\.geolocation)")
 IP_LOG_RE = re.compile(r"(?i)(req\.ip\b|request\.remote_addr|remote_addr|REMOTE_ADDR|RemoteAddr|X-Forwarded-For|"
+                       r"X-Client-IP|CF-Pseudo-IPv4|Fastly-Client-IP|X-Cluster-Client-IP|"
                        r"HTTP_X_FORWARDED_FOR|X_FORWARDED_FOR|X-Real-IP|True-Client-IP|CF-Connecting-IP|client_ip|remoteAddress|\bip_address\b)")
 IP_LOG_SINK_RE = re.compile(r"(?i)(log|logger|print|puts|console|info|warn|debug|write|store|save|insert|persist|db|audit)")
 PII_URL_RE = re.compile(r"(?i)[?&](e?-?mail(?:_?address)?|phone(?:_?number)?|mobile(?:_?number)?|tel|name|"

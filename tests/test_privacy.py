@@ -103,4 +103,8 @@ check("expiry ISO date", rb._expiry_days("2027-01-01T00:00:00Z") > 0)
 check("expiry epoch", rb._expiry_days("1798761600") > 0)
 check("expiry invalid", rb._expiry_days("not a date") is None)
 
+check("ip header cf", bool(rb.IP_LOG_RE.search('headers.get("CF-Pseudo-IPv4")')))
+check("ip header fastly", bool(rb.IP_LOG_RE.search("Fastly-Client-IP")))
+check("ip header xclient", bool(rb.IP_LOG_RE.search("X-Client-IP")))
+
 sys.exit(fail)
