@@ -988,7 +988,8 @@ IMPORT_NET_JS = re.compile(r"(\bfetch\s*\(|\baxios[.(]|\$\.ajax\s*\(|navigator\.
 IP_LOG_RE = re.compile(r"(?i)(req\.ip\b|request\.remote_addr|remote_addr|REMOTE_ADDR|RemoteAddr|X-Forwarded-For|"
                        r"CF-Connecting-IP|client_ip|\bip_address\b)")
 IP_LOG_SINK_RE = re.compile(r"(?i)(log|logger|print|puts|console|info|warn|debug|write|store|save|insert|persist|db|audit)")
-TRACKING_PARAM_RE = re.compile(r"[?&](utm_[a-z_]+|fbclid|gclid|dclid|msclkid|mc_eid|_hsenc|_hsmi|igshid|si)=")
+TRACKING_PARAM_RE = re.compile(r"[?&](utm_[a-z_]+|gclid|dclid|gbraid|wbraid|fbclid|msclkid|twclid|mc_cid|mc_eid|"
+                               r"mkt_tok|vero_id|oly_enc_id|_hsenc|_hsmi|srsltid|igshid|si)=")
 PRIVACY_DOC_NAMES = {"privacy.md", "privacy.txt", "privacy.rst", "privacy.markdown", "privacy-policy.md",
                       "privacy_policy.md", "privacy_policy.txt", "privacyinfo.xcprivacy"}
 PRIVACY_DOC_RE = re.compile(r"(?i)(^|/)(privacy|privacy[-_.]?policy)(\.(md|markdown|txt|rst|html|adoc))?$|\.xcprivacy$")
@@ -1059,7 +1060,8 @@ TRACKER_INIT_RE = re.compile(r"(?i)(\bgtag\s*\(|\bfbq\s*\(|posthog\.init|\b_paq\
                             r"amplitude\.getInstance|hotjar\.|\bclarity\s*\(|Sentry\.init|datadogRum\.init)")
 CMP_LOAD_RE = re.compile(r"(?i)(cookiebot|onetrust|optanon|osano|cookieyes|klaro|tarteaucitron|cookieconsent|"
                          r"didomi|usercentrics|iubenda|axeptio|cookiehub)")
-PII_OBJECT_RE = re.compile(r"(?i)\b(user|users|account|customer|profile|session|member|subscriber|person|lead|contact)\b")
+PII_OBJECT_RE = re.compile(r"(?i)\b(user|users|account|customer|profile|session|member|subscriber|person|lead|contact|"
+                           r"request|response|body|payload|form|form_?data|req)\b")
 
 TRACKING_COOKIE_RE = re.compile(r"(?i)(?<![\w.-])(_ga|_gid|_gat|_gcl_au|_gcl_aw|_fbp|_fbc|_hjid|_hjsession\w*|ajs_\w*|"
                                 r"__hstc|hubspotutk|intercom-[\w-]+|mp_\w+|amplitude_id\w*|ph_\w+|"
@@ -1120,7 +1122,7 @@ def check_privacy_signals(root, p, text, privacy):
         return
     is_js = ext in (".js", ".mjs", ".cjs", ".ts", ".tsx", ".jsx", ".html", ".htm", ".vue", ".svelte", ".astro")
     lines = text.split("\n")
-    tracker_at = cmp_at = None
+    tracker_at = cmp_at = storage_at = None
     for i, line in enumerate(lines, 1):
         if len(line) > 2000:
             continue
@@ -1133,6 +1135,8 @@ def check_privacy_signals(root, p, text, privacy):
                 tracker_at = i
             if CMP_LOAD_RE.search(line) and cmp_at is None:
                 cmp_at = i
+            if (COOKIE_WRITE_RE.search(line) or STORAGE_RE.search(line)) and storage_at is None:
+                storage_at = i
         if PII_LOG_RE.search(line):
             if PII_WORD_RE.search(line):
                 _priv_add(privacy, "pii-log", "low", "log line with PII", r, i, line,
@@ -1202,6 +1206,9 @@ def check_privacy_signals(root, p, text, privacy):
     if tracker_at and cmp_at and tracker_at < cmp_at:
         _priv_add(privacy, "consent-order", "low", "tracker before consent manager", r, tracker_at, lines[tracker_at - 1],
                   "A tracker initialises before the consent manager in this file; verify it does not fire before consent.")
+    if storage_at and cmp_at and storage_at < cmp_at:
+        _priv_add(privacy, "consent-order", "low", "cookie/storage write before consent manager", r, storage_at, lines[storage_at - 1],
+                  "A cookie/localStorage write happens before the consent manager loads in this file; verify it is consent-gated.")
     if p.name.lower() in PRIVACY_DOC_NAMES:
         _priv_add(privacy, "privacy-doc", "info", p.name.lower(), r, 1, p.name,
                   "Privacy policy/manifest is present in the repo.")
@@ -2000,6 +2007,10 @@ def cmd_scan(a):
             if note: notes.append(note)
         raw_count = len(findings)
         findings = collapse(dedupe(findings))
+        if a.privacy_only:
+            findings = [f for f in findings if f["tool"] in ("privacy", "telemetry")]
+        elif a.no_privacy:
+            findings = [f for f in findings if f["tool"] not in ("privacy", "telemetry")]
         if not a.no_redact:
             for f in findings:
                 if f["tool"] in ("privacy", "telemetry"):
@@ -2190,6 +2201,9 @@ def main():
     s.add_argument("--no-trust", action="store_true", help="skip GitHub trust signals (unauthenticated public API)")
     s.add_argument("--all", action="store_true", help="print all findings")
     s.add_argument("--no-redact", action="store_true", help="show raw emails/phones/cards in privacy finding snippets")
+    pv = s.add_mutually_exclusive_group()
+    pv.add_argument("--privacy-only", action="store_true", help="report only privacy/telemetry findings")
+    pv.add_argument("--no-privacy", action="store_true", help="drop privacy/telemetry findings")
     s.add_argument("--no-color", action="store_true")
     v = sp.add_parser("verify", help="verify a published repobeagle badge (signature + freshness); exit 0 valid/current, 1 invalid, 2 stale")
     v.add_argument("target", nargs="?", help="github repo slug or URL whose repobeagle branch holds the badge")
