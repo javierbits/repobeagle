@@ -1091,14 +1091,14 @@ def check_privacy(root, p, text, privacy, own=()):
                                  "translation-string link, not a runtime request." if is_i18n else
                                  "test fixture URL, not a runtime request." if test_path else
                                  "reference URL, not a request in this line."))
+                elif _is_own(host, own):
+                    _priv_add(privacy, "first-party-endpoint", "info", host, r, i, line,
+                              f"Own/related domain {host}: first-party traffic, not a third party.")
                 elif re.search(r"(?i)url\(\s*[\"']?$", line[:pos]) and not re.match(r"\s*@import", line):
                     _priv_add(privacy, "third-party-media",
                               "info" if (host in THIRD_PARTY_CDN or _known_host(host) or is_doc or test_path) else "low",
                               host, r, i, line,
                               f"CSS url() asset from {host}: it sees your IP and the page URL.")
-                elif _is_own(host, own):
-                    _priv_add(privacy, "first-party-endpoint", "info", host, r, i, line,
-                              f"Own/related domain {host}: first-party traffic, not a third party.")
                 elif host in THIRD_PARTY_CDN:
                     _priv_add(privacy, "third-party-cdn", "info" if (is_doc or test_path) else "low", host, r, i, line,
                               f"Asset requested from {host}: it sees your IP and the page URL (third-party font/CDN)"
