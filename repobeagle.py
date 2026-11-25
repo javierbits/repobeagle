@@ -2465,17 +2465,23 @@ CAP_FS = re.compile(r"(?i)(~?/\.ssh|(?<![\w.-])id_(rsa|ed25519)|(?<![\w.-])\.env
 CAP_SECTIONS = ("network", "filesystem", "processes", "environment", "storage")
 CAP_LIMIT = 60
 CAP_FILES = 20000
+TEST_PATH_RE = re.compile(r"(?i)(^|/)(tests?|spec|specs|__tests__|fixtures?|testdata)(/|$)")
 
-def scan_capabilities(root):
-    """Inventory of what the repo can touch: hosts, secret paths, subprocesses, env vars, storage. Cheap regexes, never executes code."""
+def scan_capabilities(root, trace=None):
+    """Inventory of what the repo can touch: hosts, secret paths, subprocesses, env vars, storage. Cheap regexes, never executes code.
+
+    Each entry records where it came from (`doc`/`test`) and whether a syscall trace confirmed it
+    (`verified`/`source`); `trace` is the optional {section: [value, ...]} evidence a T6 trace produces.
+    """
     caps: dict[str, dict[Any, Any]] = {k: {} for k in CAP_SECTIONS}
     files = 0
-    def add(section, value, relpath, line):
+    def add(section, value, relpath, line, doc=False, test=False):
         e = caps[section].get(value)
         if e:
             e["count"] += 1
         elif sum(len(v) for v in caps.values()) < CAP_LIMIT * len(CAP_SECTIONS):
-            caps[section][value] = {"value": value, "file": relpath, "line": line, "count": 1}
+            caps[section][value] = {"value": value, "file": relpath, "line": line, "count": 1,
+                                     "doc": bool(doc), "test": bool(test), "verified": False, "source": "static"}
     for p in iter_files(root):
         files += 1
         if files > CAP_FILES:
@@ -2486,19 +2492,34 @@ def scan_capabilities(root):
         if text is None:
             continue
         r = rel(root, p)
+        doc = p.suffix.lower() in DOC_EXT or r.lower().startswith(("docs/", "doc/"))
+        test = bool(TEST_PATH_RE.search(r))
         for i, line in enumerate(text.splitlines(), 1):
             if len(line) > 2000 or _is_comment(line):
                 continue
             for m in CAP_NET.finditer(line):
-                add("network", m.group(1).lower(), r, i)
+                add("network", m.group(1).lower(), r, i, doc, test)
             for m in CAP_PROC.finditer(line):
-                add("processes", m.group(0).lower(), r, i)
+                add("processes", m.group(0).lower(), r, i, doc, test)
             for m in CAP_STORE.finditer(line):
-                add("storage", m.group(0), r, i)
+                add("storage", m.group(0), r, i, doc, test)
             for m in CAP_FS.finditer(line):
-                add("filesystem", m.group(0).lstrip("/"), r, i)
+                add("filesystem", m.group(0).lstrip("/"), r, i, doc, test)
             for m in CAP_ENV.finditer(line):
-                add("environment", next(g for g in m.groups() if g), r, i)
+                add("environment", next(g for g in m.groups() if g), r, i, doc, test)
+    if trace:
+        for section in CAP_SECTIONS:
+            for raw in trace.get(section) or []:
+                value = str(raw.get("value") if isinstance(raw, dict) else raw)
+                if section == "network":
+                    value = value.lower()
+                e = caps[section].get(value)
+                if e:
+                    e["verified"] = True
+                    e["source"] = "trace"
+                elif sum(len(v) for v in caps.values()) < CAP_LIMIT * len(CAP_SECTIONS):
+                    caps[section][value] = {"value": value, "file": "(trace)", "line": 0, "count": 1,
+                                             "doc": False, "test": False, "verified": True, "source": "trace"}
     return {"files": files, **{k: sorted(v.values(), key=lambda e: (-e["count"], e["value"]))[:CAP_LIMIT] for k, v in caps.items()}}
 
 COVERAGE_EXTS = CODE_EXT | DOC_EXT | {".json", ".yml", ".yaml", ".toml", ".xml", ".plist", ".cfg", ".ini", ".conf", ".env", ".tf"}
@@ -2558,7 +2579,7 @@ def inner(src, out):
     result["tools"]["agent-checks"] = {"findings": len(fs), "seconds": round(time.time() - t, 1), "ok": True, "files": n}
     t = time.time()
     try:
-        result["capabilities"] = scan_capabilities(src)
+        result["capabilities"] = scan_capabilities(src, trace=result.get("trace"))
     except Exception as ex:
         result["notes"].append(f"capability map failed: {ex}")
     try:
@@ -3522,8 +3543,8 @@ def mcp_server(a):
     return 0
 
 
-def render_capabilities(d, label):
-    """Prints what the target can touch: hosts, secret paths, subprocesses, env vars, storage, hooks, permissions."""
+def render_capabilities(d, label, all_entries=False):
+    """Prints what the target can touch. Documentation/test-only entries are collapsed unless all_entries."""
     meta = d.get("meta") if isinstance(d.get("meta"), dict) else {}
     caps = meta.get("capabilities") or {}
     print(f"RepoBeagle capabilities: {label}")
@@ -3533,16 +3554,23 @@ def render_capabilities(d, label):
     print(f"  scanned: {meta.get('files', '?')} file(s), profile {meta.get('profile', '?')}, verdict {d.get('verdict', '?')}")
     names = {"network": "network hosts", "filesystem": "filesystem / secret paths", "processes": "subprocesses",
              "environment": "environment variables", "storage": "client storage"}
+    def code_entries(items):
+        return [e for e in items if not e.get("doc") and not e.get("test")]
     for key in ("network", "filesystem", "processes", "environment", "storage"):
         items = caps.get(key) or []
         if not items:
             continue
-        print(f"  {names[key]} ({len(items)}):")
-        for e in items[:8]:
+        code, hidden = code_entries(items), len(items) - len(code_entries(items))
+        shown = items if all_entries else code
+        print(f"  {names[key]} ({len(code)}{f' code, {hidden} docs/test' if hidden else ''}):")
+        for e in shown[:8]:
             where = f"[{e.get('file')}:{e.get('line')}]"
-            print(f"    {e.get('value')}  {where}" + (f" x{e['count']}" if (e.get("count") or 1) > 1 else ""))
-        if len(items) > 8:
-            print(f"    ... {len(items) - 8} more (see meta.capabilities in --json)")
+            note = (" traced" if e.get("verified") else "") + (" doc" if e.get("doc") else "") + (" test" if e.get("test") else "")
+            print(f"    {e.get('value')}  {where}" + (f" x{e['count']}" if (e.get("count") or 1) > 1 else "") + note)
+        if len(shown) > 8:
+            print(f"    ... {len(shown) - 8} more (see meta.capabilities in --json)")
+        elif not shown and hidden:
+            print(f"    (only documentation/test entries; --all to list)")
     fs = [f for f in (d.get("findings") or []) if isinstance(f, dict) and not f.get("suppressed")]
 
     def section(title, match):
@@ -3562,12 +3590,13 @@ def render_capabilities(d, label):
 
 def cmd_map(a):
     """Scans (or reads a report) and prints the capability inventory. Never executes repository code."""
+    show_all = getattr(a, "all", False)
     if a.report:
         try:
             d = json.loads(Path(a.report).read_text())
         except (OSError, json.JSONDecodeError) as ex:
             print(f"map: cannot read {a.report}: {ex}", file=sys.stderr); return 1
-        return render_capabilities(d, a.report)
+        return render_capabilities(d, a.report, all_entries=show_all)
     if not a.target:
         print("map: give a target or --report", file=sys.stderr); return 1
     work = tempfile.mkdtemp(prefix="repobeagle-map-")
@@ -3576,6 +3605,7 @@ def cmd_map(a):
     args = ["scan", a.target, "--json", str(rep), "--no-color"]
     if a.strict: args.append("--strict")
     elif a.relaxed: args.append("--relaxed")
+    if getattr(a, "ref", None): args += ["--ref", a.ref]
     if not a.network: args += ["--no-osv", "--no-trust"]
     if a.no_docker: args.append("--no-docker")
     r = _mcp_exec(args)
@@ -3584,7 +3614,7 @@ def cmd_map(a):
     except Exception:
         print("map: scan produced no report: " + ((r.stderr or r.stdout or "")[-600:]), file=sys.stderr)
         return 1
-    return render_capabilities(d, a.target)
+    return render_capabilities(d, a.target, all_entries=show_all)
 
 
 WEB_MAX_BYTES = 2_000_000
@@ -3782,11 +3812,15 @@ def report(meta, findings, v, why, counts, notes, ai, use_color, maxn=40, min_se
     if meta.get("suppressed"):
         print(C("2", f"  suppressed {meta['suppressed']} finding(s) via {SUPPRESS_FILE} (kept in --json with suppressed=true)"))
     caps = meta.get("capabilities") or {}
-    bits = [f"{len(caps[k])} {label}" for k, label in (("network", "host(s)"), ("filesystem", "secret path(s)"),
+    code = lambda k: [e for e in (caps.get(k) or []) if not e.get("doc") and not e.get("test")]
+    hidden = sum(len(caps.get(k) or []) - len(code(k)) for k in ("network", "filesystem", "processes", "environment", "storage"))
+    bits = [f"{len(code(k))} {label}" for k, label in (("network", "host(s)"), ("filesystem", "secret path(s)"),
                                                        ("processes", "subprocess(es)"), ("environment", "env var(s)"),
-                                                       ("storage", "storage use(s)")) if caps.get(k)]
+                                                       ("storage", "storage use(s)")) if code(k)]
     if bits:
-        print(C("1", "  Capabilities: " + ", ".join(bits) + "  (repobeagle map for detail)"))
+        print(C("1", "  Capabilities: " + ", ".join(bits)
+                + (f" (+{hidden} documentation/test hidden)" if hidden else "")
+                + "  (repobeagle map for detail)"))
     cov = meta.get("coverage") or {}
     if cov:
         sk = ", ".join(f"{n} {k}" for k, n in (cov.get("skipped") or {}).items() if n)
@@ -4504,6 +4538,8 @@ def main():
     mp = sp.add_parser("map", help="show what a repo can touch: hosts, secret paths, subprocesses, env vars, storage, hooks")
     mp.add_argument("target", nargs="?", help="git URL or local directory")
     mp.add_argument("--report", metavar="FILE", help="render an existing report.json instead of scanning")
+    mp.add_argument("--ref", metavar="REV", help="git branch, tag or commit to scan (requires a git URL)")
+    mp.add_argument("--all", action="store_true", help="also list documentation/test-only entries (hidden by default)")
     g = mp.add_mutually_exclusive_group()
     g.add_argument("--strict", action="store_true"); g.add_argument("--relaxed", action="store_true")
     mp.add_argument("--network", action="store_true", help="also run OSV and GitHub trust lookups (slower; the map itself is offline)")

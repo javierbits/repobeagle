@@ -67,7 +67,14 @@ planner:
 `repobeagle export` converts a stored report to SARIF 2.1.0 (GitHub code scanning, Azure DevOps, VS Code), a Markdown table for a PR comment, or normalized JSON. Every finding carries a stable `partialFingerprints` value and, when suppressed, an explicit SARIF suppression, so accepted findings stay visible but dismissed. The scan workflow uploads it when `upload-sarif: true`.
 Exit code: 0 = GREEN, 1 = YELLOW, 2 = RED. Colour turns off when output isn't a terminal or `NO_COLOR` is set.
 
-`repobeagle map <target>` answers a different question: not "is it safe?" but "what can it touch?". It lists remote hosts, secret paths (`~/.ssh`, `.env`, wallet and cloud credential files), subprocesses, environment variables, client storage, install hooks and permission scopes, each with the first `file:line`. It is computed by the same offline scan (`meta.capabilities` in `--json`), can render an existing report with `--report r.json`, and never executes repository code; `--network` additionally runs OSV and GitHub trust lookups. This is the view to read before running something in your own shell, and the one to diff between two versions.
+`repobeagle map <target>` answers a different question: not "is it safe?" but "what can it touch?". It lists remote hosts, secret paths (`~/.ssh`, `.env`, wallet and cloud credential files), subprocesses, environment variables, client storage, install hooks and permission scopes, each with the first `file:line`. It is computed by the same offline scan (`meta.capabilities` in `--json`), can render an existing report with `--report r.json`, and never executes repository code; `--network` additionally runs OSV and GitHub trust lookups. This is the view to read before running something in your own shell, and the one to diff between two versions — `--ref <rev>` scans a pinned branch/tag/sha for that comparison.
+
+Noise is classified, not hidden in the JSON: every `meta.capabilities` entry carries `doc` (documentation file or `docs/`) and `test` (`tests/`, `fixtures/`, `spec/`, …), and the human view collapses those into an "N docs/test" count unless you pass `--all`. Entries also carry `verified` and `source: "static"`; a syscall trace (T6) passes its evidence to the same collector and flips matching entries to `verified: true, source: "trace"`, adding capabilities static analysis missed with `file: "(trace)"`. The report's `Capabilities:` summary counts only code entries and says how many doc/test ones were hidden.
+
+```json
+{"network": [{"value": "api.stripe.com", "file": "src/pay.js", "line": 12, "count": 2,
+              "doc": false, "test": false, "verified": false, "source": "static"}]}
+```
 
 `repobeagle web <url>` runs the same privacy rules against a live page instead of a repository: it fetches once (no JavaScript, no crawling, 2 MB cap), treats the page's own host as first-party, and reports the third-party hosts, trackers, cookies, PII in URLs/forms, framing and permission delegation it sees. `--assets N` also fetches up to N same-origin scripts/stylesheets so inline-ESM imports and CSS `@import`/`url()` are inspected. The report is marked `meta.mode = "web (fetched once, no JS executed)"`, `meta.url` and `meta.fetched`; `file://` works, which is how the test suite covers it offline.
 
@@ -375,6 +382,7 @@ The rule-pair check is automatic: `tests/test_rule_fixtures.py` parses the `RULE
 | tests/fixtures/trap-skill (SKILL.md with zero-width and tag-char hidden "upload .env" instruction, over-broad mcp.json) | RED |
 | tests/fixtures/trap-gha, trap-markdown, trap-build, trap-binary, trap-telemetry, trap-privacy (one trap per check family; each rule name must fire) | YELLOW/RED |
 | tests/fixtures/control-clean (pinned actions, minified bundle in `public/`, normal README with comment/details/alt text, real deps), `--strict` | GREEN |
+| tests/fixtures/control-empty, control-doc-hosts, control-archive-only (capability edges: no files, docs-only hosts, uninspectable archive) | GREEN / GREEN / YELLOW |
 | tests/fixtures/ignore-suppressed (`.repobeagleignore` silences a `curl\|sh`, finding stays in JSON as suppressed) | GREEN |
 | tests/test_trust.py (offline trust-signal unit tests) | pass |
 | tests/test_privacy.py (redaction, card check, privacy summary, first-party inference, suppression units) | pass |
@@ -383,6 +391,7 @@ The rule-pair check is automatic: `tests/test_rule_fixtures.py` parses the `RULE
 | tests/test_determinism.py (normalization: order/timings/paths ignored, real changes caught) | pass |
 | tests/test_sarif_schema.py (export validates against the vendored OASIS SARIF 2.1.0 schema; purity) | pass |
 | tests/test_mcp_interop.py (official MCP SDK: initialize, schemas, scan_repo, explain_report, invalid args, unknown tool) | pass |
+| tests/test_capabilities.py (empty/doc-only/archive-only repos, doc/test collapsing, trace hook, `map --ref`) | pass |
 | tests/test_markdown_snapshot.py (PR-comment snapshot, pipe/newline escaping, suppression, truncation) | pass |
 | tests/test_rule_fixtures.py (positive fixture fires every declared rule; control-clean fires none) | pass |
 | tests/test_fuzz.py (bounded Hypothesis targets: `decode_tags`, `redact_pii`, `check_unicode`, `check_markdown_hidden`) | pass |

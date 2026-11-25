@@ -25,7 +25,7 @@ jobs:
       # Syntax-level lint only: the scanner is a single 3.4k-line module and the
       # fixtures intentionally contain odd code, so style rules would be noise.
       - name: Byte-compile the scanner and tools
-        run: python3 -m py_compile repobeagle.py tools/make_badge.py tests/test_banner.py tests/test_trust.py tests/test_privacy.py tests/test_toolchain.py tests/test_explain.py tests/test_rule_fixtures.py tests/test_fuzz.py tests/test_determinism.py tests/test_markdown_snapshot.py tests/test_sarif_schema.py tests/test_mcp_interop.py
+        run: python3 -m py_compile repobeagle.py tools/make_badge.py tests/test_banner.py tests/test_trust.py tests/test_privacy.py tests/test_toolchain.py tests/test_explain.py tests/test_rule_fixtures.py tests/test_fuzz.py tests/test_determinism.py tests/test_markdown_snapshot.py tests/test_sarif_schema.py tests/test_mcp_interop.py tests/test_capabilities.py
       - name: Lint for syntax errors and undefined names
         run: ruff check --no-cache --select E9,F63,F7,F82 repobeagle.py tools tests/*.py
       - name: Type-check the scanner and tools (mypy.ini)
