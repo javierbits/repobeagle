@@ -594,7 +594,8 @@ TELEMETRY_RULES = [
     ("session-replay", "medium", "Medallia", _telem_rx(r"\bmedallia\b")),
     # product / web analytics
     ("analytics", "medium", "Google Tag Manager", _telem_rx(r"googletagmanager\.com|\bGTM-[A-Z0-9]{4,}\b")),
-    ("analytics", "medium", "Google Analytics", _telem_rx(r"google-analytics\.com|\bgtag\s*\(|\bUA-\d{4,}-\d+\b|\bG-[A-Z0-9]{6,}\b")),
+    ("analytics", "medium", "Google Analytics", _telem_rx(r"google-analytics\.com|\bgtag\s*\(|\bUA-\d{4,}-\d+\b|"
+                                                          r"\bG-(?=[A-Z0-9]{6,}\b)(?=[A-Z0-9]*\d)[A-Z0-9]+\b")),
     ("analytics", "medium", "Plausible", _telem_rx(r"plausible\.io|@plausible/|plausible-analytics")),
     ("analytics", "medium", "Umami", _telem_rx(r"umami\.is|umami-analytics|data-website-id")),
     ("analytics", "medium", "Matomo/Piwik", _telem_rx(r"matomo|piwik|\b_paq\b")),
@@ -788,7 +789,7 @@ def check_telemetry(root, p, text, telemetry, optouts, optouts_code):
         return
     # Prose mentions vendors without using them ("alternative to Sentry"), so only opt-outs count there.
     prose = (p.suffix.lower() in PROSE_EXT or (p.suffix.lower() == ".txt" and bool(re.search(r"(?i)(^|/)docs?/", r)))
-             or bool(AUTHORS_FILE_RE.search(r)) or bool(LICENSE_FILE_RE.search(r)))
+             or bool(AUTHORS_FILE_RE.search(r)) or bool(LICENSE_FILE_RE.search(r)) or p.name == "CODEOWNERS")
     test_src = bool(TEST_SRC_RE.search(r) or TEST_FILE_RE.search(r)) and not r.startswith("tests/fixtures/")
     for i, line in enumerate(text.split("\n"), 1):
         if len(line) > 2000:
@@ -803,8 +804,8 @@ def check_telemetry(root, p, text, telemetry, optouts, optouts_code):
                 optouts_code.add("Do-Not-Track")
         if prose or _is_comment(line):
             continue          # a comment mentioning a vendor is a note, not a request
-        if test_src or I18N_FILE_RE.search(r):
-            continue          # test/i18n files list words that happen to match vendor names; shipped behaviour is what matters
+        if test_src or I18N_FILE_RE.search(r) or GENERATED_DIR_RE.search(r):
+            continue          # test/i18n/generated files list words that happen to match vendor names; shipped behaviour is what matters
         if re.match(r'\s*\("(?:ads|analytics|session-replay|crash|apm|devtool)",', line):
             continue          # a vendor table entry is a definition, not usage
         for kind, sev, vendor, rx in TELEMETRY_RULES:
@@ -854,6 +855,7 @@ def telemetry_findings(telemetry, optouts, optouts_code):
 PROSE_EXT = {".md", ".mdx", ".markdown", ".rst", ".adoc"}
 TEST_SRC_RE = re.compile(r"(?i)(^|/)(tests?|__tests__|spec)/")
 I18N_FILE_RE = re.compile(r"(?i)(^|/)(locales?|i18n|translations?|l10n)/")
+GENERATED_DIR_RE = re.compile(r"(?i)(^|/)(generated|__generated__|gen)/")
 TEST_FILE_RE = re.compile(r"(?i)(^|/)[^/]*\.(?:test|spec)\.[a-z]+$")
 PACKAGE_MANAGER_RE = re.compile(r'"packageManager"\s*:')
 AUTHORS_FILE_RE = re.compile(r"(?i)(^|/)(authors|contributors|credits|thanks)(\.\w+)?$")
@@ -1384,7 +1386,9 @@ EMAIL_RE = re.compile(r"[\w.+-]+@[a-z0-9-]+(?:\.[a-z0-9-]+)+", re.I)
 EMAIL_IGNORE = {"git@github.com", "noreply@github.com", "actions@github.com"}
 EMAIL_IGNORE_RE = re.compile(r"(?i)@users\.noreply\.github\.com$")
 PHONE_RE = re.compile(r"(?<![A-Za-z0-9+])\+\d[\d ().-]{6,14}\d")
-IMPORT_NET_PY = re.compile(r"\b(requests|httpx|aiohttp|urllib3)\.\w+\s*\(|\burlopen\s*\(|socket\.socket\s*\(|\bhttp\.client\.")
+IMPORT_NET_PY = re.compile(r"\b(requests|httpx|urllib3)\.\w+\s*\(|"
+                            r"\baiohttp\.(?!ClientTimeout|ClientSession|TCPConnector|FormData)\w+\s*\(|"
+                            r"\burlopen\s*\(|socket\.socket\s*\(|\bhttp\.client\.")
 IMPORT_NET_JS = re.compile(r"(\bfetch\s*\(|\baxios[.(]|\$\.ajax\s*\(|navigator\.geolocation)")
 IP_LOG_RE = re.compile(r"(?i)(req\.ip\b|request\.remote_addr|remote_addr|REMOTE_ADDR|RemoteAddr|X-Forwarded-For|"
                        r"HTTP_X_FORWARDED_FOR|X_FORWARDED_FOR|X-Real-IP|True-Client-IP|CF-Connecting-IP|client_ip|remoteAddress|\bip_address\b)")
