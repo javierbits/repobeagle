@@ -606,7 +606,7 @@ TELEMETRY_RULES = [
     ("analytics", "medium", "Pendo", _telem_rx(r"\bpendo\b")),
     ("analytics", "medium", "Optimizely", _telem_rx(r"\boptimizely\b")),
     ("analytics", "medium", "VWO", _telem_rx(r"vwo\.com|visualwebsiteoptimizer|_vwo_code")),
-    ("analytics", "medium", "HubSpot", _telem_rx(r"hs-scripts\.com|hsforms\.(?:net|com)|hubspotutk|\bhubspot\b")),
+    ("analytics", "medium", "HubSpot", _telem_rx(r"hs-scripts\.com|hsforms\.(?:net|com)|hubspotutk|@hubspot/|\bhubspot(?=[\"'/>.)-])")),
     ("analytics", "medium", "Klaviyo", _telem_rx(r"\bklaviyo\b")),
     ("analytics", "medium", "Braze", _telem_rx(r"\bbraze\b|appboy")),
     ("analytics", "medium", "OneSignal", _telem_rx(r"\bonesignal\b")),
