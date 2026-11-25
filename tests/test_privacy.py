@@ -17,6 +17,8 @@ check("redacts card", rb.redact_pii("4111 1111 1111 1111") == "4111 **** **** 11
 check("redacts ssn", rb.redact_pii("123-45-6789") == "***-**-6789")
 check("redacts phone", "****" in rb.redact_pii("+46701234567"))
 check("keeps text", rb.redact_pii("no pii here") == "no pii here")
+check("url userinfo is not email", rb._in_url_authority("http://user:pass@host/path", 12))
+check("email outside authority", not rb._in_url_authority("contact user@host now", 10))
 check("address US", bool(rb.ADDRESS_RE.search("221B Baker Street")))
 check("address DE", bool(rb.ADDRESS_INTL_RE.search("Hauptstraße 12")))
 check("address PO box", bool(rb.ADDRESS_INTL_RE.search("P.O. Box 42")))

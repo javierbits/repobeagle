@@ -1351,6 +1351,11 @@ IOS_DATA_TYPE_NAMES = {
 TRACKER_INIT_RE = re.compile(r"(?i)(\bgtag\s*\(|\bfbq\s*\(|posthog\.init|\b_paq\.|\bym\s*\(|mixpanel\.init|"
                             r"amplitude\.getInstance|hotjar\.|\bclarity\s*\(|Sentry\.init|datadogRum\.init)")
 CMP_LOAD_RE = CONSENT_RE
+def _in_url_authority(line, pos):
+    """True when pos falls inside scheme://userinfo@host (so it is not an email)."""
+    scheme = line.rfind("://", 0, pos)
+    return scheme >= 0 and "/" not in line[scheme + 3:pos]
+
 PII_OBJECT_RE = re.compile(r"(?i)\b(user|users|account|customer|profile|session|member|subscriber|person|lead|contact|"
                            r"request|response|body|payload|form|form_?data|req)\b")
 
@@ -1422,6 +1427,7 @@ def check_privacy_signals(root, p, text, privacy):
     if LOCKFILE_RE.search(r):
         return
     if ext in PROSE_EXT:                 # docs links can carry campaign tags, but are not requests
+        docs_emails = set()
         for i, line in enumerate(text.split("\n"), 1):
             if TRACKING_PARAM_RE.search(line):
                 _priv_add(privacy, "tracking-params", "info", "utm/campaign parameters", r, i, line,
@@ -1432,21 +1438,21 @@ def check_privacy_signals(root, p, text, privacy):
                           "Example link puts personal data in the URL query: fine in docs, leaks via Referer/logs when used at runtime.")
             for m in EMAIL_RE.finditer(line):
                 addr = m.group(0)
-                if m.start() and line[m.start() - 1] == "/":
-                    continue          # srcset density descriptors such as image@2x.png
+                if (m.start() and line[m.start() - 1] in "/:") or _in_url_authority(line, m.start()):
+                    continue          # srcset densities and URL userinfo such as user:pass@host
                 if addr.lower() in EMAIL_IGNORE or addr.lower().endswith((".example", ".invalid", ".local")):
                     continue
                 if line[max(0, m.start() - 7):m.start()].lower() == "mailto:":
                     continue          # already reported as a mailto: link
-                role = PII_ROLE_RE.match(addr.split("@", 1)[0])
-                _priv_add(privacy, "pii-email", "info", "docs:" + addr.lower(), r, i, line,
-                          ("Docs publish a role mailbox (contact info by design) — still a readable address."
-                           if role else "Docs publish a personal email address; confirm it is meant to be public."))
-                break
+                docs_emails.add(addr.lower())
             m = PHONE_RE.search(line)
             if m:
                 _priv_add(privacy, "pii-phone", "info", "docs:" + m.group(0).strip(), r, i, line,
                           "Docs publish a phone number (contact info by design).")
+        if docs_emails:
+            shown = ", ".join(sorted(docs_emails)[:4]) + (f", +{len(docs_emails) - 4}" if len(docs_emails) > 4 else "")
+            _priv_add(privacy, "pii-email", "info", f"docs: {len(docs_emails)} address(es) in {r}", r, 1, shown,
+                      "Docs publish these email addresses (contact/maintainer info); confirm they are meant to be public.")
         return
     is_js = ext in (".js", ".mjs", ".cjs", ".ts", ".tsx", ".jsx", ".html", ".htm", ".vue", ".svelte", ".astro")
     lines = text.split("\n")
@@ -1509,8 +1515,8 @@ def check_privacy_signals(root, p, text, privacy):
                         break
             for m in EMAIL_RE.finditer(line):
                 addr = m.group(0)
-                if m.start() and line[m.start() - 1] == "/":
-                    continue          # srcset density descriptors such as image@2x.png
+                if (m.start() and line[m.start() - 1] in "/:") or _in_url_authority(line, m.start()):
+                    continue          # srcset densities and URL userinfo such as user:pass@host
                 if addr.lower() in EMAIL_IGNORE or addr.lower().endswith((".example", ".invalid", ".local")):
                     continue
                 if re.search(r"(?i)@(example\.(com|org|net)|(?:[\w-]+\.)*sentry\.io)$", addr):
