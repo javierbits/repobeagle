@@ -2152,6 +2152,8 @@ def privacy_profile(summary):
     perms = len(summary.get("permissions") or [])
     consent = len(summary.get("consent") or [])
     bits = [f"{trackers} tracker vendor(s)", f"{len(hosts)} third-party host(s)", f"{pii} PII item(s)"]
+    if summary.get("vendor"):
+        bits.append(f"{len(summary['vendor'])} vendor config(s)")
     if perms:
         bits.append(f"{perms} permission scope(s)")
     if consent:
@@ -2161,12 +2163,19 @@ def privacy_profile(summary):
 def privacy_summary(findings):
     """Structured 'what kind' overview of privacy findings, for the report and JSON."""
     groups = {"trackers": {}, "pii": [], "permissions": [], "fingerprinting": [], "storage": [],
-              "consent": [], "network": [], "retention": [], "uploads": [], "transparency": []}
+              "consent": [], "vendor": [], "network": [], "retention": [], "uploads": [], "transparency": []}
 
     def add(group, value):
         if value and value not in groups[group]:
             groups[group].append(value)
 
+    permissions = {"android-permission", "android-feature", "extension-permission", "extension-resource",
+                   "extension-connectable", "macos-entitlement", "ios-tracking", "ios-tracking-domain",
+                   "ios-api-category", "ios-data-type", "ios-purpose-string"}
+    storage = {"cookie-write", "cookie-flags", "cookie-lifetime", "browser-storage", "tracking-cookie", "client-id"}
+    consent = {"consent-manager", "consent-gating", "consent-order", "consent-mode", "consent-state", "dnt-respect"}
+    network = {"insecure-endpoint", "external-endpoint", "referrer-policy", "permissions-policy", "iframe-allow"}
+    transparency = {"privacy-doc", "store-disclosure", "undisclosed-vendor"}
     for f in findings:
         if f.get("tool") not in ("telemetry", "privacy"):
             continue
@@ -2179,21 +2188,23 @@ def privacy_summary(findings):
                 vals.append(key)
         elif rule.startswith("pii-"):
             add("pii", key)
-        elif rule in ("android-permission", "extension-permission", "macos-entitlement", "ios-data-type", "ios-tracking"):
+        elif rule in permissions:
             add("permissions", key)
         elif rule == "fingerprint":
             add("fingerprinting", key)
-        elif rule in ("cookie-write", "cookie-flags", "browser-storage", "tracking-cookie", "client-id"):
+        elif rule in storage:
             add("storage", key)
-        elif rule in ("consent-manager", "consent-gating", "consent-order", "dnt-respect"):
+        elif rule in consent:
             add("consent", key)
-        elif rule in ("insecure-endpoint", "external-endpoint", "third-party-cdn", "referrer-policy", "permissions-policy"):
+        elif rule in ("vendor-pii",):
+            add("vendor", key)
+        elif rule in network or rule.startswith(("third-party-", "first-party-")):
             add("network", key)
         elif rule == "data-retention":
             add("retention", key)
         elif rule.startswith("upload-"):
             add("uploads", key)
-        elif rule in ("privacy-doc", "store-disclosure"):
+        elif rule in transparency:
             add("transparency", key)
     return {k: v for k, v in groups.items() if v}
 

@@ -29,9 +29,15 @@ findings = [
     {"tool": "privacy", "severity": "low", "file": "a.js", "line": 1, "title": "pii-email: a***@x.dev", "snippet": "", "meaning": ""},
     {"tool": "telemetry", "severity": "high", "file": "a.js", "line": 2, "title": "telemetry-session-replay: Hotjar (transitive)", "snippet": "", "meaning": ""},
 ]
+findings += [
+    {"tool": "privacy", "severity": "low", "file": "a.js", "line": 3, "title": "third-party-script: cdn.x.dev", "snippet": "", "meaning": ""},
+    {"tool": "privacy", "severity": "low", "file": "a.js", "line": 4, "title": "vendor-pii: anonymize_ip", "snippet": "", "meaning": ""},
+]
 s = rb.privacy_summary(findings)
 check("summary groups trackers", s.get("trackers", {}).get("session-replay") == ["Hotjar"])
 check("summary groups pii", s.get("pii") == ["a***@x.dev"])
+check("summary groups third-party network", "cdn.x.dev" in (s.get("network") or []))
+check("summary groups vendor configs", (s.get("vendor") or []) == ["anonymize_ip"])
 check("profile line", rb.privacy_profile(s).startswith("Privacy profile: 1 tracker"))
 
 with tempfile.TemporaryDirectory() as d:
