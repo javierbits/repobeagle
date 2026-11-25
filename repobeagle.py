@@ -3083,6 +3083,9 @@ def cmd_diff(a):
     if not isinstance(old, dict) or not isinstance(new, dict):
         print("diff: report roots must be JSON objects", file=sys.stderr); return 1
     mo, mn = old.get("meta") or {}, new.get("meta") or {}
+    if mo.get("profile") and mn.get("profile") and mo["profile"] != mn["profile"]:
+        print(f"diff: reports were produced with different profiles ({mo['profile']} vs {mn['profile']}); "
+              "findings may differ because of the thresholds, not the code", file=sys.stderr)
     if mo.get("ruleset") and mn.get("ruleset") and mo["ruleset"] != mn["ruleset"]:
         print(f"diff: reports were produced by different rulesets ({mo['ruleset']} vs {mn['ruleset']}); "
               "added/removed may include rule changes", file=sys.stderr)

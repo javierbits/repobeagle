@@ -123,6 +123,15 @@ PY
 if $RG diff "$rf" "$g2" --no-color 2>&1 | grep -q "different rulesets"; then echo "PASS diff ruleset warning"; else echo "FAIL diff ruleset warning"; fail=1; fi
 if $RG diff "$rf" "$g2" --no-color >/dev/null 2>&1; then echo "PASS diff ruleset mismatch does not gate"; else echo "FAIL diff ruleset mismatch gated"; fail=1; fi
 rm -f "$rf"
+# profile mismatch is warned about: thresholds changed, not necessarily the code
+pf=$(mktemp)
+python3 - "$g2" "$pf" <<'PY'
+import json, sys
+d = json.load(open(sys.argv[1])); d["meta"]["profile"] = "strict"
+json.dump(d, open(sys.argv[2], "w"))
+PY
+if $RG diff "$pf" "$g2" --no-color 2>&1 | grep -q "different profiles"; then echo "PASS diff profile warning"; else echo "FAIL diff profile warning"; fail=1; fi
+rm -f "$pf"
 # removed findings: reported as removed, never as a failure
 rmv=$(mktemp)
 python3 - "$g2" "$rmv" <<'PY'
