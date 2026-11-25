@@ -53,8 +53,3 @@ tests/run_tests.sh --offline
 ## Risk and rollback
 
 <!-- What can this break? Which profiles/consumers are affected? How is it reverted? -->
-
-## AI assistance
-
-- [ ] I used an AI assistant and reviewed every line
-- [ ] No AI assistance
