@@ -1389,7 +1389,7 @@ FINGERPRINT_RULES = [
     ("fonts", "medium", r"measureText|document\.fonts|FontFace\(|font-family.*local\(", "Font metrics/measuring: installed-font sets are device-specific."),
     ("screen", "low", r"screen\.(width|height|colorDepth|pixelDepth)|devicePixelRatio|screen\.avail", "Screen geometry/color depth: display fingerprint."),
     ("user-agent", "low", r"navigator\.userAgent|navigator\.platform|navigator\.hardwareConcurrency|navigator\.deviceMemory|navigator\.plugins|navigator\.languages", "Browser/device capabilities: UA, cores, memory, plugins, languages."),
-    ("timezone", "low", r"resolvedOptions\(\)\.timeZone|Intl\.DateTimeFormat|toLocaleString\(", "Timezone/locale: narrows down the user's location and language."),
+    ("timezone", "low", r"resolvedOptions\(\)\.timeZone|Intl\.DateTimeFormat\(\s*\)|toLocale(?:String|DateString|TimeString)\(\s*\)", "Timezone/locale: narrows down the user's location and language."),
     ("webrtc", "medium", r"RTCPeerConnection|createDataChannel\s*\(", "WebRTC peers see your public IP and can probe NAT/firewall; connections may be made before consent."),
     ("battery/network", "low", r"navigator\.getBattery|navigator\.connection\b", "Battery/network state narrows the device and can be sampled repeatedly."),
 ]
@@ -1521,8 +1521,8 @@ CONSENT_STATE_RE = re.compile(r"(?i)(?<![\w.-])(OptanonConsent|OptanonAlertBoxCl
                                r"cookieyes-consent|cc_cookie|borlabs-cookie|euconsent-v2|didomi_token|usprivacy|"
                                r"__cmpconsent|_iub_cs[\w-]*)(?=[=;'\"\s,)]|$)")
 TRACKING_COOKIE_RE = re.compile(r"(?i)(?<![\w.])(_ga_[A-Z0-9]+|_gac_[A-Za-z0-9]+|_ga|_gid|_gat|_gcl_au|_gcl_aw|"
-                                r"_fbp|_fbc|_hj\w*|ajs_\w*|__utm[a-z]|__hstc|__hssc|__hssrc|hubspotutk|intercom-[\w-]+|mp_\w+|"
-                                r"amplitude_id\w*|ph_\w+|_clck|_clsk|_uetvid|_uetsid|_ttp|_rdt_uuid|li_sugr|"
+                                r"_fbp|_fbc|_hj\w*|ajs_\w*(?==)|__utm[a-z]|__hstc|__hssc|__hssrc|hubspotutk|intercom-[\w-]+|mp_\w+(?==)|"
+                                r"amplitude_id\w*|ph_\w+(?==)|_clck|_clsk|_uetvid|_uetsid|_ttp|_rdt_uuid|li_sugr|"
                                 r"bcookie|lidc|_pin_unauth|_epik|_scid|\bfr(?==)|personalization_id|guest_id|__gads|__gpi|_tt_enable_cookie|IDE|NID)(?=[=;'\"\s,)]|$)")
 VENDOR_PII_RE = re.compile(r"(?i)(send_?default_?pii\s*[:=]\s*true|person_?profiles\s*[:=]\s*[\"']always[\"']|"
                             r"anonymize_?ip\s*[:=]\s*false|store_?ip\s*[:=]\s*true|track_?ip\s*[:=]\s*true)")
