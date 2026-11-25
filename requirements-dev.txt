@@ -1,0 +1,5 @@
+# Development and CI tools. The scanner itself stays stdlib-only: repobeagle.py never
+# imports these. Pinned so a green CI means the same checks as a local run.
+mypy==2.4.1
+hypothesis==6.170.17
+ruff==0.17.6

@@ -9,6 +9,7 @@ NEVER executes repository code. Stdlib only (scanners are external binaries).
 import argparse, hashlib, json, os, platform, re, shutil, subprocess, sys, tempfile, time, unicodedata
 import urllib.error, urllib.parse, urllib.request
 from fnmatch import fnmatchcase
+from typing import Any
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -27,7 +28,7 @@ MAX_FILE = 1_500_000
 SKIP_DIRS = {".git", "node_modules", ".venv", "venv", "__pycache__", ".tox", "dist", "build", "target", ".mypy_cache"}
 
 # strictness: verdict thresholds
-PROFILES = {
+PROFILES: dict[str, dict[str, Any]] = {
     # RED if any finding >= red_sev (count >= red_count); YELLOW if any >= yellow_sev
     "strict":   {"red": [("high", 1)],                    "yellow": "low"},
     "balanced": {"red": [("critical", 1)],                "yellow": "medium"},
@@ -1086,9 +1087,9 @@ def own_domains(root):
         pass
     try:
         text = (root / "pubspec.yaml").read_text(errors="replace")
-        m = re.search(r"(?m)^\s*homepage:\s*(\S+)", text)
-        if m:
-            add(m.group(1))
+        pubspec_home = re.search(r"(?m)^\s*homepage:\s*(\S+)", text)
+        if pubspec_home:
+            add(pubspec_home.group(1))
     except OSError:
         pass
     return found
@@ -1317,29 +1318,24 @@ def check_privacy(root, p, text, privacy, own=()):
                           "Framework cookie setter without HttpOnly/Secure/SameSite: readable by scripts, sent in clear or cross-site.")
         if (SET_COOKIE_RE.search(line) or COOKIE_WRITE_RE.search(line) or COOKIE_API_RE.search(line)) \
                 and not SET_COOKIE_READ_RE.search(line):
-            days = None
-            m = COOKIE_MAXAGE_RE.search(line)
-            if m:
-                days = int(m.group(1)) // 86400
-            else:
-                em = COOKIE_EXPIRES_RE.search(line)
-                if em:
-                    days = _expiry_days(em.group(1))
-            if days is None:
+            maxage = COOKIE_MAXAGE_RE.search(line)
+            expires_m = None if maxage else COOKIE_EXPIRES_RE.search(line)
+            days_left = int(maxage.group(1)) // 86400 if maxage else (_expiry_days(expires_m.group(1)) if expires_m else None)
+            if days_left is None:
                 _priv_add(privacy, "cookie-lifetime", "info", "session cookie", r, i, line,
                           "Cookie without a usable Max-Age/Expires: session-scoped (better for privacy).")
-            elif days == 0:
+            elif days_left == 0:
                 _priv_add(privacy, "cookie-lifetime", "info", "cookie deletion (Max-Age=0)", r, i, line,
                           "Zero lifetime deletes the cookie; a common logout/cleanup pattern.")
-            elif days > 365:
+            elif days_left > 365:
                 _priv_add(privacy, "cookie-lifetime", "low", "cookie lifetime > 1 year", r, i, line,
-                          f"Cookie lives {days} days: long-lived identifiers outlive their purpose; shorten where possible.")
-            elif days >= 0:
+                          f"Cookie lives {days_left} days: long-lived identifiers outlive their purpose; shorten where possible.")
+            elif days_left >= 0:
                 _priv_add(privacy, "cookie-lifetime", "info", "short-lived cookie", r, i, line,
-                          f"Cookie expires in {days} days (under a year).")
+                          f"Cookie expires in {days_left} days (under a year).")
             else:
                 _priv_add(privacy, "cookie-lifetime", "info", "expired cookie", r, i, line,
-                          f"Cookie Expires is {abs(days)} days in the past; browsers delete it.")
+                          f"Cookie Expires is {abs(days_left)} days in the past; browsers delete it.")
         if COOKIE_WRITE_RE.search(line) and not re.search(r"(?i)(;\s*secure|;\s*samesite)", line):
             _priv_add(privacy, "cookie-flags", "low", "document.cookie without Secure/SameSite", r, i, line,
                       "JavaScript cookie without Secure/SameSite: sent in clear or cross-site (HttpOnly cannot be set from JS).")
@@ -1500,13 +1496,13 @@ def check_privacy(root, p, text, privacy, own=()):
                     continue
                 sev, what = ANDROID_PERMS.get(perm, ("low", perm.replace("_", " ").lower()))
                 max_sdk = re.search(r'android:maxSdkVersion\s*=\s*"(\d+)"', line)
-                note = ""
+                sdk_note = ""
                 if max_sdk:
                     down = {"high": "medium", "medium": "low", "low": "info"}
-                    sev = down.get(sev, sev)
-                    note = f" Only applies up to API {max_sdk.group(1)} (newer Android does not request it)."
+                    sev = down[sev] if sev in down else sev
+                    sdk_note = f" Only applies up to API {max_sdk.group(1)} (newer Android does not request it)."
                 _priv_add(privacy, "android-permission", sev, perm, r, i, line,
-                          f"Android app requests {what} ({perm}); the user must grant it and the app can read it.{note}")
+                          f"Android app requests {what} ({perm}); the user must grant it and the app can read it.{sdk_note}")
     if manifest:
         groups = {"permissions": "permission", "optional_permissions": "permission",
                   "host_permissions": "host access", "optional_host_permissions": "optional host access"}
@@ -2154,11 +2150,15 @@ def zip_encrypted(p):
     return False
 
 def run_agent_checks(root):
-    findings = []
-    telemetry, optouts, optouts_code, privacy, masks = {}, set(), set(), {}, set()
+    findings: list[dict] = []
+    telemetry: dict[str, Any] = {}
+    optouts: set[str] = set()
+    optouts_code: set[str] = set()
+    privacy: dict[str, Any] = {}
+    masks: set[str] = set()
     privacy_doc = None
     own = own_domains(root)
-    prose = []
+    prose: list[str] = []
     nfiles = 0
     for p in iter_files(root):
         nfiles += 1
@@ -2185,7 +2185,7 @@ def run_agent_checks(root):
         if text is None:
             continue
         if p.suffix.lower() in PROSE_EXT or low.startswith(("readme", "privacy", "security", "notice")):
-            if sum(map(len, prose)) < 800_000:
+            if sum(len(x) for x in prose) < 800_000:
                 prose.append(text)
         check_unicode(root, p, text, findings)
         check_agent_text(root, p, text, findings)
@@ -2289,8 +2289,7 @@ def run_agent_checks(root):
     if privacy_doc:
         findings.append(finding("privacy", "info", privacy_doc, 1, "privacy-doc: privacy policy present", privacy_doc,
                                  "The repo ships a privacy policy/manifest; read it to see what it admits to collecting."))
-    elif prose and PRIVACY_LINK_RE.search(" ".join(prose)):
-        m = PRIVACY_LINK_RE.search(" ".join(prose))
+    elif prose and (m := PRIVACY_LINK_RE.search(" ".join(prose))):
         findings.append(finding("privacy", "info", "(repo)", 0, "privacy-doc: privacy policy linked (external)",
                                  (m.group(1) or m.group(2))[:140],
                                  "No policy file, but the docs link an external privacy policy; read it to see what is disclosed."))
@@ -2303,7 +2302,7 @@ def run_agent_checks(root):
 # ----------------------------------------------------------------------------
 # External scanners (run inside container or locally): gitleaks, semgrep, guarddog
 # ----------------------------------------------------------------------------
-_TOOL_VERSIONS = {}
+_TOOL_VERSIONS: dict[str, str | None] = {}
 
 def tool_version(name):
     """Best-effort version of a scanner, cached for the process. Never raises, never scans."""
@@ -2394,7 +2393,7 @@ def detect_ecosystems(src):
     return eco
 
 def parse_guarddog(stdout, src, label):
-    fs = []
+    fs: list[dict] = []
     try:
         data = json.loads(stdout[stdout.find("{"):] if "{" in stdout else stdout)
     except Exception:
@@ -2469,7 +2468,7 @@ CAP_FILES = 20000
 
 def scan_capabilities(root):
     """Inventory of what the repo can touch: hosts, secret paths, subprocesses, env vars, storage. Cheap regexes, never executes code."""
-    caps = {k: {} for k in CAP_SECTIONS}
+    caps: dict[str, dict[Any, Any]] = {k: {} for k in CAP_SECTIONS}
     files = 0
     def add(section, value, relpath, line):
         e = caps[section].get(value)
@@ -2509,7 +2508,7 @@ def scan_coverage(root):
     total = scanned = 0
     bytes_total = bytes_scanned = 0
     reasons = {"archive": 0, "binary": 0, "oversize": 0, "unreadable": 0, "unsupported": 0}
-    exts = {}
+    exts: dict[str, int] = {}
     for p in iter_files(root):
         total += 1
         try:
@@ -2541,7 +2540,7 @@ def scan_coverage(root):
 def inner(src, out):
     """Runs offline scanners + agent checks. Used inside the container or locally."""
     out = Path(out); out.mkdir(parents=True, exist_ok=True)
-    result = {"findings": [], "notes": [], "tools": {}}
+    result: dict[str, Any] = {"findings": [], "notes": [], "tools": {}}
     for name, fn in (("gitleaks", scan_gitleaks), ("semgrep", scan_semgrep), ("guarddog", scan_guarddog), ("bandit", scan_bandit)):
         t = time.time()
         try:
@@ -2868,7 +2867,7 @@ def privacy_profile(summary):
 
 def privacy_summary(findings):
     """Structured 'what kind' overview of privacy findings, for the report and JSON."""
-    groups = {"trackers": {}, "pii": [], "permissions": [], "fingerprinting": [], "storage": [],
+    groups: dict[str, Any] = {"trackers": {}, "pii": [], "permissions": [], "fingerprinting": [], "storage": [],
               "consent": [], "vendor": [], "first_party": [], "network": [], "retention": [], "uploads": [],
               "transparency": [], "identity": [], "masking": []}
 
@@ -2968,7 +2967,7 @@ def planner_apply(findings, patterns):
 
 def planner_rules(findings):
     """Whole-rule groups, least severe first (lowest worst severity, then largest, then id)."""
-    groups = {}
+    groups: dict[str, list[dict]] = {}
     for f in findings:
         groups.setdefault(_explain_rule(f), []).append(f)
     return sorted(groups.items(), key=lambda kv: (max(SEV_ORDER.get(f.get("severity"), 0) for f in kv[1]),
@@ -3069,7 +3068,7 @@ def explain_report(d, accept=(), target=None, write=False, ignore_file=None, rea
     else:
         room = [f"{max(0, n - 1 - at_least(sev))} more {sev}+" for sev, n in prof["red"]]
         print("headroom: " + ", ".join(room) + f", {max(0, 1 - ygot)} more {ysev}+ (then YELLOW/RED)")
-    rules = {}
+    rules: dict[str, int] = {}
     for f in findings:
         rule = str(f.get("title", "")).split(":")[0].split(" (")[0] or "?"
         rules[rule] = rules.get(rule, 0) + 1
@@ -3186,7 +3185,7 @@ def diff_reports(old, new):
         return [f for f in (d.get("findings") or [])
                 if isinstance(f, dict) and not f.get("suppressed") and f.get("severity") in SEV_ORDER]
     def index(d):
-        out = {}
+        out: dict[tuple[str, str], list[dict]] = {}
         for f in active(d):
             out.setdefault((_rule_of(f), f.get("file") or "?"), []).append(f)
         return out
@@ -3254,7 +3253,8 @@ SARIF_SCHEMA = "https://json.schemastore.org/sarif-2.1.0.json"
 def sarif_report(d):
     """Converts a stored report to SARIF 2.1.0 for GitHub code scanning and editors. Pure: never re-scans."""
     meta = d.get("meta") if isinstance(d.get("meta"), dict) else {}
-    rules, results = {}, []
+    rules: dict[str, dict[str, Any]] = {}
+    results: list[dict[str, Any]] = []
     fs = [f for f in (d.get("findings") or []) if isinstance(f, dict) and f.get("severity") in SEV_ORDER]
     fs.sort(key=lambda f: (-SEV_ORDER[f["severity"]], f.get("file") or "", f.get("line") or 0))
     for f in fs:
@@ -3392,7 +3392,7 @@ def mcp_scan(a):
         raise RuntimeError((r.stderr or r.stdout or "scan produced no report")[-800:])
     meta = d.get("meta") or {}
     fs = [f for f in d.get("findings") or [] if isinstance(f, dict) and not f.get("suppressed")]
-    top = sorted(fs, key=lambda f: -SEV_ORDER.get(f.get("severity"), 0))[:15]
+    top = sorted(fs, key=lambda f: -SEV_ORDER.get(str(f.get("severity")), 0))[:15]
     return {"target": target, "verdict": d.get("verdict"), "counts": d.get("counts"), "why": d.get("why"),
             "privacy_profile": meta.get("privacy_profile"), "findings_total": len(fs),
             "findings": [{"severity": f.get("severity"), "rule": _rule_of(f), "file": f.get("file"),
@@ -3415,6 +3415,7 @@ def mcp_server(a):
         params = msg.get("params") or {}
         if method in ("notifications/initialized", "notifications/cancelled"):
             continue
+        res: dict[str, Any]
         if method == "initialize":
             res = {"protocolVersion": params.get("protocolVersion") or MCP_PROTOCOL,
                    "capabilities": {"tools": {}},
@@ -3610,7 +3611,8 @@ def osv_db_dir():
     return Path(os.environ.get("XDG_CACHE_HOME") or (Path(os.environ.get("HOME") or "/tmp") / ".cache")) / "osv-scalibr"
 
 def osv_db_info():
-    base, out = osv_db_dir(), {"path": str(osv_db_dir()), "ecosystems": [], "bytes": 0, "updated": None}
+    base = osv_db_dir()
+    out: dict[str, Any] = {"path": str(base), "ecosystems": [], "bytes": 0, "updated": None}
     try:
         for p in sorted(base.glob("*/all.zip")):
             st = p.stat()
@@ -3770,7 +3772,7 @@ def report(meta, findings, v, why, counts, notes, ai, use_color, maxn=40, min_se
 
 def collapse(fs, limit=20):
     """Collapse floods of identical-title findings (e.g. 30k archives) into one summary each."""
-    groups = {}
+    groups: dict[tuple[Any, ...], list[dict]] = {}
     for f in fs: groups.setdefault((f["tool"], f["severity"], f["title"]), []).append(f)
     out = []
     for (tool, sev, title), items in groups.items():
@@ -3790,7 +3792,7 @@ def dedupe(fs):
         seen.add(k); out.append(f)
     return out
 
-_WORKDIRS = set()
+_WORKDIRS: set[str] = set()
 
 def _cleanup_workdirs():
     for w in list(_WORKDIRS):
@@ -3864,7 +3866,7 @@ def cmd_scan(a):
     t0 = time.time()
     profile = "strict" if a.strict else "relaxed" if a.relaxed else "balanced"
     skipped = []
-    osv_meta = {}
+    osv_meta: dict[str, Any] = {}
     baseline = None
     if getattr(a, "baseline", None):
         try:
