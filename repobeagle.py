@@ -844,7 +844,10 @@ KNOWN_SUFFIXES = (".githubusercontent.com", ".googleapis.com", ".gstatic.com", "
 def _known_host(host):
     return host in KNOWN_HOSTS or host.endswith(KNOWN_SUFFIXES)
 
-EMBED_RE = re.compile(r"(?i)<(?:iframe|embed|object|video)[^>]+src\s*=\s*[\"']((?:https?:)?//[^\"']+)")
+EMBED_RE = re.compile(r"(?is)<(iframe|embed|object|video)\b([^>]*)>")
+SRC_ATTR_RE = re.compile(r"(?i)\bsrc\s*=\s*[\"']([^\"']+)")
+ALLOW_ATTR_RE = re.compile(r"(?i)\ballow\s*=\s*[\"']([^\"']*)")
+SANDBOX_RE = re.compile(r"(?i)\bsandbox\b")
 SCRIPT_RE = re.compile(r"(?i)<script[^>]+src\s*=\s*[\"']((?:https?:)?//[^\"']+)")
 COOKIE_MAXAGE_RE = re.compile(r"(?i)max-age\s*=\s*(\d+)")
 FORM_RE = re.compile(r"(?i)<form[^>]+action\s*=\s*[\"']((?:https?:)?//[^\"']+)")
@@ -954,10 +957,24 @@ def check_privacy(root, p, text, privacy):
                       "Permissions-Policy present: browser features can be denied to third parties/iframes.")
         if ext in (".html", ".htm", ".svelte", ".vue", ".jsx", ".tsx", ".astro"):
             for m in EMBED_RE.finditer(line):
-                host = _host_of(m.group(1))
-                if host and not _endpoint_noise(host) and host not in NON_NET_HOSTS:
-                    _priv_add(privacy, "third-party-embed", "low", host, r, i, line,
-                              f"Embeds content from {host}: it runs third-party code, sees your IP and can set its own cookies.")
+                attrs = m.group(2)
+                sm = SRC_ATTR_RE.search(attrs)
+                host = _host_of(sm.group(1)) if sm else None
+                if not host or _endpoint_noise(host) or host in NON_NET_HOSTS:
+                    continue
+                sandboxed = bool(SANDBOX_RE.search(attrs))
+                _priv_add(privacy, "third-party-embed", "info" if sandboxed else "low", host, r, i, line,
+                          f"Embeds content from {host}: it runs third-party code, sees your IP and can set its own cookies."
+                          + (" Sandboxed, which limits what it can do." if sandboxed else ""))
+                am = ALLOW_ATTR_RE.search(attrs)
+                if am:
+                    perms = [x.strip().split(";")[0].strip() for x in am.group(1).split(";") if x.strip()]
+                    risky = [x for x in perms if x.split()[0].lower() in
+                             ("camera", "microphone", "geolocation", "clipboard-read", "clipboard-write",
+                              "display-capture", "midi", "serial", "usb", "web-share")]
+                    if risky:
+                        _priv_add(privacy, "iframe-allow", "medium", host, r, i, line,
+                                  f"iframe delegates {', '.join(risky)} to {host}: the embedded page can use that capability.")
             for m in SCRIPT_RE.finditer(line):
                 host = _host_of(m.group(1))
                 if host and not _endpoint_noise(host) and host not in NON_NET_HOSTS:
@@ -1113,8 +1130,7 @@ IOS_DATA_TYPE_NAMES = {
 
 TRACKER_INIT_RE = re.compile(r"(?i)(\bgtag\s*\(|\bfbq\s*\(|posthog\.init|\b_paq\.|\bym\s*\(|mixpanel\.init|"
                             r"amplitude\.getInstance|hotjar\.|\bclarity\s*\(|Sentry\.init|datadogRum\.init)")
-CMP_LOAD_RE = re.compile(r"(?i)(cookiebot|onetrust|optanon|osano|cookieyes|klaro|tarteaucitron|cookieconsent|"
-                         r"didomi|usercentrics|iubenda|axeptio|cookiehub)")
+CMP_LOAD_RE = CONSENT_RE
 PII_OBJECT_RE = re.compile(r"(?i)\b(user|users|account|customer|profile|session|member|subscriber|person|lead|contact|"
                            r"request|response|body|payload|form|form_?data|req)\b")
 
@@ -1314,7 +1330,8 @@ def privacy_findings(privacy):
              "android-permission": 26, "extension-permission": 27, "cookie-flags": 28, "cookie-write": 29,
              "third-party-cdn": 30, "third-party-embed": 31, "third-party-form": 32, "third-party-script": 33, "cookie-lifetime": 34, "external-endpoint": 35,
              "browser-storage": 36, "consent-manager": 37, "referrer-policy": 38, "permissions-policy": 39,
-             "extension-resource": 40, "undisclosed-vendor": 41, "privacy-doc": 42}
+             "iframe-allow": 40,
+             "extension-resource": 41, "undisclosed-vendor": 42, "privacy-doc": 43}
     down = {"high": "medium", "medium": "low", "low": "info"}
     fs = []
     for (rule, key), t in sorted(privacy.items(), key=lambda kv: (order.get(kv[1]["rule"], 9), kv[1]["key"])):
