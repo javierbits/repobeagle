@@ -836,7 +836,8 @@ KNOWN_SUFFIXES = (".githubusercontent.com", ".googleapis.com", ".gstatic.com", "
 def _known_host(host):
     return host in KNOWN_HOSTS or host.endswith(KNOWN_SUFFIXES)
 
-REFERRER_POLICY_RE = re.compile(r"(?i)(referrer-?policy|<meta[^>]+name\s*=\s*[\"']referrer|rel\s*=\s*[\"'][^\"']*noreferrer)")
+REFERRER_POLICY_RE = re.compile(r"(?i)(referrer-?policy|referrerpolicy\s*=|rel\s*=\s*[\"'][^\"']*noreferrer|"
+                             r"<meta[^>]+name\s*=\s*[\"']referrer)")
 PERMISSIONS_POLICY_RE = re.compile(r"(?i)(permissions-?policy)")
 
 def check_privacy(root, p, text, privacy):
@@ -1216,11 +1217,26 @@ def check_privacy_signals(root, p, text, privacy):
         if re.search(r"<key>NSPrivacyTracking</key>\s*<true\s*/>", text):
             _priv_add(privacy, "ios-tracking", "low", "NSPrivacyTracking", r, _line_of(text, "NSPrivacyTracking"), "NSPrivacyTracking",
                       "The app's privacy manifest declares that it tracks users (Apple's definition: linking data to identity/location/ads).")
-        for m in IOS_DATA_TYPE_RE.finditer(text):
+        for dom in re.findall(r"<key>NSPrivacyTrackingDomains</key>\s*<array>(.*?)</array>", text, re.S):
+            for host in re.findall(r"<string>([^<]+)</string>", dom):
+                _priv_add(privacy, "ios-tracking-domain", "info", host.strip(), r, _line_of(text, host), host.strip(),
+                          "Domain the app declares as a tracking endpoint in PrivacyInfo.xcprivacy.")
+        for block in re.findall(r"<dict>(.*?)</dict>", text, re.S):
+            m = re.search(r"<key>NSPrivacyCollectedDataType</key>\s*<string>NSPrivacyCollectedDataType([A-Za-z]+)</string>", block)
+            if not m:
+                continue
             name = m.group(1)
+            flags = []
+            if re.search(r"<key>NSPrivacyCollectedDataTypeLinked</key>\s*<true\s*/>", block):
+                flags.append("linked to identity")
+            if re.search(r"<key>NSPrivacyCollectedDataTypeTracking</key>\s*<true\s*/>", block):
+                flags.append("used for tracking")
             human = IOS_DATA_TYPE_NAMES.get(name, name.replace("Data", " data").lower())
-            _priv_add(privacy, "ios-data-type", "info", human, r, text[:m.start()].count("\n") + 1, f"NSPrivacyCollectedDataType{name}",
-                      "Declared in PrivacyInfo.xcprivacy: this data category is collected and linked to the user.")
+            suffix = f" ({', '.join(flags)})" if flags else ""
+            _priv_add(privacy, "ios-data-type", "info", human + suffix, r, text[:m.start()].count("\n") + 1,
+                      f"NSPrivacyCollectedDataType{name}",
+                      "Declared in PrivacyInfo.xcprivacy: this data category is collected"
+                      + (f" and {', '.join(flags)}" if flags else "") + ".")
     if ext in (".plist", ".entitlements") or p.name.endswith(".plist"):
         for m in PURPOSE_STR_RE.finditer(text):
             key, body = m.group(1), re.sub(r"\s+", " ", m.group(2)).strip()
@@ -1230,13 +1246,13 @@ def check_privacy_signals(root, p, text, privacy):
 def privacy_findings(privacy):
     order = {"fingerprint": 0, "import-time-network": 1, "ip-logging": 2, "pii-log": 3, "pii-email": 4,
              "pii-phone": 5, "pii-address": 6, "pii-ssn": 7, "pii-card": 8, "tracking-cookie": 9,
-             "browser-capability": 10, "macos-entitlement": 11, "client-id": 12,
-             "ios-tracking": 13, "ios-data-type": 14, "dnt-respect": 15, "consent-gating": 16, "consent-order": 17,
-             "data-retention": 18, "upload-surface": 19, "upload-limit": 20, "store-disclosure": 21,
-             "tracking-params": 22, "insecure-endpoint": 23, "android-permission": 24, "extension-permission": 25,
-             "cookie-flags": 26, "cookie-write": 27, "third-party-cdn": 28, "external-endpoint": 29,
-             "browser-storage": 30, "consent-manager": 31, "referrer-policy": 32, "permissions-policy": 33,
-             "ios-purpose-string": 34, "undisclosed-vendor": 35, "privacy-doc": 36}
+             "browser-capability": 10, "macos-entitlement": 11, "client-id": 12, "ios-tracking": 13,
+             "ios-tracking-domain": 14, "ios-data-type": 15, "ios-purpose-string": 16, "dnt-respect": 17,
+             "consent-gating": 18, "consent-order": 19, "data-retention": 20, "upload-surface": 21,
+             "upload-limit": 22, "store-disclosure": 23, "tracking-params": 24, "insecure-endpoint": 25,
+             "android-permission": 26, "extension-permission": 27, "cookie-flags": 28, "cookie-write": 29,
+             "third-party-cdn": 30, "external-endpoint": 31, "browser-storage": 32, "consent-manager": 33,
+             "referrer-policy": 34, "permissions-policy": 35, "undisclosed-vendor": 36, "privacy-doc": 37}
     down = {"high": "medium", "medium": "low", "low": "info"}
     fs = []
     for (rule, key), t in sorted(privacy.items(), key=lambda kv: (order.get(kv[1]["rule"], 9), kv[1]["key"])):
@@ -2174,6 +2190,16 @@ def cmd_verify(a):
         scanned = str(meta.get("scanned_sha", ""))
         if scanned:
             print(f"  scanned:   {scanned[:12]} at {meta.get('scanned_repo', '?')} (image {meta.get('image_ref', '?')})")
+        summary = d.get("privacy_summary") or privacy_summary(d.get("findings") or [])
+        if summary:
+            parts = []
+            for group, vals in summary.items():
+                if isinstance(vals, dict):
+                    n = sum(len(v) for v in vals.values())
+                    parts.append(f"{group} {n}")
+                else:
+                    parts.append(f"{group} {len(vals)}")
+            print(f"  privacy:   {', '.join(parts)}  (details in report.json)")
         head = a.expect_sha or None
         if head is None and a.target:
             g = subprocess.run(["git", "ls-remote", f"https://github.com/{slug}.git", "HEAD"],
