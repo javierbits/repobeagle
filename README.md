@@ -259,7 +259,8 @@ What this does and does not prove:
 What this gate does **not** catch:
 - **Severity changes on the same rule + file**: the key is unchanged, so `low` → `critical` is not a new finding. Gate on the absolute verdict, or compare severities yourself, if that matters.
 - **Rule renames** (warned about via the ruleset line, then compared as different ids) and a finding that moves file (it appears as removed + added, noisy but not silent).
-- A baseline that hides the regression: an older baseline, a different profile (`--strict`/`--relaxed`), `--privacy-only`, or one produced by a different toolchain. The report records `meta.profile`, `meta.ruleset`, `meta.tools` and `meta.scanned_sha`, so compare those when a result surprises you.
+- A baseline that hides the regression: an older baseline, a different profile (`--strict`/`--relaxed`), `--privacy-only`, or one produced by a different toolchain. The report records `meta.profile`, `meta.ruleset`, `meta.tools` and `meta.scanned_sha`, so compare those when a result surprises you; `diff` warns on profile and ruleset mismatches, but the baseline gate does not fail for them.
+- A skipped gate: with `baseline: true` the job passes when the badge branch has no `report.json` yet, or when the baseline clone fails (`continue-on-error`). The log says which; the commit status and the published report are still fresh.
 - New code inside binaries or archives (never inspected), git history beyond the shallow clone, and anything that only happens at runtime.
 
 Retention: the badge branch keeps every `report-<sha>.json` and per-tag copy; nothing prunes them yet, and every scan adds one blob. The baseline is always the newest `report.json`, so a long-lived badge branch accumulates objects — prune old `report-*.json` if that matters to you, or set `badge-branch: ''` (which drops the history and the gate).
