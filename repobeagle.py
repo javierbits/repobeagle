@@ -745,7 +745,9 @@ def check_telemetry(root, p, text, telemetry, optouts, optouts_code):
                                           "line": _line_of(text, dep), "snippet": dep, "count": 1, "src": "lockfile"}
         return
     # Prose mentions vendors without using them ("alternative to Sentry"), so only opt-outs count there.
-    prose = p.suffix.lower() in PROSE_EXT or (p.suffix.lower() == ".txt" and bool(re.search(r"(?i)(^|/)docs?/", r)))
+    prose = (p.suffix.lower() in PROSE_EXT or (p.suffix.lower() == ".txt" and bool(re.search(r"(?i)(^|/)docs?/", r)))
+             or bool(AUTHORS_FILE_RE.search(r)) or bool(LICENSE_FILE_RE.search(r)))
+    test_src = bool(TEST_SRC_RE.search(r))
     for i, line in enumerate(text.split("\n"), 1):
         if len(line) > 2000:
             continue
@@ -759,6 +761,8 @@ def check_telemetry(root, p, text, telemetry, optouts, optouts_code):
                 optouts_code.add("Do-Not-Track")
         if prose or _is_comment(line):
             continue          # a comment mentioning a vendor is a note, not a request
+        if test_src:
+            continue          # test code lists/uses vendors to exercise them; the shipped code is what matters
         if re.match(r'\s*\("(?:ads|analytics|session-replay|crash|apm|devtool)",', line):
             continue          # a vendor table entry is a definition, not usage
         for kind, sev, vendor, rx in TELEMETRY_RULES:
@@ -806,6 +810,7 @@ def telemetry_findings(telemetry, optouts, optouts_code):
 # Privacy: third-party endpoints, browser storage/cookies, platform permissions
 # ----------------------------------------------------------------------------
 PROSE_EXT = {".md", ".mdx", ".markdown", ".rst", ".adoc"}
+TEST_SRC_RE = re.compile(r"(?i)(^|/)(tests?|__tests__|spec)/(?!fixtures/)")
 AUTHORS_FILE_RE = re.compile(r"(?i)(^|/)(authors|contributors|credits|thanks)(\.\w+)?$")
 LICENSE_FILE_RE = re.compile(r"(?i)(^|/)(licen[cs]e|copying|notice)([.-][^/]*)?$")
 
