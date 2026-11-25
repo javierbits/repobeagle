@@ -22,12 +22,25 @@ The `telemetry-*` findings describe the *scanned* repository, not the scanner.
 
 ## Privacy checks for scanned repos
 
-`telemetry-*` (analytics, session replay, ad pixels, crash reporting, APM/OTEL,
-dev-tool and transitive dependency telemetry), `fingerprint`, `android-permission`,
-`extension-permission`, `cookie-write`, `cookie-flags`, `browser-storage`,
-`third-party-cdn`, `consent-manager`, `insecure-endpoint`, `ip-logging`,
-`pii-log`, `pii-email`, `pii-phone`, `tracking-params`, `import-time-network`
-and `privacy-doc`. See the README for what each rule means and its severity.
+`telemetry-*` (analytics incl. GTM/GA and marketing/engagement platforms,
+session replay, ad pixels, crash reporting, APM/OTEL, dev-tool and transitive
+dependency telemetry, vendor PII configs), `fingerprint`, `android-permission`,
+`android-feature`, `extension-permission`, `extension-resource`,
+`extension-connectable`, `macos-entitlement`, `ios-tracking`,
+`ios-tracking-domain`, `ios-api-category`, `ios-data-type`, `ios-purpose-string`,
+`cookie-write`, `cookie-flags`, `cookie-lifetime`, `browser-storage`,
+`browser-capability`, `client-id`, `third-party-cdn`, `third-party-script`,
+`third-party-stylesheet`, `third-party-media`, `third-party-preconnect`,
+`third-party-preload`, `third-party-embed`, `third-party-form`, `iframe-allow`,
+`consent-manager`, `consent-mode`, `consent-state`, `consent-gating`,
+`consent-order`, `dnt-respect`, `insecure-endpoint`, `external-endpoint`,
+`first-party-endpoint`, `ip-logging`, `pii-log`, `pii-email`, `pii-phone`,
+`pii-address`, `pii-postcode`, `pii-ssn`, `pii-card`, `pii-in-url`,
+`tracking-params`, `tracking-cookie`, `import-time-network`,
+`import-time-storage`, `data-retention`, `upload-surface`, `upload-limit`,
+`store-disclosure`, `undisclosed-vendor`, `privacy-doc`. See the README for what
+each rule means and its severity, and `.repobeagleignore` for per-repo
+suppression of reviewed findings.
 
 ## Report data
 

@@ -795,6 +795,7 @@ NON_NET_HOSTS = {"localhost", "127.0.0.1", "0.0.0.0", "::1", "example.com", "exa
                  "xmlns.com", "unicode.org", "ietf.org", "rfc-editor.org", "python.org", "nodejs.org",
                  "schemas.android.com", "schemas.xmlsoap.org"}
 THIRD_PARTY_CDN = {"fonts.googleapis.com", "fonts.gstatic.com", "use.typekit.net", "cdn.jsdelivr.net", "unpkg.com",
+                   "fonts.bunny.net", "api.fontshare.com", "fonts.cdnfonts.com",
                    "cdnjs.cloudflare.com", "esm.sh", "cdn.skypack.dev", "code.jquery.com", "ajax.googleapis.com",
                    "cdn.tailwindcss.com", "static.cloudflareinsights.com"}
 
@@ -1469,7 +1470,12 @@ def check_privacy_signals(root, p, text, privacy):
                               f"Cookie '{name}' belongs to {vendor}: it persists an identifier on the device.")
             m = CONSENT_STATE_RE.search(line)
             if m:
-                _priv_add(privacy, "consent-state", "info", m.group(1), r, i, line,
+                vendor = {"optanonconsent": "OneTrust", "optanonalertboxclosed": "OneTrust",
+                          "cookieyes-consent": "CookieYes", "cc_cookie": "CookieConsent",
+                          "euconsent-v2": "IAB TCF", "didomi_token": "Didomi",
+                          "borlabs-cookie": "Borlabs"}.get(m.group(1).lower())
+                key = f"{m.group(1)} ({vendor})" if vendor else m.group(1)
+                _priv_add(privacy, "consent-state", "info", key, r, i, line,
                           "Consent state is stored client-side in this cookie: changing it controls the CMP.")
             m = SSN_RE.search(line)
             if m and ext not in PII_SKIP_EXT:
