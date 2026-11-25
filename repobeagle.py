@@ -1076,16 +1076,18 @@ def check_privacy(root, p, text, privacy, own=()):
                     continue          # already reported by the telemetry check
                 if _is_comment(line):
                     continue          # a reference URL in a comment is not a request
+                xml_ref = re.search(r"(?i)(xmlns|schemaLocation|setFeature|DOCTYPE|noNamespaceSchemaLocation)", line)
+                archived = "web.archive.org/web/" in line[:pos]
+                url_value = bool(re.search(r"(?i)\bnew\s+URL\(|\bURL\((?:string:)?[\"']|\bURL\s*=\s*[\"']", line))
                 if scheme in ("http", "ws"):
                     requested = re.search(r"(?i)(fetch\s*\(|curl|wget|requests\.|urlopen|src\s*=|href\s*=|action\s*=|XMLHttpRequest|axios|WebSocket|\.get\s*\()", line)
-                    xml_ref = re.search(r"(?i)(xmlns|schemaLocation|setFeature|DOCTYPE|noNamespaceSchemaLocation)", line)
-                    archived = "web.archive.org/web/" in line[:pos]
                     _priv_add(privacy, "insecure-endpoint",
-                              "info" if (xml_ref or archived or test_path or is_i18n) or (is_doc and not requested)
+                              "info" if (xml_ref or archived or url_value or test_path or is_i18n) or (is_doc and not requested)
                               else ("medium" if requested else "low"),
                               host, r, i, line,
                               f"Plaintext {scheme}:// to {host}: "
                               + ("XML namespace/schema identifier, not a fetched URL." if xml_ref else
+                                 "URL value constructed here, not fetched on this line." if url_value else
                                  "historical URL inside a web.archive.org link." if archived else
                                  "requests and metadata are not encrypted in transit." if requested else
                                  "reference URL in docs, not a request." if is_doc else
@@ -1095,7 +1097,7 @@ def check_privacy(root, p, text, privacy, own=()):
                 elif _is_own(host, own):
                     _priv_add(privacy, "first-party-endpoint", "info", host, r, i, line,
                               f"Own/related domain {host}: first-party traffic, not a third party.")
-                elif re.search(r"(?i)url\(\s*[\"']?$", line[:pos]) and not re.match(r"\s*@import", line):
+                elif re.search(r"url\(\s*[\"']?$", line[:pos]) and not re.match(r"\s*@import", line):
                     _priv_add(privacy, "third-party-media",
                               "info" if (host in THIRD_PARTY_CDN or _known_host(host) or is_doc or test_path) else "low",
                               host, r, i, line,
@@ -1108,11 +1110,13 @@ def check_privacy(root, p, text, privacy, own=()):
                     _priv_add(privacy, "external-endpoint", "info", host, r, i, line,
                               f"Network destination {host} (known platform/infrastructure).")
                 else:
-                    _priv_add(privacy, "external-endpoint", "info" if (is_doc or test_path or is_i18n) else "low", host, r, i, line,
+                    _priv_add(privacy, "external-endpoint",
+                              "info" if (is_doc or test_path or is_i18n or url_value) else "low", host, r, i, line,
                               f"Unknown third-party host {host}: "
                               + ("docs link; not fetched at runtime." if is_doc else
                                  "translation-string link." if is_i18n else
                                  "test fixture URL." if test_path else
+                                 "URL value constructed here, not fetched on this line." if url_value else
                                  "verify what it receives and whether it sets cookies/tracks."))
         if COOKIE_WRITE_RE.search(line):
             _priv_add(privacy, "cookie-write", "low", "document.cookie", r, i, line,
