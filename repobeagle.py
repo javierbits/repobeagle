@@ -1171,6 +1171,13 @@ def check_privacy(root, p, text, privacy, own=()):
                     _priv_add(privacy, "external-endpoint", "info", host, r, i, line,
                               f"Network destination {host} (known platform/infrastructure).")
                 else:
+                    pre = line[max(0, pos - 80):pos]
+                    specific = bool(re.search(r"(?i)(?:src|srcset|poster|action)\s*=\s*[\"']?$", pre)
+                                    or re.search(r"url\(\s*[\"']?$", pre)
+                                    or (re.search(r"(?i)href\s*=\s*[\"']?$", pre)
+                                        and re.search(r"(?i)<(?:img|source|link|script|video|audio|picture)\b", line)))
+                    if specific:
+                        continue      # the tag/asset rule below reports this host more precisely
                     _priv_add(privacy, "external-endpoint",
                               "info" if (is_doc or test_path or is_i18n or url_value) else "low", host, r, i, line,
                               f"Unknown third-party host {host}: "
