@@ -1431,6 +1431,7 @@ def check_privacy_signals(root, p, text, privacy):
         return
     if ext in PROSE_EXT:                 # docs links can carry campaign tags, but are not requests
         docs_emails = set()
+        docs_addresses = set()
         for i, line in enumerate(text.split("\n"), 1):
             if TRACKING_PARAM_RE.search(line):
                 _priv_add(privacy, "tracking-params", "info", "utm/campaign parameters", r, i, line,
@@ -1457,6 +1458,13 @@ def check_privacy_signals(root, p, text, privacy):
             if m:
                 _priv_add(privacy, "pii-phone", "info", "docs:" + m.group(0).strip(), r, i, line,
                           "Docs publish a phone number (contact info by design).")
+            m = ADDRESS_RE.search(line) or ADDRESS_INTL_RE.search(line)
+            if m:
+                docs_addresses.add(m.group(0).strip())
+        if docs_addresses:
+            shown = "; ".join(sorted(docs_addresses)[:3])
+            _priv_add(privacy, "pii-address", "info", f"docs: {len(docs_addresses)} address(es) in {r}", r, 1, shown,
+                      "Docs publish these postal addresses (contact info); confirm they are meant to be public.")
         if docs_emails:
             shown = ", ".join(sorted(docs_emails)[:4]) + (f", +{len(docs_emails) - 4}" if len(docs_emails) > 4 else "")
             _priv_add(privacy, "pii-email", "info", f"docs: {len(docs_emails)} address(es) in {r}", r, 1, shown,
