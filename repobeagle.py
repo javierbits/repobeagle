@@ -2730,13 +2730,14 @@ def cmd_scan(a):
         if note: notes.append(note)
         v, why, counts = verdict(active, profile, ai)
         privacy_mode = "only" if a.privacy_only else "excluded" if a.no_privacy else "full"
+        summary = privacy_summary(active)
         meta = {"target": a.target, "fetched_via": how, "mode": "docker (--network none, read-only)" if use_docker else "local (no docker)",
                 "profile": profile, "files": tools.get("agent-checks", {}).get("files"), "seconds": round(time.time() - t0, 1),
                 "tools": tools, "suppressed": len(suppressed), "pii_redacted": not a.no_redact,
                 "privacy_mode": privacy_mode}
-        summary = privacy_summary(active)
         if summary:
             meta["privacy_summary"] = summary
+            meta["privacy_profile"] = privacy_profile(summary)
         report(meta, active, v, why, counts, notes, ai, color_enabled() and not a.no_color, 10**6 if a.all else 40)
         if a.json:
             Path(a.json).write_text(json.dumps({"version": VERSION, "verdict": v, "why": why, "counts": counts, "meta": meta,

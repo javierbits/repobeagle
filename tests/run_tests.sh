@@ -32,6 +32,7 @@ RULES="third-party-cdn insecure-endpoint cookie-write browser-storage consent-ma
   check tests/fixtures/trap-privacy "YELLOW|RED" $L
 j=$(mktemp); $RG scan tests/fixtures/trap-privacy --no-color --json "$j" $L >/dev/null 2>&1
 python3 -c "import json,sys;d=json.load(open('$j'));s=d.get('privacy_summary') or {};ok=bool(s.get('trackers',{}).get('session-replay')) and bool(s.get('pii'));print('PASS privacy summary' if ok else 'FAIL privacy summary');sys.exit(0 if ok else 1)" || fail=1
+python3 -c "import json,sys;d=json.load(open('$j'));p=(d.get('meta') or {}).get('privacy_profile') or '';ok=p.startswith('Privacy profile:') and 'tracker vendor' in p;print('PASS privacy profile in JSON' if ok else 'FAIL privacy profile in JSON');sys.exit(0 if ok else 1)" || fail=1
 python3 -c "import json,sys;d=json.load(open('$j'));s=d.get('privacy_summary') or {};ok=bool(s.get('masking')) and bool(s.get('identity')) and any('IP address' in x for x in (s.get('pii') or [])) and any('clipboard' == x for x in (s.get('permissions') or []));print('PASS privacy summary completeness' if ok else 'FAIL privacy summary completeness');sys.exit(0 if ok else 1)" || fail=1
 python3 -c "import json,sys;d=json.load(open('$j'));e=[x for x in d['findings'] if x['title'].startswith('pii-email')];ok=any('s***@widget.dev' in x['snippet'] and 's***@widget.dev' in x['title'] for x in e);print('PASS PII redacted in snippets' if ok else 'FAIL PII redaction');sys.exit(0 if ok else 1)" || fail=1
 python3 tools/make_badge.py "$j" --endpoint "$j.badge" >/dev/null 2>&1
