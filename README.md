@@ -90,7 +90,7 @@ Severity follows privacy impact, so a default `balanced` scan goes YELLOW when a
 | `third-party-embed` | `<iframe>`/`<embed>`/`<object>` (via `src` or `data`) pointing at another host (video/audio are media): it runs third-party code, sees your IP and can set its own cookies; `info` when `sandbox`ed or `credentialless` | low/info |
 | `iframe-allow` | an embedded frame delegates `camera`, `microphone`, `geolocation`, clipboard, display-capture, USB/serial, … to the third party via `allow=` (also when the iframe tag is split across lines) | medium |
 | `third-party-form` | `<form action="https://other">`: user input is posted to a third party (own/related domains are excluded, like other endpoint rules) | low |
-| `third-party-script` | `<script src="//other">` or ESM `import … from "https://other"`: executable third-party code (info for known CDNs); own/related domains are skipped | low/info |
+| `third-party-script` | `<script src="//other">` (incl. inline `<script>` ESM imports) or `import … from "https://other"`: executable third-party code (info for known CDNs); own/related domains are skipped | low/info |
 | `third-party-preconnect` | `<link rel="preconnect">`/`dns-prefetch` to another host: the browser opens a connection (IP, TLS) before any consent or request | low/info |
 | `third-party-media` | `<img>`/`<video>` (incl. `poster`)/`<source>`/`<audio>` (including `srcset`) and CSS `url()` assets from another host (own/related domains are classified as first-party): they see your IP and page URL; known CDNs are `info`, unknown hosts `low`; `@import` stays `third-party-stylesheet` | low/info |
 | `third-party-stylesheet` | `<link rel="stylesheet">` or CSS `@import` from another host: it sees your IP/referrer and pulls fonts/images from its servers; known CDNs `info`, unknown `low` | low/info |
@@ -243,7 +243,7 @@ Apart from the clone, OSV/GuardDog-verify, the GitHub trust lookup and your own 
 
 ## Example output (abridged)
 ```
-repobeagle 1.137.0  |  tests/fixtures/trap-npm
+repobeagle 1.138.0  |  tests/fixtures/trap-npm
   VERDICT: RED    2 critical / 2 high findings, e.g. npm lifecycle script 'postinstall' runs automatically on install (package.json:8)
   CRITICAL [agent-checks] package.json:8
            npm lifecycle script 'postinstall' runs automatically on install

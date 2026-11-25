@@ -1189,6 +1189,7 @@ def check_privacy(root, p, text, privacy, own=()):
                 else:
                     pre = line[max(0, pos - 80):pos]
                     specific = bool(re.search(r"(?i)(?:src|srcset|poster|action|data)\s*=\s*[\"']?$", pre)
+                                    or re.search(r"(?i)(?:import|from)\s*\(?\s*[\"']?$", pre)
                                     or re.search(r"url\(\s*[\"']?$", pre)
                                     or (re.search(r"(?i)href\s*=\s*[\"']?$", pre)
                                         and re.search(r"(?i)<(?:img|source|link|script|video|audio|picture)\b", line)))
@@ -1390,7 +1391,7 @@ def check_privacy(root, p, text, privacy, own=()):
                 if host and not _endpoint_noise(host) and host not in NON_NET_HOSTS and not _is_own(host, own):
                     _priv_add(privacy, "third-party-form", "low", host, r, i, line,
                               f"Form action posts user data to {host}; verify what it collects and its policy.")
-        if ext in (".js", ".mjs", ".cjs", ".ts", ".tsx", ".jsx", ".vue", ".svelte", ".astro"):
+        if ext in (".js", ".mjs", ".cjs", ".ts", ".tsx", ".jsx", ".vue", ".svelte", ".astro", ".html", ".htm"):
             for m in JS_IMPORT_URL_RE.finditer(line):
                 host = _host_of(m.group(1))
                 if host and not _endpoint_noise(host) and host not in NON_NET_HOSTS and not _is_own(host, own):
