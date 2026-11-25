@@ -856,6 +856,8 @@ ALLOW_ATTR_RE = re.compile(r"(?i)\ballow\s*=\s*[\"']([^\"']*)")
 SANDBOX_RE = re.compile(r"(?i)\bsandbox\b")
 SCRIPT_RE = re.compile(r"(?i)<script[^>]+src\s*=\s*[\"']((?:https?:)?//[^\"']+)")
 MEDIA_RE = re.compile(r"(?i)<(?:img|source|video|audio|picture)\b[^>]*\bsrc\s*=\s*[\"']((?:https?:)?//[^\"']+)")
+LINK_CSS_RE = re.compile(r"(?i)<link[^>]+rel\s*=\s*[\"']stylesheet[\"'][^>]+href\s*=\s*[\"']((?:https?:)?//[^\"']+)")
+PRELOAD_RE = re.compile(r"(?i)<link[^>]+rel\s*=\s*[\"'](?:preload|prefetch)[\"'][^>]+href\s*=\s*[\"']((?:https?:)?//[^\"']+)")
 PRECONNECT_RE = re.compile(r"(?i)<link[^>]+rel\s*=\s*[\"'](?:preconnect|dns-prefetch)[\"'][^>]+href\s*=\s*[\"']((?:https?:)?//[^\"']+)")
 COOKIE_MAXAGE_RE = re.compile(r"(?i)max-age\s*=\s*(\d+)")
 COOKIE_EXPIRES_RE = re.compile(r"(?i)expires\s*=\s*([^;\"']+)")
@@ -1089,6 +1091,18 @@ def check_privacy(root, p, text, privacy, own=()):
                     _priv_add(privacy, "third-party-media", "info" if host in THIRD_PARTY_CDN or _known_host(host) else "low",
                               host, r, i, line,
                               f"Media loaded from {host}: it sees your IP and the page URL, and may set/send cookies or beacons.")
+            for m in LINK_CSS_RE.finditer(line):
+                host = _host_of(m.group(1))
+                if host and not _endpoint_noise(host) and host not in NON_NET_HOSTS and not _is_own(host, own):
+                    _priv_add(privacy, "third-party-stylesheet", "info" if host in THIRD_PARTY_CDN else "low",
+                              host, r, i, line,
+                              f"Stylesheet loaded from {host}: it sees your IP/referrer and can pull fonts/images from its own servers.")
+            for m in PRELOAD_RE.finditer(line):
+                host = _host_of(m.group(1))
+                if host and not _endpoint_noise(host) and host not in NON_NET_HOSTS and not _is_own(host, own):
+                    _priv_add(privacy, "third-party-preload", "info" if host in THIRD_PARTY_CDN else "low",
+                              host, r, i, line,
+                              f"Resource preloaded/prefetched from {host}: fetched before it is needed, revealing your IP early.")
             for m in PRECONNECT_RE.finditer(line):
                 host = _host_of(m.group(1))
                 if host and not _endpoint_noise(host) and host not in NON_NET_HOSTS and not _is_own(host, own):
@@ -1509,19 +1523,22 @@ def check_privacy_signals(root, p, text, privacy):
                       "Apple purpose string: the user-facing reason shown when this capability is requested.")
 
 def privacy_findings(privacy):
-    order = {"fingerprint": 0, "import-time-network": 1, "import-time-storage": 2, "ip-logging": 3, "pii-log": 3, "pii-email": 4,
-             "pii-phone": 5, "pii-address": 6, "pii-ssn": 7, "pii-card": 8, "tracking-cookie": 9,
-             "browser-capability": 10, "macos-entitlement": 11, "client-id": 12, "ios-tracking": 13,
-             "ios-tracking-domain": 14, "ios-api-category": 15, "ios-data-type": 16, "ios-purpose-string": 16, "dnt-respect": 17,
-             "consent-gating": 18, "consent-order": 19, "data-retention": 20, "upload-surface": 21,
-             "upload-limit": 22, "store-disclosure": 23, "tracking-params": 24, "pii-in-url": 25, "insecure-endpoint": 26,
-             "android-permission": 26, "android-feature": 27, "extension-permission": 28, "cookie-flags": 28, "cookie-write": 29,
-             "third-party-cdn": 30, "third-party-embed": 31, "third-party-form": 32, "first-party-endpoint": 33,
-             "third-party-script": 34, "third-party-preconnect": 35, "third-party-media": 36, "cookie-lifetime": 37, "external-endpoint": 38,
-             "browser-storage": 36, "consent-manager": 37, "consent-mode": 38, "consent-state": 39,
-             "referrer-policy": 40, "permissions-policy": 41,
-             "iframe-allow": 42,
-             "extension-connectable": 43, "extension-resource": 44, "undisclosed-vendor": 45, "privacy-doc": 46}
+    order = {
+        "fingerprint": 0, "import-time-network": 1, "import-time-storage": 2, "ip-logging": 3,
+        "pii-log": 4, "pii-email": 5, "pii-phone": 6, "pii-address": 7, "pii-ssn": 8, "pii-card": 9,
+        "pii-in-url": 10, "tracking-cookie": 11, "tracking-params": 12, "browser-capability": 13,
+        "macos-entitlement": 14, "client-id": 15, "ios-tracking": 16, "ios-tracking-domain": 17,
+        "ios-api-category": 18, "ios-data-type": 19, "ios-purpose-string": 20, "dnt-respect": 21,
+        "consent-gating": 22, "consent-order": 23, "consent-mode": 24, "consent-state": 25,
+        "data-retention": 26, "upload-surface": 27, "upload-limit": 28, "store-disclosure": 29,
+        "insecure-endpoint": 30, "external-endpoint": 31, "first-party-endpoint": 32, "third-party-cdn": 33,
+        "third-party-script": 34, "third-party-stylesheet": 35, "third-party-media": 36,
+        "third-party-preconnect": 37, "third-party-preload": 38, "third-party-embed": 39, "third-party-form": 40,
+        "cookie-flags": 41, "cookie-write": 42, "cookie-lifetime": 43, "browser-storage": 44,
+        "consent-manager": 45, "referrer-policy": 46, "permissions-policy": 47, "iframe-allow": 48,
+        "extension-permission": 49, "extension-resource": 50, "extension-connectable": 51,
+        "android-permission": 52, "android-feature": 53, "undisclosed-vendor": 54, "privacy-doc": 55,
+    }
     down = {"high": "medium", "medium": "low", "low": "info"}
     fs = []
     for (rule, key), t in sorted(privacy.items(), key=lambda kv: (order.get(kv[1]["rule"], 9), kv[1]["key"])):
