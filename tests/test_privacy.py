@@ -121,4 +121,9 @@ hist = [rx for k, sev, rx, m in rb.BROWSER_CAPABILITIES if k == "browsing histor
 check("history bare window ignored", not re.search(hist, "window.history.back()") if (re := __import__("re")) else False)
 check("history length matched", bool(__import__("re").search(hist, "if (history.length > 1)")))
 
+pat = {v: pats for k, v, pats in rb.TELEMETRY_PACKAGES}
+check("vercel speed package", any(rb._pkg_is("@vercel/speed-insights", x) for x in pat["Vercel Speed Insights"]))
+check("embrace package", any(rb._pkg_is("@embrace-io/web-sdk", x) for x in pat["Embrace"]))
+check("instabug package", any(rb._pkg_is("instabug-reactnative", x) for x in pat["Instabug"]))
+
 sys.exit(fail)
