@@ -1,0 +1,8 @@
+# SHA-256 of the exact artifacts install.sh downloads. `sha256sum -c` compatible.
+# Bump a version in install.sh only together with its line here.
+e4a487ee7ccd7d3a7f7ec08657610aa3606637dab924210b3aee62570fb4b080  gitleaks_8.30.1_linux_arm64.tar.gz
+551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb  gitleaks_8.30.1_linux_x64.tar.gz
+4061ef4c021ed3c47f203b818f337e351336cc5cd67c0274fc36bd1dfc728dd7  osv-scanner_linux_arm64
+160c6253e2922e9e0a6a9771c5c4c40a4b3c6090b34a3cdd5e80c96cc2e4218b  osv-scanner_linux_amd64
+c5d324e091826b0d7a78eb16fef316450b4eb9aaec045611c08ba06f5e73220a  cosign-linux-arm64
+4629c757b7618056f8ddd7e2625ae9fdd94c0372a65049520bc7d9df9efc7f71  cosign-linux-amd64

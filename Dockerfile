@@ -1,12 +1,17 @@
 # repobeagle-scanner: offline scanning image. Multi-arch (amd64/arm64).
-FROM python:3.12-slim
+
+# Base image pinned by multi-arch digest and scanners pinned in constraints.txt:
+# the image, and therefore every report, is reproducible until a deliberate bump.
+# Bump both here and in constraints.txt when you want new scanner rules.
+FROM python:3.12-slim@sha256:191083cdf6c7bda8c76158983163ead5d5cf7b77cf3033e805bb0f5296f51b4b
 ARG GITLEAKS_VERSION=8.30.1
 RUN apt-get update && apt-get install -y --no-install-recommends curl ca-certificates git \
  && rm -rf /var/lib/apt/lists/*
 RUN set -eux; a="$(uname -m)"; case "$a" in aarch64) g=arm64;; x86_64) g=x64;; *) exit 1;; esac; \
     curl -fsSL "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_${g}.tar.gz" \
     | tar -xz -C /usr/local/bin gitleaks
-RUN pip install --no-cache-dir semgrep guarddog bandit
+COPY constraints.txt /opt/repobeagle/constraints.txt
+RUN pip install --no-cache-dir -c /opt/repobeagle/constraints.txt semgrep guarddog bandit
 COPY rules /opt/repobeagle/rules
 COPY repobeagle.py VERSION /opt/repobeagle/
 COPY THIRD-PARTY-NOTICES /opt/repobeagle/THIRD-PARTY-NOTICES

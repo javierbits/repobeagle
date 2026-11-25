@@ -3,6 +3,8 @@
 #   ./install.sh                 pull prebuilt image ghcr.io/javierbits/repobeagle:<VERSION> + install wrapper
 #   ./install.sh --build-local   build the image locally from this folder instead of pulling
 #   ./install.sh --local-tools   also install gitleaks/semgrep/guarddog/bandit on the host (for --no-docker fallback)
+# Every downloaded artifact is pinned and SHA-256 verified against checksums.txt,
+# and the pulled image's keyless signature is checked when cosign is available.
 set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 VERSION="$(tr -d '[:space:]' < "$HERE/VERSION" 2>/dev/null || true)"; VERSION="${VERSION:-v1.0.0}"
@@ -18,7 +20,36 @@ case "$(uname -m)" in
   x86_64|amd64)  GL_ARCH=x64;   OSV_ARCH=amd64 ;;
   *) echo "Unsupported arch $(uname -m)"; exit 1 ;;
 esac
-latest(){ curl -fsSL "https://api.github.com/repos/$1/releases/latest" 2>/dev/null | python3 -c 'import sys,json;print(json.load(sys.stdin)["tag_name"].lstrip("v"))' 2>/dev/null || true; }
+# Pinned releases. Bump these here and in checksums.txt together: the installer
+# refuses to install an artifact it cannot verify against a pinned SHA-256.
+GITLEAKS_VERSION="${GITLEAKS_VERSION:-8.30.1}"
+OSV_VERSION="${OSV_VERSION:-2.7.0}"
+COSIGN_VERSION="${COSIGN_VERSION:-3.1.3}"
+CHECKSUMS="$HERE/checksums.txt"
+
+verify_sha(){ # downloaded-file expected-artifact-name
+  local f=$1 name=$2 want got
+  want="$(awk -v n="$name" '$2==n {print $1; exit}' "$CHECKSUMS" 2>/dev/null || true)"
+  if [[ -z $want ]]; then
+    echo "no checksum for $name in $CHECKSUMS: refusing an unverified artifact (bump checksums.txt)" >&2
+    return 1
+  fi
+  got="$(sha256sum "$f" | awk '{print $1}')"
+  if [[ $got != "$want" ]]; then
+    echo "checksum mismatch for $name: expected $want, got $got" >&2
+    return 1
+  fi
+  say "verified $name (sha256 ${want:0:12}...)"
+}
+
+fetch(){ # url destination-path
+  local url=$1 dest=$2 name tmp
+  name="${url##*/}"
+  tmp="$(mktemp)"
+  if ! curl -fsSL -o "$tmp" "$url"; then echo "download failed: $url" >&2; rm -f "$tmp"; return 1; fi
+  if ! verify_sha "$tmp" "$name"; then rm -f "$tmp"; return 1; fi
+  mv "$tmp" "$dest"
+}
 
 command -v git >/dev/null && command -v python3 >/dev/null || { echo "need git and python3"; exit 1; }
 
@@ -36,21 +67,43 @@ fi
 
 # 2) osv-scanner on the host (needs network for the vuln DB; reads lockfiles only)
 if ! command -v osv-scanner >/dev/null 2>&1; then
-  V="$(latest google/osv-scanner)"; V="${V:-2.7.0}"; say "installing osv-scanner $V ($OSV_ARCH)"
-  curl -fsSL -o "$BIN/osv-scanner" "https://github.com/google/osv-scanner/releases/download/v$V/osv-scanner_linux_${OSV_ARCH}" && chmod 0755 "$BIN/osv-scanner"
+  say "installing osv-scanner $OSV_VERSION ($OSV_ARCH)"
+  fetch "https://github.com/google/osv-scanner/releases/download/v$OSV_VERSION/osv-scanner_linux_${OSV_ARCH}" "$BIN/osv-scanner"
+  chmod 0755 "$BIN/osv-scanner"
 fi
 
 # 3) cosign on the host (verifies signatures on published badge reports)
 if ! command -v cosign >/dev/null 2>&1 && [[ ! -x "$BIN/cosign" ]]; then
-  V="$(latest sigstore/cosign)"; V="${V:-3.1.3}"; say "installing cosign $V ($OSV_ARCH)"
-  curl -fsSL -o "$BIN/cosign" "https://github.com/sigstore/cosign/releases/download/v$V/cosign-linux-${OSV_ARCH}" && chmod 0755 "$BIN/cosign"
+  say "installing cosign $COSIGN_VERSION ($OSV_ARCH)"
+  fetch "https://github.com/sigstore/cosign/releases/download/v$COSIGN_VERSION/cosign-linux-${OSV_ARCH}" "$BIN/cosign"
+  chmod 0755 "$BIN/cosign"
 fi
 
-# 4) optional host tools for the no-docker fallback
+# 4) verify the pulled image's keyless signature (the image workflow signs by digest)
+if [[ $BUILD_LOCAL == 0 ]]; then
+  C="$(command -v cosign || true)"; [[ -n $C ]] || C="$BIN/cosign"
+  if [[ -x $C ]]; then
+    if "$C" verify "$IMAGE" \
+        --certificate-identity-regexp '^https://github\.com/javierbits/repobeagle/\.github/workflows/image\.yml@refs/(heads/main|tags/v[0-9]+\.[0-9]+\.[0-9]+)$' \
+        --certificate-oidc-issuer 'https://token.actions.githubusercontent.com' >/dev/null 2>&1; then
+      say "image signature verified"
+    elif [[ "${BEAGLE_REQUIRE_SIGNATURE:-0}" == 1 ]]; then
+      echo "image $IMAGE is not verifiably signed; refusing (BEAGLE_REQUIRE_SIGNATURE=1)" >&2; exit 1
+    else
+      echo "warning: no verifiable signature on $IMAGE (tag published before signing, or a local build)" >&2
+    fi
+  else
+    say "cosign unavailable: image signature not checked"
+  fi
+fi
+
+# 5) optional host tools for the no-docker fallback
 if [[ $LOCAL_TOOLS == 1 ]]; then
   if ! command -v gitleaks >/dev/null 2>&1; then
-    V="$(latest gitleaks/gitleaks)"; V="${V:-8.30.1}"; say "installing gitleaks $V ($GL_ARCH)"
-    T="$(mktemp -d)"; curl -fsSL "https://github.com/gitleaks/gitleaks/releases/download/v$V/gitleaks_${V}_linux_${GL_ARCH}.tar.gz" | tar -xz -C "$T" gitleaks
+    say "installing gitleaks $GITLEAKS_VERSION ($GL_ARCH)"
+    T="$(mktemp -d)"; A="gitleaks_${GITLEAKS_VERSION}_linux_${GL_ARCH}.tar.gz"
+    fetch "https://github.com/gitleaks/gitleaks/releases/download/v$GITLEAKS_VERSION/$A" "$T/$A"
+    tar -xzf "$T/$A" -C "$T" gitleaks
     install -m 0755 "$T/gitleaks" "$BIN/gitleaks"; rm -rf "$T"
   fi
   if [[ ! -x "$PREFIX/venv/bin/semgrep" || ! -x "$PREFIX/venv/bin/guarddog" || ! -x "$PREFIX/venv/bin/bandit" ]]; then
