@@ -610,7 +610,7 @@ TELEMETRY_RULES = [
     ("analytics", "medium", "Klaviyo", _telem_rx(r"\bklaviyo\b")),
     ("analytics", "medium", "Braze", _telem_rx(r"\bbraze\b|appboy")),
     ("analytics", "medium", "OneSignal", _telem_rx(r"\bonesignal\b")),
-    ("analytics", "medium", "Customer.io", _telem_rx(r"customer\.io|customerio")),
+    ("analytics", "medium", "Customer.io", _telem_rx(r"(?<![\w-])customer\.io|\bcustomerio\b")),
     ("analytics", "medium", "Tealium", _telem_rx(r"\btealium\b|tiq\.js")),
     ("analytics", "medium", "Mailchimp", _telem_rx(r"mailchimp|chimpstatic")),
     ("analytics", "medium", "Intercom", _telem_rx(r"intercom\.(?:io|com)|intercom-")),
@@ -750,7 +750,7 @@ def check_telemetry(root, p, text, telemetry, optouts, optouts_code):
     # Prose mentions vendors without using them ("alternative to Sentry"), so only opt-outs count there.
     prose = (p.suffix.lower() in PROSE_EXT or (p.suffix.lower() == ".txt" and bool(re.search(r"(?i)(^|/)docs?/", r)))
              or bool(AUTHORS_FILE_RE.search(r)) or bool(LICENSE_FILE_RE.search(r)))
-    test_src = bool(TEST_SRC_RE.search(r)) and not r.startswith("tests/fixtures/")
+    test_src = bool(TEST_SRC_RE.search(r) or TEST_FILE_RE.search(r)) and not r.startswith("tests/fixtures/")
     for i, line in enumerate(text.split("\n"), 1):
         if len(line) > 2000:
             continue
@@ -815,6 +815,7 @@ def telemetry_findings(telemetry, optouts, optouts_code):
 PROSE_EXT = {".md", ".mdx", ".markdown", ".rst", ".adoc"}
 TEST_SRC_RE = re.compile(r"(?i)(^|/)(tests?|__tests__|spec)/")
 I18N_FILE_RE = re.compile(r"(?i)(^|/)(locales?|i18n|translations?|l10n)/")
+TEST_FILE_RE = re.compile(r"(?i)(^|/)[^/]*\.(?:test|spec)\.[a-z]+$")
 PACKAGE_MANAGER_RE = re.compile(r'"packageManager"\s*:')
 AUTHORS_FILE_RE = re.compile(r"(?i)(^|/)(authors|contributors|credits|thanks)(\.\w+)?$")
 LICENSE_FILE_RE = re.compile(r"(?i)(^|/)(licen[cs]e|copying|notice)([.-][^/]*)?$")
