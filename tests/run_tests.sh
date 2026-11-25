@@ -51,8 +51,10 @@ j=$(mktemp); $RG scan tests/fixtures/trap-privacy --no-color --json "$j" $L --no
 python3 -c "import json,sys;d=json.load(open('$j'));t={f['tool'] for f in d['findings']};ok=not (t & {'privacy','telemetry'});print('PASS --no-privacy' if ok else 'FAIL --no-privacy');sys.exit(0 if ok else 1)" || fail=1
 rm -f "$j"
 j=$(mktemp); $RG privacy tests/fixtures/trap-privacy --no-color --json "$j" $L >/dev/null 2>&1
-python3 -c "import json,sys;d=json.load(open('$j'));t={f['tool'] for f in d['findings']};ok=bool(t) and t <= {'privacy','telemetry'};print('PASS privacy subcommand' if ok else 'FAIL privacy subcommand');sys.exit(0 if ok else 1)" || fail=1
-rm -f "$j"
+python3 -c "import json,sys;d=json.load(open('$j'));t={f['tool'] for f in d['findings']};ok=bool(t) and t <= {'privacy','telemetry'} and d.get('meta',{}).get('privacy_mode')=='only';print('PASS privacy subcommand' if ok else 'FAIL privacy subcommand');sys.exit(0 if ok else 1)" || fail=1
+python3 tools/make_badge.py "$j" --endpoint "$j.badge" >/dev/null 2>&1
+python3 -c "import json,sys;b=json.load(open('$j.badge'));print('PASS badge marks privacy-only' if b.get('privacy_only') is True else 'FAIL badge privacy-only flag');sys.exit(0 if b.get('privacy_only') is True else 1)" || fail=1
+rm -f "$j" "$j.badge"
 python3 tests/test_trust.py || fail=1
 python3 tests/test_banner.py || fail=1
 tests/test_cleanup.sh || fail=1

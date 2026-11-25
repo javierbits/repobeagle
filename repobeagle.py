@@ -2346,7 +2346,8 @@ def cmd_scan(a):
         v, why, counts = verdict(active, profile, ai)
         meta = {"target": a.target, "fetched_via": how, "mode": "docker (--network none, read-only)" if use_docker else "local (no docker)",
                 "profile": profile, "files": tools.get("agent-checks", {}).get("files"), "seconds": round(time.time() - t0, 1),
-                "tools": tools, "suppressed": len(suppressed), "pii_redacted": not a.no_redact}
+                "tools": tools, "suppressed": len(suppressed), "pii_redacted": not a.no_redact,
+                "privacy_mode": privacy_mode}
         summary = privacy_summary(active)
         if summary:
             meta["privacy_summary"] = summary
