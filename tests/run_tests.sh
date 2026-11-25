@@ -39,6 +39,11 @@ python3 tools/make_badge.py "$j" --endpoint "$j.badge" >/dev/null 2>&1
 python3 -c "import json,sys;d=json.load(open('$j.badge'));ok=bool(d.get('privacy',{}).get('trackers'));print('PASS badge privacy counts' if ok else 'FAIL badge privacy counts');sys.exit(0 if ok else 1)" || fail=1
 rm -f "$j.badge"
 python3 -c "import json,sys;d=json.load(open('$j'));e=[f for f in d['findings'] if f['title'].startswith('pii-email')];m=[f for f in d['findings'] if f['title'].startswith('pii-log')];ok=bool(e) and all(f['severity']=='info' for f in e) and any(f['severity']=='info' for f in m);print('PASS role email + masked log are info' if ok else 'FAIL severity refinement');sys.exit(0 if ok else 1)" || fail=1
+python3 -c "import json,sys;d=json.load(open('$j'));fs=d['findings'];ok=(any(f['title'].startswith('third-party-script') and 'preloadscript' in f['title'] for f in fs) and any(f['title'].startswith('iframe-allow') and 'cam.example' in f['meaning'] for f in fs) and any(f['title'].startswith('android-queries') and 'android.intent.action.VIEW' in f['title'] for f in fs) and any('020 7946 0958' in f['title'] for f in fs) and any('0412 345 678' in f['title'] for f in fs) and len((d.get('meta') or {}).get('ruleset',''))==12);print('PASS aggregated rule coverage' if ok else 'FAIL aggregated rule coverage');sys.exit(0 if ok else 1)" || fail=1
+j2=$(mktemp); $RG scan tests/fixtures/trap-privacy --no-color --json "$j2" --min-severity high $L >/tmp/rb-minsev.txt 2>&1 || true
+if grep -q "printing findings at/above high" /tmp/rb-minsev.txt && ! grep -q "^  LOW" /tmp/rb-minsev.txt; then echo "PASS --min-severity hides lows"; else echo "FAIL --min-severity hides lows"; fail=1; fi
+python3 -c "import json,sys;d=json.load(open('$j2'));ok=any(f['severity']=='low' for f in d['findings']);print('PASS --min-severity keeps JSON' if ok else 'FAIL --min-severity JSON');sys.exit(0 if ok else 1)" || fail=1
+rm -f "$j2" /tmp/rb-minsev.txt
 rm -f "$j"
 check tests/fixtures/trap-gha RED $L --strict
 check tests/fixtures/control-clean GREEN $L --strict   # pinned actions, dist bundle, normal README, real deps

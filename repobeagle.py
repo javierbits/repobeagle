@@ -6,7 +6,7 @@ NEVER executes repository code. Stdlib only (scanners are external binaries).
                   [--json out.json] [--no-docker] [--verify-deps] [--no-osv] [--no-trust]
   repobeagle verify <github-repo> [--branch repobeagle] [--expect-sha SHA]
 """
-import argparse, json, os, platform, re, shutil, subprocess, sys, tempfile, time, unicodedata
+import argparse, hashlib, json, os, platform, re, shutil, subprocess, sys, tempfile, time, unicodedata
 import urllib.error, urllib.request
 from pathlib import Path
 
@@ -973,6 +973,21 @@ SRC_ATTR_RE = re.compile(r"(?i)\bsrc\s*=\s*[\"']([^\"']+)")
 DATA_ATTR_RE = re.compile(r"(?i)\bdata\s*=\s*[\"']([^\"']+)")
 ACTION_ATTR_RE = re.compile(r"(?i)\baction\s*=\s*[\"']([^\"']+)")
 ALLOW_ATTR_RE = re.compile(r"(?i)\ballow\s*=\s*[\"']([^\"']*)")
+
+IFRAME_RISKY = {"camera", "microphone", "geolocation", "clipboard-read", "clipboard-write",
+                "display-capture", "midi", "serial", "usb", "web-share"}
+
+def _iframe_allow_perms(attrs):
+    """Feature (origin) pairs delegated by an iframe allow attribute."""
+    m = ALLOW_ATTR_RE.search(attrs or "")
+    if not m:
+        return []
+    out = []
+    for part in m.group(1).split(";"):
+        bits = part.strip().split()
+        if bits and bits[0].lower() in IFRAME_RISKY:
+            out.append(bits[0].lower() + (f" ({bits[1]})" if len(bits) > 1 else ""))
+    return out
 SANDBOX_RE = re.compile(r"(?i)\bsandbox\b")
 CREDENTIALLESS_RE = re.compile(r"(?i)\bcredentialless\b")
 REFERRER_UNSAFE_RE = re.compile(r"(?i)unsafe-url")
@@ -1098,6 +1113,18 @@ def check_privacy(root, p, text, privacy, own=()):
         if not isinstance(manifest, dict) or "manifest_version" not in manifest:
             manifest = None
     lines = text.split("\n")
+    if p.name == "AndroidManifest.xml":
+        for qb in re.findall(r"(?is)<queries>(.*?)</queries>", text):
+            for pm in re.finditer(r'<package[^>]*android:name="([^"]+)"', qb):
+                _priv_add(privacy, "android-queries", "info", pm.group(1), r, _line_of(text, pm.group(1)), pm.group(0),
+                          "Manifest <queries> lists an installed app this app can see/discover (Android 11 package visibility).")
+            for ib in re.findall(r"(?is)<intent>(.*?)</intent>", qb):
+                acts = re.findall(r'<action[^>]*android:name="([^"]+)"', ib)
+                data = re.findall(r'<data[^>]*android:(?:scheme|host|mimeType)="([^"]+)"', ib)
+                for a in acts:
+                    _priv_add(privacy, "android-queries", "info", a, r, _line_of(text, a), a,
+                              "Manifest <queries> intent filter: this app can discover handlers for "
+                              + (", ".join(data) if data else "that intent") + ".")
     for i, line in enumerate(lines, 1):
         if len(line) > 2000:
             continue
@@ -1176,15 +1203,10 @@ def check_privacy(root, p, text, privacy, own=()):
                     _priv_add(privacy, "third-party-embed", "info" if safe else "low", host, r, i, line,
                               f"Embed attribute on a tag opened above includes content/code from {host}."
                               + (" Sandboxed, which limits what it can do." if safe else ""))
-                    am = ALLOW_ATTR_RE.search(tag_window)
-                    if am:
-                        perms = [x.strip().split(";")[0].strip() for x in am.group(1).split(";") if x.strip()]
-                        risky = [x for x in perms if x.split()[0].lower() in
-                                 ("camera", "microphone", "geolocation", "clipboard-read", "clipboard-write",
-                                  "display-capture", "midi", "serial", "usb", "web-share")]
-                        if risky:
-                            _priv_add(privacy, "iframe-allow", "medium", host, r, i, line,
-                                      f"iframe delegates {', '.join(risky)} to {host}: the embedded page can use that capability.")
+                    risky = _iframe_allow_perms(tag_window)
+                    if risky:
+                        _priv_add(privacy, "iframe-allow", "medium", host, r, i, line,
+                                  f"iframe delegates {', '.join(risky)} to {host}: the embedded page can use that capability.")
                 elif tag_ctx == "stylesheet":
                     _priv_add(privacy, "third-party-stylesheet", "info" if host in THIRD_PARTY_CDN else "low",
                               host, r, i, line,
@@ -1384,15 +1406,10 @@ def check_privacy(root, p, text, privacy, own=()):
                           f"Embeds content from {host}: it runs third-party code, sees your IP and can set its own cookies."
                           + (" Sandboxed, which limits what it can do." if sandboxed else "")
                           + (" Credentialless: its requests are sent without cookies." if credentialless else ""))
-                am = ALLOW_ATTR_RE.search(attrs)
-                if am:
-                    perms = [x.strip().split(";")[0].strip() for x in am.group(1).split(";") if x.strip()]
-                    risky = [x for x in perms if x.split()[0].lower() in
-                             ("camera", "microphone", "geolocation", "clipboard-read", "clipboard-write",
-                              "display-capture", "midi", "serial", "usb", "web-share")]
-                    if risky:
-                        _priv_add(privacy, "iframe-allow", "medium", host, r, i, line,
-                                  f"iframe delegates {', '.join(risky)} to {host}: the embedded page can use that capability.")
+                risky = _iframe_allow_perms(attrs)
+                if risky:
+                    _priv_add(privacy, "iframe-allow", "medium", host, r, i, line,
+                              f"iframe delegates {', '.join(risky)} to {host}: the embedded page can use that capability.")
             for m in SCRIPT_RE.finditer(line):
                 host = _host_of(m.group(1))
                 if host and not _endpoint_noise(host) and host not in NON_NET_HOSTS and not _is_own(host, own):
@@ -1432,9 +1449,20 @@ def check_privacy(root, p, text, privacy, own=()):
                               host, r, i, line,
                               f"Stylesheet loaded from {host}: it sees your IP/referrer and can pull fonts/images from its own servers.")
                 elif "preload" in relv or "prefetch" in relv or "modulepreload" in relv:
-                    _priv_add(privacy, "third-party-preload", "info" if host in THIRD_PARTY_CDN else "low",
-                              host, r, i, line,
-                              f"Resource preloaded/prefetched from {host}: fetched before it is needed, revealing your IP early.")
+                    asm = re.search(r"(?i)\bas\s*=\s*[\"']([^\"']+)", attrs)
+                    asv = asm.group(1).lower() if asm else ""
+                    if asv == "script":
+                        _priv_add(privacy, "third-party-script", "info" if host in THIRD_PARTY_CDN else "low",
+                                  host, r, i, line,
+                                  f"Script preloaded from {host}: code fetched before it is needed.")
+                    elif asv == "style":
+                        _priv_add(privacy, "third-party-stylesheet", "info" if host in THIRD_PARTY_CDN else "low",
+                                  host, r, i, line,
+                                  f"Stylesheet preloaded from {host}: fetched before it is needed.")
+                    else:
+                        _priv_add(privacy, "third-party-preload", "info" if host in THIRD_PARTY_CDN else "low",
+                                  host, r, i, line,
+                                  f"Resource preloaded/prefetched from {host}: fetched before it is needed, revealing your IP early.")
                 elif "preconnect" in relv or "dns-prefetch" in relv:
                     _priv_add(privacy, "third-party-preconnect", "info" if host in THIRD_PARTY_CDN else "low", host, r, i, line,
                               f"Preconnect/DNS-prefetch to {host}: the browser opens a connection (IP, TLS) before any consent or request.")
@@ -1462,9 +1490,6 @@ def check_privacy(root, p, text, privacy, own=()):
                 feat = m.group(1)
                 _priv_add(privacy, "android-feature", "info", feat, r, i, line,
                           f"Manifest declares hardware feature {feat}: the app is expected to use that sensor/capability.")
-            for qm in re.finditer(r'<package[^>]*android:name="([^"]+)"', line):
-                _priv_add(privacy, "android-queries", "info", qm.group(1), r, i, line,
-                          "Manifest <queries> lists an installed app this app can see/discover (Android 11 package visibility).")
             if re.search(r'android:usesCleartextTraffic\s*=\s*"true"', line):
                 _priv_add(privacy, "android-cleartext", "medium", "usesCleartextTraffic", r, i, line,
                           "App allows plaintext HTTP: requests and metadata can be read or modified on the way.")
@@ -1563,7 +1588,13 @@ EMAIL_IGNORE = {"git@github.com", "noreply@github.com", "actions@github.com"}
 EMAIL_IGNORE_RE = re.compile(r"(?i)@users\.noreply\.github\.com$")
 PHONE_RE = re.compile(r"(?<![A-Za-z0-9+])\+\d[\d ().-]{6,14}\d")
 PHONE_CONTEXT_RE = re.compile(r"(?i)(?:phone|telephone|mobile|cell|fax)\b|(?<![a-z])tel\b")
-PHONE_LOCAL_RE = re.compile(r"(?<!\d)(?:\+?1[-. ]?)?\(?\d{3}\)?[-. ]\d{3}[-.]\d{4}(?!\d)")
+PHONE_LOCAL_RE = re.compile(
+    r"(?<!\d)(?:"
+    r"(?:\+?1[-. ]?)?\(?\d{3}\)?[-. ]\d{3}[-.]\d{4}"      # US/CA
+    r"|0\d{2,3}[ -]?\d{3,4}[ -]?\d{3,4}"                     # UK
+    r"|0[45]\d{2}[ -]?\d{3}[ -]?\d{3}"                       # AU mobile
+    r"|\(0[2-8]\)[ -]?\d{4}[ -]?\d{4}"                       # AU landline
+    r")(?!\d)")
 IMPORT_NET_PY = re.compile(r"\b(requests|httpx|urllib3)\.\w+\s*\(|"
                             r"\baiohttp\.(?!ClientTimeout|ClientSession|TCPConnector|FormData)\w+\s*\(|"
                             r"\burlopen\s*\(|socket\.socket\s*\(|\bhttp\.client\.")
@@ -1676,7 +1707,7 @@ def _in_url_authority(line, pos):
     return scheme >= 0 and "/" not in line[scheme + 3:pos]
 
 PII_OBJECT_RE = re.compile(r"(?i)\b(user|users|account|customer|profile|session|member|subscriber|person|lead|contact|"
-                           r"request|response|body|payload|form|form_?data|req)\b")
+                           r"request|response|body|payload|form|form_?data|req)\b(?=\.\w|[([{,:_\-})])")
 
 CONSENT_MODE_RE = re.compile(r"(?i)(\b(?:analytics|ad|functionality|personalization)_storage\b|consent_?mode|ad_user_data|ad_personalization)")
 CONSENT_STATE_RE = re.compile(r"(?i)(?<![\w.-])(OptanonConsent|OptanonAlertBoxClosed|CookieConsentV2|CookieConsent|"
@@ -2020,8 +2051,7 @@ def check_privacy_signals(root, p, text, privacy, masks):
             _priv_add(privacy, "ios-purpose-string", "info", key, r, text[:m.start()].count("\n") + 1, body[:140],
                       "Apple purpose string: the user-facing reason shown when this capability is requested.")
 
-def privacy_findings(privacy):
-    order = {
+PRIVACY_RULE_ORDER = {
         "fingerprint": 0, "import-time-network": 1, "import-time-storage": 2, "ip-logging": 3,
         "pii-log": 4, "pii-email": 5, "pii-phone": 6, "pii-address": 7, "pii-ssn": 8, "pii-card": 9,
         "pii-in-url": 10, "tracking-cookie": 11, "tracking-params": 12, "browser-capability": 13,
@@ -2040,6 +2070,10 @@ def privacy_findings(privacy):
         "android-cleartext": 58, "ios-cleartext": 59, "ios-tracking-declaration": 60,
         "android-queries": 61, "form-method": 62,
     }
+RULESET = hashlib.sha256(" ".join(sorted(PRIVACY_RULE_ORDER)).encode()).hexdigest()[:12]
+
+def privacy_findings(privacy):
+    order = PRIVACY_RULE_ORDER
     down = {"high": "medium", "medium": "low", "low": "info"}
     fs = []
     for (rule, key), t in sorted(privacy.items(), key=lambda kv: (order.get(kv[1]["rule"], 9), kv[1]["key"])):
@@ -2163,9 +2197,10 @@ def run_agent_checks(root):
         check_build_hooks(root, p, text, findings)
         check_workflows(root, p, text, findings)
         check_obfuscation_deps(root, p, text, findings)
-        check_telemetry(root, p, text, telemetry, optouts, optouts_code)
-        check_privacy(root, p, text, privacy, own)
-        check_privacy_signals(root, p, text, privacy, masks)
+        if len(text) <= 2_000_000:       # huge/minified files are generated; keep the scan cheap
+            check_telemetry(root, p, text, telemetry, optouts, optouts_code)
+            check_privacy(root, p, text, privacy, own)
+            check_privacy_signals(root, p, text, privacy, masks)
     tf = telemetry_findings(telemetry, optouts, optouts_code)
     tracking_kinds = {"telemetry-analytics", "telemetry-ads", "telemetry-session-replay", "telemetry-crash", "telemetry-apm"}
     tracked = {f["title"].split(":")[0] for f in tf} & tracking_kinds
@@ -2761,7 +2796,7 @@ def banner(use_color):
         rows.append(C("36", dog) + (" " * (26 - len(dog)) + right if right else ""))
     return "\n".join(rows) + "\n"
 
-def report(meta, findings, v, why, counts, notes, ai, use_color, maxn=40):
+def report(meta, findings, v, why, counts, notes, ai, use_color, maxn=40, min_sev="info"):
     C = (lambda code, s: f"\033[{code}m{s}\033[0m") if use_color else (lambda code, s: s)
     vc = {"RED": "1;41;97", "YELLOW": "1;43;30", "GREEN": "1;42;30"}[v]
     sc = {"critical": "1;91", "high": "91", "medium": "93", "low": "96", "info": "37"}
@@ -2789,7 +2824,12 @@ def report(meta, findings, v, why, counts, notes, ai, use_color, maxn=40):
         print(C("1", "AI review: ") + f"intent={ai.get('intent')} confidence={ai.get('confidence')}\n  {ai.get('summary', '')}")
         for k in ai.get("key_concerns", [])[:5]: print(f"   - {k}")
         print()
+    total = len(findings)
+    thr = SEV_ORDER.get(min_sev, 0)
+    findings = [f for f in findings if SEV_ORDER[f["severity"]] >= thr]
     fs = sorted(findings, key=lambda f: (-SEV_ORDER[f["severity"]], f["file"], f["line"]))
+    if min_sev != "info":
+        print(C("2", f"  printing findings at/above {min_sev} ({total - len(fs)} hidden; counts/verdict cover all)"))
     if fs:
         print(C("1", f"Findings ({len(fs)}, showing {min(len(fs), maxn)}):"))
     for f in fs[:maxn]:
@@ -2974,11 +3014,12 @@ def cmd_scan(a):
         meta = {"target": a.target, "fetched_via": how, "mode": "docker (--network none, read-only)" if use_docker else "local (no docker)",
                 "profile": profile, "files": tools.get("agent-checks", {}).get("files"), "seconds": round(time.time() - t0, 1),
                 "tools": tools, "suppressed": len(suppressed), "pii_redacted": not a.no_redact,
-                "privacy_mode": privacy_mode}
+                "privacy_mode": privacy_mode, "ruleset": RULESET}
         if summary:
             meta["privacy_summary"] = summary
             meta["privacy_profile"] = privacy_profile(summary)
-        report(meta, active, v, why, counts, notes, ai, color_enabled() and not a.no_color, 10**6 if a.all else 40)
+        report(meta, active, v, why, counts, notes, ai, color_enabled() and not a.no_color,
+               10**6 if a.all else 40, getattr(a, "min_severity", "info"))
         if a.json:
             Path(a.json).write_text(json.dumps({"version": VERSION, "verdict": v, "why": why, "counts": counts, "meta": meta,
                                                 "privacy_summary": summary,
@@ -3124,6 +3165,9 @@ def cmd_verify(a):
             print("  warning:   privacy_summary does not match the findings")
         if not verdict_consistent(d):
             print("  warning:   verdict/counts do not match the findings")
+        rs_v = (d.get("meta") or {}).get("ruleset")
+        if rs_v and rs_v != RULESET:
+            print(f"  warning:   report ruleset {rs_v} differs from this scanner ({RULESET}); rules changed since the report")
         summary = d.get("privacy_summary") or privacy_summary(d.get("findings") or [])
         if summary:
             parts = []
@@ -3170,6 +3214,8 @@ def main():
         s.add_argument("--verify-deps", action="store_true", help="GuardDog-verify deps from requirements.txt/package.json (downloads packages, static only)")
         s.add_argument("--no-trust", action="store_true", help="skip GitHub trust signals (unauthenticated public API)")
         s.add_argument("--all", action="store_true", help="print all findings")
+        s.add_argument("--min-severity", choices=list(SEV_ORDER), default="info",
+                       help="only print findings at/above this severity (JSON keeps all)")
         s.add_argument("--no-redact", action="store_true", help="show raw emails/phones/cards in privacy finding snippets")
         if privacy_modes:
             pv = s.add_mutually_exclusive_group()

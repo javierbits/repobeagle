@@ -32,3 +32,5 @@ const profileUrl = `/profile?user_id=${id}&email_address=${email}`;
 document.cookie = "iso=1; expires=2027-01-01T00:00:00Z";
 Cookies.set("consent", "1", { secure: true, sameSite: "strict" });
 Cookies.set("long", "1", { expires: 400, secure: true, sameSite: "lax" });
+const ukPhone = "020 7946 0958";
+const auPhone = "0412 345 678";

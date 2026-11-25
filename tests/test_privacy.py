@@ -132,4 +132,16 @@ check("onesignal package", any(rb._pkg_is("onesignal-cordova-plugin", x) for x i
 check("braze package", any(rb._pkg_is("@braze/web-sdk", x) for x in pat["Braze"]))
 check("pendo package", any(rb._pkg_is("pendo-ios", x) for x in pat["Pendo"]))
 
+check("iframe allow origin", rb._iframe_allow_perms('allow="camera https://cam.example; geolocation"') == ["camera (https://cam.example)", "geolocation"])
+check("pii object prose ignored", not rb.PII_OBJECT_RE.search("closed for this session."))
+check("pii object field matched", bool(rb.PII_OBJECT_RE.search("console.log(user.id)")))
+check("phone US local", bool(rb.PHONE_LOCAL_RE.search("(415) 555-0132")))
+check("phone UK local", bool(rb.PHONE_LOCAL_RE.search("020 7946 0958")))
+check("phone AU local", bool(rb.PHONE_LOCAL_RE.search("0412 345 678")))
+check("ruleset fingerprint", len(rb.RULESET) == 12)
+with tempfile.TemporaryDirectory() as td:
+    Path(td, "package.json").write_text('{"dependencies": {"posthog-js": "1"}, "pad": "' + "a" * 2_100_000 + '"}')
+    big_findings, _ = rb.run_agent_checks(Path(td))
+    check("huge file skipped for telemetry", not any(f["title"].startswith("telemetry-analytics: PostHog") for f in big_findings))
+
 sys.exit(fail)

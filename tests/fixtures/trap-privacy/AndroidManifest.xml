@@ -10,5 +10,9 @@
     <application android:usesCleartextTraffic="true" />
     <queries>
         <package android:name="com.example.partner" />
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="https" />
+        </intent>
     </queries>
 </manifest>
