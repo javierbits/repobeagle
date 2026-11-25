@@ -801,6 +801,8 @@ def telemetry_findings(telemetry, optouts, optouts_code):
 # Privacy: third-party endpoints, browser storage/cookies, platform permissions
 # ----------------------------------------------------------------------------
 PROSE_EXT = {".md", ".mdx", ".markdown", ".rst", ".adoc"}
+AUTHORS_FILE_RE = re.compile(r"(?i)(^|/)(authors|contributors|credits|thanks)(\.\w+)?$")
+LICENSE_FILE_RE = re.compile(r"(?i)(^|/)(licen[cs]e|copying|notice)([.-][^/]*)?$")
 
 URL_HOST_RE = re.compile(r"(?i)\b(https?)://([a-z0-9][a-z0-9.-]*[a-z0-9])")
 NON_NET_HOSTS = {"localhost", "127.0.0.1", "0.0.0.0", "::1", "example.com", "example.org", "www.w3.org", "w3.org",
@@ -1481,7 +1483,8 @@ def check_privacy_signals(root, p, text, privacy):
     r, ext = rel(root, p), p.suffix.lower()
     if LOCKFILE_RE.search(r):
         return
-    if ext in PROSE_EXT:                 # docs links can carry campaign tags, but are not requests
+    if (ext in PROSE_EXT or ext == ".po" or AUTHORS_FILE_RE.search(r) or LICENSE_FILE_RE.search(r)
+            or TEST_PATH.search(r)):       # docs/contributors/licences/tests: contacts and links, not runtime traffic
         docs_emails = set()
         docs_addresses = set()
         for i, line in enumerate(text.split("\n"), 1):
