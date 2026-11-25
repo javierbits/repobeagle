@@ -1035,6 +1035,11 @@ def check_privacy(root, p, text, privacy, own=()):
         if TRACKING_PARAM_RE.search(line):
             _priv_add(privacy, "tracking-params", "low", "utm/campaign parameters", r, i, line,
                       "URL carries campaign/tracking parameters (utm_*, fbclid, gclid, …): links leak referrer and campaign identity.")
+        if not _is_comment(line):
+            m = PII_URL_RE.search(line)
+            if m:
+                _priv_add(privacy, "pii-in-url", "low", m.group(1).lower(), r, i, line,
+                          "Personal data in the URL query: it leaks via Referer, access logs, proxies and browser history.")
         m = CLIENT_ID_RE.search(line)
         if m and CLIENT_ID_CONTEXT_RE.search(line):
             _priv_add(privacy, "client-id", "low", m.group(0).lower(), r, i, line,
@@ -1162,6 +1167,8 @@ IMPORT_NET_JS = re.compile(r"(\bfetch\s*\(|\baxios[.(]|\$\.ajax\s*\(|navigator\.
 IP_LOG_RE = re.compile(r"(?i)(req\.ip\b|request\.remote_addr|remote_addr|REMOTE_ADDR|RemoteAddr|X-Forwarded-For|"
                        r"HTTP_X_FORWARDED_FOR|X_FORWARDED_FOR|X-Real-IP|True-Client-IP|CF-Connecting-IP|client_ip|remoteAddress|\bip_address\b)")
 IP_LOG_SINK_RE = re.compile(r"(?i)(log|logger|print|puts|console|info|warn|debug|write|store|save|insert|persist|db|audit)")
+PII_URL_RE = re.compile(r"(?i)[?&](e?-?mail|phone|mobile|tel|name|first_?name|last_?name|full_?name|username|"
+                         r"user_?name|address|street|zip|zip_?code|postal|ssn|dob|birthdate|birthday|gender)=")
 TRACKING_PARAM_RE = re.compile(r"[?&](utm_[a-z_]+|gclid|dclid|gbraid|wbraid|fbclid|msclkid|twclid|mc_cid|mc_eid|"
                                r"mkt_tok|vero_id|oly_enc_id|_hsenc|_hsmi|srsltid|igshid|si|_ga|_gl|gclsrc|dclsrc)=")
 PRIVACY_DOC_NAMES = {"privacy.md", "privacy.txt", "privacy.rst", "privacy.markdown", "privacy-policy.md",
@@ -1304,6 +1311,10 @@ def check_privacy_signals(root, p, text, privacy):
             if TRACKING_PARAM_RE.search(line):
                 _priv_add(privacy, "tracking-params", "info", "utm/campaign parameters", r, i, line,
                           "Link carries campaign/tracking parameters (utm_*, fbclid, gclid, …).")
+            m = PII_URL_RE.search(line)
+            if m:
+                _priv_add(privacy, "pii-in-url", "info", m.group(1).lower() + " (docs link)", r, i, line,
+                          "Example link puts personal data in the URL query: fine in docs, leaks via Referer/logs when used at runtime.")
         return
     is_js = ext in (".js", ".mjs", ".cjs", ".ts", ".tsx", ".jsx", ".html", ".htm", ".vue", ".svelte", ".astro")
     lines = text.split("\n")
@@ -1450,7 +1461,7 @@ def privacy_findings(privacy):
              "browser-capability": 10, "macos-entitlement": 11, "client-id": 12, "ios-tracking": 13,
              "ios-tracking-domain": 14, "ios-data-type": 15, "ios-purpose-string": 16, "dnt-respect": 17,
              "consent-gating": 18, "consent-order": 19, "data-retention": 20, "upload-surface": 21,
-             "upload-limit": 22, "store-disclosure": 23, "tracking-params": 24, "insecure-endpoint": 25,
+             "upload-limit": 22, "store-disclosure": 23, "tracking-params": 24, "pii-in-url": 25, "insecure-endpoint": 26,
              "android-permission": 26, "android-feature": 27, "extension-permission": 28, "cookie-flags": 28, "cookie-write": 29,
              "third-party-cdn": 30, "third-party-embed": 31, "third-party-form": 32, "first-party-endpoint": 33,
              "third-party-script": 34, "cookie-lifetime": 35, "external-endpoint": 36,
