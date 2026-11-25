@@ -868,6 +868,8 @@ EMBED_RE = re.compile(r"(?is)<(iframe|embed|object|video)\b([^>]*)>")
 SRC_ATTR_RE = re.compile(r"(?i)\bsrc\s*=\s*[\"']([^\"']+)")
 ALLOW_ATTR_RE = re.compile(r"(?i)\ballow\s*=\s*[\"']([^\"']*)")
 SANDBOX_RE = re.compile(r"(?i)\bsandbox\b")
+CREDENTIALLESS_RE = re.compile(r"(?i)\bcredentialless\b")
+REFERRER_UNSAFE_RE = re.compile(r"(?i)unsafe-url")
 SCRIPT_RE = re.compile(r"(?i)<script[^>]+src\s*=\s*[\"']((?:https?:)?//[^\"']+)")
 MEDIA_RE = re.compile(r"(?i)<(?:img|source|video|audio|picture)\b[^>]*\bsrc\s*=\s*[\"']((?:https?:)?//[^\"']+)")
 CSS_IMPORT_RE = re.compile(r"(?i)@import\s+(?:url\()?\s*[\"']?((?:https?:)?//[^\"')\s]+)")
@@ -1080,7 +1082,10 @@ def check_privacy(root, p, text, privacy, own=()):
         if m and CLIENT_ID_CONTEXT_RE.search(line):
             _priv_add(privacy, "client-id", "low", m.group(0).lower(), r, i, line,
                       "Named persistent client identifier: links sessions or devices without relying on a login.")
-        if REFERRER_POLICY_RE.search(line):
+        if REFERRER_UNSAFE_RE.search(line):
+            _priv_add(privacy, "referrer-policy", "low", "unsafe-url", r, i, line,
+                      "Referrer policy is unsafe-url: the full URL (including path and query) is sent to third parties anyway.")
+        elif REFERRER_POLICY_RE.search(line):
             _priv_add(privacy, "referrer-policy", "info", "policy", r, i, line,
                       "Referrer policy present: third parties see a reduced URL instead of the full one.")
         if PERMISSIONS_POLICY_RE.search(line):
@@ -1094,9 +1099,12 @@ def check_privacy(root, p, text, privacy, own=()):
                 if not host or _endpoint_noise(host) or host in NON_NET_HOSTS or _is_own(host, own):
                     continue
                 sandboxed = bool(SANDBOX_RE.search(attrs))
-                _priv_add(privacy, "third-party-embed", "info" if sandboxed else "low", host, r, i, line,
+                credentialless = bool(CREDENTIALLESS_RE.search(attrs))
+                safe = sandboxed or credentialless
+                _priv_add(privacy, "third-party-embed", "info" if safe else "low", host, r, i, line,
                           f"Embeds content from {host}: it runs third-party code, sees your IP and can set its own cookies."
-                          + (" Sandboxed, which limits what it can do." if sandboxed else ""))
+                          + (" Sandboxed, which limits what it can do." if sandboxed else "")
+                          + (" Credentialless: its requests are sent without cookies." if credentialless else ""))
                 am = ALLOW_ATTR_RE.search(attrs)
                 if am:
                     perms = [x.strip().split(";")[0].strip() for x in am.group(1).split(";") if x.strip()]

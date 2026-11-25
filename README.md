@@ -12,10 +12,10 @@ You give it a git URL or a local folder and get a **GREEN / YELLOW / RED** verdi
 **RepoBeagle never runs repo code.** It never runs installs or builds, and it never extracts archives.
 
 ## Install (DGX Spark / any Linux, arm64 or x86_64)
-The scanners ship as a prebuilt **public** multi-arch image (no login needed), `ghcr.io/javierbits/repobeagle` (linux/amd64 + linux/arm64). It's built by `.github/workflows/image.yml` on every push to main, on `v*` release tags, weekly, and on manual dispatch. Release tags get `v1.51.0`-style and `stable` tags; main also gets `latest`, `sha-<commit>` and the ISO week (e.g. `2026-W42`). `install.sh` and `repobeagle` default to the image matching the `VERSION` file (currently `v1.51.0`).
+The scanners ship as a prebuilt **public** multi-arch image (no login needed), `ghcr.io/javierbits/repobeagle` (linux/amd64 + linux/arm64). It's built by `.github/workflows/image.yml` on every push to main, on `v*` release tags, weekly, and on manual dispatch. Release tags get `v1.52.0`-style and `stable` tags; main also gets `latest`, `sha-<commit>` and the ISO week (e.g. `2026-W42`). `install.sh` and `repobeagle` default to the image matching the `VERSION` file (currently `v1.52.0`).
 ```bash
 git clone https://github.com/javierbits/repobeagle && cd repobeagle
-./install.sh                   # docker pull ghcr.io/javierbits/repobeagle:v1.51.0 + install the repobeagle wrapper
+./install.sh                   # docker pull ghcr.io/javierbits/repobeagle:v1.52.0 + install the repobeagle wrapper
 ./install.sh --build-local     # fallback: build the same image locally from the Dockerfile
 ./install.sh --local-tools     # also install gitleaks/semgrep/guarddog/bandit on the host for --no-docker
 ```
@@ -82,7 +82,7 @@ Severity follows privacy impact, so a default `balanced` scan goes YELLOW when a
 | `cookie-write`, `cookie-flags` | `document.cookie =` writes, `Set-Cookie` headers and framework setters (`set_cookie(`, `res.cookie(`, `setcookie(`, `setCookie(`) missing `HttpOnly`/`Secure`/`SameSite`; JS cookies are checked for `Secure`/`SameSite` only, and `__Host-`/`__Secure-` names must carry their required flags | low |
 | `browser-storage` | `localStorage`/`sessionStorage`/`indexedDB` writes: persistent client-side identifiers | info |
 | `third-party-cdn` | assets loaded from third-party font/CDN hosts (Google Fonts, Bunny, Fontshare, jsDelivr, unpkg, …: they see your IP and the page URL) | low |
-| `third-party-embed` | `<iframe>`/`<embed>`/`<object>`/`<video>` pointing at another host: it runs third-party code, sees your IP and can set its own cookies; `info` when sandboxed | low/info |
+| `third-party-embed` | `<iframe>`/`<embed>`/`<object>`/`<video>` pointing at another host: it runs third-party code, sees your IP and can set its own cookies; `info` when `sandbox`ed or `credentialless` | low/info |
 | `iframe-allow` | an embedded frame delegates `camera`, `microphone`, `geolocation`, clipboard, display-capture, USB/serial, … to the third party via `allow=` | medium |
 | `third-party-form` | `<form action="https://other">`: user input is posted to a third party | low |
 | `third-party-script` | `<script src="//other">`: executable third-party code with page privileges (info for known CDNs); own/related domains are skipped | low/info |
@@ -118,7 +118,7 @@ Severity follows privacy impact, so a default `balanced` scan goes YELLOW when a
 | `data-retention` | retention/expiry windows in config/code (`retention_days`, `ttl`, `expires`, `delete_after`, …); `low` when the repo collects data but no retention setting exists | info/low |
 | `upload-surface`, `upload-limit` | endpoints accepting files/request bodies, and size caps (`max_file_size`, `MAX_CONTENT_LENGTH`, `client_max_body_size`, `limits:`, …); `low` when uploads have no cap | info/low |
 | `store-disclosure` | browser-extension data-collection declarations (Firefox `data_collection_permissions`); info when disclosures only exist on the store | info |
-| `referrer-policy` | `Referrer-Policy` header, `<meta name="referrer">`, `referrerpolicy=` attributes, `fetch(..., {referrerPolicy})` or `rel="noreferrer"`; `low` when third-party requests exist without one (the full URL leaks in `Referer`) | info/low |
+| `referrer-policy` | `Referrer-Policy` header, `<meta name="referrer">`, `referrerpolicy=` attributes, `fetch(..., {referrerPolicy})` or `rel="noreferrer"`; `low` when third-party requests exist without one or with `unsafe-url` (the full URL leaks in `Referer`) | info/low |
 | `permissions-policy` | `Permissions-Policy` header; `low` when camera/microphone/geolocation/screen/clipboard APIs are used without one | info/low |
 | `privacy-doc` | `info` when a privacy policy/manifest exists anywhere in the repo (`PRIVACY.md`, `docs/privacy-policy.md`, `PrivacyInfo.xcprivacy`, …) or the README links an external policy; `low` when data leaves the repo but no policy is shipped or linked | info/low |
 | `undisclosed-vendor` | detected telemetry vendors that are not named in any README/privacy doc, when the repo ships one | info |
@@ -170,7 +170,7 @@ Then add the badge; after a tag push, a per-tag badge also exists:
 
 ```markdown
 ![RepoBeagle](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/OWNER/REPO/repobeagle/badge.json)
-![RepoBeagle v1.51.0](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/OWNER/REPO/repobeagle/badge-v1.51.0.json)
+![RepoBeagle v1.52.0](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/OWNER/REPO/repobeagle/badge-v1.52.0.json)
 ```
 
 The workflow publishes a `repobeagle` branch containing `badge.json` (shields.io endpoint), a self-hosted `badge.svg` fallback and the full `report.json` (plus `report-<sha>.json` per commit and per-tag copies), so every finding is one click away from the badge. Inputs: `profile`, `fail-on-red`, `privacy-only`, `badge-branch` (empty string disables publishing), `set-status` (default true) and `tools-ref` (toolchain ref, default `main`; the `VERSION` file there pins the scanned image).
@@ -183,7 +183,7 @@ The badge is produced by the author's own CI, so on its own it is self-attested.
 repobeagle verify javierbits/javierbits.github.io
 #   signature: VALID  policy: official scan.yml (main or v* tag)
 #   report:    YELLOW  0 critical / 6 high / 1 medium / 56 low
-#   scanned:   a7cb435002de at javierbits/javierbits.github.io (image ghcr.io/javierbits/repobeagle:v1.51.0)
+#   scanned:   a7cb435002de at javierbits/javierbits.github.io (image ghcr.io/javierbits/repobeagle:v1.52.0)
 #   snippets:  redacted by scanner
 #   scope:     full
 #   freshness: UP TO DATE (HEAD a7cb435002de)
@@ -237,7 +237,7 @@ Apart from the clone, OSV/GuardDog-verify, the GitHub trust lookup and your own 
 
 ## Example output (abridged)
 ```
-repobeagle 1.51.0  |  tests/fixtures/trap-npm
+repobeagle 1.52.0  |  tests/fixtures/trap-npm
   VERDICT: RED    2 critical / 2 high findings, e.g. npm lifecycle script 'postinstall' runs automatically on install (package.json:8)
   CRITICAL [agent-checks] package.json:8
            npm lifecycle script 'postinstall' runs automatically on install
