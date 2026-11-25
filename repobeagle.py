@@ -854,6 +854,7 @@ SRC_ATTR_RE = re.compile(r"(?i)\bsrc\s*=\s*[\"']([^\"']+)")
 ALLOW_ATTR_RE = re.compile(r"(?i)\ballow\s*=\s*[\"']([^\"']*)")
 SANDBOX_RE = re.compile(r"(?i)\bsandbox\b")
 SCRIPT_RE = re.compile(r"(?i)<script[^>]+src\s*=\s*[\"']((?:https?:)?//[^\"']+)")
+PRECONNECT_RE = re.compile(r"(?i)<link[^>]+rel\s*=\s*[\"'](?:preconnect|dns-prefetch)[\"'][^>]+href\s*=\s*[\"']((?:https?:)?//[^\"']+)")
 COOKIE_MAXAGE_RE = re.compile(r"(?i)max-age\s*=\s*(\d+)")
 COOKIE_EXPIRES_RE = re.compile(r"(?i)expires\s*=\s*([^;\"']+)")
 
@@ -1080,6 +1081,11 @@ def check_privacy(root, p, text, privacy, own=()):
                     cdn = host in THIRD_PARTY_CDN
                     _priv_add(privacy, "third-party-script", "info" if cdn else "low", host, r, i, line,
                               f"Loads executable script from {host}: it runs with page privileges and can read cookies/DOM and beacon data.")
+            for m in PRECONNECT_RE.finditer(line):
+                host = _host_of(m.group(1))
+                if host and not _endpoint_noise(host) and host not in NON_NET_HOSTS and not _is_own(host, own):
+                    _priv_add(privacy, "third-party-preconnect", "info" if host in THIRD_PARTY_CDN else "low", host, r, i, line,
+                              f"Preconnect/DNS-prefetch to {host}: the browser opens a connection (IP, TLS) before any consent or request.")
             for m in FORM_RE.finditer(line):
                 host = _host_of(m.group(1))
                 if host and not _endpoint_noise(host) and host not in NON_NET_HOSTS:
@@ -1095,8 +1101,14 @@ def check_privacy(root, p, text, privacy, own=()):
                 if perm in ANDROID_IGNORE:
                     continue
                 sev, what = ANDROID_PERMS.get(perm, ("low", perm.replace("_", " ").lower()))
+                max_sdk = re.search(r'android:maxSdkVersion\s*=\s*"(\d+)"', line)
+                note = ""
+                if max_sdk:
+                    down = {"high": "medium", "medium": "low", "low": "info"}
+                    sev = down.get(sev, sev)
+                    note = f" Only applies up to API {max_sdk.group(1)} (newer Android does not request it)."
                 _priv_add(privacy, "android-permission", sev, perm, r, i, line,
-                          f"Android app requests {what} ({perm}); the user must grant it and the app can read it.")
+                          f"Android app requests {what} ({perm}); the user must grant it and the app can read it.{note}")
     if manifest:
         groups = {"permissions": "permission", "optional_permissions": "permission",
                   "host_permissions": "host access", "optional_host_permissions": "optional host access"}
@@ -1497,7 +1509,7 @@ def privacy_findings(privacy):
              "upload-limit": 22, "store-disclosure": 23, "tracking-params": 24, "pii-in-url": 25, "insecure-endpoint": 26,
              "android-permission": 26, "android-feature": 27, "extension-permission": 28, "cookie-flags": 28, "cookie-write": 29,
              "third-party-cdn": 30, "third-party-embed": 31, "third-party-form": 32, "first-party-endpoint": 33,
-             "third-party-script": 34, "cookie-lifetime": 35, "external-endpoint": 36,
+             "third-party-script": 34, "third-party-preconnect": 35, "cookie-lifetime": 36, "external-endpoint": 37,
              "browser-storage": 36, "consent-manager": 37, "consent-mode": 38, "consent-state": 39,
              "referrer-policy": 40, "permissions-policy": 41,
              "iframe-allow": 42,
