@@ -3065,6 +3065,12 @@ def diff_reports(old, new):
     removed = sorted((fs[0] for k, fs in o.items() if k not in n), key=order)
     return added, removed, sum(len(v) for v in o.values()), sum(len(v) for v in n.values())
 
+def gate_findings(old, new, min_severity):
+    """Added findings at/above the gate severity (rule + file matching), plus the diff counters."""
+    added, removed, old_n, new_n = diff_reports(old, new)
+    thr = SEV_ORDER.get(min_severity, SEV_ORDER["medium"])
+    return [f for f in added if SEV_ORDER.get(f["severity"], 0) >= thr], added, removed, old_n, new_n
+
 def cmd_diff(a):
     """Compares two stored reports and fails when the change added findings at/above --min-severity. Never scans."""
     try:
@@ -3080,9 +3086,7 @@ def cmd_diff(a):
     if mo.get("ruleset") and mn.get("ruleset") and mo["ruleset"] != mn["ruleset"]:
         print(f"diff: reports were produced by different rulesets ({mo['ruleset']} vs {mn['ruleset']}); "
               "added/removed may include rule changes", file=sys.stderr)
-    added, removed, old_n, new_n = diff_reports(old, new)
-    thr = SEV_ORDER[a.min_severity]
-    gated = [f for f in added if SEV_ORDER.get(f["severity"], 0) >= thr]
+    gated, added, removed, old_n, new_n = gate_findings(old, new, a.min_severity)
     C = (lambda code, s: f"\033[{code}m{s}\033[0m") if (color_enabled() and not a.no_color) else (lambda code, s: s)
     vc = {"RED": "1;41;97", "YELLOW": "1;43;30", "GREEN": "1;42;30"}
     show = lambda v: C(vc[v], v) if v in vc else (v or "?")
@@ -3727,6 +3731,15 @@ def cmd_scan(a):
     profile = "strict" if a.strict else "relaxed" if a.relaxed else "balanced"
     skipped = []
     osv_meta = {}
+    baseline = None
+    if getattr(a, "baseline", None):
+        try:
+            baseline = json.loads(Path(a.baseline).read_text(encoding="utf-8"))
+            if not isinstance(baseline, dict):
+                raise ValueError("root must be a JSON object")
+        except (OSError, ValueError) as ex:
+            print(f"[repobeagle] baseline {a.baseline}: {ex}", file=sys.stderr)
+            return 1
     if getattr(a, "privacy_only", False):
         # privacy-only filters non-privacy findings anyway, so skip the work/network for them
         if not getattr(a, "no_osv", False):
@@ -3837,6 +3850,27 @@ def cmd_scan(a):
             print(f"[repobeagle] JSON written to {a.json}", file=sys.stderr)
         if a.keep:
             print(f"[repobeagle] kept clone at {src}", file=sys.stderr)
+        if baseline is not None:
+            bm = baseline.get("meta") or {}
+            if bm.get("ruleset") and bm["ruleset"] != RULESET:
+                print(f"[repobeagle] baseline ruleset {bm['ruleset']} differs from this scanner ({RULESET}); "
+                      "rule changes may show up as added/removed", file=sys.stderr)
+            thr = getattr(a, "baseline_min_severity", "medium")
+            gated, added, removed, old_n, new_n = gate_findings(
+                baseline, {"findings": active + suppressed}, thr)
+            print(f"[repobeagle] baseline {a.baseline}: findings {old_n}; current findings {new_n}; "
+                  f"added {len(added)}, removed {len(removed)} (rule + file matching; line moves are not changes)",
+                  file=sys.stderr)
+            for f in gated[:20]:
+                loc = f"{f.get('file')}:{f.get('line')}" if f.get("line") else str(f.get("file"))
+                print(f"[repobeagle]   new {str(f.get('severity', '?')).upper()} {f.get('title')} [{loc}]", file=sys.stderr)
+            if len(gated) > 20:
+                print(f"[repobeagle]   ... {len(gated) - 20} more new finding(s)", file=sys.stderr)
+            if gated:
+                print(f"[repobeagle] gate: {len(gated)} new finding(s) at/above {thr}", file=sys.stderr)
+                return 1
+            print(f"[repobeagle] gate: no new findings at/above {thr}", file=sys.stderr)
+            return 0
         return {"GREEN": 0, "YELLOW": 1, "RED": 2}[v]
     finally:
         if work and not a.keep:
@@ -4161,6 +4195,11 @@ def main():
         s.add_argument("--all", action="store_true", help="print all findings")
         s.add_argument("--min-severity", choices=list(SEV_ORDER), default="info",
                        help="only print findings at/above this severity (JSON keeps all)")
+        s.add_argument("--baseline", metavar="REPORT",
+                       help="gate the scan against a stored report: exit 1 only when findings were added at/above "
+                            "--baseline-min-severity (rule + file matching; the verdict code is then not used)")
+        s.add_argument("--baseline-min-severity", choices=list(SEV_ORDER), default="medium",
+                       help="severity of an added finding that fails --baseline (default: medium)")
         s.add_argument("--no-redact", action="store_true", help="show raw emails/phones/cards in privacy finding snippets")
         if privacy_modes:
             pv = s.add_mutually_exclusive_group()

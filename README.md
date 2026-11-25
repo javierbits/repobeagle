@@ -39,7 +39,7 @@ Set `BEAGLE_IMAGE` to use a different tag (e.g. `ghcr.io/javierbits/repobeagle:l
 ```bash
 repobeagle scan <git-url | local-dir> [--ref <branch|tag|sha>] [--since <rev>] [--strict|--balanced|--relaxed] [--keep] [--json out.json]
                 [--no-docker] [--no-osv] [--offline-vulnerabilities] [--verify-deps] [--all] [--min-severity info|low|medium|high|critical] [--no-color]
-                [--privacy-only | --no-privacy] [--no-redact]
+                [--baseline old.json [--baseline-min-severity medium]] [--privacy-only | --no-privacy] [--no-redact]
 repobeagle privacy <git-url | local-dir> [same scan options]
 repobeagle explain <report.json>
 repobeagle diff <old.json> <new.json> [--min-severity medium] [--json out.json]
@@ -53,7 +53,7 @@ repobeagle update [--check]
 ```
 `repobeagle explain` takes a report produced by `scan --json` and prints the threshold arithmetic behind its verdict — which profile threshold was met, the margin to the next tier, and the largest rule contributors. It never re-scans and touches no network, so it works on a report someone shared with you.
 
-`repobeagle diff` compares two reports and classifies what the change added or removed, matching on rule id + file so line moves and re-indentation are not counts as changes. It exits 1 when an added finding is at or above `--min-severity` (default `medium`), which is the gate to use in CI: keep yesterday's report, scan the PR, and fail only on *new* findings. Like `explain`, it never re-scans.
+`repobeagle diff` compares two reports and classifies what the change added or removed, matching on rule id + file so line moves and re-indentation are not counts as changes. It exits 1 when an added finding is at or above `--min-severity` (default `medium`), which is the gate to use in CI: keep yesterday's report, scan the PR, and fail only on *new* findings. Like `explain`, it never re-scans. `scan --baseline old.json --baseline-min-severity high` does the scan and the same gate in one command: it exits 1 only when the scan added a finding at/above the threshold, and the verdict exit code is deliberately not used in that mode. `--baseline-min-severity` is separate from `--min-severity`, which only controls printing.
 `repobeagle export` converts a stored report to SARIF 2.1.0 (GitHub code scanning, Azure DevOps, VS Code), a Markdown table for a PR comment, or normalized JSON. Every finding carries a stable `partialFingerprints` value and, when suppressed, an explicit SARIF suppression, so accepted findings stay visible but dismissed. The scan workflow uploads it when `upload-sarif: true`.
 Exit code: 0 = GREEN, 1 = YELLOW, 2 = RED. Colour turns off when output isn't a terminal or `NO_COLOR` is set.
 
@@ -219,7 +219,7 @@ Then add the badge; after a tag push, a per-tag badge also exists:
 ![RepoBeagle v1.153.0](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/OWNER/REPO/repobeagle/badge-v1.153.0.json)
 ```
 
-The workflow publishes a `repobeagle` branch containing `badge.json` (shields.io endpoint), a self-hosted `badge.svg` fallback and the full `report.json` (plus `report-<sha>.json` per commit and per-tag copies), so every finding is one click away from the badge. Inputs: `profile`, `fail-on-red`, `privacy-only`, `badge-branch` (empty string disables publishing), `set-status` (default true) and `tools-ref` (toolchain ref, default `main`; the `VERSION` file there pins the scanned image).
+The workflow publishes a `repobeagle` branch containing `badge.json` (shields.io endpoint), a self-hosted `badge.svg` fallback and the full `report.json` (plus `report-<sha>.json` per commit and per-tag copies), so every finding is one click away from the badge. Inputs: `profile`, `fail-on-red`, `baseline` + `baseline-min-severity` (gate on new findings, see below), `privacy-only`, `badge-branch` (empty string disables publishing), `set-status` (default true), `upload-sarif` and `tools-ref` (toolchain ref, default `main`; the `VERSION` file there pins the scanned image).
 
 ### Verifying a badge (public repos)
 
@@ -248,6 +248,21 @@ cosign verify-blob \
 What this does and does not prove:
 - Proven: the official workflow ran and produced exactly this report. The report records `meta.image_digest`, `meta.toolchain_ref`, the run URL, the scanned SHA and the scanned repository; a report produced for any other repository is rejected. The offline scan is deterministic, so anyone can re-run the pinned image on the same commit and diff the findings.
 - Not proven: that the branch tip is still that commit. A repo owner can republish an old, honestly-green report next to new code; always check `meta.scanned_sha` against HEAD. A missing or failing signature means unverified, never verified. Badges also only make sense on public repos: on a private one nobody can see the README or the report. For a fully independent verdict, someone else must run the scan (or a future hosted service).
+
+### Gate on new findings instead of the absolute verdict
+
+`fail-on-red` fails on any RED, which on a large honest repository means the day it is enabled. The diff gate inverts that: fail only on what the change introduced. Matching is on rule id + file, so line moves and re-indentation are not changes.
+
+- Your own baseline: `repobeagle scan <target> --json candidate.json --baseline baseline.json --baseline-min-severity high` (one command, exit 1 only on new findings), or separately `repobeagle diff baseline.json candidate.json --min-severity high`.
+- With this workflow: `baseline: true` and `baseline-min-severity: high`. Before scanning, the job clones the badge branch and copies its `report.json` — the last published report, byte-identical to the newest `report-<sha>.json` — as the baseline. It then scans, publishes the new report and the commit status, and only then runs the same diff, failing when the candidate has a finding at/above the threshold that the baseline did not. The first run on a repository has no baseline and skips the gate; `badge-branch: ''` disables publishing and therefore the gate.
+
+What this gate does **not** catch:
+- **Severity changes on the same rule + file**: the key is unchanged, so `low` → `critical` is not a new finding. Gate on the absolute verdict, or compare severities yourself, if that matters.
+- **Rule renames** (warned about via the ruleset line, then compared as different ids) and a finding that moves file (it appears as removed + added, noisy but not silent).
+- A baseline that hides the regression: an older baseline, a different profile (`--strict`/`--relaxed`), `--privacy-only`, or one produced by a different toolchain. The report records `meta.profile`, `meta.ruleset`, `meta.tools` and `meta.scanned_sha`, so compare those when a result surprises you.
+- New code inside binaries or archives (never inspected), git history beyond the shallow clone, and anything that only happens at runtime.
+
+Retention: the badge branch keeps every `report-<sha>.json` and per-tag copy; nothing prunes them yet, and every scan adds one blob. The baseline is always the newest `report.json`, so a long-lived badge branch accumulates objects — prune old `report-*.json` if that matters to you, or set `badge-branch: ''` (which drops the history and the gate).
 
 ## Pipeline
 1. **Fetch** always uses a filtered checkout, so huge repos stay small. It runs `git clone --depth 1 --filter=blob:none --no-checkout --no-recurse-submodules`, lists files with `git ls-tree`, then does a sparse checkout that **excludes archives and binaries**. Those files are reported as findings but never downloaded. For example, DataDog's ~44 GB malware dataset comes down as ~250 MB in about 17 s. The checkout goes into a fresh temp dir (mode 0700), with these protections: `GIT_TERMINAL_PROMPT=0`, `core.hooksPath=/dev/null`, `core.symlinks=false`, `protocol.file.allow=never`, `GIT_ALLOW_PROTOCOL=https:http:ssh`, no credential helper, and LFS smudge skipped. A local directory is copied instead, without `.git`. The copy is deleted at the end unless you pass `--keep`.

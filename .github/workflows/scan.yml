@@ -16,6 +16,8 @@
 #       with:
 #         profile: balanced   # strict | balanced | relaxed
 #         fail-on-red: false  # true = the job fails on a RED verdict (PR gate)
+#         baseline: false     # true = fail only on findings added since the last published report
+#         baseline-min-severity: high  # severity of a new finding that fails the baseline gate
 #         privacy-only: false # true = badge only privacy/telemetry findings
 #
 # The badge is self-attested: it lives in this repository. The report is signed
@@ -36,6 +38,16 @@ on:
         required: false
         default: false
         type: boolean
+      baseline:
+        description: "Fail only on findings added since the last published report on the badge branch (needs badge-branch)"
+        required: false
+        default: false
+        type: boolean
+      baseline-min-severity:
+        description: "Severity of a new finding that fails the baseline gate: critical, high, medium, low or info"
+        required: false
+        default: "high"
+        type: string
       privacy-only:
         description: "Publish a privacy-only verdict (only privacy/telemetry findings)"
         required: false
@@ -112,6 +124,24 @@ jobs:
             echo "TOOLS=$TOOLS"
             echo "OUT=$OUT"
           } >> "$GITHUB_ENV"
+
+      - name: Fetch the last published report as the baseline
+        if: inputs.baseline && inputs.badge-branch != ''
+        continue-on-error: true            # a missing branch is "no baseline yet", not a failure
+        run: |
+          set -euo pipefail
+          B="$BADGE_BRANCH"
+          if git clone -q --depth 1 --branch "$B" \
+               "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "$RUNNER_TEMP/baseline" 2>/dev/null \
+             && [ -s "$RUNNER_TEMP/baseline/report.json" ]; then
+            cp "$RUNNER_TEMP/baseline/report.json" "$OUT/baseline.json"
+            python3 -c 'import json,sys;d=json.load(open(sys.argv[1]));m=d.get("meta") or {};print("baseline: %s %s" % (d.get("verdict"), str(m.get("scanned_sha","?"))[:12]))' "$OUT/baseline.json"
+          else
+            echo "no report on the $B branch yet: the baseline gate will be skipped"
+          fi
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BADGE_BRANCH: ${{ inputs.badge-branch }}
 
       - name: Scan
         id: scan
@@ -218,3 +248,28 @@ jobs:
         run: |
           echo "RepoBeagle verdict is RED (see the repobeagle/scan status)"
           exit 1
+
+      # Publishes first, then gates: the new report (and every finding) stays available
+      # even when the job fails. Matching is rule + file, so line moves are not changes.
+      - name: Gate on findings added since the last report
+        if: inputs.baseline
+        run: |
+          set -euo pipefail
+          if [ ! -s "$OUT/baseline.json" ]; then
+            echo "no baseline report: gate skipped (first run for this repository, or badge-branch is empty)"
+            exit 0
+          fi
+          set +e
+          python3 "$TOOLS/repobeagle.py" diff "$OUT/baseline.json" "$OUT/beagle.json" \
+            --min-severity "$BASELINE_MIN_SEVERITY" --no-color
+          rc=$?
+          set -e
+          if [ "$rc" -eq 0 ]; then exit 0; fi
+          if [ "$rc" -eq 1 ]; then
+            echo "repobeagle: new findings at/above $BASELINE_MIN_SEVERITY since the last published report"
+            exit 1
+          fi
+          echo "repobeagle diff failed (rc=$rc)"
+          exit 1
+        env:
+          BASELINE_MIN_SEVERITY: ${{ inputs.baseline-min-severity }}

@@ -113,6 +113,32 @@ for f in new["findings"]:
 json.dump(new, open(sys.argv[2], "w"))
 PY
 if $RG diff "$g2" "$g3" --no-color --min-severity info >/tmp/rb-diff2.txt 2>&1; then echo "PASS diff ignores line drift"; else echo "FAIL diff ignores line drift"; fail=1; fi
+# ruleset mismatch: loudly compared, but a version change alone is not a gate failure
+rf=$(mktemp)
+python3 - "$g2" "$rf" <<'PY'
+import json, sys
+d = json.load(open(sys.argv[1])); d["meta"]["ruleset"] = "000000000000"
+json.dump(d, open(sys.argv[2], "w"))
+PY
+if $RG diff "$rf" "$g2" --no-color 2>&1 | grep -q "different rulesets"; then echo "PASS diff ruleset warning"; else echo "FAIL diff ruleset warning"; fail=1; fi
+if $RG diff "$rf" "$g2" --no-color >/dev/null 2>&1; then echo "PASS diff ruleset mismatch does not gate"; else echo "FAIL diff ruleset mismatch gated"; fail=1; fi
+rm -f "$rf"
+# removed findings: reported as removed, never as a failure
+rmv=$(mktemp)
+python3 - "$g2" "$rmv" <<'PY'
+import json, sys
+d = json.load(open(sys.argv[1]))
+d["findings"] = d["findings"][1:]
+json.dump(d, open(sys.argv[2], "w"))
+PY
+if out=$($RG diff "$g2" "$rmv" --min-severity info --no-color 2>/dev/null) && grep -q "added 0, removed" <<<"$out"; then echo "PASS diff removed"; else echo "FAIL diff removed"; fail=1; fi
+if $RG diff "$g2" "$rmv" --min-severity info --no-color >/dev/null 2>&1; then echo "PASS diff removal is not a gate failure"; else echo "FAIL diff removal gated"; fail=1; fi
+rm -f "$rmv"
+# scan --baseline: one command scans and gates on new findings, suppressing the verdict code
+if $RG scan tests/fixtures/trap-npm --baseline "$g1" --baseline-min-severity high $L >/dev/null 2>&1; then echo "FAIL baseline gate on new findings"; fail=1; else echo "PASS baseline gate on new findings"; fi
+if $RG scan tests/fixtures/trap-npm --baseline "$g2" --baseline-min-severity high $L >/dev/null 2>&1; then echo "PASS baseline gate quiet on the same tree"; else echo "FAIL baseline gate on unchanged tree"; fail=1; fi
+if err=$($RG scan tests/fixtures/trap-npm --baseline /nonexistent.json $L 2>&1 >/dev/null); then echo "FAIL baseline missing file"; fail=1
+elif grep -q "baseline /nonexistent.json" <<<"$err"; then echo "PASS baseline missing file rejected"; else echo "FAIL baseline missing file message"; fail=1; fi
 # export: SARIF must be structurally valid, reference declared rules, and use unique fingerprints.
 g4=$(mktemp)
 $RG export "$g2" --format sarif -o "$g4" 2>/dev/null || fail=1
