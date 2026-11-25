@@ -95,7 +95,7 @@ Severity follows privacy impact, so a default `balanced` scan goes YELLOW when a
 | `third-party-stylesheet` | `<link rel="stylesheet">` or CSS `@import` from another host: it sees your IP/referrer and pulls fonts/images from its servers; known CDNs `info`, unknown `low` | low/info |
 | `third-party-preload` | `<link rel="preload"/"prefetch"/"modulepreload">` from another host: fetches bytes before needed, revealing your IP early | low/info |
 | `cookie-lifetime` | cookies with `Max-Age`/`Expires` over one year (`low`) or under it / session-scoped / already expired / deleted with `Max-Age=0` (`info`) | low/info |
-| `consent-manager` | OneTrust/Optanon, Cookiebot, Osano, CookieYes, Klaro, tarteaucitron, Didomi, Usercentrics, Iubenda, **Sourcepoint**, **TrustArc**, CookiePro, Fides, CookieFirst, … (positive signal: tracking should be gated on consent) | info |
+| `consent-manager` | OneTrust/Optanon (`cookielaw.org`, `otSDKStub`), Cookiebot, Osano, CookieYes, Klaro, tarteaucitron, Didomi, Usercentrics, Iubenda, Sourcepoint, TrustArc, CookiePro, Fides, CookieFirst, Civic (`civicuk.com`), … (positive signal: tracking should be gated on consent) | info |
 | `external-endpoint` | inventory of remote hosts in code/config/HTML, including `ws://`/`wss://` sockets and protocol-relative `//host/…`; known platforms/registries/CDNs are `info`, unknown third parties are `low`; comments (including inline `# …` / `// …`), docs/test fixtures and translation catalogs are `info`; `.invalid`/`.test`/`.example`/`.localhost` are ignored | info/low |
 | `first-party-endpoint` | hosts belonging to the repo itself, inferred from `CNAME`, `package.json`, `pyproject.toml`, `setup.cfg`, `Cargo.toml`, `pubspec.yaml` or `composer.json`; classified as first-party and not counted against third-party checks | info |
 | `macos-entitlement` | macOS `*.entitlements` capabilities granted without a per-use prompt: location, camera, microphone, photo library, contacts, calendars, Bluetooth, USB, network, user-selected/Downloads/Desktop/Documents/all files (read-only variants included), Apple Events automation | high/medium/low |
@@ -242,7 +242,7 @@ Apart from the clone, OSV/GuardDog-verify, the GitHub trust lookup and your own 
 
 ## Example output (abridged)
 ```
-repobeagle 1.116.0  |  tests/fixtures/trap-npm
+repobeagle 1.117.0  |  tests/fixtures/trap-npm
   VERDICT: RED    2 critical / 2 high findings, e.g. npm lifecycle script 'postinstall' runs automatically on install (package.json:8)
   CRITICAL [agent-checks] package.json:8
            npm lifecycle script 'postinstall' runs automatically on install

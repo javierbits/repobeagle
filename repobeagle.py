@@ -877,7 +877,7 @@ COOKIE_WRITE_RE = re.compile(r"document\.cookie\s*=")
 STORAGE_RE = re.compile(r"(?i)(localStorage|sessionStorage)\.(setItem|removeItem)|\bindexedDB\b")
 CONSENT_RE = re.compile(r"(?i)(onetrust|optanon|cookiebot|osano|cookieyes|klaro|tarteaucitron|cookieconsent|"
                         r"consent-manager|quantcast|didomi|usercentrics|borlabs|iubenda|complianz|axeptio|cookiehub|"
-                        r"cookieinformation|termly|consentmanager|sirdata|civic|usercentrics\.eu|sourcepoint|"
+                        r"cookieinformation|termly|consentmanager|sirdata|civicuk|cookielaw\.org|otSDKStub|usercentrics\.eu|sourcepoint|"
                         r"sp-prod\.net|privacy-mgmt\.com|trustarc|truste\.com|cookiepro|\bfides\b|cookiefirst)")
 SET_COOKIE_RE = re.compile(r"(?i)['\"]set-cookie['\"]")
 SET_COOKIE_READ_RE = re.compile(r"(?i)(\.get|\.getheader|header\(\)\.get)\([^)]*['\"]set-cookie")
