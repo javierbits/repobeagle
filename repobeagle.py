@@ -1299,6 +1299,8 @@ FINGERPRINT_RULES = [
     ("screen", "low", r"screen\.(width|height|colorDepth|pixelDepth)|devicePixelRatio|screen\.avail", "Screen geometry/color depth: display fingerprint."),
     ("user-agent", "low", r"navigator\.userAgent|navigator\.platform|navigator\.hardwareConcurrency|navigator\.deviceMemory|navigator\.plugins|navigator\.languages", "Browser/device capabilities: UA, cores, memory, plugins, languages."),
     ("timezone", "low", r"resolvedOptions\(\)\.timeZone|Intl\.DateTimeFormat|toLocaleString\(", "Timezone/locale: narrows down the user's location and language."),
+    ("webrtc", "medium", r"RTCPeerConnection|createDataChannel\s*\(", "WebRTC peers see your public IP and can probe NAT/firewall; connections may be made before consent."),
+    ("battery/network", "low", r"navigator\.getBattery|navigator\.connection\b", "Battery/network state narrows the device and can be sampled repeatedly."),
 ]
 FINGERPRINT_MEANING = "Device-fingerprinting signal: combine several and a browser can be recognized without cookies."
 IDENTIFY_RE = re.compile(r"(?i)\.(identify|setUser(?:Id|Email|Properties)?|set_user(?:_id|_email|_properties)?|alias)\s*\("
