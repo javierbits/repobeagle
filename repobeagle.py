@@ -2416,6 +2416,15 @@ def cmd_scan(a):
     print(banner(color_enabled(sys.stderr) and not a.no_color), file=sys.stderr)   # stderr keeps stdout reports clean
     t0 = time.time()
     profile = "strict" if a.strict else "relaxed" if a.relaxed else "balanced"
+    skipped = []
+    if getattr(a, "privacy_only", False):
+        # privacy-only filters non-privacy findings anyway, so skip the work/network for them
+        if not getattr(a, "no_osv", False):
+            a.no_osv = True
+            skipped.append("OSV vulnerability scan")
+        if not getattr(a, "no_trust", False):
+            a.no_trust = True
+            skipped.append("GitHub trust signals")
     work = None
     try:
         work = tempfile.mkdtemp(prefix="repobeagle-")
@@ -2452,11 +2461,13 @@ def cmd_scan(a):
         if a.verify_deps:
             fs, note = verify_deps(src); findings += fs
             if note: notes.append(note)
+        if skipped:
+            notes.append("privacy-only: skipped non-privacy stages (" + ", ".join(skipped) + ")")
         raw_count = len(findings)
         findings = collapse(dedupe(findings))
-        if a.privacy_only:
+        if getattr(a, "privacy_only", False):
             findings = [f for f in findings if f["tool"] in ("privacy", "telemetry")]
-        elif a.no_privacy:
+        elif getattr(a, "no_privacy", False):
             findings = [f for f in findings if f["tool"] not in ("privacy", "telemetry")]
         if not a.no_redact:
             for f in findings:

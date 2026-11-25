@@ -55,6 +55,9 @@ python3 -c "import json,sys;d=json.load(open('$j'));t={f['tool'] for f in d['fin
 python3 tools/make_badge.py "$j" --endpoint "$j.badge" >/dev/null 2>&1
 python3 -c "import json,sys;b=json.load(open('$j.badge'));print('PASS badge marks privacy-only' if b.get('privacy_only') is True else 'FAIL badge privacy-only flag');sys.exit(0 if b.get('privacy_only') is True else 1)" || fail=1
 rm -f "$j" "$j.badge"
+j=$(mktemp); $RG privacy tests/fixtures/trap-privacy --no-color --json "$j" --no-docker >/dev/null 2>&1
+python3 -c "import json,sys;d=json.load(open('$j'));ok=any('privacy-only: skipped' in n for n in d.get('notes') or []);print('PASS privacy-only skips OSV/trust' if ok else 'FAIL privacy-only skip note');sys.exit(0 if ok else 1)" || fail=1
+rm -f "$j"
 python3 tests/test_trust.py || fail=1
 python3 tests/test_banner.py || fail=1
 python3 tests/test_privacy.py || fail=1
