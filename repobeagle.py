@@ -2938,7 +2938,9 @@ def verdict(findings, profile, ai):
         v = "YELLOW"
     top = sorted(findings, key=lambda f: -SEV_ORDER[f["severity"]])
     if v == "RED":
-        why = f"{counts['critical']} critical / {counts['high']} high findings, e.g. {top[0]['title']} ({top[0]['file']}:{top[0]['line']})"
+        why = ("the AI review set the verdict (no scanner findings)" if not top else
+               f"{counts['critical']} critical / {counts['high']} high findings, e.g. "
+               f"{top[0]['title']} ({top[0]['file']}:{top[0]['line']})")
     elif v == "YELLOW":
         why = f"No critical issues; {counts['high']} high, {counts['medium']} medium, {counts['low']} low findings worth a look"
     else:
@@ -2975,15 +2977,16 @@ def planner_rules(findings):
 def _planner_pressure(findings, profile, ai=None):
     """Distance to the target tier: (verdict rank, findings above the binding threshold)."""
     v, _, counts = verdict(findings, profile, ai)
+    rank = {"GREEN": 0, "YELLOW": 1, "RED": 2}[v]
     prof = PROFILES[profile]
     at_least = lambda s: sum(n for k, n in counts.items() if SEV_ORDER[k] >= SEV_ORDER[s])
     if v == "RED":
         for s, n in prof["red"]:
             if at_least(s) >= n:
-                return 2, at_least(s) - n + 1
-    if v == "YELLOW":
-        return 1, at_least(prof["yellow"])
-    return 0, 0
+                return rank, at_least(s) - n + 1
+    elif v == "YELLOW":
+        return rank, at_least(prof["yellow"])
+    return rank, 0
 
 def planner_plan(findings, profile, ai, target):
     """Accepts whole rules, each step the one that moves the verdict closest to the target; lighter rules win ties."""
@@ -3019,6 +3022,7 @@ def write_suppressions(path, rules, reason=""):
     if not add:
         return 0, len(rules)
     reason = " ".join(str(reason or "").split()) or "reviewed with repobeagle explain"
+    p.parent.mkdir(parents=True, exist_ok=True)
     with p.open("a", encoding="utf-8") as fh:
         if existing and not existing.endswith("\n"):
             fh.write("\n")
