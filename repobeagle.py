@@ -668,7 +668,9 @@ TELEMETRY_OPTOUT_RE = re.compile(
     r"(?i)(DO_NOT_TRACK|NEXT_TELEMETRY_DISABLED|NUXT_TELEMETRY_DISABLED|ASTRO_TELEMETRY_DISABLED|GATSBY_TELEMETRY_DISABLED|"
     r"TURBO_TELEMETRY_DISABLED|DOTNET_CLI_TELEMETRY_OPTOUT|HOMEBREW_NO_ANALYTICS|CHECKPOINT_DISABLE|"
     r"NG_CLI_ANALYTICS\s*[=:]\s*(false|off)|telemetry\s*[=:]\s*(false|off)|disable[_-]?telemetry|no[_-]?telemetry|"
-    r"analytics\s*[=:]\s*(false|off)|TELEMETRY_OPTOUT|DISABLE_TELEMETRY|NO_?TELEMETRY|--no-?telemetry|disable[_-]?analytics)")
+    r"analytics\s*[=:]\s*(false|off)|TELEMETRY_OPTOUT|DISABLE_TELEMETRY|NO_?TELEMETRY|--no-?telemetry|disable[_-]?analytics|"
+    r"optOutCapturing|opt_out_capturing|setOptOut|set_opt_out|disableTracking|disable_tracking|"
+    r"trackingEnabled\s*[=:]\s*false|analytics\.disable\s*\()")
 DNT_RE = re.compile(r"(?i)(navigator\.doNotTrack|\bdoNotTrack\b|globalPrivacyControl|\bGPC\b|\bDNT\b|Sec-GPC)")
 
 TELEMETRY_PACKAGES = [
@@ -1953,6 +1955,11 @@ def run_agent_checks(root):
             findings.append(finding("privacy", "info", "(repo)", 0, "dnt-respect: Do-Not-Track / opt-out is referenced",
                                      ", ".join(sorted(optouts)[:3]),
                                      "Telemetry exists and the repo references a Do-Not-Track/opt-out switch, so the signal can be honoured."))
+        elif optouts_code:
+            findings.append(finding("privacy", "info", "(repo)", 0,
+                                     "dnt-respect: opt-out handled in code (Do-Not-Track not read)",
+                                     ", ".join(sorted(optouts_code)[:3]),
+                                     "The repo calls an SDK opt-out switch, but does not read navigator.doNotTrack/Global Privacy Control; browser-level signals may still be ignored."))
         else:
             findings.append(finding("privacy", "low", "(repo)", 0,
                                      "dnt-respect: Do-Not-Track only documented, not handled" if dnt_documented else

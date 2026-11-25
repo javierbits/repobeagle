@@ -90,4 +90,8 @@ check("summary consistent", rb.privacy_summary_consistent({"version": rb.VERSION
 check("summary mismatch", not rb.privacy_summary_consistent({"version": rb.VERSION, "findings": fs, "privacy_summary": {"trackers": {"ads": ["x"]}}}))
 check("summary older version skipped", rb.privacy_summary_consistent({"version": "v0.1.0", "findings": fs, "privacy_summary": {"trackers": {}}}))
 
+check("sdk opt-out call", bool(rb.TELEMETRY_OPTOUT_RE.search("posthog.opt_out_capturing()")))
+check("sdk opt-out setter", bool(rb.TELEMETRY_OPTOUT_RE.search("analytics.setOptOut(true)")))
+check("tracking false", bool(rb.TELEMETRY_OPTOUT_RE.search("trackingEnabled: false")))
+
 sys.exit(fail)
