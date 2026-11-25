@@ -1198,7 +1198,8 @@ def check_privacy(root, p, text, privacy, own=()):
                                     or re.search(r"(?i)(?:import|from)\s*\(?\s*[\"']?$", pre)
                                     or re.search(r"url\(\s*[\"']?$", pre)
                                     or (re.search(r"(?i)href\s*=\s*[\"']?$", pre)
-                                        and re.search(r"(?i)<(?:img|source|link|script|video|audio|picture)\b", line)))
+                                        and (re.search(r"(?i)<(?:img|source|script|video|audio|picture)\b", line)
+                                             or re.search(r"(?i)rel\s*=\s*[\"'][^\"']*(?:stylesheet|preload|prefetch|modulepreload|preconnect|dns-prefetch)", line))))
                     if specific:
                         continue      # the tag/asset rule below reports this host more precisely
                     _priv_add(privacy, "external-endpoint",
