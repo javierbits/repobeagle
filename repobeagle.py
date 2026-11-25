@@ -590,6 +590,7 @@ TELEMETRY_RULES = [
     ("session-replay", "high", "Quantum Metric", _telem_rx(r"quantummetric|quantum-metric")),
     ("session-replay", "high", "rrweb", _telem_rx(r"\brrweb\b|@rrweb/")),
     ("session-replay", "high", "Sentry Replay", _telem_rx(r"replaysSessionSampleRate|replaysOnErrorSampleRate|replayIntegration")),
+    ("session-replay", "high", "PostHog Replay", _telem_rx(r"disable_session_recording\s*[:=]\s*false|session_recording\s*:\s*\{")),
     ("session-replay", "high", "Glassbox", _telem_rx(r"\bglassbox\b")),
     ("session-replay", "medium", "Medallia", _telem_rx(r"\bmedallia\b")),
     # product / web analytics
@@ -953,7 +954,7 @@ MEDIA_RE = re.compile(r"(?i)<(?:img|source|video|audio|picture)\b[^>]*\bsrc\s*=\
 CSS_IMPORT_RE = re.compile(r"(?i)@import\s+(?:url\()?\s*[\"']?((?:https?:)?//[^\"')\s]+)")
 SRCSET_RE = re.compile(r"(?i)<(?:img|source)\b[^>]*\bsrcset\s*=\s*[\"']([^\"']+)")
 LINK_CSS_RE = re.compile(r"(?i)<link[^>]+rel\s*=\s*[\"']stylesheet[\"'][^>]+href\s*=\s*[\"']((?:https?:)?//[^\"']+)")
-PRELOAD_RE = re.compile(r"(?i)<link[^>]+rel\s*=\s*[\"'](?:preload|prefetch)[\"'][^>]+href\s*=\s*[\"']((?:https?:)?//[^\"']+)")
+PRELOAD_RE = re.compile(r"(?i)<link[^>]+rel\s*=\s*[\"'](?:preload|prefetch|modulepreload)[\"'][^>]+href\s*=\s*[\"']((?:https?:)?//[^\"']+)")
 PRECONNECT_RE = re.compile(r"(?i)<link[^>]+rel\s*=\s*[\"'](?:preconnect|dns-prefetch)[\"'][^>]+href\s*=\s*[\"']((?:https?:)?//[^\"']+)")
 COOKIE_MAXAGE_RE = re.compile(r"(?i)max-age\s*=\s*(\d+)")
 COOKIE_EXPIRES_RE = re.compile(r"(?i)expires\s*=\s*([^;\"']+)")

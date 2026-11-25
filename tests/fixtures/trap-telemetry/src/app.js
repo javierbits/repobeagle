@@ -10,3 +10,4 @@ const script = document.createElement("script");
 script.src = "https://www.googletagmanager.com/gtag/js?id=G-EXAMPLE1";
 document.head.appendChild(script);
 posthog.identify(user.id, { email: user.email });
+posthog.init("phc_example", { disable_session_recording: false });
