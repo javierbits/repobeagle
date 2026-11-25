@@ -1,0 +1,82 @@
+# End-to-end proof of the SARIF path: export a fixture report, upload it to GitHub
+# code scanning twice, and assert that the second identical upload does not duplicate
+# alerts (dedupe works through the stable partialFingerprints). Fixture alerts are
+# deliberate: trap-npm is malicious by design.
+name: sarif
+on:
+  push:
+    branches: [main]
+    paths:
+      - repobeagle.py
+      - tests/fixtures/**
+      - tests/schema/**
+      - tests/test_sarif_schema.py
+      - requirements-dev.txt
+      - .github/workflows/sarif.yml
+  pull_request:
+    paths:
+      - repobeagle.py
+      - tests/fixtures/**
+      - tests/schema/**
+      - tests/test_sarif_schema.py
+      - requirements-dev.txt
+      - .github/workflows/sarif.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  security-events: write   # upload SARIF to code scanning
+concurrency:
+  group: sarif-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  code-scanning:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Export the fixture report as SARIF (offline)
+        run: |
+          mkdir -p out
+          python3 repobeagle.py scan tests/fixtures/trap-npm --no-color --json out/report.json --no-osv --no-trust || true
+          python3 repobeagle.py export out/report.json --format sarif -o out/report.sarif
+          python3 -c 'import json;d=json.load(open("out/report.sarif"));print("results:", len(d["runs"][0]["results"]))'
+      - name: Upload SARIF to code scanning (first run)
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: out/report.sarif
+          category: repobeagle-trap-npm
+      - name: Wait until the alerts are processed
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          expected="$(python3 -c 'import json;d=json.load(open("out/report.sarif"));print(len({r["partialFingerprints"]["repobeagle/v1"] for r in d["runs"][0]["results"]}))')"
+          echo "EXPECTED=$expected" >> "$GITHUB_ENV"
+          for i in $(seq 1 24); do
+            n=$(gh api "repos/$GITHUB_REPOSITORY/code-scanning/alerts?tool_name=repobeagle&per_page=100" --jq 'length' 2>/dev/null || true)
+            echo "attempt $i: alerts=${n:-none} expected=$expected"
+            if [ "${n:-0}" -ge "$expected" ]; then exit 0; fi
+            sleep 5
+          done
+          echo "the upload produced no alerts"; exit 1
+      - name: Upload the identical SARIF again
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: out/report.sarif
+          category: repobeagle-trap-npm
+      - name: A duplicate upload must not add alerts
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          sleep 30                                  # let the second analysis be processed
+          n=$(gh api "repos/$GITHUB_REPOSITORY/code-scanning/alerts?tool_name=repobeagle&per_page=100" --jq 'length')
+          echo "alerts after the duplicate upload: $n (unique fingerprints: $EXPECTED)"
+          if [ "$n" -ne "$EXPECTED" ]; then
+            echo "dedupe failed: $n alerts for $EXPECTED fingerprints"
+            exit 1
+          fi
+          echo "PASS alerts deduplicated across identical uploads"

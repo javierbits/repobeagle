@@ -3,3 +3,4 @@
 mypy==2.4.1
 hypothesis==6.170.17
 ruff==0.17.6
+jsonschema==4.26.0

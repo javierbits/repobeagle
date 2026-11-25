@@ -229,7 +229,16 @@ Then add the badge; after a tag push, a per-tag badge also exists:
 ![RepoBeagle v1.153.0](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/OWNER/REPO/repobeagle/badge-v1.153.0.json)
 ```
 
-The workflow publishes a `repobeagle` branch containing `badge.json` (shields.io endpoint), a self-hosted `badge.svg` fallback and the full `report.json` (plus `report-<sha>.json` per commit and per-tag copies), so every finding is one click away from the badge. Inputs: `profile`, `fail-on-red`, `baseline` + `baseline-min-severity` (gate on new findings, see below), `privacy-only`, `badge-branch` (empty string disables publishing), `set-status` (default true), `upload-sarif` and `tools-ref` (toolchain ref, default `main`; the `VERSION` file there pins the scanned image).
+The workflow publishes a `repobeagle` branch containing `badge.json` (shields.io endpoint), a self-hosted `badge.svg` fallback and the full `report.json` (plus `report-<sha>.json` per commit and per-tag copies), so every finding is one click away from the badge. Inputs: `profile`, `fail-on-red`, `baseline` + `baseline-min-severity` (gate on new findings, see below), `privacy-only`, `badge-branch` (empty string disables publishing), `set-status` (default true), `upload-sarif` and `tools-ref` (toolchain ref, default `main`; the `VERSION` file there pins the scanned image). `upload-sarif: true` needs `security-events: write` in the caller job and publishes the findings to GitHub code scanning with stable `partialFingerprints`, so repeat scans dedupe instead of piling up.
+
+Manual upload (any CI, no workflow input needed):
+
+```bash
+repobeagle scan <target> --json report.json
+repobeagle export report.json --format sarif -o repobeagle.sarif
+```
+
+then upload `repobeagle.sarif` with `github/codeql-action/upload-sarif@v3` (GitHub) or any SARIF 2.1.0 consumer (Azure DevOps, VS Code SARIF viewer, GitLab's analyzer upload). The exporter is validated against the vendored official OASIS schema (`tests/schema/sarif-schema-2.1.0.json`) in `ci.yml`, and `.github/workflows/sarif.yml` proves the GitHub path end to end: export a fixture, upload twice, and assert the second upload does not duplicate alerts.
 
 ### Verifying a badge (public repos)
 
@@ -338,6 +347,7 @@ CI enforces all of it:
 | `ci.yml` | every push / PR | `py_compile`, `ruff --select E9,F63,F7,F82`, `mypy`, and `tests/run_tests.sh --offline` (hermetic: no image, no network scanners) |
 | `toolchain.yml` | Dockerfile/constraints/lock/scanner changes | builds the image and asserts the pinned toolchain and identical `meta.tools` across runs |
 | `arch.yml` | scanner, Dockerfile, rule or fixture changes | builds the image for amd64 and arm64 (QEMU), scans the same fixture on both and fails unless the normalized core and `meta.tools` are equal |
+| `sarif.yml` | scanner or fixture changes | exports a fixture report as SARIF, uploads it to code scanning twice and fails if the second upload duplicates alerts |
 | `nightly.yml` | schedule / manual | `tests/run_tests.sh` against the real corpus (network, osv.dev, GitHub API); red is allowed, it never blocks a PR |
 | `image.yml` | tags / main / weekly | builds, signs and publishes the multi-arch image |
 
@@ -355,6 +365,8 @@ The rule-pair check is automatic: `tests/test_rule_fixtures.py` parses the `RULE
 | tests/test_toolchain.py (scanner pins, drift detection, lock/constraints consistency) | pass |
 | tests/test_explain.py (verdict arithmetic per profile, planner transitions, `--write`) | pass |
 | tests/test_determinism.py (normalization: order/timings/paths ignored, real changes caught) | pass |
+| tests/test_sarif_schema.py (export validates against the vendored OASIS SARIF 2.1.0 schema; purity) | pass |
+| tests/test_markdown_snapshot.py (PR-comment snapshot, pipe/newline escaping, suppression, truncation) | pass |
 | tests/test_rule_fixtures.py (positive fixture fires every declared rule; control-clean fires none) | pass |
 | tests/test_fuzz.py (bounded Hypothesis targets: `decode_tags`, `redact_pii`, `check_unicode`, `check_markdown_hidden`) | pass |
 | psf/requests, tj/commander.js | GREEN/YELLOW |
