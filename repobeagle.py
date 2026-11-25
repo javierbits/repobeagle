@@ -3198,9 +3198,75 @@ def cmd_verify(a):
     finally:
         shutil.rmtree(work, ignore_errors=True)
 
+def _parse_ver(v):
+    m = re.match(r"v?(\d+)\.(\d+)\.(\d+)$", v or "")
+    return tuple(map(int, m.groups())) if m else None
+
+def latest_release(timeout=4):
+    req = urllib.request.Request("https://api.github.com/repos/javierbits/repobeagle/releases/latest",
+                                 headers={"User-Agent": "repobeagle", "Accept": "application/vnd.github+json"})
+    with urllib.request.urlopen(req, timeout=timeout) as resp:
+        return json.loads(resp.read().decode()).get("tag_name", "")
+
+def update_available(force=False):
+    """Latest release tag when newer than this install; cached for a day. None offline/disabled."""
+    if os.environ.get("BEAGLE_NO_UPDATE_CHECK"):
+        return None
+    cache = os.path.join(os.environ.get("XDG_CACHE_HOME", os.path.expanduser("~/.cache")), "repobeagle", "update.json")
+    try:
+        with open(cache, encoding="utf-8") as fh:
+            cached = json.load(fh)
+    except (OSError, ValueError):
+        cached = {}
+    try:
+        fresh = force or time.time() - float(cached.get("ts", 0)) >= float(os.environ.get("BEAGLE_UPDATE_INTERVAL", 86400))
+    except (TypeError, ValueError):
+        fresh = True
+    latest = None if fresh else cached.get("latest")
+    if fresh:
+        try:
+            latest = latest_release()
+        except Exception:
+            return None
+        try:
+            os.makedirs(os.path.dirname(cache), exist_ok=True)
+            with open(cache, "w", encoding="utf-8") as fh:
+                json.dump({"ts": time.time(), "latest": latest}, fh)
+        except OSError:
+            pass
+    cur, new = _parse_ver(VERSION), _parse_ver(latest)
+    return latest if cur and new and new > cur else None
+
+def cmd_update(a):
+    repo = Path(__file__).resolve().parent
+    try:
+        latest = latest_release()
+    except Exception:
+        latest = ""
+    if a.check:
+        print(f"installed: {VERSION}")
+        print(f"latest:    {latest or 'unknown'}")
+        new = _parse_ver(latest)
+        return 10 if new and _parse_ver(VERSION) and new > _parse_ver(VERSION) else 0
+    if _parse_ver(latest) and _parse_ver(latest) <= _parse_ver(VERSION):
+        print(f"[repobeagle] up to date ({VERSION})")
+        return 0
+    if (repo / ".git").exists() and shutil.which("git"):
+        print(f"[repobeagle] pulling {repo}")
+        subprocess.call(["git", "-C", str(repo), "pull", "--ff-only"])
+    installer = repo / "install.sh"
+    if installer.exists():
+        print(f"[repobeagle] installing {latest or 'latest'}")
+        return subprocess.call(["bash", str(installer)])
+    print(f"[repobeagle] {latest or 'a newer release'} is available; re-run ./install.sh in your checkout")
+    return 0
+
 def main():
     if len(sys.argv) >= 2 and sys.argv[1] == "_inner":
         inner(sys.argv[2], sys.argv[3]); return 0
+    if "--version" in sys.argv[1:] or "-V" in sys.argv[1:]:
+        print(f"RepoBeagle {VERSION}\nimage: {IMAGE}")
+        return 0
     ap = argparse.ArgumentParser(prog="repobeagle", description="RepoBeagle: Static safety gate for untrusted repos (never executes repo code).")
     sp = ap.add_subparsers(dest="cmd", required=True)
     def add_scan_args(s, privacy_modes=True):
@@ -3235,15 +3301,23 @@ def main():
     v.add_argument("--expect-sha", help="commit SHA the report must cover (default: HEAD of the target repo)")
     v.add_argument("--identity-regexp", default=VERIFY_IDENTITY, help="allowed signing workflow identity")
     v.add_argument("--no-color", action="store_true")
+    ap.add_argument("-V", "--version", action="store_true", help="print the installed version and image tag")
     sp.add_parser("version")
+    up = sp.add_parser("update", help="pull the latest release and reinstall")
+    up.add_argument("--check", action="store_true", help="only report installed/latest and exit 10 when an update exists")
     a = ap.parse_args()
     if a.cmd == "privacy":
         a.privacy_only, a.no_privacy = True, False
         return cmd_scan(a)
     if a.cmd == "verify":
         return cmd_verify(a)
+    if a.cmd == "update":
+        return cmd_update(a)
     if a.cmd == "version":
         print(VERSION); return 0
+    newer = update_available()
+    if newer:
+        print(f"[repobeagle] update available: {newer} (installed {VERSION}) — run 'repobeagle update'", file=sys.stderr)
     _install_cleanup()
     return cmd_scan(a)
 

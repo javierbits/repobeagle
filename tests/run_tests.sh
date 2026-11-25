@@ -3,6 +3,7 @@
 # Usage: tests/run_tests.sh [--offline]   (offline = local fixtures only)
 cd "$(dirname "$0")/.." || exit 1
 RG=./repobeagle; fail=0
+export BEAGLE_NO_UPDATE_CHECK=1   # offline suite: no GitHub release API calls
 check(){ # target expected-verdicts(regex) [extra args]; RULES="a b" = rule names that must appear
   local t=$1 exp=$2; shift 2
   local j; j=$(mktemp)
@@ -45,6 +46,8 @@ if grep -q "printing findings at/above high" /tmp/rb-minsev.txt && ! grep -q "^ 
 python3 -c "import json,sys;d=json.load(open('$j2'));ok=any(f['severity']=='low' for f in d['findings']);print('PASS --min-severity keeps JSON' if ok else 'FAIL --min-severity JSON');sys.exit(0 if ok else 1)" || fail=1
 rm -f "$j2" /tmp/rb-minsev.txt
 rm -f "$j"
+if [[ "$($RG --version)" == *"RepoBeagle $(sed 's/^v//' VERSION)"* ]] && [[ "$($RG version)" == "$(sed 's/^v//' VERSION)" ]]; then
+  echo "PASS version flags"; else echo "FAIL version flags"; fail=1; fi
 check tests/fixtures/trap-gha RED $L --strict
 check tests/fixtures/control-clean GREEN $L --strict   # pinned actions, dist bundle, normal README, real deps
 check tests/fixtures/ignore-suppressed GREEN $L   # .repobeagleignore suppresses the curl|sh finding

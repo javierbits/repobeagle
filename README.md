@@ -39,10 +39,12 @@ repobeagle scan <git-url | local-dir> [--strict|--balanced|--relaxed] [--keep] [
                 [--no-docker] [--no-osv] [--verify-deps] [--all] [--min-severity info|low|medium|high|critical] [--no-color]
                 [--privacy-only | --no-privacy] [--no-redact]
 repobeagle privacy <git-url | local-dir> [same scan options]
+repobeagle --version | version
+repobeagle update [--check]
 ```
 Exit code: 0 = GREEN, 1 = YELLOW, 2 = RED. Colour turns off when output isn't a terminal or `NO_COLOR` is set.
 
-`repobeagle privacy <target>` is the same as `scan --privacy-only`: a privacy audit that only reports privacy/telemetry findings. OSV vulnerability scanning and GitHub trust signals are skipped automatically in this mode (their findings would be filtered anyway), and the report notes that. Reports record `meta.privacy_mode` (`full`, `only` or `excluded`), and a privacy-only badge carries `"privacy_only": true` so consumers know the verdict basis. Each `--json` finding carries a stable `rule` id (the title prefix, e.g. `telemetry-analytics`, `pii-email`) for filtering/automation. `--privacy-only` does it inline, `--no-privacy` drops those findings, `--no-redact` shows raw PII in snippets instead of the default masking. `--min-severity` filters only the printed findings (verdict/counts and `--json` still cover everything).
+`repobeagle privacy <target>` is the same as `scan --privacy-only`: a privacy audit that only reports privacy/telemetry findings. OSV vulnerability scanning and GitHub trust signals are skipped automatically in this mode (their findings would be filtered anyway), and the report notes that. Reports record `meta.privacy_mode` (`full`, `only` or `excluded`), and a privacy-only badge carries `"privacy_only": true` so consumers know the verdict basis. Each `--json` finding carries a stable `rule` id (the title prefix, e.g. `telemetry-analytics`, `pii-email`) for filtering/automation. `--privacy-only` does it inline, `--no-privacy` drops those findings, `--no-redact` shows raw PII in snippets instead of the default masking. `--min-severity` filters only the printed findings (verdict/counts and `--json` still cover everything). `--version`/`version` print the installed version and image tag. `repobeagle update --check` reports installed vs latest (exit 10 when an update exists); `repobeagle update` runs `git pull --ff-only` in a checkout and then `install.sh`. Scans check GitHub's release API at most once a day (cached under `~/.cache/repobeagle`) and print an update notice to stderr; set `BEAGLE_NO_UPDATE_CHECK=1` to disable or `BEAGLE_UPDATE_INTERVAL` (seconds) to change the cadence. The check never contacts the scanned repo.
 
 | Profile | RED when | YELLOW when |
 |---|---|---|

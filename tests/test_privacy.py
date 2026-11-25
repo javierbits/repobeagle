@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Unit tests for the privacy helpers (no network, no repo code)."""
-import sys, tempfile, json
+import os, sys, tempfile, json
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import repobeagle as rb
@@ -151,5 +151,20 @@ with tempfile.TemporaryDirectory() as td:
     rb.check_exfil(Path(td), f, f.read_text(), ex)
     check("env read near network is not critical", ex and all(x["severity"] != "critical" for x in ex))
     check("env read is reported as medium", any(x["severity"] == "medium" for x in ex))
+
+check("semver ordering", rb._parse_ver("v1.152.0") > rb._parse_ver("v1.3.0"))
+check("semver reject", rb._parse_ver("stable") is None)
+_no_update = os.environ.pop("BEAGLE_NO_UPDATE_CHECK", None)
+with tempfile.TemporaryDirectory() as td:
+    os.makedirs(Path(td) / "repobeagle")
+    cache = Path(td) / "repobeagle" / "update.json"
+    os.environ["XDG_CACHE_HOME"] = td
+    cache.write_text(json.dumps({"ts": __import__("time").time(), "latest": "v9.9.9"}))
+    check("update detection", rb.update_available() == "v9.9.9")
+    cache.write_text(json.dumps({"ts": __import__("time").time(), "latest": "v1.152.0"}))
+    check("no update when current", rb.update_available() is None)
+    del os.environ["XDG_CACHE_HOME"]
+if _no_update is not None:
+    os.environ["BEAGLE_NO_UPDATE_CHECK"] = _no_update
 
 sys.exit(fail)
