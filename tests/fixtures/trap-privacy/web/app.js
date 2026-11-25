@@ -11,3 +11,4 @@ fetch("https://api.widget.dev/v2/ping?ttclid=abc");
 analytics.identify(user.id, { email: user.email });
 const pc = new RTCPeerConnection();
 navigator.getBattery().then(b => b.level);
+document.cookie = "_scid=abc; path=/";

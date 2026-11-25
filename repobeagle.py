@@ -1061,7 +1061,7 @@ def check_privacy(root, p, text, privacy, own=()):
                 if prefix in line and not all(x.lower() in line.lower() for x in reqs):
                     _priv_add(privacy, "cookie-flags", "low", prefix + " prefix without required flags", r, i, line,
                               f"Cookie name {prefix} requires {' and '.join(reqs)}; without them browsers may reject it or it is sent insecurely.")
-        if SET_COOKIE_RE.search(line) and not SET_COOKIE_READ_RE.search(line) and not all(s in line for s in ("HttpOnly", "Secure", "SameSite")):
+        if SET_COOKIE_RE.search(line) and not SET_COOKIE_READ_RE.search(line) and not all(re.search(s, line, re.I) for s in ("httponly", "secure", "samesite")):
             _priv_add(privacy, "cookie-flags", "low", "Set-Cookie", r, i, line,
                       "Set-Cookie header without all of HttpOnly/Secure/SameSite: readable by scripts, sent in clear or cross-site.")
         elif COOKIE_API_RE.search(line):
@@ -1425,7 +1425,7 @@ CONSENT_STATE_RE = re.compile(r"(?i)(?<![\w.-])(OptanonConsent|OptanonAlertBoxCl
 TRACKING_COOKIE_RE = re.compile(r"(?i)(?<![\w.])(_ga_[A-Z0-9]+|_gac_[A-Za-z0-9]+|_ga|_gid|_gat|_gcl_au|_gcl_aw|"
                                 r"_fbp|_fbc|_hj\w*|ajs_\w*|__utm[a-z]|__hstc|hubspotutk|intercom-[\w-]+|mp_\w+|"
                                 r"amplitude_id\w*|ph_\w+|_clck|_clsk|_uetvid|_uetsid|_ttp|_rdt_uuid|li_sugr|"
-                                r"bcookie|lidc|_pin_unauth|IDE|NID)(?=[=;'\"\s,)]|$)")
+                                r"bcookie|lidc|_pin_unauth|_epik|_scid|\bfr|personalization_id|guest_id|__gads|__gpi|_tt_enable_cookie|IDE|NID)(?=[=;'\"\s,)]|$)")
 VENDOR_PII_RE = re.compile(r"(?i)(send_?default_?pii\s*[:=]\s*true|person_?profiles\s*[:=]\s*[\"']always[\"']|"
                             r"anonymize_?ip\s*[:=]\s*false|store_?ip\s*[:=]\s*true|track_?ip\s*[:=]\s*true)")
 VENDOR_PII_SAFE_RE = re.compile(r"(?i)(send_?default_?pii\s*[:=]\s*false|person_?profiles\s*[:=]\s*[\"'](?:never|identified_only)[\"']|"
@@ -1445,7 +1445,10 @@ TRACKING_COOKIE_VENDORS = [
     ("_clsk", "Microsoft Clarity"), ("_uetvid", "Microsoft Ads"), ("_uetsid", "Microsoft Ads"), ("_ttp", "TikTok"),
     ("__utm", "Google Analytics (legacy)"), ("_hj", "Hotjar"),
     ("_rdt_uuid", "Reddit"), ("li_sugr", "LinkedIn"), ("bcookie", "LinkedIn"), ("lidc", "LinkedIn"),
-    ("_pin_unauth", "Pinterest"),
+    ("_pin_unauth", "Pinterest"), ("_epik", "Pinterest"),
+    ("_scid", "Snapchat"), ("fr", "Meta Pixel"), ("personalization_id", "X/Twitter"),
+    ("guest_id", "X/Twitter"), ("__gads", "Google Ads"), ("__gpi", "Google Ads"),
+    ("_tt_enable_cookie", "TikTok"),
 ]
 SSN_RE = re.compile(r"\b\d{3}-\d{2}-\d{4}\b")
 TEL_LINK_RE = re.compile(r"(?i)href\s*=\s*[\"'](tel|sms):([+0-9 ().-]+)")

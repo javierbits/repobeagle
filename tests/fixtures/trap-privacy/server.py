@@ -27,3 +27,6 @@ def remember(resp):
 
 def chip(resp):
     resp.headers["Set-Cookie"] = "pref=1; Secure; Partitioned; SameSite=None"
+
+def hardened(resp):
+    resp.headers["set-cookie"] = "sid=1; path=/; httponly; secure; samesite=lax"
