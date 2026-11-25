@@ -896,6 +896,9 @@ ANDROID_PERMS = {
     "READ_CALENDAR": ("medium", "calendar"), "QUERY_ALL_PACKAGES": ("medium", "all installed apps"),
     "BLUETOOTH_SCAN": ("medium", "nearby Bluetooth devices"), "BLUETOOTH_CONNECT": ("low", "Bluetooth devices"),
     "POST_NOTIFICATIONS": ("low", "notifications"), "ACCESS_ADSERVICES_AD_ID": ("high", "advertising ID"),
+    "ACCESS_ADSERVICES_ATTRIBUTION": ("medium", "ad attribution (Privacy Sandbox)"),
+    "ACCESS_ADSERVICES_TOPICS": ("medium", "ad topics (Privacy Sandbox)"),
+    "NEARBY_WIFI_DEVICES": ("medium", "nearby Wi-Fi devices"),
     "AD_ID": ("high", "advertising ID"), "READ_PHONE_NUMBERS": ("medium", "phone number"),
     "READ_MEDIA_VISUAL_USER_SELECTED": ("info", "user-selected photos only (Android 14 partial access)"),
 }

@@ -77,7 +77,7 @@ Severity follows privacy impact, so a default `balanced` scan goes YELLOW when a
 | `android-cleartext` | `android:usesCleartextTraffic="true"` in `AndroidManifest.xml` or `cleartextTrafficPermitted="true"` in a network security config: the app permits plaintext HTTP | medium |
 | `ios-cleartext` | `NSAllowsArbitraryLoads`/`NSExceptionAllowsInsecureHTTPLoads` enabled in a plist: App Transport Security permits plaintext HTTP | medium |
 | `ios-tracking-declaration` | iOS privacy manifest plus ad/analytics SDKs: info when `NSPrivacyTracking` is declared, low when the manifest omits it | info/low |
-| `android-permission` | `AndroidManifest.xml` permissions (`uses-permission` and `uses-permission-sdk-23`) that read user data: precise/background location, camera, microphone, contacts, SMS, call log, storage, ad ID (`AD_ID`/`AD_ADSERVICES_AD_ID`), calendars, Bluetooth, all installed apps; Android 14 user-selected photo access is `info`, and permissions limited by `android:maxSdkVersion` are downgraded with a note. Benign ones (`INTERNET`, `VIBRATE`, …) are ignored | high/medium/low by data sensitivity |
+| `android-permission` | `AndroidManifest.xml` permissions (`uses-permission` and `uses-permission-sdk-23`) that read user data: precise/background location, camera, microphone, contacts, SMS, call log, storage, ad ID (`AD_ID`/`AD_ADSERVICES_AD_ID`), Privacy Sandbox ad topics/attribution (`ACCESS_ADSERVICES_*`), nearby Wi-Fi devices, calendars, Bluetooth, all installed apps; Android 14 user-selected photo access is `info`, and permissions limited by `android:maxSdkVersion` are downgraded with a note. Benign ones (`INTERNET`, `VIBRATE`, …) are ignored | high/medium/low by data sensitivity |
 | `android-feature` | `AndroidManifest.xml` `<uses-feature>` hardware declarations (`android.hardware.camera`, `microphone`, `location`, `bluetooth`, `nfc`, …) that imply the capability is used | info |
 | `extension-permission` | browser-extension `manifest.json`: `<all_urls>`/`*://*/*`/wildcard-host access, `optional_host_permissions`, `content_scripts` on every page, plus sensitive APIs (`cookies`, `history`, `tabs`, `webRequest`, `bookmarks`, `downloads`, `clipboardRead`, `geolocation`, …); benign `storage`/`alarms`/`contextMenus`/`activeTab` are `info` | high/medium/low |
 | `extension-resource` | browser-extension `web_accessible_resources`: files exposed to `<all_urls>` (any site can load them and detect the extension) are `low`, site-scoped exposure `info` | low/info |
@@ -242,7 +242,7 @@ Apart from the clone, OSV/GuardDog-verify, the GitHub trust lookup and your own 
 
 ## Example output (abridged)
 ```
-repobeagle 1.124.0  |  tests/fixtures/trap-npm
+repobeagle 1.125.0  |  tests/fixtures/trap-npm
   VERDICT: RED    2 critical / 2 high findings, e.g. npm lifecycle script 'postinstall' runs automatically on install (package.json:8)
   CRITICAL [agent-checks] package.json:8
            npm lifecycle script 'postinstall' runs automatically on install
