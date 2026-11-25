@@ -954,6 +954,7 @@ def _known_host(host):
 EMBED_RE = re.compile(r"(?is)<(iframe|embed|object)\b([^>]*)>")
 SRC_ATTR_RE = re.compile(r"(?i)\bsrc\s*=\s*[\"']([^\"']+)")
 DATA_ATTR_RE = re.compile(r"(?i)\bdata\s*=\s*[\"']([^\"']+)")
+ACTION_ATTR_RE = re.compile(r"(?i)\baction\s*=\s*[\"']([^\"']+)")
 ALLOW_ATTR_RE = re.compile(r"(?i)\ballow\s*=\s*[\"']([^\"']*)")
 SANDBOX_RE = re.compile(r"(?i)\bsandbox\b")
 CREDENTIALLESS_RE = re.compile(r"(?i)\bcredentialless\b")
@@ -1102,12 +1103,12 @@ def check_privacy(root, p, text, privacy, own=()):
                 tag_ctx = None
                 tag_window = line
                 if not re.search(r"(?i)<(img|video|source|audio|picture|script|iframe|link)\b", line) and \
-                        re.search(r"(?i)\b(?:src|href|srcset)\s*=", line):
+                        re.search(r"(?i)\b(?:src|href|srcset|action)\s*=", line):
                     back = "\n".join(lines[max(0, i - 6):i])
                     tag_window = back + "\n" + line + "\n" + "\n".join(lines[i:i + 3])
                     cand = []
                     for pat, ctx in ((r"<(?:img|video|source|audio|picture)\b", "media"), (r"<script\b", "script"),
-                                     (r"<iframe\b", "embed"), (r"<link\b", "link")):
+                                     (r"<iframe\b", "embed"), (r"<link\b", "link"), (r"<form\b", "form")):
                         ms = list(re.finditer(r"(?i)" + pat, back))
                         if ms:
                             cand.append((ms[-1].start(), ctx))
@@ -1179,6 +1180,11 @@ def check_privacy(root, p, text, privacy, own=()):
                     _priv_add(privacy, "third-party-preconnect", "info" if host in THIRD_PARTY_CDN else "low",
                               host, r, i, line,
                               f"Preconnect/DNS-prefetch on a <link> opened above opens a connection to {host} early.")
+                elif tag_ctx == "form":
+                    am = ACTION_ATTR_RE.search(tag_window)
+                    if am and not _is_own(_host_of(am.group(1)) or "", own):
+                        _priv_add(privacy, "third-party-form", "low", host, r, i, line,
+                                  f"Form action on a <form> opened above posts user data to {host}.")
                 elif host in THIRD_PARTY_CDN:
                     _priv_add(privacy, "third-party-cdn", "info" if (is_doc or test_path) else "low", host, r, i, line,
                               f"Asset requested from {host}: it sees your IP and the page URL (third-party font/CDN)"
