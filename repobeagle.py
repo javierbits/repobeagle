@@ -2524,12 +2524,29 @@ def scan_capabilities(root, trace=None):
 
 COVERAGE_EXTS = CODE_EXT | DOC_EXT | {".json", ".yml", ".yaml", ".toml", ".xml", ".plist", ".cfg", ".ini", ".conf", ".env", ".tf"}
 
+# Languages we can name but may not read. An extension in this map that is not in
+# COVERAGE_EXTS is reported as "no rules": the scanner never looked inside those files.
+LANG_BY_EXT = {
+    ".py": "Python", ".js": "JavaScript", ".mjs": "JavaScript", ".cjs": "JavaScript", ".jsx": "JavaScript",
+    ".ts": "TypeScript", ".tsx": "TypeScript", ".vue": "Vue", ".svelte": "Svelte", ".astro": "Astro",
+    ".go": "Go", ".rs": "Rust", ".rb": "Ruby", ".php": "PHP", ".java": "Java", ".kt": "Kotlin",
+    ".cs": "C#", ".swift": "Swift", ".lua": "Lua", ".pl": "Perl", ".sh": "Shell", ".bash": "Shell",
+    ".zsh": "Shell", ".ps1": "PowerShell", ".bat": "Batch", ".cmd": "Batch",
+    ".c": "C", ".h": "C/C++ header", ".cc": "C++", ".cpp": "C++", ".cxx": "C++", ".hpp": "C++",
+    ".m": "Objective-C", ".mm": "Objective-C++", ".scala": "Scala", ".clj": "Clojure",
+    ".cljs": "ClojureScript", ".ex": "Elixir", ".exs": "Elixir", ".erl": "Erlang", ".hs": "Haskell",
+    ".ml": "OCaml", ".fs": "F#", ".fsx": "F#", ".jl": "Julia", ".r": "R", ".sol": "Solidity",
+    ".zig": "Zig", ".dart": "Dart", ".nim": "Nim", ".pas": "Pascal", ".groovy": "Groovy",
+    ".sql": "SQL", ".graphql": "GraphQL", ".proto": "Protocol Buffers", ".d": "D", ".v": "Verilog",
+}
+
 def scan_coverage(root):
-    """What the scan actually inspected: source bytes, and why the rest was skipped. Never executes code."""
+    """What the scan actually inspected: source bytes, skipped reasons, and which languages it never read. Never executes code."""
     total = scanned = 0
     bytes_total = bytes_scanned = 0
     reasons = {"archive": 0, "binary": 0, "oversize": 0, "unreadable": 0, "unsupported": 0}
     exts: dict[str, int] = {}
+    languages: dict[str, dict[str, int]] = {"inspected": {}, "no_rules": {}}
     for p in iter_files(root):
         total += 1
         try:
@@ -2538,6 +2555,10 @@ def scan_coverage(root):
             size = 0
         bytes_total += size
         ext = p.suffix.lower()
+        lang = LANG_BY_EXT.get(ext)
+        if lang:
+            bucket = languages["inspected" if ext in COVERAGE_EXTS else "no_rules"]
+            bucket[lang] = bucket.get(lang, 0) + 1
         if ext in ARCHIVE_EXT:
             reasons["archive"] += 1; continue
         if ext in BINARY_EXT:
@@ -2556,7 +2577,8 @@ def scan_coverage(root):
     pct = round(100.0 * bytes_scanned / bytes_total, 1) if bytes_total else 100.0
     return {"files_total": total, "files_scanned": scanned, "bytes_total": bytes_total,
             "bytes_scanned": bytes_scanned, "bytes_scanned_pct": pct, "skipped": reasons,
-            "unscanned_extensions": sorted(exts.items(), key=lambda kv: (-kv[1], kv[0]))[:12]}
+            "unscanned_extensions": sorted(exts.items(), key=lambda kv: (-kv[1], kv[0]))[:12],
+            "languages": {k: dict(sorted(v.items(), key=lambda kv: (-kv[1], kv[0]))[:12]) for k, v in languages.items()}}
 
 def inner(src, out):
     """Runs offline scanners + agent checks. Used inside the container or locally."""
@@ -3823,9 +3845,18 @@ def report(meta, findings, v, why, counts, notes, ai, use_color, maxn=40, min_se
                 + "  (repobeagle map for detail)"))
     cov = meta.get("coverage") or {}
     if cov:
-        sk = ", ".join(f"{n} {k}" for k, n in (cov.get("skipped") or {}).items() if n)
-        print(f"  Coverage: {cov.get('bytes_scanned_pct', '?')}% of source bytes "
-              f"({cov.get('files_scanned', '?')}/{cov.get('files_total', '?')} files)" + (f"; not inspected: {sk}" if sk else ""))
+        unread = {k: n for k, n in (cov.get("skipped") or {}).items() if n and k != "unsupported"}
+        unsupported = (cov.get("skipped") or {}).get("unsupported") or 0
+        no_rules = (cov.get("languages") or {}).get("no_rules") or {}
+        line = (f"  Coverage: {cov.get('bytes_scanned_pct', '?')}% of source bytes covered by language-aware rules "
+                f"({cov.get('files_scanned', '?')}/{cov.get('files_total', '?')} files)")
+        if unread:
+            line += "; not read: " + ", ".join(f"{n} {k}" for k, n in unread.items())
+        if unsupported or no_rules:
+            bits = ([f"{unsupported} unsupported extension(s)"] if unsupported else []) + \
+                   [f"{n} ({c})" for n, c in no_rules.items()]
+            line += "; no language rules for: " + ", ".join(bits)
+        print(line)
     if meta.get("privacy_summary"):
         prof = privacy_profile(meta["privacy_summary"])
         if prof:
