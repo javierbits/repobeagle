@@ -78,6 +78,7 @@ python3 tests/test_fuzz.py || fail=1
 python3 tests/test_determinism.py || fail=1
 python3 tests/test_markdown_snapshot.py || fail=1
 python3 tests/test_sarif_schema.py || fail=1
+python3 tests/test_mcp_interop.py || fail=1
 tests/test_cleanup.sh || fail=1
 # Determinism: the same fixture must produce identical findings (timings excluded).
 d1=$(mktemp); d2=$(mktemp)
@@ -177,14 +178,19 @@ sys.exit(0 if ok else 1)
 PY
 if $RG export "$g2" --format markdown 2>/dev/null | grep -q '^## RepoBeagle: '; then echo "PASS markdown export"; else echo "FAIL markdown export"; fail=1; fi
 rm -f "$g4" "$g1" "$g2" "$g3" /tmp/rb-diff.txt /tmp/rb-diff2.txt
-# MCP: initialize, tools/list, a real scan, an unknown tool and ping over stdio.
+# MCP: a malformed line is skipped, a cancellation notification is accepted (and cannot
+# interrupt the in-flight scan), then initialize, tools/list, a real scan, an unknown
+# tool, an invalid argument call and ping over stdio.
 printf '%s\n' \
+ 'this is not json {' \
  '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05"}}' \
  '{"jsonrpc":"2.0","method":"notifications/initialized"}' \
+ '{"jsonrpc":"2.0","method":"notifications/cancelled","params":{"requestId":3,"reason":"client timeout"}}' \
  '{"jsonrpc":"2.0","id":2,"method":"tools/list"}' \
- '{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"scan_repo","arguments":{"target":"tests/fixtures/trap-npm","network":false}}}' \
+ '{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"scan_repo","arguments":{"target":"tests/fixtures/trap-npm","network":false,"timeout_seconds":120}}}' \
  '{"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"nope","arguments":{}}}' \
  '{"jsonrpc":"2.0","id":5,"method":"ping"}' \
+ '{"jsonrpc":"2.0","id":6,"method":"tools/call","params":{"name":"scan_repo","arguments":{}}}' \
  | $RG mcp 2>/dev/null > /tmp/rb-mcp.jsonl || { echo "FAIL MCP server (exit)"; fail=1; }
 python3 - /tmp/rb-mcp.jsonl <<'PY' || fail=1
 import json, sys
@@ -194,11 +200,13 @@ try:
         m = json.loads(line); msgs[m.get("id")] = m
     init = msgs[1]["result"]; tl = msgs[2]["result"]["tools"]
     call = json.loads(msgs[3]["result"]["content"][0]["text"])
-    ok = (init["serverInfo"]["name"] == "repobeagle" and init.get("protocolVersion")
+    ok = (set(msgs) == {1, 2, 3, 4, 5, 6}          # malformed line and notification produced no reply
+          and init["serverInfo"]["name"] == "repobeagle" and init.get("protocolVersion")
           and sorted(t["name"] for t in tl) == ["explain_report", "scan_repo", "verify_badge"]
           and all("inputSchema" in t for t in tl)
           and call["verdict"] == "RED" and call["counts"]["critical"] > 0 and call["findings_total"] > 0
-          and msgs[4]["result"].get("isError") is True and msgs[5]["result"] == {})
+          and msgs[4]["result"].get("isError") is True and msgs[5]["result"] == {}
+          and msgs[6]["result"].get("isError") is True and "target is required" in msgs[6]["result"]["content"][0]["text"])
 except Exception as ex:
     print("FAIL MCP server:", ex); sys.exit(1)
 print("PASS MCP server" if ok else "FAIL MCP server")
