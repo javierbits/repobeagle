@@ -557,6 +557,9 @@ TELEMETRY_RULES = [
     ("ads", "high", "Amazon Ads", _telem_rx(r"amazon-adsystem")),
     ("ads", "high", "Snap Pixel", _telem_rx(r"sc-static\.net|\bsnaptr\b")),
     ("ads", "medium", "Google Ads conversion", _telem_rx(r"googleadservices\.com|/pagead/conversion")),
+    ("ads", "high", "AppsFlyer", _telem_rx(r"appsflyer")),
+    ("ads", "high", "Adjust", _telem_rx(r"adjust\.com|@adjust/|adjust[_-]sdk")),
+    ("ads", "medium", "Branch", _telem_rx(r"app\.branch\.io|branch\.io/v1|@branch/")),
     # session replay / recording
     ("session-replay", "high", "Microsoft Clarity", _telem_rx(r"clarity\.ms|@microsoft/clarity|clarity-analytics")),
     ("session-replay", "high", "Hotjar", _telem_rx(r"\bhotjar\b")),
@@ -588,6 +591,7 @@ TELEMETRY_RULES = [
     ("analytics", "medium", "Mixpanel", _telem_rx(r"\bmixpanel\b")),
     ("analytics", "medium", "Amplitude", _telem_rx(r"api2?\.amplitude|\bamplitude\.(init|getInstance|track)|@amplitude/")),
     ("analytics", "medium", "PostHog", _telem_rx(r"\bposthog\b")),
+    ("analytics", "medium", "Firebase Analytics", _telem_rx(r"firebase[_-]analytics|firebase/analytics")),
     ("analytics", "medium", "Heap Analytics", _telem_rx(r"heap\.io|heap-analytics|\bheap\.track\(")),
     ("analytics", "medium", "Countly", _telem_rx(r"\bcountly\b")),
     ("analytics", "medium", "Adobe Analytics", _telem_rx(r"omtrdc\.net|adobedtm|\bappmeasurement\b")),
