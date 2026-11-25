@@ -47,4 +47,12 @@ with tempfile.TemporaryDirectory() as d:
     act, sup = rb.apply_suppressions([dict(findings[1])], pats)
     check("suppression glob", not act and sup and sup[0].get("suppressed") is True)
 
+only = {"meta": {"privacy_mode": "only"}, "findings": [{"tool": "privacy"}, {"tool": "telemetry"}]}
+mixed = {"meta": {"privacy_mode": "only"}, "findings": [{"tool": "privacy"}, {"tool": "gitleaks"}]}
+excl = {"meta": {"privacy_mode": "excluded"}, "findings": [{"tool": "gitleaks"}]}
+check("mode only consistent", rb.privacy_mode_consistent(only))
+check("mode only mismatch", not rb.privacy_mode_consistent(mixed))
+check("mode excluded consistent", rb.privacy_mode_consistent(excl))
+check("mode full no constraint", rb.privacy_mode_consistent({"findings": [{"tool": "gitleaks"}]}))
+
 sys.exit(fail)

@@ -2081,6 +2081,16 @@ def run_in_docker(src, out):
     except Exception:
         raise SystemExit("container scan failed: " + (r.stderr or r.stdout)[-600:])
 
+def privacy_mode_consistent(report):
+    """True when findings match the declared meta.privacy_mode (only/excluded/full)."""
+    mode = (report.get("meta") or {}).get("privacy_mode")
+    tools = {f.get("tool") for f in report.get("findings") or [] if isinstance(f, dict)}
+    if mode == "only":
+        return tools <= {"privacy", "telemetry"}
+    if mode == "excluded":
+        return not (tools & {"privacy", "telemetry"})
+    return True
+
 def privacy_summary(findings):
     """Structured 'what kind' overview of privacy findings, for the report and JSON."""
     groups = {"trackers": {}, "pii": [], "permissions": [], "fingerprinting": [], "storage": [],
@@ -2524,6 +2534,12 @@ def cmd_verify(a):
         if scanned:
             print(f"  scanned:   {scanned[:12]} at {meta.get('scanned_repo', '?')} (image {meta.get('image_ref', '?')})")
         print(f"  snippets:  {'redacted by scanner' if meta.get('pii_redacted') else 'raw'}")
+        mode = meta.get("privacy_mode")
+        if mode:
+            print(f"  scope:     {mode} (privacy findings only)" if mode == "only" else
+                  f"  scope:     {mode} (privacy findings excluded)" if mode == "excluded" else "  scope:     full")
+        if not privacy_mode_consistent(d):
+            print(f"  warning:   findings do not match meta.privacy_mode={mode!r}")
         summary = d.get("privacy_summary") or privacy_summary(d.get("findings") or [])
         if summary:
             parts = []
