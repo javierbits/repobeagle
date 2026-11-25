@@ -167,4 +167,11 @@ with tempfile.TemporaryDirectory() as td:
 if _no_update is not None:
     os.environ["BEAGLE_NO_UPDATE_CHECK"] = _no_update
 
+with tempfile.TemporaryDirectory() as td:
+    w = Path(td) / "repobeagle"
+    w.write_text('#!/usr/bin/env bash\nexport BEAGLE_IMAGE="${BEAGLE_IMAGE:-ghcr.io/jvr0x/repobeagle:v1.0.0}"\n')
+    os.environ["BEAGLE_BIN"] = td
+    check("wrapper retarget", rb._retarget_wrapper("v1.152.0") and "javierbits/repobeagle:v1.152.0" in w.read_text())
+    del os.environ["BEAGLE_BIN"]
+
 sys.exit(fail)

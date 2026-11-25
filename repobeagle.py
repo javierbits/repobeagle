@@ -3198,6 +3198,15 @@ def cmd_verify(a):
     finally:
         shutil.rmtree(work, ignore_errors=True)
 
+def image_problem():
+    """Explain why the configured image may not match the installed code."""
+    if "jvr0x" in IMAGE:
+        return "the wrapper still exports the old jvr0x image"
+    tag = IMAGE.rsplit("/", 1)[-1]
+    if ":" in tag and RELEASE and not IMAGE.endswith(":" + RELEASE):
+        return f"image tag {tag.split(':', 1)[1]!r} does not match the installed code ({RELEASE})"
+    return None
+
 def _parse_ver(v):
     m = re.match(r"v?(\d+)\.(\d+)\.(\d+)$", v or "")
     return tuple(map(int, m.groups())) if m else None
@@ -3237,6 +3246,43 @@ def update_available(force=False):
     cur, new = _parse_ver(VERSION), _parse_ver(latest)
     return latest if cur and new and new > cur else None
 
+def _docker_ok():
+    return bool(shutil.which("docker")) and subprocess.run(["docker", "info"], capture_output=True).returncode == 0
+
+def _pull_image(tag):
+    if not tag:
+        return False
+    if not _docker_ok():
+        print("[repobeagle] docker unavailable: skipped image pull")
+        return False
+    ref = f"ghcr.io/javierbits/repobeagle:{tag}"
+    print(f"[repobeagle] pulling {ref}")
+    return subprocess.call(["docker", "pull", ref]) == 0
+
+def _retarget_wrapper(tag):
+    """Point an installed wrapper at another image tag (only its default; BEAGLE_IMAGE still wins)."""
+    wrapper = Path(os.environ.get("BEAGLE_BIN", os.path.expanduser("~/.local/bin"))) / "repobeagle"
+    try:
+        text = wrapper.read_text(encoding="utf-8")
+    except OSError:
+        return False
+    line = f'export BEAGLE_IMAGE="${{BEAGLE_IMAGE:-ghcr.io/javierbits/repobeagle:{tag}}}"'
+    new = re.sub(r"(?m)^export BEAGLE_IMAGE=.*$", lambda m: line, text)
+    if new == text:
+        return False
+    try:
+        wrapper.write_text(new, encoding="utf-8")
+    except OSError:
+        return False
+    print(f"[repobeagle] wrapper default image set to {tag}")
+    return True
+
+def _disk_version(repo):
+    try:
+        return (repo / "VERSION").read_text(encoding="utf-8").strip().lstrip("v")
+    except OSError:
+        return ""
+
 def cmd_update(a):
     repo = Path(__file__).resolve().parent
     try:
@@ -3248,24 +3294,38 @@ def cmd_update(a):
         print(f"latest:    {latest or 'unknown'}")
         new = _parse_ver(latest)
         return 10 if new and _parse_ver(VERSION) and new > _parse_ver(VERSION) else 0
-    if _parse_ver(latest) and _parse_ver(latest) <= _parse_ver(VERSION):
-        print(f"[repobeagle] up to date ({VERSION})")
-        return 0
+    new, cur = _parse_ver(latest), _parse_ver(VERSION)
+    stale = bool(new and cur and new > cur)
+    rc = 0
     if (repo / ".git").exists() and shutil.which("git"):
         print(f"[repobeagle] pulling {repo}")
         subprocess.call(["git", "-C", str(repo), "pull", "--ff-only"])
     installer = repo / "install.sh"
-    if installer.exists():
-        print(f"[repobeagle] installing {latest or 'latest'}")
-        return subprocess.call(["bash", str(installer)])
-    print(f"[repobeagle] {latest or 'a newer release'} is available; re-run ./install.sh in your checkout")
-    return 0
+    if stale and installer.exists():
+        print(f"[repobeagle] installing {latest}")
+        rc = subprocess.call(["bash", str(installer)])
+    tag = latest or RELEASE
+    pulled = _pull_image(tag)
+    if (stale and _disk_version(repo) < (latest or "").lstrip("v")) or image_problem():
+        # stale/unreadable checkout, stale handle, or the wrapper's tag is wrong
+        _retarget_wrapper(tag)
+    if not stale:
+        print(f"[repobeagle] up to date ({VERSION})" + ("; image refreshed" if pulled else ""))
+    elif not installer.exists():
+        print(f"[repobeagle] code is still {VERSION}; run ./install.sh in your checkout to update the CLI")
+    if os.environ.get("BEAGLE_IMAGE"):
+        print(f"[repobeagle] note: BEAGLE_IMAGE={os.environ['BEAGLE_IMAGE']} overrides the wrapper default")
+    return rc
 
 def main():
     if len(sys.argv) >= 2 and sys.argv[1] == "_inner":
         inner(sys.argv[2], sys.argv[3]); return 0
     if "--version" in sys.argv[1:] or "-V" in sys.argv[1:]:
-        print(f"RepoBeagle {VERSION}\nimage: {IMAGE}")
+        src = " (BEAGLE_IMAGE set)" if os.environ.get("BEAGLE_IMAGE") else ""
+        print(f"RepoBeagle {VERSION}\nimage: {IMAGE}{src}")
+        problem = image_problem()
+        if problem:
+            print(f"warning: {problem}; run ./install.sh to refresh the wrapper", file=sys.stderr)
         return 0
     ap = argparse.ArgumentParser(prog="repobeagle", description="RepoBeagle: Static safety gate for untrusted repos (never executes repo code).")
     sp = ap.add_subparsers(dest="cmd", required=True)
@@ -3315,6 +3375,9 @@ def main():
         return cmd_update(a)
     if a.cmd == "version":
         print(VERSION); return 0
+    problem = image_problem()
+    if problem and a.cmd != "version":
+        print(f"[repobeagle] warning: {problem}; run ./install.sh to refresh the wrapper", file=sys.stderr)
     newer = update_available()
     if newer:
         print(f"[repobeagle] update available: {newer} (installed {VERSION}) — run 'repobeagle update'", file=sys.stderr)
