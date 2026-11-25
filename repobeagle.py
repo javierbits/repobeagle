@@ -803,6 +803,7 @@ ANDROID_PERMS = {
     "BLUETOOTH_SCAN": ("medium", "nearby Bluetooth devices"), "BLUETOOTH_CONNECT": ("low", "Bluetooth devices"),
     "POST_NOTIFICATIONS": ("low", "notifications"), "ACCESS_ADSERVICES_AD_ID": ("high", "advertising ID"),
     "AD_ID": ("high", "advertising ID"), "READ_PHONE_NUMBERS": ("medium", "phone number"),
+    "READ_MEDIA_VISUAL_USER_SELECTED": ("info", "user-selected photos only (Android 14 partial access)"),
 }
 EXT_HIGH = {"tabs", "history", "cookies", "webRequest", "bookmarks", "downloads", "management", "clipboardRead",
             "geolocation", "nativeMessaging", "declarativeNetRequest", "topSites", "sessions", "readingList"}
@@ -1398,6 +1399,9 @@ def check_privacy_signals(root, p, text, privacy):
         elif is_js and IMPORT_NET_JS.search(line) and not line.lstrip().startswith(("import ", "export ")):
             _priv_add(privacy, "import-time-network", "low", "javascript module scope", r, i, line,
                       "Network call at module top level: runs when the module loads (startup page views, update checks).")
+        if is_js and (COOKIE_WRITE_RE.search(line) or STORAGE_RE.search(line)):
+            _priv_add(privacy, "import-time-storage", "low", "javascript module scope", r, i, line,
+                      "Cookie/localStorage write at module top level: runs on load, before any user interaction or consent.")
     if tracker_at and cmp_at and tracker_at < cmp_at:
         _priv_add(privacy, "consent-order", "low", "tracker before consent manager", r, tracker_at, lines[tracker_at - 1],
                   "A tracker initialises before the consent manager in this file; verify it does not fire before consent.")
@@ -1435,7 +1439,7 @@ def check_privacy_signals(root, p, text, privacy):
                       "Apple purpose string: the user-facing reason shown when this capability is requested.")
 
 def privacy_findings(privacy):
-    order = {"fingerprint": 0, "import-time-network": 1, "ip-logging": 2, "pii-log": 3, "pii-email": 4,
+    order = {"fingerprint": 0, "import-time-network": 1, "import-time-storage": 2, "ip-logging": 3, "pii-log": 3, "pii-email": 4,
              "pii-phone": 5, "pii-address": 6, "pii-ssn": 7, "pii-card": 8, "tracking-cookie": 9,
              "browser-capability": 10, "macos-entitlement": 11, "client-id": 12, "ios-tracking": 13,
              "ios-tracking-domain": 14, "ios-data-type": 15, "ios-purpose-string": 16, "dnt-respect": 17,
