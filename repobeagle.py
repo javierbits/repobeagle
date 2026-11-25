@@ -669,7 +669,7 @@ DNT_RE = re.compile(r"(?i)(navigator\.doNotTrack|\bdoNotTrack\b|globalPrivacyCon
 
 TELEMETRY_PACKAGES = [
     ("crash", "Sentry", ("sentry", "sentry-sdk", "sentry-go", "@sentry/")),
-    ("apm", "OpenTelemetry (OTEL)", ("opentelemetry", "opentelemetry-", "@opentelemetry/", "go.opentelemetry.io/otel")),
+    ("apm", "OpenTelemetry (OTEL)", ("opentelemetry", "opentelemetry-", "@opentelemetry/", "go.opentelemetry.io/otel", "otel")),
     ("analytics", "PostHog", ("posthog", "posthog-js", "posthog-python")),
     ("analytics", "Segment", ("@segment/", "analytics-node", "segment")),
     ("analytics", "Mixpanel", ("mixpanel", "mixpanel-")),
@@ -685,7 +685,7 @@ TELEMETRY_PACKAGES = [
     ("crash", "Bugsnag", ("bugsnag", "@bugsnag/")),
     ("crash", "Rollbar", ("rollbar", "rollbar-")),
     ("crash", "Firebase Crashlytics", ("@react-native-firebase/crashlytics", "firebase-crashlytics", "crashlytics")),
-    ("apm", "Datadog", ("ddtrace", "dd-trace", "@datadog/", "datadog")),
+    ("apm", "Datadog", ("ddtrace", "dd-trace", "dd-trace-", "@datadog/", "datadog")),
     ("apm", "New Relic", ("newrelic", "@newrelic/", "newrelic-")),
     ("apm", "Elastic APM", ("elastic-apm", "@elastic/apm-rum")),
     ("apm", "Honeycomb", ("libhoney", "honeycomb", "@honeycombio/")),
@@ -733,8 +733,9 @@ def check_telemetry(root, p, text, telemetry, optouts, optouts_code):
     r = rel(root, p)
     if LOCKFILE_RE.search(r):          # transitive deps are not evidence of this repo phoning home
         for dep in lockfile_packages(p, text):
+            names = {dep, dep.rsplit("/", 1)[-1]}     # go.sum modules and scoped paths
             for kind, vendor, pats in TELEMETRY_PACKAGES:
-                if any(_pkg_is(dep, pat) for pat in pats):
+                if any(_pkg_is(n, pat) for n in names for pat in pats):
                     key = (kind, vendor, "lockfile")
                     t = telemetry.get(key)
                     if t:
