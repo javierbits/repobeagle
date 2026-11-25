@@ -2,6 +2,13 @@
 <plist version="1.0">
 <dict>
     <key>NSPrivacyTracking</key><true/>
+    <key>NSPrivacyAccessedAPITypes</key>
+    <array>
+        <dict>
+            <key>NSPrivacyAccessedAPIType</key><string>NSPrivacyAccessedAPICategoryUserDefaults</string>
+            <key>NSPrivacyAccessedAPITypeReasons</key><array><string>CA92.1</string></array>
+        </dict>
+    </array>
     <key>NSPrivacyTrackingDomains</key>
     <array>
         <string>api.posthog.com</string>
@@ -12,6 +19,11 @@
             <key>NSPrivacyCollectedDataType</key><string>NSPrivacyCollectedDataTypeEmailAddress</string>
             <key>NSPrivacyCollectedDataTypeLinked</key><true/>
             <key>NSPrivacyCollectedDataTypeTracking</key><true/>
+            <key>NSPrivacyCollectedDataTypePurposes</key>
+            <array>
+                <string>NSPrivacyCollectedDataTypePurposeAnalytics</string>
+                <string>NSPrivacyCollectedDataTypePurposeAdvertising</string>
+            </array>
         </dict>
         <dict>
             <key>NSPrivacyCollectedDataType</key><string>NSPrivacyCollectedDataTypePreciseLocation</string>

@@ -1155,7 +1155,7 @@ FINGERPRINT_MEANING = "Device-fingerprinting signal: combine several and a brows
 PII_LOG_RE = re.compile(r"(?i)(console\.(log|info|warn|error|debug|trace|table|dir)|log(ger)?\.(info|warn|error|debug|exception|critical)|"
                         r"\bprint|printf|puts|fmt\.Print|tracing::(info|warn|error|debug)|log\.\w+|"
                         r"println!|eprintln!|log::(?:info|warn|error|debug)|System\.out\.print|Log\.[dviwe]\s*\(|"
-                        r"error_log|print_r|var_dump|\bdd\(|logger\.Log)")
+                        r"error_log|print_r|var_dump|\bdd\(|logger\.Log|slog\.\w+|zap\.(?:info|warn|error|debug))")
 PII_WORD_RE = re.compile(r"(?i)\b(e-?mail|phone|mobile|mobile_?number|phone_?number|ssn|social security|address|street|zip|zip_?code|postal|"
                          r"username|user_?name|nickname|passport|iban|"
                          r"credit ?card|card_?number|dob|birthday|birth_?date|full_?name|first_?name|last_?name|"
@@ -1435,6 +1435,10 @@ def check_privacy_signals(root, p, text, privacy):
             for host in re.findall(r"<string>([^<]+)</string>", dom):
                 _priv_add(privacy, "ios-tracking-domain", "info", host.strip(), r, _line_of(text, host), host.strip(),
                           "Domain the app declares as a tracking endpoint in PrivacyInfo.xcprivacy.")
+        for api in re.findall(r"<key>NSPrivacyAccessedAPITypes</key>\s*<array>(.*?)</array>", text, re.S):
+            for cat in re.findall(r"NSPrivacyAccessedAPICategory([A-Za-z]+)", api):
+                _priv_add(privacy, "ios-api-category", "info", cat, r, _line_of(text, cat), f"NSPrivacyAccessedAPICategory{cat}",
+                          "Apple required-reason API declared in PrivacyInfo.xcprivacy: the app explains why it uses it.")
         for block in re.findall(r"<dict>(.*?)</dict>", text, re.S):
             m = re.search(r"<key>NSPrivacyCollectedDataType</key>\s*<string>NSPrivacyCollectedDataType([A-Za-z]+)</string>", block)
             if not m:
@@ -1445,12 +1449,16 @@ def check_privacy_signals(root, p, text, privacy):
                 flags.append("linked to identity")
             if re.search(r"<key>NSPrivacyCollectedDataTypeTracking</key>\s*<true\s*/>", block):
                 flags.append("used for tracking")
+            purposes = [re.sub(r"(?<=[a-z])(?=[A-Z])", " ", p).lower()
+                        for p in re.findall(r"NSPrivacyCollectedDataTypePurpose([A-Z][A-Za-z]+)", block)]
             human = IOS_DATA_TYPE_NAMES.get(name, name.replace("Data", " data").lower())
-            suffix = f" ({', '.join(flags)})" if flags else ""
+            bits = flags + ([f"purposes: {', '.join(purposes)}"] if purposes else [])
+            suffix = f" ({'; '.join(bits)})" if bits else ""
             _priv_add(privacy, "ios-data-type", "info", human + suffix, r, text[:m.start()].count("\n") + 1,
                       f"NSPrivacyCollectedDataType{name}",
                       "Declared in PrivacyInfo.xcprivacy: this data category is collected"
-                      + (f" and {', '.join(flags)}" if flags else "") + ".")
+                      + (f" and {', '.join(flags)}" if flags else "")
+                      + (f" for {', '.join(purposes)}" if purposes else "") + ".")
     if ext in (".plist", ".entitlements") or p.name.endswith(".plist"):
         for m in PURPOSE_STR_RE.finditer(text):
             key, body = m.group(1), re.sub(r"\s+", " ", m.group(2)).strip()
@@ -1461,7 +1469,7 @@ def privacy_findings(privacy):
     order = {"fingerprint": 0, "import-time-network": 1, "import-time-storage": 2, "ip-logging": 3, "pii-log": 3, "pii-email": 4,
              "pii-phone": 5, "pii-address": 6, "pii-ssn": 7, "pii-card": 8, "tracking-cookie": 9,
              "browser-capability": 10, "macos-entitlement": 11, "client-id": 12, "ios-tracking": 13,
-             "ios-tracking-domain": 14, "ios-data-type": 15, "ios-purpose-string": 16, "dnt-respect": 17,
+             "ios-tracking-domain": 14, "ios-api-category": 15, "ios-data-type": 16, "ios-purpose-string": 16, "dnt-respect": 17,
              "consent-gating": 18, "consent-order": 19, "data-retention": 20, "upload-surface": 21,
              "upload-limit": 22, "store-disclosure": 23, "tracking-params": 24, "pii-in-url": 25, "insecure-endpoint": 26,
              "android-permission": 26, "android-feature": 27, "extension-permission": 28, "cookie-flags": 28, "cookie-write": 29,
