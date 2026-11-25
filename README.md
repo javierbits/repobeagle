@@ -83,8 +83,8 @@ Severity follows privacy impact, so a default `balanced` scan goes YELLOW when a
 | `extension-resource` | browser-extension `web_accessible_resources`: files exposed to `<all_urls>` (any site can load them and detect the extension) are `low`, site-scoped exposure `info` | low/info |
 | `extension-connectable` | browser-extension `externally_connectable`: `<all_urls>` lets any website message the extension (`low`), listed sites only `info` | low/info |
 | `insecure-endpoint` | `http://`/`ws://` requests to real remote hosts (plaintext), skipping local/LAN/CGNAT hosts, reference URLs in comments (line-leading or inline), XML namespace/schema identifiers, web.archive.org historical URLs, docs/test fixtures and translation catalogs (those are `info`); plaintext references that are not a request in that line are `low` | medium/low |
-| `cookie-write`, `cookie-flags` | `document.cookie =` writes, `Set-Cookie` headers (reads via `.get()` excluded) and framework setters (`set_cookie(`, `res.cookie(`, `setcookie(`, `setCookie(`) missing `HttpOnly`/`Secure`/`SameSite` (header-flag matching is case-insensitive and the title names the missing flag); JS cookies are checked for `Secure`/`SameSite` only, `__Host-`/`__Secure-` cookie names must carry their required flags (a prose mention is ignored), and `Partitioned`/CHIPS is noted as positive `info` | low/info |
-| `browser-storage` | `localStorage`/`sessionStorage`/`indexedDB` writes: persistent client-side identifiers | info |
+| `cookie-write`, `cookie-flags` | `document.cookie =` writes, the js-cookie `Cookies.set/remove` API, `Set-Cookie` headers (reads via `.get()` excluded) and framework setters (`set_cookie(`, `res.cookie(`, `setcookie(`, `setCookie(`) missing `HttpOnly`/`Secure`/`SameSite` (header-flag matching is case-insensitive and the title names the missing flag); JS cookies are checked for `Secure`/`SameSite` only, `__Host-`/`__Secure-` cookie names must carry their required flags (a prose mention is ignored), and `Partitioned`/CHIPS is noted as positive `info` | low/info |
+| `browser-storage` | `localStorage`/`sessionStorage` writes (methods and direct property assignment) and `indexedDB`: persistent client-side identifiers | info |
 | `third-party-cdn` | assets loaded from third-party font/CDN hosts (Google Fonts, Bunny, Fontshare, jsDelivr, unpkg, …: they see your IP and the page URL) | low |
 | `third-party-embed` | `<iframe>`/`<embed>`/`<object>`/`<video>` pointing at another host: it runs third-party code, sees your IP and can set its own cookies; `info` when `sandbox`ed or `credentialless` | low/info |
 | `iframe-allow` | an embedded frame delegates `camera`, `microphone`, `geolocation`, clipboard, display-capture, USB/serial, … to the third party via `allow=` | medium |
@@ -242,7 +242,7 @@ Apart from the clone, OSV/GuardDog-verify, the GitHub trust lookup and your own 
 
 ## Example output (abridged)
 ```
-repobeagle 1.121.0  |  tests/fixtures/trap-npm
+repobeagle 1.122.0  |  tests/fixtures/trap-npm
   VERDICT: RED    2 critical / 2 high findings, e.g. npm lifecycle script 'postinstall' runs automatically on install (package.json:8)
   CRITICAL [agent-checks] package.json:8
            npm lifecycle script 'postinstall' runs automatically on install

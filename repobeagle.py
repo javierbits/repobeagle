@@ -873,8 +873,9 @@ THIRD_PARTY_CDN = {"fonts.googleapis.com", "fonts.gstatic.com", "use.typekit.net
                    "cdnjs.cloudflare.com", "esm.sh", "cdn.skypack.dev", "code.jquery.com", "ajax.googleapis.com",
                    "cdn.tailwindcss.com", "static.cloudflareinsights.com"}
 
-COOKIE_WRITE_RE = re.compile(r"document\.cookie\s*=")
-STORAGE_RE = re.compile(r"(?i)(localStorage|sessionStorage)\.(setItem|removeItem)|\bindexedDB\b")
+COOKIE_WRITE_RE = re.compile(r"(document\.cookie\s*=|\bCookies\.(?:set|remove)\s*\()")
+STORAGE_RE = re.compile(r"(?i)(localStorage|sessionStorage)\.(setItem|removeItem)|"
+                          r"(localStorage|sessionStorage)\.[A-Za-z_$][\w$]*\s*=[^=]|\bindexedDB\b")
 CONSENT_RE = re.compile(r"(?i)(onetrust|optanon|cookiebot|osano|cookieyes|klaro|tarteaucitron|cookieconsent|"
                         r"consent-manager|quantcast|didomi|usercentrics|borlabs|iubenda|complianz|axeptio|cookiehub|"
                         r"cookieinformation|termly|consentmanager|sirdata|civicuk|cookielaw\.org|otSDKStub|usercentrics\.eu|sourcepoint|"
@@ -1119,8 +1120,10 @@ def check_privacy(root, p, text, privacy, own=()):
                                  "URL value constructed here, not fetched on this line." if url_value else
                                  "verify what it receives and whether it sets cookies/tracks."))
         if COOKIE_WRITE_RE.search(line):
-            _priv_add(privacy, "cookie-write", "low", "document.cookie", r, i, line,
-                      "JavaScript writes a cookie (persistent client-side identifier; check lifetime and consent).")
+            js_cookie = bool(re.search(r"\bCookies\.(?:set|remove)\s*\(", line))
+            _priv_add(privacy, "cookie-write", "low", "js-cookie" if js_cookie else "document.cookie", r, i, line,
+                      "JavaScript writes a cookie (persistent client-side identifier; check lifetime and consent)."
+                      + (" Detected via the js-cookie library." if js_cookie else ""))
         if STORAGE_RE.search(line):
             _priv_add(privacy, "browser-storage", "info", "localStorage/sessionStorage", r, i, line,
                       "Data stored in the browser: survives reloads (localStorage) and can be used to track the user.")
