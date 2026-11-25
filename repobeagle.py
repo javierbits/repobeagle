@@ -1005,6 +1005,12 @@ def check_privacy(root, p, text, privacy, own=()):
         if STORAGE_RE.search(line):
             _priv_add(privacy, "browser-storage", "info", "localStorage/sessionStorage", r, i, line,
                       "Data stored in the browser: survives reloads (localStorage) and can be used to track the user.")
+        if "__Host-" in line or "__Secure-" in line:
+            needs = {"__Host-": ("Secure", "Path=/"), "__Secure-": ("Secure",)}
+            for prefix, reqs in needs.items():
+                if prefix in line and not all(x.lower() in line.lower() for x in reqs):
+                    _priv_add(privacy, "cookie-flags", "low", prefix + " prefix without required flags", r, i, line,
+                              f"Cookie name {prefix} requires {' and '.join(reqs)}; without them browsers may reject it or it is sent insecurely.")
         if SET_COOKIE_RE.search(line) and not all(s in line for s in ("HttpOnly", "Secure", "SameSite")):
             _priv_add(privacy, "cookie-flags", "low", "Set-Cookie", r, i, line,
                       "Set-Cookie header without all of HttpOnly/Secure/SameSite: readable by scripts, sent in clear or cross-site.")
@@ -1315,6 +1321,8 @@ TRACKING_COOKIE_RE = re.compile(r"(?i)(?<![\w.-])(_ga_[A-Z0-9]+|_gac_[A-Za-z0-9]
                                 r"_fbp|_fbc|_hj\w*|ajs_\w*|__utm[a-z]|__hstc|hubspotutk|intercom-[\w-]+|mp_\w+|"
                                 r"amplitude_id\w*|ph_\w+|_clck|_clsk|_uetvid|_uetsid|_ttp|_rdt_uuid|li_sugr|"
                                 r"bcookie|lidc|_pin_unauth|IDE|NID)(?=[=;'\"\s,)]|$)")
+ZIP_CONTEXT_RE = re.compile(r"(?i)\b(zip|zip[_-]?code|postal|postcode|postleitzahl|plz)\b")
+ZIP_RE = re.compile(r"\b(\d{5}(?:-\d{4})?|[A-Z]{1,2}\d[A-Z\d]?\s?\d[A-Z]{2})\b")
 PII_ROLE_RE = re.compile(r"(?i)^(no-?_?reply|do-?not-?reply|bounce|notifications?|news|events|hr|recruiting|partners|support|info|hello|hi|hey|team|security|admin|contact|"
                          r"sales|press|jobs|careers|billing|legal|privacy|dpo|abuse|postmaster|webmaster|mail|"
                          r"office|help|feedback|newsletter|marketing|dev|developers)([+._-].*)?$")
@@ -1475,6 +1483,11 @@ def check_privacy_signals(root, p, text, privacy):
             if m:
                 _priv_add(privacy, "pii-address", "low", m.group(0).strip(), r, i, line,
                           "Postal address in source/config (personal data); check it is intended to be public.")
+            if ZIP_CONTEXT_RE.search(line):
+                m = ZIP_RE.search(line)
+                if m:
+                    _priv_add(privacy, "pii-postcode", "low", m.group(1), r, i, line,
+                              "Postal/ZIP code next to a postal keyword: narrows down where the user is.")
             m = RETENTION_RE.search(line)
             if m:
                 _priv_add(privacy, "data-retention", "info", m.group(1).lower(), r, i, line,

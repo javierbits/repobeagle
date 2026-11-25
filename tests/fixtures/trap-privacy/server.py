@@ -19,3 +19,7 @@ def upload(req):
 
 def audit(req):
     logger.info("email=%s", mask_email(user.email))
+
+
+def remember(resp):
+    resp.headers["Set-Cookie"] = "__Host-session=abc; Path=/; SameSite=Lax"
