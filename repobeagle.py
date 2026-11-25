@@ -1245,6 +1245,12 @@ MACOS_ENTITLEMENTS = {
     "com.apple.security.network.client": ("low", "outgoing network"),
     "com.apple.security.network.server": ("low", "incoming network"),
     "com.apple.security.files.user-selected.read-write": ("low", "user-selected files"),
+    "com.apple.security.files.user-selected.read-only": ("low", "user-selected files (read-only)"),
+    "com.apple.security.files.downloads.read-only": ("low", "Downloads folder (read-only)"),
+    "com.apple.security.files.desktop.read-write": ("low", "Desktop folder"),
+    "com.apple.security.files.desktop.read-only": ("low", "Desktop folder (read-only)"),
+    "com.apple.security.files.documents.read-write": ("medium", "Documents folder"),
+    "com.apple.security.files.documents.read-only": ("low", "Documents folder (read-only)"),
     "com.apple.security.files.downloads.read-write": ("low", "Downloads folder"),
     "com.apple.security.files.all": ("medium", "all files"),
     "com.apple.security.automation.apple-events": ("medium", "Apple Events automation"),
@@ -1273,6 +1279,10 @@ CLIENT_ID_RE = re.compile(r"(?i)\b(client_?id|device_?id|visitor_?id|anonymous_?
 CLIENT_ID_CONTEXT_RE = re.compile(r"(?i)(localStorage|sessionStorage|document\.cookie|cookie|uuid|randomUUID|nanoid|v4\s*\(|guid)")
 ADDRESS_RE = re.compile(r"(?i)\b\d{1,6}[A-Za-z]?\s+[A-Z][\w.'-]*(?:\s+[A-Z][\w.'-]*){0,4}\s+"
                         r"(?:street|st|road|rd|avenue|ave|boulevard|blvd|lane|ln|drive|dr|way|court|ct|place|pl|square|sq)\b")
+ADDRESS_INTL_RE = re.compile(r"(?i)(?<![\w.-])(?:"
+                             r"[A-Z][\w.'-]*(?:stra(?:ß|ss)e|str\.|weg|platz|gasse|allee|laan)\s+\d{1,5}[a-z]?|"
+                             r"(?:rue|via|calle|avenida|rua|ulica)\s+[A-Z][\w.'-]*(?:\s+[A-Z][\w.'-]*){0,3}\s+\d{1,5}|"
+                             r"P\.?\s?O\.?\s?Box\s+\d{1,8})(?![\w])")
 RETENTION_RE = re.compile(r"(?i)\b(data[_-]?retention|retention[_-]?(?:days|period|policy)?|log[_-]?retention|retain(?:ed)?|"
                            r"ttl[_-]?(?:seconds|secs|days)?|expir(?:y|es|ation)|purge[_-]?after|delete[_-]?after)\b"
                            r"\s*[:=]?\s*\d")
@@ -1461,7 +1471,7 @@ def check_privacy_signals(root, p, text, privacy):
             if m:
                 _priv_add(privacy, "pii-phone", "low", m.group(0).strip(), r, i, line,
                           "Hardcoded phone number in source/config (personal data); check it is intentional.")
-            m = ADDRESS_RE.search(line)
+            m = ADDRESS_RE.search(line) or ADDRESS_INTL_RE.search(line)
             if m:
                 _priv_add(privacy, "pii-address", "low", m.group(0).strip(), r, i, line,
                           "Postal address in source/config (personal data); check it is intended to be public.")
