@@ -993,6 +993,9 @@ TRACKING_PARAM_RE = re.compile(r"[?&](utm_[a-z_]+|gclid|dclid|gbraid|wbraid|fbcl
 PRIVACY_DOC_NAMES = {"privacy.md", "privacy.txt", "privacy.rst", "privacy.markdown", "privacy-policy.md",
                       "privacy_policy.md", "privacy_policy.txt", "privacyinfo.xcprivacy"}
 PRIVACY_DOC_RE = re.compile(r"(?i)(^|/)(privacy|privacy[-_.]?policy)(\.(md|markdown|txt|rst|html|adoc))?$|\.xcprivacy$")
+PRIVACY_LINK_RE = re.compile(r"(?i)\[(?:privacy|data[- ]protection)[^\]]*\]\((https?://[^)\s]+)\)|"
+                             r"(https?://[^\s)\"']*(?:privacy|data[-_]protection)[^\s)\"']*)")
+PURPOSE_STR_RE = re.compile(r"<key>(NS[A-Za-z]+?(?:UsageDescription|AlwaysUsageDescription|WhenInUseUsageDescription))</key>\s*<string>(.*?)</string>", re.S)
 PROTO_REL_RE = re.compile(r"(?<![:/\w])//([a-z0-9][a-z0-9.-]*[a-z0-9])/")
 COOKIE_API_RE = re.compile(r"(?i)(\bset_cookie\s*\(|\bres\.cookie\s*\(|\bsetcookie\s*\(|\bsetCookie\s*\()")
 COOKIE_FLAG_WORDS = re.compile(r"(?i)(httponly|secure|samesite|same_site|samesite_)")
@@ -1209,9 +1212,6 @@ def check_privacy_signals(root, p, text, privacy):
     if storage_at and cmp_at and storage_at < cmp_at:
         _priv_add(privacy, "consent-order", "low", "cookie/storage write before consent manager", r, storage_at, lines[storage_at - 1],
                   "A cookie/localStorage write happens before the consent manager loads in this file; verify it is consent-gated.")
-    if p.name.lower() in PRIVACY_DOC_NAMES:
-        _priv_add(privacy, "privacy-doc", "info", p.name.lower(), r, 1, p.name,
-                  "Privacy policy/manifest is present in the repo.")
     if ext == ".xcprivacy" or p.name.endswith(".xcprivacy"):
         if re.search(r"<key>NSPrivacyTracking</key>\s*<true\s*/>", text):
             _priv_add(privacy, "ios-tracking", "low", "NSPrivacyTracking", r, _line_of(text, "NSPrivacyTracking"), "NSPrivacyTracking",
@@ -1221,6 +1221,11 @@ def check_privacy_signals(root, p, text, privacy):
             human = IOS_DATA_TYPE_NAMES.get(name, name.replace("Data", " data").lower())
             _priv_add(privacy, "ios-data-type", "info", human, r, text[:m.start()].count("\n") + 1, f"NSPrivacyCollectedDataType{name}",
                       "Declared in PrivacyInfo.xcprivacy: this data category is collected and linked to the user.")
+    if ext in (".plist", ".entitlements") or p.name.endswith(".plist"):
+        for m in PURPOSE_STR_RE.finditer(text):
+            key, body = m.group(1), re.sub(r"\s+", " ", m.group(2)).strip()
+            _priv_add(privacy, "ios-purpose-string", "info", key, r, text[:m.start()].count("\n") + 1, body[:140],
+                      "Apple purpose string: the user-facing reason shown when this capability is requested.")
 
 def privacy_findings(privacy):
     order = {"fingerprint": 0, "import-time-network": 1, "ip-logging": 2, "pii-log": 3, "pii-email": 4,
@@ -1231,7 +1236,7 @@ def privacy_findings(privacy):
              "tracking-params": 22, "insecure-endpoint": 23, "android-permission": 24, "extension-permission": 25,
              "cookie-flags": 26, "cookie-write": 27, "third-party-cdn": 28, "external-endpoint": 29,
              "browser-storage": 30, "consent-manager": 31, "referrer-policy": 32, "permissions-policy": 33,
-             "undisclosed-vendor": 34, "privacy-doc": 35}
+             "ios-purpose-string": 34, "undisclosed-vendor": 35, "privacy-doc": 36}
     down = {"high": "medium", "medium": "low", "low": "info"}
     fs = []
     for (rule, key), t in sorted(privacy.items(), key=lambda kv: (order.get(kv[1]["rule"], 9), kv[1]["key"])):
@@ -1407,6 +1412,11 @@ def run_agent_checks(root):
     if privacy_doc:
         findings.append(finding("privacy", "info", privacy_doc, 1, "privacy-doc: privacy policy present", privacy_doc,
                                  "The repo ships a privacy policy/manifest; read it to see what it admits to collecting."))
+    elif prose and PRIVACY_LINK_RE.search(" ".join(prose)):
+        m = PRIVACY_LINK_RE.search(" ".join(prose))
+        findings.append(finding("privacy", "info", "(repo)", 0, "privacy-doc: privacy policy linked (external)",
+                                 (m.group(1) or m.group(2))[:140],
+                                 "No policy file, but the docs link an external privacy policy; read it to see what is disclosed."))
     elif any(f["severity"] in ("high", "medium", "low") for f in tf + pf):
         findings.append(finding("privacy", "low", "(repo)", 0, "privacy-doc: no privacy policy file",
                                  "expected PRIVACY.md or PrivacyInfo.xcprivacy",
