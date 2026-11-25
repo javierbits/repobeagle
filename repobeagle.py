@@ -1529,6 +1529,10 @@ def check_privacy_signals(root, p, text, privacy, masks):
                 addr = m.group(0)
                 if (m.start() and line[m.start() - 1] in "/:") or _in_url_authority(line, m.start()):
                     continue          # srcset densities and URL userinfo such as user:pass@host
+                if not addr.split("@", 1)[0].strip(".-"):
+                    continue          # Ruby ranges/instance vars: (..@notifications.first.id)
+                if m.start() and line[m.start() - 1] == "@":
+                    continue          # fediverse handle @user@instance, not an email
                 if addr.lower() in EMAIL_IGNORE or EMAIL_IGNORE_RE.search(addr):
                     continue
                 domain = addr.rsplit("@", 1)[-1]
@@ -1628,6 +1632,10 @@ def check_privacy_signals(root, p, text, privacy, masks):
                 if version_string:
                     break
                 addr = m.group(0)
+                if not addr.split("@", 1)[0].strip(".-"):
+                    continue          # Ruby ranges/instance vars: (..@notifications.first.id)
+                if m.start() and line[m.start() - 1] == "@":
+                    continue          # fediverse handle @user@instance, not an email
                 if (m.start() and line[m.start() - 1] in "/:") or _in_url_authority(line, m.start()):
                     continue          # srcset densities and URL userinfo such as user:pass@host
                 if addr.lower() in EMAIL_IGNORE or EMAIL_IGNORE_RE.search(addr):
