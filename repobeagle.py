@@ -745,7 +745,7 @@ def check_telemetry(root, p, text, telemetry, optouts, optouts_code):
                                           "line": _line_of(text, dep), "snippet": dep, "count": 1, "src": "lockfile"}
         return
     # Prose mentions vendors without using them ("alternative to Sentry"), so only opt-outs count there.
-    prose = p.suffix.lower() in PROSE_EXT
+    prose = p.suffix.lower() in PROSE_EXT or (p.suffix.lower() == ".txt" and bool(re.search(r"(?i)(^|/)docs?/", r)))
     for i, line in enumerate(text.split("\n"), 1):
         if len(line) > 2000:
             continue
@@ -983,6 +983,8 @@ def check_privacy(root, p, text, privacy, own=()):
     r, ext = rel(root, p), p.suffix.lower()
     if LOCKFILE_RE.search(r) or ext in PROSE_EXT:
         return
+    is_doc = ext in DOC_EXT or bool(re.search(r"(?i)(^|/)docs?/", r))
+    test_path = bool(TEST_PATH.search(r))
     scan_endpoints = ext in ENDPOINT_EXT or p.name in ENDPOINT_NAMES or p.name.startswith(".env")
     web = ext in (".js", ".mjs", ".cjs", ".ts", ".tsx", ".jsx", ".vue", ".svelte", ".astro", ".html", ".htm")
     is_manifest = p.name == "manifest.json"
@@ -1004,30 +1006,39 @@ def check_privacy(root, p, text, privacy, own=()):
                     continue
                 if any(rx.search(host) for _, _, _, rx in TELEMETRY_RULES):
                     continue          # already reported by the telemetry check
+                if _is_comment(line):
+                    continue          # a reference URL in a comment is not a request
                 if scheme == "http":
-                    if _is_comment(line):
-                        continue      # a reference URL in a comment is not a request
                     requested = re.search(r"(?i)(fetch\s*\(|curl|wget|requests\.|urlopen|src\s*=|href\s*=|action\s*=|XMLHttpRequest|axios|\.get\s*\()", line)
-                    _priv_add(privacy, "insecure-endpoint", "medium" if requested else "low", host, r, i, line,
+                    _priv_add(privacy, "insecure-endpoint",
+                              "info" if test_path or (is_doc and not requested) else ("medium" if requested else "low"),
+                              host, r, i, line,
                               f"Plaintext http:// to {host}: "
                               + ("requests and metadata are not encrypted in transit." if requested else
+                                 "reference URL in docs, not a request." if is_doc else
+                                 "test fixture URL, not a runtime request." if test_path else
                                  "reference URL, not a request in this line."))
                 elif re.search(r"(?i)url\(\s*[\"']?$", line[:pos]) and not re.match(r"\s*@import", line):
-                    _priv_add(privacy, "third-party-media", "info" if host in THIRD_PARTY_CDN or _known_host(host) else "low",
+                    _priv_add(privacy, "third-party-media",
+                              "info" if (host in THIRD_PARTY_CDN or _known_host(host) or is_doc or test_path) else "low",
                               host, r, i, line,
                               f"CSS url() asset from {host}: it sees your IP and the page URL.")
                 elif _is_own(host, own):
                     _priv_add(privacy, "first-party-endpoint", "info", host, r, i, line,
                               f"Own/related domain {host}: first-party traffic, not a third party.")
                 elif host in THIRD_PARTY_CDN:
-                    _priv_add(privacy, "third-party-cdn", "low", host, r, i, line,
-                              f"Asset requested from {host}: it sees your IP and the page URL (third-party font/CDN).")
+                    _priv_add(privacy, "third-party-cdn", "info" if (is_doc or test_path) else "low", host, r, i, line,
+                              f"Asset requested from {host}: it sees your IP and the page URL (third-party font/CDN)"
+                              + (" (docs/test reference)." if (is_doc or test_path) else "."))
                 elif _known_host(host):
                     _priv_add(privacy, "external-endpoint", "info", host, r, i, line,
                               f"Network destination {host} (known platform/infrastructure).")
                 else:
-                    _priv_add(privacy, "external-endpoint", "low", host, r, i, line,
-                              f"Unknown third-party host {host}: verify what it receives and whether it sets cookies/tracks.")
+                    _priv_add(privacy, "external-endpoint", "info" if (is_doc or test_path) else "low", host, r, i, line,
+                              f"Unknown third-party host {host}: "
+                              + ("docs link; not fetched at runtime." if is_doc else
+                                 "test fixture URL." if test_path else
+                                 "verify what it receives and whether it sets cookies/tracks."))
         if COOKIE_WRITE_RE.search(line):
             _priv_add(privacy, "cookie-write", "low", "document.cookie", r, i, line,
                       "JavaScript writes a cookie (persistent client-side identifier; check lifetime and consent).")
