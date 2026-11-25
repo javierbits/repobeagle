@@ -1072,7 +1072,9 @@ def check_privacy(root, p, text, privacy, own=()):
         if "__Host-" in line or "__Secure-" in line:
             needs = {"__Host-": ("Secure", "Path=/"), "__Secure-": ("Secure",)}
             for prefix, reqs in needs.items():
-                if prefix in line and not all(x.lower() in line.lower() for x in reqs):
+                if prefix not in line or not re.search(re.escape(prefix) + r"[\w.-]+", line):
+                    continue          # prefix mentioned in prose/an error message, not a cookie name
+                if not all(x.lower() in line.lower() for x in reqs):
                     _priv_add(privacy, "cookie-flags", "low", prefix + " prefix without required flags", r, i, line,
                               f"Cookie name {prefix} requires {' and '.join(reqs)}; without them browsers may reject it or it is sent insecurely.")
         if SET_COOKIE_RE.search(line) and not SET_COOKIE_READ_RE.search(line) and not all(re.search(s, line, re.I) for s in ("httponly", "secure", "samesite")):
