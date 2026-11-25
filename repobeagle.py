@@ -1914,6 +1914,16 @@ def check_privacy_signals(root, p, text, privacy, masks):
                 if UPLOAD_LIMIT_RE.search(line):
                     _priv_add(privacy, "upload-limit", "info", "size cap", r, i, line,
                               "A request/upload size cap is set (data-minimization guard).")
+    if ext in (".html", ".htm", ".jsx", ".tsx", ".vue", ".svelte", ".astro", ".php"):
+        for fm in re.finditer(r"(?is)<form\b([^>]*)>", text):
+            if not re.search(r"(?i)\bmethod\s*=\s*[\"']?get\b", fm.group(1)):
+                continue
+            end = text.find("</form>", fm.end())
+            body = text[fm.end(): end if end >= 0 else fm.end() + 3000]
+            if re.search(r"(?i)\btype\s*=\s*[\"']?(?:password|email|tel)\b", body):
+                _priv_add(privacy, "form-method", "low", "GET form with user data", r,
+                          text[:fm.start()].count("\n") + 1, fm.group(0)[:120],
+                          "Form uses method=GET with password/email/phone inputs: values end up in the URL (Referer, logs, history).")
     # import-time network and IP logging: line-scoped, cheap enough to do in one more pass
     for i, line in enumerate(text.split("\n"), 1):
         if not line or line[0] in " \t" or _is_comment(line):
@@ -1999,7 +2009,7 @@ def privacy_findings(privacy):
         "android-permission": 52, "android-feature": 53, "undisclosed-vendor": 54, "privacy-doc": 55,
         "telemetry-identify": 56, "session-replay-mask": 57,
         "android-cleartext": 58, "ios-cleartext": 59, "ios-tracking-declaration": 60,
-        "android-queries": 61,
+        "android-queries": 61, "form-method": 62,
     }
     down = {"high": "medium", "medium": "low", "low": "info"}
     fs = []
@@ -2599,7 +2609,7 @@ def privacy_summary(findings):
                "import-time-storage"}
     consent = {"consent-manager", "consent-gating", "consent-order", "consent-mode", "consent-state", "dnt-respect"}
     network = {"insecure-endpoint", "external-endpoint", "referrer-policy", "permissions-policy", "iframe-allow",
-               "android-cleartext", "ios-cleartext", "import-time-network", "tracking-params"}
+               "android-cleartext", "ios-cleartext", "import-time-network", "tracking-params", "form-method"}
     transparency = {"privacy-doc", "store-disclosure", "undisclosed-vendor"}
     for f in findings:
         if f.get("tool") not in ("telemetry", "privacy"):
