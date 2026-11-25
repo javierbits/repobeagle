@@ -81,6 +81,7 @@ python3 tests/test_sarif_schema.py || fail=1
 python3 tests/test_mcp_interop.py || fail=1
 python3 tests/test_capabilities.py || fail=1
 python3 tests/test_coverage.py || fail=1
+python3 tests/test_web.py || fail=1
 tests/test_cleanup.sh || fail=1
 # Determinism: the same fixture must produce identical findings (timings excluded).
 d1=$(mktemp); d2=$(mktemp)

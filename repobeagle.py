@@ -3645,7 +3645,7 @@ WEB_UA = f"repobeagle/{VERSION} (+https://github.com/javierbits/repobeagle)"
 def _web_get(url, timeout=20):
     req = urllib.request.Request(url, headers={"User-Agent": WEB_UA, "Accept": "text/html,text/css,*/*"})
     with urllib.request.urlopen(req, timeout=timeout) as resp:
-        return resp.read(WEB_MAX_BYTES + 1)
+        return resp.read(WEB_MAX_BYTES + 1), resp.geturl()
 
 def cmd_web(a):
     """Fetches one page (plus N same-origin assets), runs the existing privacy rules on the bytes, never executes JS."""
@@ -3660,11 +3660,12 @@ def cmd_web(a):
     src.mkdir()
     notes = []
     try:
-        data = _web_get(url, a.timeout)
+        data, final_url = _web_get(url, a.timeout)
     except Exception as ex:
         print(f"web: cannot fetch {url}: {ex}", file=sys.stderr)
         return 1
-    if len(data) > WEB_MAX_BYTES:
+    truncated = len(data) > WEB_MAX_BYTES
+    if truncated:
         notes.append(f"page truncated at {WEB_MAX_BYTES} bytes")
         data = data[:WEB_MAX_BYTES]
     html = data.decode("utf-8", errors="replace")
@@ -3672,7 +3673,10 @@ def cmd_web(a):
     netloc = urllib.parse.urlsplit(url).netloc
     if netloc:
         (src / "CNAME").write_text(netloc)          # first-party inference: own host is not "third party"
-    fetched = {"page_bytes": len(data), "assets": 0}
+    fetched = {"page_bytes": len(data), "assets": 0, "asset_failures": 0,
+               "final_url": final_url, "redirected": final_url != url, "truncated": truncated}
+    if fetched["redirected"]:
+        notes.append(f"redirected to {final_url}")
     if a.assets > 0:
         refs = re.findall(r'(?i)<script[^>]+src\s*=\s*["\']([^"\']+)', html) + \
                re.findall(r'(?i)<link[^>]+rel\s*=\s*["\']stylesheet["\'][^>]*href\s*=\s*["\']([^"\']+)', html)
@@ -3687,8 +3691,9 @@ def cmd_web(a):
             if netloc and urllib.parse.urlsplit(full).netloc != netloc:
                 continue                            # same-origin only unless file://
             try:
-                body = _web_get(full, a.timeout)
+                body, _ = _web_get(full, a.timeout)
             except Exception as ex:
+                fetched["asset_failures"] += 1
                 notes.append(f"asset fetch failed: {full} ({type(ex).__name__})")
                 continue
             ext = Path(urllib.parse.urlsplit(full).path).suffix if Path(urllib.parse.urlsplit(full).path).suffix in (".js", ".css") else ".txt"
