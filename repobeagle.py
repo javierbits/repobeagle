@@ -748,8 +748,8 @@ def check_telemetry(root, p, text, telemetry, optouts):
             optouts.add(m.group(1))
         if DNT_RE.search(line):
             optouts.add("Do-Not-Track")
-        if prose:
-            continue
+        if prose or _is_comment(line):
+            continue          # a comment mentioning a vendor is a note, not a request
         for kind, sev, vendor, rx in TELEMETRY_RULES:
             key = (kind, vendor, "direct")
             if key in telemetry:
@@ -990,8 +990,11 @@ def check_privacy(root, p, text, privacy, own=()):
                 if scheme == "http":
                     if _is_comment(line):
                         continue      # a reference URL in a comment is not a request
-                    _priv_add(privacy, "insecure-endpoint", "medium", host, r, i, line,
-                              f"Plaintext http:// to {host}: requests and metadata are not encrypted in transit.")
+                    requested = re.search(r"(?i)(fetch\s*\(|curl|wget|requests\.|urlopen|src\s*=|href\s*=|action\s*=|XMLHttpRequest|axios|\.get\s*\()", line)
+                    _priv_add(privacy, "insecure-endpoint", "medium" if requested else "low", host, r, i, line,
+                              f"Plaintext http:// to {host}: "
+                              + ("requests and metadata are not encrypted in transit." if requested else
+                                 "reference URL, not a request in this line."))
                 elif _is_own(host, own):
                     _priv_add(privacy, "first-party-endpoint", "info", host, r, i, line,
                               f"Own/related domain {host}: first-party traffic, not a third party.")
@@ -1452,7 +1455,7 @@ def check_privacy_signals(root, p, text, privacy):
         if len(line) > 2000:
             continue
         comment = _is_comment(line)
-        if is_js:
+        if is_js and not comment:
             for key, sev, rx, meaning in FINGERPRINT_RULES:
                 if re.search(rx, line):
                     _priv_add(privacy, "fingerprint", sev, key, r, i, line, FINGERPRINT_MEANING)
