@@ -841,6 +841,7 @@ KNOWN_HOSTS = {
     "rust-lang.org", "go.dev", "golang.org", "shields.io", "img.shields.io", "badgen.net", "doi.org", "arxiv.org",
     "wikipedia.org", "x.com", "twitter.com", "linkedin.com", "youtube.com", "discord.gg", "discord.com", "slack.com",
     "stripe.com", "paypal.com", "sentry.io", "ingest.sentry.io", "githubusercontent.com",
+    "images.unsplash.com", "picsum.photos", "gravatar.com", "avatars.githubusercontent.com",
 }
 KNOWN_SUFFIXES = (".githubusercontent.com", ".googleapis.com", ".gstatic.com", ".amazonaws.com", ".cloudfront.net",
                   ".azureedge.net", ".cloudflare.com", ".huggingface.co", ".pythonhosted.org", ".npmjs.org",
@@ -854,6 +855,7 @@ SRC_ATTR_RE = re.compile(r"(?i)\bsrc\s*=\s*[\"']([^\"']+)")
 ALLOW_ATTR_RE = re.compile(r"(?i)\ballow\s*=\s*[\"']([^\"']*)")
 SANDBOX_RE = re.compile(r"(?i)\bsandbox\b")
 SCRIPT_RE = re.compile(r"(?i)<script[^>]+src\s*=\s*[\"']((?:https?:)?//[^\"']+)")
+MEDIA_RE = re.compile(r"(?i)<(?:img|source|video|audio|picture)\b[^>]*\bsrc\s*=\s*[\"']((?:https?:)?//[^\"']+)")
 PRECONNECT_RE = re.compile(r"(?i)<link[^>]+rel\s*=\s*[\"'](?:preconnect|dns-prefetch)[\"'][^>]+href\s*=\s*[\"']((?:https?:)?//[^\"']+)")
 COOKIE_MAXAGE_RE = re.compile(r"(?i)max-age\s*=\s*(\d+)")
 COOKIE_EXPIRES_RE = re.compile(r"(?i)expires\s*=\s*([^;\"']+)")
@@ -1081,6 +1083,12 @@ def check_privacy(root, p, text, privacy, own=()):
                     cdn = host in THIRD_PARTY_CDN
                     _priv_add(privacy, "third-party-script", "info" if cdn else "low", host, r, i, line,
                               f"Loads executable script from {host}: it runs with page privileges and can read cookies/DOM and beacon data.")
+            for m in MEDIA_RE.finditer(line):
+                host = _host_of(m.group(1))
+                if host and not _endpoint_noise(host) and host not in NON_NET_HOSTS and not _is_own(host, own):
+                    _priv_add(privacy, "third-party-media", "info" if host in THIRD_PARTY_CDN or _known_host(host) else "low",
+                              host, r, i, line,
+                              f"Media loaded from {host}: it sees your IP and the page URL, and may set/send cookies or beacons.")
             for m in PRECONNECT_RE.finditer(line):
                 host = _host_of(m.group(1))
                 if host and not _endpoint_noise(host) and host not in NON_NET_HOSTS and not _is_own(host, own):
@@ -1509,7 +1517,7 @@ def privacy_findings(privacy):
              "upload-limit": 22, "store-disclosure": 23, "tracking-params": 24, "pii-in-url": 25, "insecure-endpoint": 26,
              "android-permission": 26, "android-feature": 27, "extension-permission": 28, "cookie-flags": 28, "cookie-write": 29,
              "third-party-cdn": 30, "third-party-embed": 31, "third-party-form": 32, "first-party-endpoint": 33,
-             "third-party-script": 34, "third-party-preconnect": 35, "cookie-lifetime": 36, "external-endpoint": 37,
+             "third-party-script": 34, "third-party-preconnect": 35, "third-party-media": 36, "cookie-lifetime": 37, "external-endpoint": 38,
              "browser-storage": 36, "consent-manager": 37, "consent-mode": 38, "consent-state": 39,
              "referrer-policy": 40, "permissions-policy": 41,
              "iframe-allow": 42,
