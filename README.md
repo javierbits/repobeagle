@@ -12,10 +12,10 @@ You give it a git URL or a local folder and get a **GREEN / YELLOW / RED** verdi
 **RepoBeagle never runs repo code.** It never runs installs or builds, and it never extracts archives.
 
 ## Install (DGX Spark / any Linux, arm64 or x86_64)
-The scanners ship as a prebuilt **public** multi-arch image (no login needed), `ghcr.io/javierbits/repobeagle` (linux/amd64 + linux/arm64). It's built by `.github/workflows/image.yml` on every push to main, on `v*` release tags, weekly, and on manual dispatch. Release tags get `v1.95.0`-style and `stable` tags; main also gets `latest`, `sha-<commit>` and the ISO week (e.g. `2026-W42`). `install.sh` and `repobeagle` default to the image matching the `VERSION` file (currently `v1.95.0`).
+The scanners ship as a prebuilt **public** multi-arch image (no login needed), `ghcr.io/javierbits/repobeagle` (linux/amd64 + linux/arm64). It's built by `.github/workflows/image.yml` on every push to main, on `v*` release tags, weekly, and on manual dispatch. Release tags get `v1.96.0`-style and `stable` tags; main also gets `latest`, `sha-<commit>` and the ISO week (e.g. `2026-W42`). `install.sh` and `repobeagle` default to the image matching the `VERSION` file (currently `v1.96.0`).
 ```bash
 git clone https://github.com/javierbits/repobeagle && cd repobeagle
-./install.sh                   # docker pull ghcr.io/javierbits/repobeagle:v1.95.0 + install the repobeagle wrapper
+./install.sh                   # docker pull ghcr.io/javierbits/repobeagle:v1.96.0 + install the repobeagle wrapper
 ./install.sh --build-local     # fallback: build the same image locally from the Dockerfile
 ./install.sh --local-tools     # also install gitleaks/semgrep/guarddog/bandit on the host for --no-docker
 ```
@@ -130,7 +130,7 @@ Severity follows privacy impact, so a default `balanced` scan goes YELLOW when a
 
 Findings from the `privacy`/`telemetry` checks have their snippets **and titles redacted by default** (emails `s***@domain`, cards `4111 **** **** 1111`, phones `+46 ***** 567`, SSNs `***-**-6789`) so a published badge report does not republish the PII it found. The report prints a redaction notice when it applies, `verify` prints `snippets: redacted by scanner` (or `raw`), `--no-redact` shows raw values and `meta.pii_redacted` records the mode.
 
-Test fixtures and fake hosts (`example.com`, single-label names, private ranges) are excluded or downgraded so the checks don't drown a verdict in noise. `target/` build output is skipped like `dist/` and `build/`.
+Component sources (`.jsx`, `.tsx`, `.vue`, `.svelte`, `.astro`) are scanned like JavaScript for endpoints, scripts, media and imports. Test fixtures and fake hosts (`example.com`, single-label names, private ranges) are excluded or downgraded so the checks don't drown a verdict in noise. `target/` build output is skipped like `dist/` and `build/`.
 
 `repobeagle verify` prints the same counts line (`privacy: trackers N, pii N, …`) and the declared scope (`full`/`only`/`excluded`), warning if the findings contradict `meta.privacy_mode`, from the signed report, so a badge consumer sees the privacy profile without downloading the JSON. `badge.json` also carries a `privacy` object with those counts (extra keys are ignored by shields.io and available to any API consumer). The report prints a one-line `Privacy profile` (tracker vendors, third-party hosts, PII items, permission scopes, consent signals, identity-sharing calls) before the detailed summary. Report and `--json` output add a structured `privacy_summary` grouping what was found by kind (trackers by telemetry kind and vendor, PII incl. IP logging, permissions incl. browser capabilities, fingerprinting, storage/cookies incl. import-time writes, consent, vendor configs, first-party vs third-party network signals incl. import-time requests and tracking params, replay masking, identity, retention, uploads, transparency) so you can see *what kinds* a repo has without reading every finding. Suppressed findings are excluded from it and counted separately.
 
@@ -175,7 +175,7 @@ Then add the badge; after a tag push, a per-tag badge also exists:
 
 ```markdown
 ![RepoBeagle](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/OWNER/REPO/repobeagle/badge.json)
-![RepoBeagle v1.95.0](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/OWNER/REPO/repobeagle/badge-v1.95.0.json)
+![RepoBeagle v1.96.0](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/OWNER/REPO/repobeagle/badge-v1.96.0.json)
 ```
 
 The workflow publishes a `repobeagle` branch containing `badge.json` (shields.io endpoint), a self-hosted `badge.svg` fallback and the full `report.json` (plus `report-<sha>.json` per commit and per-tag copies), so every finding is one click away from the badge. Inputs: `profile`, `fail-on-red`, `privacy-only`, `badge-branch` (empty string disables publishing), `set-status` (default true) and `tools-ref` (toolchain ref, default `main`; the `VERSION` file there pins the scanned image).
@@ -188,7 +188,7 @@ The badge is produced by the author's own CI, so on its own it is self-attested.
 repobeagle verify javierbits/javierbits.github.io
 #   signature: VALID  policy: official scan.yml (main or v* tag)
 #   report:    YELLOW  0 critical / 6 high / 1 medium / 56 low
-#   scanned:   a7cb435002de at javierbits/javierbits.github.io (image ghcr.io/javierbits/repobeagle:v1.95.0)
+#   scanned:   a7cb435002de at javierbits/javierbits.github.io (image ghcr.io/javierbits/repobeagle:v1.96.0)
 #   snippets:  redacted by scanner
 #   scope:     full
 #   freshness: UP TO DATE (HEAD a7cb435002de)
@@ -242,7 +242,7 @@ Apart from the clone, OSV/GuardDog-verify, the GitHub trust lookup and your own 
 
 ## Example output (abridged)
 ```
-repobeagle 1.95.0  |  tests/fixtures/trap-npm
+repobeagle 1.96.0  |  tests/fixtures/trap-npm
   VERDICT: RED    2 critical / 2 high findings, e.g. npm lifecycle script 'postinstall' runs automatically on install (package.json:8)
   CRITICAL [agent-checks] package.json:8
            npm lifecycle script 'postinstall' runs automatically on install

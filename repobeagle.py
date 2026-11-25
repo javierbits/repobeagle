@@ -93,7 +93,7 @@ SINK_RE = re.compile(r"(?i)(\bcurl\b|\bwget\b|\bfetch\s*\(|requests\.(post|put|g
 READ_RE = re.compile(r"(?i)(readFile|readFileSync|open\s*\(|read_text|read_bytes|\bcat\s|\bcp\s|\bscp\b|tar\s|zip\s|base64\s|homedir|expanduser|\$HOME|~/|\bupload|\bsend|\bpost)")
 PIPE_SHELL = re.compile(r"(?i)(curl|wget)\b[^|\n]{0,300}\|\s*(sudo\s+)?(ba|z|da)?sh\b|base64\s+(-d|--decode)[^|\n]{0,100}\|\s*(ba)?sh|\bpowershell\b.{0,40}-e(nc(odedcommand)?)?\s|iex\s*\(\s*(new-object|iwr|invoke-webrequest)|python[0-9.]*\s+-c\s+[\"'].{0,80}(urlopen|requests\.get)")
 DECODE_EXEC = re.compile(r"(?i)(eval|exec|Function)\s*\(\s*(atob|base64\.b64decode|Buffer\.from\([^)]*base64|zlib\.decompress|codecs\.decode|bytes\.fromhex)")
-CODE_EXT = {".js", ".mjs", ".cjs", ".ts", ".py", ".sh", ".bash", ".zsh", ".rb", ".go", ".rs", ".ps1", ".php", ".pl", ".lua", ".java", ".kt", ".cs", ".swift", ".bat", ".cmd"}
+CODE_EXT = {".js", ".mjs", ".cjs", ".ts", ".jsx", ".tsx", ".vue", ".svelte", ".astro", ".py", ".sh", ".bash", ".zsh", ".rb", ".go", ".rs", ".ps1", ".php", ".pl", ".lua", ".java", ".kt", ".cs", ".swift", ".bat", ".cmd"}
 DOC_EXT = {".md", ".mdx", ".rst", ".txt", ".html", ".adoc"}
 
 def strip_invisible(s):
