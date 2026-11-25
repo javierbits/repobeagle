@@ -1566,7 +1566,7 @@ def check_privacy_signals(root, p, text, privacy):
                            "The logged argument name suggests personal data (user/account/profile/…); verify the destination and retention."))
         if not comment:
             for m in IDENTIFY_RE.finditer(line):
-                _priv_add(privacy, "telemetry-identify", "low", m.group(1).lower(), r, i, line,
+                _priv_add(privacy, "telemetry-identify", "low", m.group(1), r, i, line,
                           f"Call to {m.group(1)}() sends a user identifier/attributes to the analytics or crash SDK; "
                           "check what the payload includes and whether the user can opt out.")
         if not comment and not re.match(r"\s*\(", line):
