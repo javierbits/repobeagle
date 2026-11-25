@@ -1318,6 +1318,21 @@ def check_privacy_signals(root, p, text, privacy):
             if m:
                 _priv_add(privacy, "pii-in-url", "info", m.group(1).lower() + " (docs link)", r, i, line,
                           "Example link puts personal data in the URL query: fine in docs, leaks via Referer/logs when used at runtime.")
+            for m in EMAIL_RE.finditer(line):
+                addr = m.group(0)
+                if addr.lower() in EMAIL_IGNORE or addr.lower().endswith((".example", ".invalid", ".local")):
+                    continue
+                if line[max(0, m.start() - 7):m.start()].lower() == "mailto:":
+                    continue          # already reported as a mailto: link
+                role = PII_ROLE_RE.match(addr.split("@", 1)[0])
+                _priv_add(privacy, "pii-email", "info", "docs:" + addr.lower(), r, i, line,
+                          ("Docs publish a role mailbox (contact info by design) — still a readable address."
+                           if role else "Docs publish a personal email address; confirm it is meant to be public."))
+                break
+            m = PHONE_RE.search(line)
+            if m:
+                _priv_add(privacy, "pii-phone", "info", "docs:" + m.group(0).strip(), r, i, line,
+                          "Docs publish a phone number (contact info by design).")
         return
     is_js = ext in (".js", ".mjs", ".cjs", ".ts", ".tsx", ".jsx", ".html", ".htm", ".vue", ".svelte", ".astro")
     lines = text.split("\n")
