@@ -1757,7 +1757,7 @@ def privacy_findings(privacy):
         "extension-permission": 49, "extension-resource": 50, "extension-connectable": 51,
         "android-permission": 52, "android-feature": 53, "undisclosed-vendor": 54, "privacy-doc": 55,
         "telemetry-identify": 56, "session-replay-mask": 57,
-        "android-cleartext": 58, "ios-cleartext": 59,
+        "android-cleartext": 58, "ios-cleartext": 59, "ios-tracking-declaration": 60,
     }
     down = {"high": "medium", "medium": "low", "low": "info"}
     fs = []
@@ -1928,6 +1928,17 @@ def run_agent_checks(root):
                                      "no CMP found",
                                      "Analytics/ads/session replay are present but no OneTrust/Cookiebot/Osano/… was detected; verify tracking waits for consent."))
     rules = {f["title"].split(":")[0] for f in pf}
+    if rules & {"ios-tracking-domain", "ios-data-type", "ios-purpose-string", "ios-api-category"} and \
+       tracked & {"telemetry-ads", "telemetry-analytics"}:
+        if "ios-tracking" in rules:
+            findings.append(finding("privacy", "info", "(repo)", 0, "ios-tracking-declaration: manifest declares tracking",
+                                     "PrivacyInfo.xcprivacy with <key>NSPrivacyTracking</key><true/>",
+                                     "The iOS privacy manifest declares tracking and ad/analytics SDKs are present, so the declaration is consistent."))
+        else:
+            findings.append(finding("privacy", "low", "(repo)", 0, "ios-tracking-declaration: manifest omits NSPrivacyTracking",
+                                     "PrivacyInfo.xcprivacy without <key>NSPrivacyTracking</key><true/>",
+                                     "An iOS privacy manifest exists but does not declare tracking, while ad/analytics SDKs are present; "
+                                     "Apple may treat data linked to identity as tracking."))
     collects = bool(tracked) or bool(rules & {"pii-log", "pii-email", "pii-phone", "pii-address", "client-id"})
     if collects and "data-retention" not in rules:
         findings.append(finding("privacy", "low", "(repo)", 0, "data-retention: data collected but no retention/expiry setting found",
@@ -2322,7 +2333,7 @@ def privacy_summary(findings):
 
     permissions = {"android-permission", "android-feature", "extension-permission", "extension-resource",
                    "extension-connectable", "macos-entitlement", "ios-tracking", "ios-tracking-domain",
-                   "ios-api-category", "ios-data-type", "ios-purpose-string"}
+                   "ios-api-category", "ios-data-type", "ios-purpose-string", "ios-tracking-declaration"}
     storage = {"cookie-write", "cookie-flags", "cookie-lifetime", "browser-storage", "tracking-cookie", "client-id"}
     consent = {"consent-manager", "consent-gating", "consent-order", "consent-mode", "consent-state", "dnt-respect"}
     network = {"insecure-endpoint", "external-endpoint", "referrer-policy", "permissions-policy", "iframe-allow",
