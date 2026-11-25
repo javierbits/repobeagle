@@ -1072,6 +1072,10 @@ def check_privacy(root, p, text, privacy, own=()):
             _priv_add(privacy, "tracking-params", "low", "utm/campaign parameters", r, i, line,
                       "URL carries campaign/tracking parameters (utm_*, fbclid, gclid, …): links leak referrer and campaign identity.")
         if not _is_comment(line):
+            m = VENDOR_PII_SAFE_RE.search(line)
+            if m:
+                _priv_add(privacy, "vendor-pii", "info", m.group(0).split(":")[0].strip(), r, i, line,
+                          "SDK is configured to minimise personal data in its telemetry (good).")
             m = VENDOR_PII_RE.search(line)
             if m:
                 _priv_add(privacy, "vendor-pii", "low", m.group(0).split(":")[0].strip(), r, i, line,
@@ -1356,6 +1360,8 @@ TRACKING_COOKIE_RE = re.compile(r"(?i)(?<![\w.-])(_ga_[A-Z0-9]+|_gac_[A-Za-z0-9]
                                 r"bcookie|lidc|_pin_unauth|IDE|NID)(?=[=;'\"\s,)]|$)")
 VENDOR_PII_RE = re.compile(r"(?i)(send_?default_?pii\s*[:=]\s*true|person_?profiles\s*[:=]\s*[\"']always[\"']|"
                             r"anonymize_?ip\s*[:=]\s*false|store_?ip\s*[:=]\s*true|track_?ip\s*[:=]\s*true)")
+VENDOR_PII_SAFE_RE = re.compile(r"(?i)(send_?default_?pii\s*[:=]\s*false|person_?profiles\s*[:=]\s*[\"'](?:never|identified_only)[\"']|"
+                                r"anonymize_?ip\s*[:=]\s*true|store_?ip\s*[:=]\s*false|track_?ip\s*[:=]\s*false)")
 ZIP_CONTEXT_RE = re.compile(r"(?i)\b(zip|zip[_-]?code|postal|postcode|postleitzahl|plz)\b")
 ZIP_RE = re.compile(r"\b(\d{5}(?:-\d{4})?|[A-Z]{1,2}\d[A-Z\d]?\s?\d[A-Z]{2})\b")
 PII_ROLE_RE = re.compile(r"(?i)^(no-?_?reply|do-?not-?reply|bounce|notifications?|news|events|hr|recruiting|partners|support|info|hello|hi|hey|team|security|admin|contact|"
@@ -1374,7 +1380,7 @@ TRACKING_COOKIE_VENDORS = [
     ("_pin_unauth", "Pinterest"),
 ]
 SSN_RE = re.compile(r"\b\d{3}-\d{2}-\d{4}\b")
-TEL_LINK_RE = re.compile(r"(?i)href\s*=\s*[\"']tel:([+0-9 ().-]+)")
+TEL_LINK_RE = re.compile(r"(?i)href\s*=\s*[\"'](tel|sms):([+0-9 ().-]+)")
 MAILTO_RE = re.compile(r"(?i)href\s*=\s*[\"']mailto:([^\"?\s]+)")
 CARD_RE = re.compile(r"(?<![\d.])(?:\d{13,19}|\d{4}(?:[ ]\d{4}){3}|\d{4}[ -]\d{4}[ -]\d{4}[ -]\d{4}|\d{4}[ -]\d{6}[ -]\d{5})(?![\d.])")
 HASHY_RE = re.compile(r"(?i)(sha\d*|md5|hash|uuid|commit|0x[0-9a-f]+)")
@@ -1517,8 +1523,8 @@ def check_privacy_signals(root, p, text, privacy):
                           "mailto: link exposes an email address by design (contact info, not a leak).")
             m = TEL_LINK_RE.search(line)
             if m:
-                _priv_add(privacy, "pii-phone", "info", "tel:" + m.group(1).strip(), r, i, line,
-                          "tel: link exposes a phone number by design (contact info, not a leak).")
+                _priv_add(privacy, "pii-phone", "info", f"{m.group(1).lower()}:" + m.group(2).strip(), r, i, line,
+                          f"{m.group(1).lower()}: link exposes a phone number by design (contact info, not a leak).")
             m = PHONE_RE.search(line)
             if m:
                 _priv_add(privacy, "pii-phone", "low", m.group(0).strip(), r, i, line,
