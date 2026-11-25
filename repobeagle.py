@@ -1067,10 +1067,13 @@ CMP_LOAD_RE = re.compile(r"(?i)(cookiebot|onetrust|optanon|osano|cookieyes|klaro
 PII_OBJECT_RE = re.compile(r"(?i)\b(user|users|account|customer|profile|session|member|subscriber|person|lead|contact|"
                            r"request|response|body|payload|form|form_?data|req)\b")
 
-TRACKING_COOKIE_RE = re.compile(r"(?i)(?<![\w.-])(_ga|_gid|_gat|_gcl_au|_gcl_aw|_fbp|_fbc|_hjid|_hjsession\w*|ajs_\w*|"
+TRACKING_COOKIE_RE = re.compile(r"(?i)(?<![\w.-])(_ga_[A-Z0-9]+|_ga|_gid|_gat|_gcl_au|_gcl_aw|_fbp|_fbc|_hjid|_hjsession\w*|ajs_\w*|"
                                 r"__hstc|hubspotutk|intercom-[\w-]+|mp_\w+|amplitude_id\w*|ph_\w+|"
                                 r"_clck|_clsk|_uetvid|_uetsid|_ttp|_rdt_uuid|li_sugr|bcookie|lidc|_pin_unauth|IDE|NID)"
                                 r"(?=[=;'\"\s,)]|$)")
+PII_ROLE_RE = re.compile(r"(?i)^(no-?reply|do-?not-?reply|support|info|hello|hi|hey|team|security|admin|contact|"
+                         r"sales|press|jobs|careers|billing|legal|privacy|dpo|abuse|postmaster|webmaster|mail|"
+                         r"office|help|feedback|newsletter|marketing|dev|developers)([+._-].*)?$")
 TRACKING_COOKIE_VENDORS = [
     ("_ga", "Google Analytics"), ("_gid", "Google Analytics"), ("_gat", "Google Analytics"),
     ("_gcl_au", "Google Ads"), ("_gcl_aw", "Google Ads"), ("IDE", "Google DoubleClick"), ("NID", "Google"),
@@ -1142,12 +1145,15 @@ def check_privacy_signals(root, p, text, privacy):
             if (COOKIE_WRITE_RE.search(line) or STORAGE_RE.search(line)) and storage_at is None:
                 storage_at = i
         if PII_LOG_RE.search(line):
+            masked = re.search(r"(?i)(redact|mask|scrub|hash|anonymi[sz]|truncat|partial)", line)
             if PII_WORD_RE.search(line):
-                _priv_add(privacy, "pii-log", "low", "log line with PII", r, i, line,
-                          "A log/print statement names personal data: it can end up in log files, log shippers and crash reports.")
+                _priv_add(privacy, "pii-log", "info" if masked else "low", "log line with PII", r, i, line,
+                          ("The log line already masks/redacts the value." if masked else
+                           "A log/print statement names personal data: it can end up in log files, log shippers and crash reports."))
             elif PII_OBJECT_RE.search(line):
-                _priv_add(privacy, "pii-log", "low", "logged object likely containing PII", r, i, line,
-                          "The logged argument name suggests personal data (user/account/profile/…); verify the destination and retention.")
+                _priv_add(privacy, "pii-log", "info" if masked else "low", "logged object likely containing PII", r, i, line,
+                          ("The logged object is already masked/redacted." if masked else
+                           "The logged argument name suggests personal data (user/account/profile/…); verify the destination and retention."))
         if not comment:
             for m in TRACKING_COOKIE_RE.finditer(line):
                 name = m.group(1)
@@ -1173,8 +1179,10 @@ def check_privacy_signals(root, p, text, privacy):
                     continue
                 if re.search(r"(?i)@(example\.(com|org|net)|sentry\.io|ingest\.sentry\.io)$", addr):
                     continue
-                _priv_add(privacy, "pii-email", "low", addr.lower(), r, i, line,
-                          "Hardcoded email address (a person's PII or a DSN); check it is intended to be public.")
+                role = PII_ROLE_RE.match(addr.split("@", 1)[0])
+                _priv_add(privacy, "pii-email", "info" if role else "low", addr.lower(), r, i, line,
+                          ("Role mailbox (support@, noreply@, …): not personal data." if role else
+                           "Hardcoded email address (a person's PII or a DSN); check it is intended to be public."))
                 break
             m = PHONE_RE.search(line)
             if m:

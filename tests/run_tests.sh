@@ -36,6 +36,7 @@ python3 -c "import json,sys;d=json.load(open('$j'));e=[x for x in d['findings'] 
 python3 tools/make_badge.py "$j" --endpoint "$j.badge" >/dev/null 2>&1
 python3 -c "import json,sys;d=json.load(open('$j.badge'));ok=bool(d.get('privacy',{}).get('trackers'));print('PASS badge privacy counts' if ok else 'FAIL badge privacy counts');sys.exit(0 if ok else 1)" || fail=1
 rm -f "$j.badge"
+python3 -c "import json,sys;d=json.load(open('$j'));e=[f for f in d['findings'] if f['title'].startswith('pii-email')];m=[f for f in d['findings'] if f['title'].startswith('pii-log')];ok=bool(e) and all(f['severity']=='info' for f in e) and any(f['severity']=='info' for f in m);print('PASS role email + masked log are info' if ok else 'FAIL severity refinement');sys.exit(0 if ok else 1)" || fail=1
 rm -f "$j"
 check tests/fixtures/trap-gha RED $L --strict
 check tests/fixtures/control-clean GREEN $L --strict   # pinned actions, dist bundle, normal README, real deps

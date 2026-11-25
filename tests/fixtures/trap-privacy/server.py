@@ -16,3 +16,6 @@ MAX_CONTENT_LENGTH = 1048576
 def upload(req):
     for f in req.files.getlist("file"):
         save(f)
+
+def audit(req):
+    logger.info("email=%s", mask_email(user.email))
