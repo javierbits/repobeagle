@@ -1499,11 +1499,12 @@ IMPORT_NET_JS = re.compile(r"(\bfetch\s*\(|\baxios[.(]|\$\.ajax\s*\(|navigator\.
 IP_LOG_RE = re.compile(r"(?i)(req\.ip\b|request\.remote_addr|remote_addr|REMOTE_ADDR|RemoteAddr|X-Forwarded-For|"
                        r"HTTP_X_FORWARDED_FOR|X_FORWARDED_FOR|X-Real-IP|True-Client-IP|CF-Connecting-IP|client_ip|remoteAddress|\bip_address\b)")
 IP_LOG_SINK_RE = re.compile(r"(?i)(log|logger|print|puts|console|info|warn|debug|write|store|save|insert|persist|db|audit)")
-PII_URL_RE = re.compile(r"(?i)[?&](e?-?mail|phone|mobile|tel|name|first_?name|last_?name|full_?name|username|"
-                         r"user_?name|address|street|zip|zip_?code|postal|ssn|dob|birthdate|birthday|gender)=")
+PII_URL_RE = re.compile(r"(?i)[?&](e?-?mail(?:_?address)?|phone(?:_?number)?|mobile(?:_?number)?|tel|name|"
+                         r"first_?name|last_?name|full_?name|username|user_?name|user_?id|account(?:_?id)?|address|"
+                         r"street|zip|zip_?code|postal|ssn|dob|birthdate|birthday|gender)=")
 TRACKING_PARAM_RE = re.compile(r"[?&](utm_[a-z_]+|gclid|dclid|gbraid|wbraid|fbclid|msclkid|twclid|ttclid|yclid|"
                                r"li_fat_id|s_kwcid|epik|rb_clickid|wickedid|sc_cid|irclickid|mc_cid|mc_eid|"
-                               r"mkt_tok|vero_id|oly_enc_id|_hsenc|_hsmi|srsltid|igshid|si|_ga|_gl|gclsrc|dclsrc)=")
+                               r"mkt_tok|vero_id|oly_enc_id|_hsenc|_hsmi|srsltid|igshid|si|_ga|_gl|gclsrc|dclsrc|gad_source|gad_campaignid)=")
 PRIVACY_DOC_NAMES = {"privacy.md", "privacy.txt", "privacy.rst", "privacy.markdown", "privacy-policy.md",
                       "privacy_policy.md", "privacy_policy.txt", "privacyinfo.xcprivacy"}
 PRIVACY_DOC_RE = re.compile(r"(?i)(^|/)(privacy|privacy[-_.]?policy)(\.(md|markdown|txt|rst|html|adoc))?$|\.xcprivacy$")
