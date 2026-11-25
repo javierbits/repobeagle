@@ -901,6 +901,7 @@ ANDROID_PERMS = {
 EXT_HIGH = {"tabs", "history", "cookies", "webRequest", "bookmarks", "downloads", "management", "clipboardRead",
             "geolocation", "nativeMessaging", "declarativeNetRequest", "topSites", "sessions", "readingList",
             "debugger", "webNavigation", "proxy", "privacy", "unlimitedStorage", "background"}
+EXT_INFO = {"activeTab", "alarms", "storage", "unlimitedStorage", "contextMenus", "idle", "background", "offscreen"}
 ANDROID_IGNORE = {"INTERNET", "ACCESS_NETWORK_STATE", "ACCESS_WIFI_STATE", "VIBRATE", "WAKE_LOCK", "FOREGROUND_SERVICE"}
 
 def _priv_add(privacy, rule, sev, key, r, line_no, line, meaning):
@@ -1345,9 +1346,12 @@ def check_privacy(root, p, text, privacy, own=()):
                 if not isinstance(v, str):
                     continue
                 broad = v in ("<all_urls>", "*://*/*") or re.match(r"^[a-z*]+://\*/", v) is not None
-                sev = "high" if broad else ("medium" if v in EXT_HIGH else "low")
+                benign = v in EXT_INFO
+                sev = "info" if benign else ("high" if broad else ("medium" if v in EXT_HIGH else "low"))
                 _priv_add(privacy, "extension-permission", sev, v, r, _line_of(text, f'"{v}"'), f'"{v}" ({label})',
-                          f"Browser extension requests '{v}': " + ("reads every page you visit." if broad else "access to this browser capability."))
+                          f"Browser extension requests '{v}': "
+                          + ("benign capability (no page/user data)." if benign else
+                             "reads every page you visit." if broad else "access to this browser capability."))
         for cs in manifest.get("content_scripts") or []:
             for v in (cs.get("matches") or []) if isinstance(cs, dict) else []:
                 if v in ("<all_urls>", "*://*/*"):
