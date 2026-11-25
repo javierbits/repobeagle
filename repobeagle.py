@@ -2041,6 +2041,7 @@ def cmd_scan(a):
             for f in findings:
                 if f["tool"] in ("privacy", "telemetry"):
                     f["snippet"] = redact_pii(f["snippet"])
+                    f["title"] = redact_pii(f["title"])
         ignored = load_suppressions(src)
         active, suppressed = apply_suppressions(findings, ignored) if ignored else (findings, [])
         if suppressed:

@@ -28,12 +28,25 @@ def _color(verdict):
     return COLORS.get(verdict, FALLBACK[0]), HEXES.get(verdict, FALLBACK[1])
 
 
-def endpoint_json(verdict, label, link):
+def endpoint_json(verdict, label, link, privacy=None):
     color, _ = _color(verdict)
     d = {"schemaVersion": 1, "label": label, "message": verdict, "color": color}
     if link:
         d["link"] = link
+    if privacy:
+        d["privacy"] = privacy
     return json.dumps(d, indent=2) + "\n"
+
+
+def privacy_counts(report):
+    """Counts from the report's privacy_summary; extra keys are ignored by shields.io but useful to API consumers."""
+    summary = report.get("privacy_summary") or {}
+    out = {}
+    for group, vals in summary.items():
+        n = sum(len(v) for v in vals.values()) if isinstance(vals, dict) else len(vals)
+        if n:
+            out[group] = n
+    return out
 
 
 def svg(verdict, label):
@@ -82,9 +95,10 @@ def main():
         print(f"make_badge: unexpected verdict {verdict!r} in {a.report}", file=sys.stderr)
         return 1
     out = False
+    privacy = privacy_counts(report)
     if a.endpoint:
         with open(a.endpoint, "w", encoding="utf-8") as fh:
-            fh.write(endpoint_json(verdict, a.label, a.link))
+            fh.write(endpoint_json(verdict, a.label, a.link, privacy))
         out = True
     if a.svg:
         with open(a.svg, "w", encoding="utf-8") as fh:
