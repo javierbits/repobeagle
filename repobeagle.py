@@ -595,7 +595,10 @@ TELEMETRY_RULES = [
     ("analytics", "medium", "Tealium", _telem_rx(r"\btealium\b|tiq\.js")),
     ("analytics", "medium", "Mailchimp", _telem_rx(r"mailchimp|chimpstatic")),
     ("analytics", "medium", "Intercom", _telem_rx(r"intercom\.(?:io|com)|intercom-")),
-    ("analytics", "low", "Tracking pixel", _telem_rx(r"1x1\.(gif|png)|pixel\.gif|\btracking[ -]pixel\b")),
+    ("analytics", "low", "Tracking pixel", _telem_rx(r"1x1\.(gif|png)|pixel\.gif|\btracking[ -]pixel\b|"
+                                                        r"width\s*=\s*[\"']?1[\"']?\s+height\s*=\s*[\"']?1[\"']?|"
+                                                        r"height\s*=\s*[\"']?1[\"']?\s+width\s*=\s*[\"']?1[\"']?|"
+                                                        r"width:\s*1px[^\"']*height:\s*1px")),
     # crash / error reporting
     ("crash", "medium", "Sentry", _telem_rx(r"sentry\.io|@sentry/|sentry_sdk|sentry\.properties|\bsentry[-_.]")),
     ("crash", "medium", "Bugsnag", _telem_rx(r"\bbugsnag\b")),
@@ -871,7 +874,7 @@ def _host_of(url):
     m = re.match(r"(?i)(?:https?:)?//([a-z0-9][a-z0-9.-]*[a-z0-9])", url.strip())
     return m.group(1).lower() if m else None
 
-REFERRER_POLICY_RE = re.compile(r"(?i)(referrer-?policy|referrerpolicy\s*=|rel\s*=\s*[\"'][^\"']*noreferrer|"
+REFERRER_POLICY_RE = re.compile(r"(?i)(referrer-?policy|referrerpolicy\s*[:=]|rel\s*=\s*[\"'][^\"']*noreferrer|"
                              r"<meta[^>]+name\s*=\s*[\"']referrer)")
 PERMISSIONS_POLICY_RE = re.compile(r"(?i)(permissions-?policy)")
 

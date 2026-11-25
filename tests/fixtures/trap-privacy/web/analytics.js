@@ -20,3 +20,4 @@ gtag('consent', 'default', {analytics_storage: 'denied', ad_storage: 'denied'});
 const oneTrust = "OptanonConsent=groups=1";
 fetch("https://widget.dev/api?email=user%40widget.dev");
 console.dir(user);
+fetch("https://widget.dev/ping", {referrerPolicy: "no-referrer"});
