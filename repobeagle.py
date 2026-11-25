@@ -1070,6 +1070,9 @@ def check_privacy(root, p, text, privacy, own=()):
             elif days >= 0:
                 _priv_add(privacy, "cookie-lifetime", "info", "short-lived cookie", r, i, line,
                           f"Cookie expires in {days} days (under a year).")
+            else:
+                _priv_add(privacy, "cookie-lifetime", "info", "expired cookie", r, i, line,
+                          f"Cookie Expires is {abs(days)} days in the past; browsers delete it.")
         if COOKIE_WRITE_RE.search(line) and not re.search(r"(?i)(;\s*secure|;\s*samesite)", line):
             _priv_add(privacy, "cookie-flags", "low", "document.cookie without Secure/SameSite", r, i, line,
                       "JavaScript cookie without Secure/SameSite: sent in clear or cross-site (HttpOnly cannot be set from JS).")
@@ -1393,7 +1396,7 @@ PII_OBJECT_RE = re.compile(r"(?i)\b(user|users|account|customer|profile|session|
 CONSENT_MODE_RE = re.compile(r"(?i)(\b(?:analytics|ad|functionality|personalization)_storage\b|consent_?mode|ad_user_data|ad_personalization)")
 CONSENT_STATE_RE = re.compile(r"(?i)(?<![\w.-])(OptanonConsent|OptanonAlertBoxClosed|CookieConsentV2|CookieConsent|"
                                r"cookieyes-consent|cc_cookie|borlabs-cookie|euconsent-v2|didomi_token)(?=[=;'\"\s,)]|$)")
-TRACKING_COOKIE_RE = re.compile(r"(?i)(?<![\w.-])(_ga_[A-Z0-9]+|_gac_[A-Za-z0-9]+|_ga|_gid|_gat|_gcl_au|_gcl_aw|"
+TRACKING_COOKIE_RE = re.compile(r"(?i)(?<![\w.])(_ga_[A-Z0-9]+|_gac_[A-Za-z0-9]+|_ga|_gid|_gat|_gcl_au|_gcl_aw|"
                                 r"_fbp|_fbc|_hj\w*|ajs_\w*|__utm[a-z]|__hstc|hubspotutk|intercom-[\w-]+|mp_\w+|"
                                 r"amplitude_id\w*|ph_\w+|_clck|_clsk|_uetvid|_uetsid|_ttp|_rdt_uuid|li_sugr|"
                                 r"bcookie|lidc|_pin_unauth|IDE|NID)(?=[=;'\"\s,)]|$)")
