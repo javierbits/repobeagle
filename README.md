@@ -324,6 +324,24 @@ Recommended actions:
 ## Tests
 Run `tests/run_tests.sh`, or `tests/run_tests.sh --offline` for the fixtures only.
 
+```bash
+python3 -m pip install -r requirements-dev.txt   # mypy, hypothesis, ruff (the scanner stays stdlib-only)
+mypy                                            # mypy.ini: scanner + tools, untyped bodies included
+python3 tests/test_fuzz.py                      # bounded Hypothesis targets (100 examples each, derandomized)
+python3 tests/test_rule_fixtures.py             # every declared rule fires on its trap and stays silent on control-clean
+```
+
+CI enforces all of it:
+
+| Workflow | Trigger | What it runs |
+|---|---|---|
+| `ci.yml` | every push / PR | `py_compile`, `ruff --select E9,F63,F7,F82`, `mypy`, and `tests/run_tests.sh --offline` (hermetic: no image, no network scanners) |
+| `toolchain.yml` | Dockerfile/constraints/lock/scanner changes | builds the image and asserts the pinned toolchain and identical `meta.tools` across runs |
+| `nightly.yml` | schedule / manual | `tests/run_tests.sh` against the real corpus (network, osv.dev, GitHub API); red is allowed, it never blocks a PR |
+| `image.yml` | tags / main / weekly | builds, signs and publishes the multi-arch image |
+
+The rule-pair check is automatic: `tests/test_rule_fixtures.py` parses the `RULES="…"` declarations from `tests/run_tests.sh`, rescans each trap fixture and requires every declared rule to fire there, then requires that none of them fires on `tests/fixtures/control-clean`. A rule without an honest negative fixture fails CI.
+
 | Target | Expect |
 |---|---|
 | tests/fixtures/trap-npm (postinstall `curl\|sh`, reads ~/.ssh/id_rsa and POSTs it) | RED |
@@ -334,6 +352,9 @@ Run `tests/run_tests.sh`, or `tests/run_tests.sh --offline` for the fixtures onl
 | tests/test_trust.py (offline trust-signal unit tests) | pass |
 | tests/test_privacy.py (redaction, card check, privacy summary, first-party inference, suppression units) | pass |
 | tests/test_toolchain.py (scanner pins, drift detection, lock/constraints consistency) | pass |
+| tests/test_explain.py (verdict arithmetic per profile, planner transitions, `--write`) | pass |
+| tests/test_rule_fixtures.py (positive fixture fires every declared rule; control-clean fires none) | pass |
+| tests/test_fuzz.py (bounded Hypothesis targets: `decode_tags`, `redact_pii`, `check_unicode`, `check_markdown_hidden`) | pass |
 | psf/requests, tj/commander.js | GREEN/YELLOW |
 | invariantlabs-ai/mcp-injection-experiments | RED (MCP tool poisoning / exfil instructions) |
 | juice-shop/juice-shop | YELLOW (control: intentionally vulnerable code, not malicious) |

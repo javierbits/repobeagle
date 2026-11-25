@@ -132,11 +132,18 @@ Run these before opening a PR:
 ```bash
 tests/run_tests.sh --offline     # fixtures only; must be green
 tests/run_tests.sh               # also clones a few real repos; run when behaviour changed
+python3 -m pip install -r requirements-dev.txt
+mypy                             # mypy.ini covers repobeagle.py and tools; check_untyped_defs is on
 python3 -m py_compile repobeagle.py tools/make_badge.py tests/test_*.py
 ruff check --select E9,F63,F7,F82 repobeagle.py tools tests/*.py
 ```
 
-`.github/workflows/ci.yml` runs the same compile/lint/offline steps on push and PRs.
+`.github/workflows/ci.yml` runs the same compile/lint/mypy/offline steps on push and PRs.
+`tests/run_tests.sh --offline` also runs `tests/test_rule_fixtures.py` (every declared rule
+must fire on its trap fixture and stay silent on `control-clean`) and the bounded
+`tests/test_fuzz.py` targets (skipped with a note when hypothesis is not installed).
+`.github/workflows/nightly.yml` runs the online corpus on a schedule; it can be red
+without blocking a PR.
 
 Adding a rule or detection requires **two fixtures**: one that fires it and one that must
 not. Put them under `tests/fixtures/` and assert the rule id in `tests/run_tests.sh` — the
@@ -144,8 +151,8 @@ suite already asserts rule ids, not just verdicts. If a legitimate repository wo
 your rule, add a `.repobeagleignore` example or narrow the pattern instead of lowering the
 severity.
 
-Known gaps, tracked as issues: no enforced formatter or type-checker yet (#5), and the
-online corpus is nightly-only.
+Known gaps, tracked as issues: no enforced formatter (#5, the syntax lint catches errors,
+not style).
 
 ## Commit messages: Conventional Commits are required
 

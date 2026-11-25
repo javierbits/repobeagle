@@ -1,0 +1,28 @@
+# Online corpus: real repositories, osv.dev and the GitHub API. Network-dependent,
+# so it is a separate schedule-only workflow that can be red without blocking a PR.
+# PR CI stays hermetic in ci.yml; the image toolchain is checked in toolchain.yml.
+name: nightly
+on:
+  schedule:
+    - cron: "23 3 * * *"
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: nightly
+  cancel-in-progress: true
+jobs:
+  corpus:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install the pinned scanner image (verifies its signature)
+        run: ./install.sh
+      - name: Install the pinned development tools
+        run: python3 -m pip install --quiet -r requirements-dev.txt
+      - name: Online corpus (psf/requests, tj/commander.js, an MCP-poisoned repo, juice-shop, a malware dataset)
+        run: tests/run_tests.sh

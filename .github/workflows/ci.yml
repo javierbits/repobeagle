@@ -20,13 +20,15 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - name: Install the pinned development tools
+        run: python3 -m pip install --quiet -r requirements-dev.txt
       # Syntax-level lint only: the scanner is a single 3.4k-line module and the
       # fixtures intentionally contain odd code, so style rules would be noise.
       - name: Byte-compile the scanner and tools
-        run: python3 -m py_compile repobeagle.py tools/make_badge.py tests/test_banner.py tests/test_trust.py tests/test_privacy.py tests/test_toolchain.py tests/test_explain.py
+        run: python3 -m py_compile repobeagle.py tools/make_badge.py tests/test_banner.py tests/test_trust.py tests/test_privacy.py tests/test_toolchain.py tests/test_explain.py tests/test_rule_fixtures.py tests/test_fuzz.py
       - name: Lint for syntax errors and undefined names
-        run: |
-          python3 -m pip install --quiet ruff
-          ruff check --no-cache --select E9,F63,F7,F82 repobeagle.py tools tests/*.py
+        run: ruff check --no-cache --select E9,F63,F7,F82 repobeagle.py tools tests/*.py
+      - name: Type-check the scanner and tools (mypy.ini)
+        run: mypy
       - name: Offline regression suite (fixtures only; no image, no OSV, no trust API)
         run: tests/run_tests.sh --offline
