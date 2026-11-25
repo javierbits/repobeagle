@@ -1484,7 +1484,8 @@ def check_privacy_signals(root, p, text, privacy):
     if LOCKFILE_RE.search(r):
         return
     if (ext in PROSE_EXT or ext == ".po" or AUTHORS_FILE_RE.search(r) or LICENSE_FILE_RE.search(r)
-            or TEST_PATH.search(r)):       # docs/contributors/licences/tests: contacts and links, not runtime traffic
+            or TEST_PATH.search(r) or (ext == ".txt" and re.search(r"(?i)(^|/)docs?/", r))):
+        # docs/contributors/licences/tests: contacts and links, not runtime traffic
         docs_emails = set()
         docs_addresses = set()
         for i, line in enumerate(text.split("\n"), 1):
