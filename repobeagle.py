@@ -1310,6 +1310,9 @@ FINGERPRINT_RULES = [
 FINGERPRINT_MEANING = "Device-fingerprinting signal: combine several and a browser can be recognized without cookies."
 IDENTIFY_RE = re.compile(r"(?i)\.(identify|setUser(?:Id|Email|Properties)?|set_user(?:_id|_email|_properties)?|alias)\s*\("
                         r"|\b(Sentry\.setUser|sentry_sdk\.set_user)\b")
+MASK_KEYS_RE = re.compile(r"(?i)\b(maskAllInputs|mask_all_inputs|maskInputOptions|maskInputs|maskTextSelector|"
+                          r"mask_text_selector|maskAllText|maskTextFn|unmaskAllInputs|mask_?pii|"
+                          r"data-hj-suppress|data-clarity-mask|maskTextClass)\b")
 PII_LOG_RE = re.compile(r"(?i)(console\.(log|info|warn|error|debug|trace|table|dir)|log(ger)?\.(info|warn|error|debug|exception|critical)|"
                         r"\bprint|printf|puts|fmt\.Print|tracing::(info|warn|error|debug)|log\.\w+|"
                         r"println!|eprintln!|log::(?:info|warn|error|debug)|System\.out\.print|Log\.[dviwe]\s*\(|"
@@ -1496,7 +1499,7 @@ def _tracking_cookie_vendor(name):
             return vendor
     return None
 
-def check_privacy_signals(root, p, text, privacy):
+def check_privacy_signals(root, p, text, privacy, masks):
     """Fingerprinting, PII in logs/source, import-time network, IP logging, tracking params. Static only."""
     r, ext = rel(root, p), p.suffix.lower()
     if LOCKFILE_RE.search(r):
@@ -1576,6 +1579,9 @@ def check_privacy_signals(root, p, text, privacy):
                           ("The logged object is already masked/redacted." if masked else
                            "The logged argument name suggests personal data (user/account/profile/…); verify the destination and retention."))
         if not comment:
+            mk = MASK_KEYS_RE.search(line)
+            if mk:
+                masks.add(mk.group(1))
             for m in IDENTIFY_RE.finditer(line):
                 name = m.group(1) or m.group(2).split(".")[-1]
                 _priv_add(privacy, "telemetry-identify", "low", name, r, i, line,
@@ -1740,7 +1746,7 @@ def privacy_findings(privacy):
         "consent-manager": 45, "referrer-policy": 46, "permissions-policy": 47, "iframe-allow": 48,
         "extension-permission": 49, "extension-resource": 50, "extension-connectable": 51,
         "android-permission": 52, "android-feature": 53, "undisclosed-vendor": 54, "privacy-doc": 55,
-        "telemetry-identify": 56,
+        "telemetry-identify": 56, "session-replay-mask": 57,
     }
     down = {"high": "medium", "medium": "low", "low": "info"}
     fs = []
@@ -1822,7 +1828,7 @@ def zip_encrypted(p):
 
 def run_agent_checks(root):
     findings = []
-    telemetry, optouts, optouts_code, privacy = {}, set(), set(), {}
+    telemetry, optouts, optouts_code, privacy, masks = {}, set(), set(), {}, set()
     privacy_doc = None
     own = own_domains(root)
     prose = []
@@ -1867,7 +1873,7 @@ def run_agent_checks(root):
         check_obfuscation_deps(root, p, text, findings)
         check_telemetry(root, p, text, telemetry, optouts, optouts_code)
         check_privacy(root, p, text, privacy, own)
-        check_privacy_signals(root, p, text, privacy)
+        check_privacy_signals(root, p, text, privacy, masks)
     tf = telemetry_findings(telemetry, optouts, optouts_code)
     pf = privacy_findings(privacy)
     findings += tf + pf
@@ -1896,6 +1902,15 @@ def run_agent_checks(root):
                                      "The docs mention an opt-out but no code reads it, so the signal may be ignored."
                                      if dnt_documented else
                                      "Browsers send Do-Not-Track and DO_NOT_TRACK is a de-facto standard; without a reference these signals are ignored."))
+        if "telemetry-session-replay" in tracked:
+            if masks:
+                findings.append(finding("privacy", "info", "(repo)", 0, "session-replay-mask: masking option referenced",
+                                         ", ".join(sorted(masks)[:4]),
+                                         "The repo configures input/text masking for session replay, so recorded PII can be limited."))
+            else:
+                findings.append(finding("privacy", "low", "(repo)", 0, "session-replay-mask: session replay with no masking option found",
+                                         "no maskAllInputs/maskText/data-hj-suppress/… in the repo",
+                                         "Session replay vendors record DOM/inputs; without a masking directive the vendor defaults decide what PII is captured. Verify them."))
         if not any(f["title"].startswith("consent-manager") for f in pf) and \
            tracked & {"telemetry-analytics", "telemetry-ads", "telemetry-session-replay"}:
             findings.append(finding("privacy", "low", "(repo)", 0, "consent-gating: trackers with no consent manager detected",
