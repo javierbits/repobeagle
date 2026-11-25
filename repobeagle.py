@@ -1084,15 +1084,23 @@ def check_privacy(root, p, text, privacy, own=()):
                 archived = "web.archive.org/web/" in line[:pos]
                 url_value = bool(re.search(r"(?i)\bnew\s+URL\(|\bURL\((?:string:)?[\"']|\bURL\s*=\s*[\"']", line))
                 tag_ctx = None
-                if not re.search(r"(?i)<(img|video|source|audio|picture|script|iframe)\b", line) and \
+                if not re.search(r"(?i)<(img|video|source|audio|picture|script|iframe|link)\b", line) and \
                         re.search(r"(?i)\b(?:src|href)\s*=", line):
                     back = "\n".join(lines[max(0, i - 6):i])
-                    if re.search(r"(?i)<(img|video|source|audio|picture)\b", back):
-                        tag_ctx = "media"
-                    elif re.search(r"(?i)<script\b", back):
-                        tag_ctx = "script"
-                    elif re.search(r"(?i)<iframe\b", back):
-                        tag_ctx = "embed"
+                    cand = []
+                    for pat, ctx in ((r"<(?:img|video|source|audio|picture)\b", "media"), (r"<script\b", "script"),
+                                     (r"<iframe\b", "embed"), (r"<link\b", "link")):
+                        ms = list(re.finditer(r"(?i)" + pat, back))
+                        if ms:
+                            cand.append((ms[-1].start(), ctx))
+                    if cand:
+                        _, tag_ctx = max(cand)
+                    if tag_ctx == "link":
+                        relm = re.search(r"(?i)\brel\s*=\s*[\"']([^\"']+)", back + "\n" + line)
+                        relv = relm.group(1).lower() if relm else ""
+                        tag_ctx = ("stylesheet" if "stylesheet" in relv else
+                                   "preload" if ("preload" in relv or "prefetch" in relv or "modulepreload" in relv) else
+                                   "preconnect" if ("preconnect" in relv or "dns-prefetch" in relv) else None)
                 if scheme in ("http", "ws"):
                     requested = re.search(r"(?i)(fetch\s*\(|curl|wget|requests\.|urlopen|src\s*=|href\s*=|action\s*=|XMLHttpRequest|axios|WebSocket|\.get\s*\()", line)
                     _priv_add(privacy, "insecure-endpoint",
@@ -1128,6 +1136,18 @@ def check_privacy(root, p, text, privacy, own=()):
                 elif tag_ctx == "embed":
                     _priv_add(privacy, "third-party-embed", "low", host, r, i, line,
                               f"Embed attribute on a tag opened above includes content/code from {host}.")
+                elif tag_ctx == "stylesheet":
+                    _priv_add(privacy, "third-party-stylesheet", "info" if host in THIRD_PARTY_CDN else "low",
+                              host, r, i, line,
+                              f"Stylesheet attribute on a <link> opened above loads from {host}.")
+                elif tag_ctx == "preload":
+                    _priv_add(privacy, "third-party-preload", "info" if host in THIRD_PARTY_CDN else "low",
+                              host, r, i, line,
+                              f"Preload/prefetch on a <link> opened above fetches from {host} early.")
+                elif tag_ctx == "preconnect":
+                    _priv_add(privacy, "third-party-preconnect", "info" if host in THIRD_PARTY_CDN else "low",
+                              host, r, i, line,
+                              f"Preconnect/DNS-prefetch on a <link> opened above opens a connection to {host} early.")
                 elif host in THIRD_PARTY_CDN:
                     _priv_add(privacy, "third-party-cdn", "info" if (is_doc or test_path) else "low", host, r, i, line,
                               f"Asset requested from {host}: it sees your IP and the page URL (third-party font/CDN)"
