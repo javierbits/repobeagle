@@ -1060,6 +1060,9 @@ def check_privacy(root, p, text, privacy, own=()):
         if not _is_comment(line) and re.search(r"(?i)\bpartitioned\b", line):
             _priv_add(privacy, "cookie-flags", "info", "Partitioned (CHIPS)", r, i, line,
                       "Partitioned cookie (CHIPS): stored per top-level site, which limits cross-site tracking.")
+        if ext == ".xml" and re.search(r'(?i)cleartextTrafficPermitted\s*=\s*"true"', line):
+            _priv_add(privacy, "android-cleartext", "medium", "network security config", r, i, line,
+                      "Network security config permits cleartext HTTP for these domains.")
         if "__Host-" in line or "__Secure-" in line:
             needs = {"__Host-": ("Secure", "Path=/"), "__Secure-": ("Secure",)}
             for prefix, reqs in needs.items():
