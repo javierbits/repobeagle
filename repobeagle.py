@@ -2338,7 +2338,7 @@ def privacy_summary(findings):
     """Structured 'what kind' overview of privacy findings, for the report and JSON."""
     groups = {"trackers": {}, "pii": [], "permissions": [], "fingerprinting": [], "storage": [],
               "consent": [], "vendor": [], "first_party": [], "network": [], "retention": [], "uploads": [],
-              "transparency": [], "identity": []}
+              "transparency": [], "identity": [], "masking": []}
 
     def add(group, value):
         if value and value not in groups[group]:
@@ -2346,11 +2346,13 @@ def privacy_summary(findings):
 
     permissions = {"android-permission", "android-feature", "extension-permission", "extension-resource",
                    "extension-connectable", "macos-entitlement", "ios-tracking", "ios-tracking-domain",
-                   "ios-api-category", "ios-data-type", "ios-purpose-string", "ios-tracking-declaration"}
-    storage = {"cookie-write", "cookie-flags", "cookie-lifetime", "browser-storage", "tracking-cookie", "client-id"}
+                   "ios-api-category", "ios-data-type", "ios-purpose-string", "ios-tracking-declaration",
+                   "browser-capability"}
+    storage = {"cookie-write", "cookie-flags", "cookie-lifetime", "browser-storage", "tracking-cookie", "client-id",
+               "import-time-storage"}
     consent = {"consent-manager", "consent-gating", "consent-order", "consent-mode", "consent-state", "dnt-respect"}
     network = {"insecure-endpoint", "external-endpoint", "referrer-policy", "permissions-policy", "iframe-allow",
-               "android-cleartext", "ios-cleartext"}
+               "android-cleartext", "ios-cleartext", "import-time-network", "tracking-params"}
     transparency = {"privacy-doc", "store-disclosure", "undisclosed-vendor"}
     for f in findings:
         if f.get("tool") not in ("telemetry", "privacy"):
@@ -2364,8 +2366,10 @@ def privacy_summary(findings):
             vals = groups["trackers"].setdefault(kind, [])
             if key not in vals:
                 vals.append(key)
-        elif rule.startswith("pii-"):
+        elif rule.startswith("pii-") or rule == "ip-logging":
             add("pii", key)
+        elif rule == "session-replay-mask":
+            add("masking", key)
         elif rule in permissions:
             add("permissions", key)
         elif rule == "fingerprint":
