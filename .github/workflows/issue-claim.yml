@@ -1,0 +1,126 @@
+# Claim commands for fork-based contributors.
+#
+# Contributors cannot assign themselves or apply labels on the upstream repo, so a
+# command comment is the only channel they have. This workflow turns:
+#
+#   /claim            (first line; scope + ETA in the following lines)
+#   /release          (claimer or maintainer)
+#
+# into an assignee + `status: claimed` label + a confirmation comment. A weekly job
+# reminds silent claims after 7 days and releases them after 21 days.
+#
+# Nothing here touches the scanned code; it only edits issue metadata.
+name: issue-claim
+on:
+  issue_comment:
+    types: [created]
+  schedule:
+    - cron: "23 5 * * 1"   # weekly: claims with no activity for 7 / 21 days
+permissions:
+  issues: write
+  contents: read
+jobs:
+  command:
+    if: github.event_name == 'issue_comment' && github.event.issue && !github.event.issue.pull_request
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const body = context.payload.comment.body || "";
+            const first = body.split("\n")[0].trim();
+            const m = first.match(/^\/(claim|release)\b/i);
+            if (!m) return;
+
+            const cmd = m[1].toLowerCase();
+            const { owner, repo } = context.repo;
+            const issue = context.payload.issue;
+            const issue_number = issue.number;
+            const who = context.payload.comment.user.login;
+            const isMaintainer = ["OWNER", "MEMBER", "COLLABORATOR"].includes(context.payload.comment.author_association);
+            const labels = (issue.labels || []).map(l => l.name);
+            const assignees = (issue.assignees || []).map(a => a.login);
+            const claimed = labels.includes("status: claimed");
+            const issues = github.rest.issues;
+            const marker = (m) => `<!-- repobeagle:${m} -->`;
+
+            const ensureLabel = async (name, color, description) => {
+              try {
+                await issues.getLabel({ owner, repo, name });
+              } catch {
+                await issues.createLabel({ owner, repo, name, color, description });
+              }
+            };
+            await ensureLabel("status: claimed", "fbca04", "Claimed: someone is working on this (see CONTRIBUTING.md)");
+            await ensureLabel("status: blocked", "d93f0b", "Blocked on another issue, PR or an external decision");
+
+            if (cmd === "claim") {
+              if (claimed && assignees.length && !assignees.includes(who) && !isMaintainer) {
+                await issues.createComment({ owner, repo, issue_number, body:
+                  `Already claimed by @${assignees[0]} (\`status: claimed\`). Coordinate here, split the work by scope, or wait for \`/release\`.\n\n${marker("claim-refused")}` });
+                return;
+              }
+              try {
+                await issues.addAssignees({ owner, repo, issue_number, assignees: [who] });
+              } catch (e) {
+                // Assignment can fail for users GitHub does not consider assignable yet.
+                // The label plus this comment are still the authoritative claim.
+              }
+              await issues.addLabels({ owner, repo, issue_number, labels: ["status: claimed"] });
+              await issues.createComment({ owner, repo, issue_number, body:
+                `Claimed by @${who}.\n\n` +
+                `- Open a **draft PR from your fork** within **7 days**; the claim lapses after **21 days** without activity.\n` +
+                `- Put the files/functions/rule ids you will touch in the comment, and do not edit files another active claim owns.\n` +
+                `- \`/release\` gives the claim back. A maintainer can always take over.\n\n` +
+                marker("claim-ok") });
+            }
+
+            if (cmd === "release") {
+              if (!claimed) return;
+              if (!assignees.includes(who) && !isMaintainer) {
+                await issues.createComment({ owner, repo, issue_number, body:
+                  `Only @${assignees.join(", @") || "the assignee"} or a maintainer can release this claim. Post \`/claim\` if you want it after the release.\n\n${marker("release-refused")}` });
+                return;
+              }
+              if (assignees.length) try { await issues.removeAssignees({ owner, repo, issue_number, assignees }); } catch (e) {}
+              try { await issues.removeLabel({ owner, repo, issue_number, name: "status: claimed" }); } catch (e) {}
+              await issues.createComment({ owner, repo, issue_number, body:
+                `Released by @${who}. The issue is available for a new \`/claim\`.\n\n${marker("release-ok")}` });
+            }
+
+  stale:
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const issues = github.rest.issues;
+            const open = await github.paginate(issues.listForRepo, { owner, repo, state: "open", labels: "status: claimed", per_page: 100 });
+            for (const issue of open) {
+              if (issue.pull_request) continue;
+              const assignees = (issue.assignees || []).map(a => a.login);
+              const comments = await github.paginate(issues.listComments, { owner, repo, issue_number: issue.number, per_page: 100 });
+              // Activity means human activity: the bot's own reminders must not reset the window.
+              const human = comments.filter(c => c.user && c.user.type !== "Bot");
+              const last = Math.max(new Date(issue.created_at).getTime(), ...human.map(c => new Date(c.created_at).getTime()));
+              const days = (Date.now() - last) / 86400000;
+              if (days >= 21) {
+                if (assignees.length) try { await issues.removeAssignees({ owner, repo, issue_number: issue.number, assignees }); } catch (e) {}
+                try { await issues.removeLabel({ owner, repo, issue_number: issue.number, name: "status: claimed" }); } catch (e) {}
+                await issues.createComment({ owner, repo, issue_number: issue.number, body:
+                  `Claim window elapsed (21 days without activity), so the claim was released. ` +
+                  `Comment \`/claim\` to take it again. <!-- repobeagle:claim-expired -->` });
+                continue;
+              }
+              if (days >= 7) {
+                const recent = comments.some(c => (c.body || "").includes("repobeagle:claim-check") &&
+                  (Date.now() - new Date(c.created_at).getTime()) < 7 * 86400000);
+                if (!recent) {
+                  await issues.createComment({ owner, repo, issue_number: issue.number, body:
+                    `@${assignees.join(", @") || "assignee"}: this claim has been quiet for ${Math.floor(days)} days. ` +
+                    `Link the draft PR, comment to confirm, or \`/release\` it. Released automatically at 21 days. <!-- repobeagle:claim-check -->` });
+                }
+              }
+            }
