@@ -970,12 +970,23 @@ COOKIE_MAXAGE_RE = re.compile(r"(?i)max-age\s*=\s*(\d+)")
 COOKIE_EXPIRES_RE = re.compile(r"(?i)expires\s*=\s*([^;\"']+)")
 
 def _expiry_days(value):
-    """Days until a cookie Expires date (RFC 1123); None when unparsable."""
+    """Days until a cookie Expires date (RFC 1123, ISO 8601 or unix epoch); None when unparsable."""
     import datetime as dt
     from email.utils import parsedate_to_datetime
+    raw = value.strip().strip('"\'')
+    when = None
     try:
-        when = parsedate_to_datetime(value.strip())
+        when = parsedate_to_datetime(raw)
     except (TypeError, ValueError):
+        try:
+            when = dt.datetime.fromisoformat(raw.replace("Z", "+00:00"))
+        except ValueError:
+            if raw.isdigit():
+                try:
+                    when = dt.datetime.fromtimestamp(int(raw), dt.timezone.utc)
+                except (ValueError, OSError, OverflowError):
+                    when = None
+    if when is None:
         return None
     if when.tzinfo is None:
         when = when.replace(tzinfo=dt.timezone.utc)

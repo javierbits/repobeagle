@@ -29,3 +29,4 @@ navigator.serviceWorker.register("/sw.js");
 await navigator.share({ url: location.href });
 const supportPhone = "(415) 555-0132";
 const profileUrl = `/profile?user_id=${id}&email_address=${email}`;
+document.cookie = "iso=1; expires=2027-01-01T00:00:00Z";

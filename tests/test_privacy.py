@@ -98,4 +98,9 @@ check("tracking false", bool(rb.TELEMETRY_OPTOUT_RE.search("trackingEnabled: fal
 check("own host match", rb._is_own("www.widget.dev", {"widget.dev"}))
 check("foreign host mismatch", not rb._is_own("api.other.dev", {"widget.dev"}))
 
+check("expiry RFC date", rb._expiry_days("Wed, 21 Oct 2015 07:28:00 GMT") < 0)
+check("expiry ISO date", rb._expiry_days("2027-01-01T00:00:00Z") > 0)
+check("expiry epoch", rb._expiry_days("1798761600") > 0)
+check("expiry invalid", rb._expiry_days("not a date") is None)
+
 sys.exit(fail)
