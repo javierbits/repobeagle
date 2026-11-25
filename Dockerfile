@@ -10,8 +10,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends curl ca-certifi
 RUN set -eux; a="$(uname -m)"; case "$a" in aarch64) g=arm64;; x86_64) g=x64;; *) exit 1;; esac; \
     curl -fsSL "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_${g}.tar.gz" \
     | tar -xz -C /usr/local/bin gitleaks
-COPY constraints.txt /opt/repobeagle/constraints.txt
-RUN pip install --no-cache-dir -c /opt/repobeagle/constraints.txt semgrep guarddog bandit
+COPY constraints.txt requirements.lock /opt/repobeagle/
+# --require-hashes: every transitive wheel/sdist comes from requirements.lock by SHA-256,
+# so a weekly rebuild cannot resolve a different dependency tree than the reviewed one.
+RUN pip install --no-cache-dir --require-hashes -r /opt/repobeagle/requirements.lock
 COPY rules /opt/repobeagle/rules
 COPY repobeagle.py VERSION /opt/repobeagle/
 COPY THIRD-PARTY-NOTICES /opt/repobeagle/THIRD-PARTY-NOTICES

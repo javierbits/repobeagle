@@ -2808,6 +2808,42 @@ def privacy_mode_consistent(report):
         return not (tools & {"privacy", "telemetry"})
     return True
 
+def toolchain_pins():
+    """Scanner versions this install pins: pip scanners from constraints.txt, gitleaks from the Dockerfile ARG.
+
+    Missing files are not an error (an installed wrapper may point at a repo checkout or the image);
+    a scanner without a discoverable pin is simply absent from the result.
+    """
+    base = Path(__file__).resolve().parent
+    pins = {}
+    try:
+        for ln in (base / "constraints.txt").read_text(encoding="utf-8").splitlines():
+            m = re.match(r"^([A-Za-z0-9][A-Za-z0-9_.-]*)==([0-9][A-Za-z0-9_.+-]*)", ln.strip())
+            if m:
+                pins[m.group(1).lower()] = m.group(2)
+    except OSError:
+        pass
+    try:
+        m = re.search(r"(?m)^ARG GITLEAKS_VERSION=([0-9][A-Za-z0-9_.+-]*)",
+                      (base / "Dockerfile").read_text(encoding="utf-8"))
+        if m:
+            pins["gitleaks"] = m.group(1)
+    except OSError:
+        pass
+    return pins
+
+def toolchain_drift(tools, pins):
+    """'name got (pins want)' for scanners whose recorded version differs from this install's pins."""
+    if not isinstance(tools, dict) or not isinstance(pins, dict):
+        return []
+    drift = []
+    for name in sorted(pins):
+        t = tools.get(name)
+        got = t.get("version") if isinstance(t, dict) else None
+        if got and str(got) != pins[name]:
+            drift.append(f"{name} {got} (pins {pins[name]})")
+    return drift
+
 def privacy_profile(summary):
     """One-line counts for the report header; details stay in privacy_summary."""
     if not summary:
@@ -3941,6 +3977,10 @@ def cmd_verify(a):
         rs_v = (d.get("meta") or {}).get("ruleset")
         if rs_v and rs_v != RULESET:
             print(f"  warning:   report ruleset {rs_v} differs from this scanner ({RULESET}); rules changed since the report")
+        drift = toolchain_drift((d.get("meta") or {}).get("tools"), toolchain_pins())
+        if drift:
+            print(f"  warning:   report toolchain differs from the pinned image ({', '.join(drift)}); "
+                  "re-scan with this image to compare verdicts")
         summary = d.get("privacy_summary") or privacy_summary(d.get("findings") or [])
         if summary:
             parts = []

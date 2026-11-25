@@ -1,0 +1,71 @@
+# Builds the scanner image and asserts what it reports: the pinned toolchain and
+# the same toolchain across two runs of one build. Path-gated because it is the
+# only job that needs Docker; the offline suite in ci.yml covers everything else.
+name: toolchain
+on:
+  push:
+    branches: [main]
+    paths:
+      - Dockerfile
+      - constraints.txt
+      - requirements.lock
+      - repobeagle.py
+      - install.sh
+      - checksums.txt
+      - tests/fixtures/trap-npm/**
+      - .github/workflows/toolchain.yml
+  pull_request:
+    paths:
+      - Dockerfile
+      - constraints.txt
+      - requirements.lock
+      - repobeagle.py
+      - install.sh
+      - checksums.txt
+      - tests/fixtures/trap-npm/**
+      - .github/workflows/toolchain.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: toolchain-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  image-toolchain:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Build the scanner image (amd64)
+        run: docker build --platform linux/amd64 --tag rb:toolchain .
+      - name: Assert the image reports the pinned toolchain, twice
+        run: |
+          for i in 1 2; do
+            mkdir -p "/tmp/out$i"
+            docker run --rm --network none --read-only --tmpfs /tmp \
+              -v "$PWD/tests/fixtures/trap-npm:/src:ro" -v "/tmp/out$i:/out" \
+              --user 0 rb:toolchain /src /out
+          done
+          python3 - <<'PY'
+          import json
+          import re
+          import sys
+          from pathlib import Path
+
+          pins = dict(re.findall(r"(?m)^([a-z0-9-]+)==(\S+)$", Path("constraints.txt").read_text()))
+          gl = re.search(r"(?m)^ARG GITLEAKS_VERSION=(\S+)$", Path("Dockerfile").read_text())
+          pins["gitleaks"] = gl.group(1)
+          runs = [json.loads(Path(f"/tmp/out{i}/inner.json").read_text()) for i in (1, 2)]
+          reported = [{k: v.get("version") for k, v in (r.get("tools") or {}).items() if v.get("version")}
+                      for r in runs]
+          bad = [f"{n}: reported {reported[0].get(n)}, pinned {v}" for n, v in sorted(pins.items())
+                 if reported[0].get(n) != v]
+          critical = [f for f in runs[0].get("findings") or [] if f.get("severity") == "critical"]
+          print("pinned:  ", pins)
+          print("reported:", reported[0])
+          for b in bad:
+              print("MISMATCH", b)
+          print("deterministic meta.tools:", reported[0] == reported[1])
+          sys.exit(0 if (not bad and critical and reported[0] == reported[1]) else 1)
+          PY
