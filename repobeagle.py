@@ -953,6 +953,7 @@ def _known_host(host):
 
 EMBED_RE = re.compile(r"(?is)<(iframe|embed|object)\b([^>]*)>")
 SRC_ATTR_RE = re.compile(r"(?i)\bsrc\s*=\s*[\"']([^\"']+)")
+DATA_ATTR_RE = re.compile(r"(?i)\bdata\s*=\s*[\"']([^\"']+)")
 ALLOW_ATTR_RE = re.compile(r"(?i)\ballow\s*=\s*[\"']([^\"']*)")
 SANDBOX_RE = re.compile(r"(?i)\bsandbox\b")
 CREDENTIALLESS_RE = re.compile(r"(?i)\bcredentialless\b")
@@ -1187,7 +1188,7 @@ def check_privacy(root, p, text, privacy, own=()):
                               f"Network destination {host} (known platform/infrastructure).")
                 else:
                     pre = line[max(0, pos - 80):pos]
-                    specific = bool(re.search(r"(?i)(?:src|srcset|poster|action)\s*=\s*[\"']?$", pre)
+                    specific = bool(re.search(r"(?i)(?:src|srcset|poster|action|data)\s*=\s*[\"']?$", pre)
                                     or re.search(r"url\(\s*[\"']?$", pre)
                                     or (re.search(r"(?i)href\s*=\s*[\"']?$", pre)
                                         and re.search(r"(?i)<(?:img|source|link|script|video|audio|picture)\b", line)))
@@ -1322,7 +1323,7 @@ def check_privacy(root, p, text, privacy, own=()):
         if ext in (".html", ".htm", ".svelte", ".vue", ".jsx", ".tsx", ".astro"):
             for m in EMBED_RE.finditer(line):
                 attrs = m.group(2)
-                sm = SRC_ATTR_RE.search(attrs)
+                sm = SRC_ATTR_RE.search(attrs) or DATA_ATTR_RE.search(attrs)
                 host = _host_of(sm.group(1)) if sm else None
                 if not host or _endpoint_noise(host) or host in NON_NET_HOSTS or _is_own(host, own):
                     continue
