@@ -869,6 +869,8 @@ ALLOW_ATTR_RE = re.compile(r"(?i)\ballow\s*=\s*[\"']([^\"']*)")
 SANDBOX_RE = re.compile(r"(?i)\bsandbox\b")
 SCRIPT_RE = re.compile(r"(?i)<script[^>]+src\s*=\s*[\"']((?:https?:)?//[^\"']+)")
 MEDIA_RE = re.compile(r"(?i)<(?:img|source|video|audio|picture)\b[^>]*\bsrc\s*=\s*[\"']((?:https?:)?//[^\"']+)")
+CSS_IMPORT_RE = re.compile(r"(?i)@import\s+(?:url\()?\s*[\"']?((?:https?:)?//[^\"')\s]+)")
+SRCSET_RE = re.compile(r"(?i)<(?:img|source)\b[^>]*\bsrcset\s*=\s*[\"']([^\"']+)")
 LINK_CSS_RE = re.compile(r"(?i)<link[^>]+rel\s*=\s*[\"']stylesheet[\"'][^>]+href\s*=\s*[\"']((?:https?:)?//[^\"']+)")
 PRELOAD_RE = re.compile(r"(?i)<link[^>]+rel\s*=\s*[\"'](?:preload|prefetch)[\"'][^>]+href\s*=\s*[\"']((?:https?:)?//[^\"']+)")
 PRECONNECT_RE = re.compile(r"(?i)<link[^>]+rel\s*=\s*[\"'](?:preconnect|dns-prefetch)[\"'][^>]+href\s*=\s*[\"']((?:https?:)?//[^\"']+)")
@@ -1109,6 +1111,13 @@ def check_privacy(root, p, text, privacy, own=()):
                     cdn = host in THIRD_PARTY_CDN
                     _priv_add(privacy, "third-party-script", "info" if cdn else "low", host, r, i, line,
                               f"Loads executable script from {host}: it runs with page privileges and can read cookies/DOM and beacon data.")
+            for m in SRCSET_RE.finditer(line):
+                for url in re.findall(r"(?:https?:)?//[^\s,]+", m.group(1)):
+                    host = _host_of(url)
+                    if host and not _endpoint_noise(host) and host not in NON_NET_HOSTS and not _is_own(host, own):
+                        _priv_add(privacy, "third-party-media", "info" if host in THIRD_PARTY_CDN or _known_host(host) else "low",
+                                  host, r, i, line,
+                                  f"Responsive media from {host}: it sees your IP and the page URL.")
             for m in MEDIA_RE.finditer(line):
                 host = _host_of(m.group(1))
                 if host and not _endpoint_noise(host) and host not in NON_NET_HOSTS and not _is_own(host, own):
@@ -1137,6 +1146,13 @@ def check_privacy(root, p, text, privacy, own=()):
                 if host and not _endpoint_noise(host) and host not in NON_NET_HOSTS:
                     _priv_add(privacy, "third-party-form", "low", host, r, i, line,
                               f"Form action posts user data to {host}; verify what it collects and its policy.")
+        if ext in (".css", ".scss", ".sass", ".less"):
+            for m in CSS_IMPORT_RE.finditer(line):
+                host = _host_of(m.group(1))
+                if host and not _endpoint_noise(host) and host not in NON_NET_HOSTS and not _is_own(host, own):
+                    _priv_add(privacy, "third-party-stylesheet", "info" if host in THIRD_PARTY_CDN else "low",
+                              host, r, i, line,
+                              f"CSS @import from {host}: sees your IP/referrer and can chain further requests.")
         if p.name == "AndroidManifest.xml":
             for m in re.finditer(r'<uses-feature[^>]*android:name="(android\.hardware\.[A-Za-z0-9_.]+)"', line):
                 feat = m.group(1)
@@ -1395,6 +1411,8 @@ def check_privacy_signals(root, p, text, privacy):
                           "Example link puts personal data in the URL query: fine in docs, leaks via Referer/logs when used at runtime.")
             for m in EMAIL_RE.finditer(line):
                 addr = m.group(0)
+                if m.start() and line[m.start() - 1] == "/":
+                    continue          # srcset density descriptors such as image@2x.png
                 if addr.lower() in EMAIL_IGNORE or addr.lower().endswith((".example", ".invalid", ".local")):
                     continue
                 if line[max(0, m.start() - 7):m.start()].lower() == "mailto:":
@@ -1465,6 +1483,8 @@ def check_privacy_signals(root, p, text, privacy):
                         break
             for m in EMAIL_RE.finditer(line):
                 addr = m.group(0)
+                if m.start() and line[m.start() - 1] == "/":
+                    continue          # srcset density descriptors such as image@2x.png
                 if addr.lower() in EMAIL_IGNORE or addr.lower().endswith((".example", ".invalid", ".local")):
                     continue
                 if re.search(r"(?i)@(example\.(com|org|net)|(?:[\w-]+\.)*sentry\.io)$", addr):
