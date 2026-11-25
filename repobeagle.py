@@ -1633,10 +1633,14 @@ def check_privacy_signals(root, p, text, privacy):
             for host in re.findall(r"<string>([^<]+)</string>", dom):
                 _priv_add(privacy, "ios-tracking-domain", "info", host.strip(), r, _line_of(text, host), host.strip(),
                           "Domain the app declares as a tracking endpoint in PrivacyInfo.xcprivacy.")
-        for api in re.findall(r"<key>NSPrivacyAccessedAPITypes</key>\s*<array>(.*?)</array>", text, re.S):
-            for cat in re.findall(r"NSPrivacyAccessedAPICategory([A-Za-z]+)", api):
-                _priv_add(privacy, "ios-api-category", "info", cat, r, _line_of(text, cat), f"NSPrivacyAccessedAPICategory{cat}",
-                          "Apple required-reason API declared in PrivacyInfo.xcprivacy: the app explains why it uses it.")
+        for m in re.finditer(r"NSPrivacyAccessedAPICategory([A-Za-z]+)", text):
+            cat = m.group(1)
+            tail = text[m.end():m.end() + 400]
+            end = tail.find("</dict>")
+            reasons = re.findall(r"<string>([A-Z0-9.]+)</string>", tail[:end if end >= 0 else len(tail)])
+            why = f" Reasons: {', '.join(reasons)}." if reasons else ""
+            _priv_add(privacy, "ios-api-category", "info", cat, r, _line_of(text, cat), f"NSPrivacyAccessedAPICategory{cat}",
+                      "Apple required-reason API declared in PrivacyInfo.xcprivacy: the app explains why it uses it." + why)
         for block in re.findall(r"<dict>(.*?)</dict>", text, re.S):
             m = re.search(r"<key>NSPrivacyCollectedDataType</key>\s*<string>NSPrivacyCollectedDataType([A-Za-z]+)</string>", block)
             if not m:
