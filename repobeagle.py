@@ -883,6 +883,7 @@ ALLOW_ATTR_RE = re.compile(r"(?i)\ballow\s*=\s*[\"']([^\"']*)")
 SANDBOX_RE = re.compile(r"(?i)\bsandbox\b")
 CREDENTIALLESS_RE = re.compile(r"(?i)\bcredentialless\b")
 REFERRER_UNSAFE_RE = re.compile(r"(?i)unsafe-url")
+JS_IMPORT_URL_RE = re.compile(r"(?i)\b(?:import|from)\s*\(?\s*[\"']((?:https?:)?//[^\"']+)")
 SCRIPT_RE = re.compile(r"(?i)<script[^>]+src\s*=\s*[\"']((?:https?:)?//[^\"']+)")
 MEDIA_RE = re.compile(r"(?i)<(?:img|source|video|audio|picture)\b[^>]*\bsrc\s*=\s*[\"']((?:https?:)?//[^\"']+)")
 CSS_IMPORT_RE = re.compile(r"(?i)@import\s+(?:url\()?\s*[\"']?((?:https?:)?//[^\"')\s]+)")
@@ -1182,6 +1183,13 @@ def check_privacy(root, p, text, privacy, own=()):
                 if host and not _endpoint_noise(host) and host not in NON_NET_HOSTS:
                     _priv_add(privacy, "third-party-form", "low", host, r, i, line,
                               f"Form action posts user data to {host}; verify what it collects and its policy.")
+        if ext in (".js", ".mjs", ".cjs", ".ts", ".tsx", ".jsx", ".vue", ".svelte", ".astro"):
+            for m in JS_IMPORT_URL_RE.finditer(line):
+                host = _host_of(m.group(1))
+                if host and not _endpoint_noise(host) and host not in NON_NET_HOSTS and not _is_own(host, own):
+                    _priv_add(privacy, "third-party-script", "info" if host in THIRD_PARTY_CDN else "low",
+                              host, r, i, line,
+                              f"Module import from {host}: code fetched and executed from a third-party server.")
         if ext in (".css", ".scss", ".sass", ".less"):
             for m in CSS_IMPORT_RE.finditer(line):
                 host = _host_of(m.group(1))
