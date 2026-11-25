@@ -58,7 +58,7 @@ A repo that is safe to run is not necessarily safe to *use*. The `telemetry` che
 
 | Rule id | What it means | Severity |
 |---|---|---|
-| `telemetry-session-replay` | records what you do (clicks, keystrokes, forms, page content): Clarity, Hotjar, FullStory, LogRocket, Smartlook, Mouseflow, Lucky Orange, Highlight, OpenReplay, Datadog RUM, Contentsquare, Quantum Metric, Glassbox, Medallia, rrweb | high/medium |
+| `telemetry-session-replay` | records what you do (clicks, keystrokes, forms, page content): Clarity, Hotjar, FullStory, LogRocket, Smartlook, Mouseflow, Lucky Orange, Highlight, OpenReplay, Datadog RUM, Contentsquare, Quantum Metric, Glassbox, Medallia, rrweb, Sentry Replay (`replaysSessionSampleRate`) | high/medium |
 | `telemetry-ads` | advertising/attribution pixels and SDKs with per-device IDs: Meta, TikTok, LinkedIn, X/Twitter, Pinterest, Reddit, Microsoft UET, **Google AdSense/Ad Manager**, Criteo, Taboola, Outbrain, Amazon Ads, Snap, AppsFlyer, Adjust, Branch | high/medium |
 | `telemetry-crash` | uploads stack traces and payloads, often file paths, env and request data: Sentry, Bugsnag, Rollbar, Raygun, Honeybadger, Airbrake, Exceptionless, Crashlytics, Application Insights, Backtrace | medium |
 | `telemetry-analytics` | page views, events and persistent IDs: Google Tag Manager (`GTM-*`), Google Analytics/gtag, Firebase Analytics, tracking pixels (`1x1`, `width=1 height=1`), Plausible, Umami, Matomo/Piwik, Fathom, GoatCounter, Simple Analytics, Cloudflare/Vercel Analytics/Speed Insights, Segment, Mixpanel, Amplitude, PostHog, Heap, Countly, Adobe, Yandex Metrica, Baidu, WordPress Stats, Snowplow, RudderStack, Pendo, Optimizely, VWO, HubSpot, Klaviyo, Braze, OneSignal, Customer.io, Tealium, Mailchimp, Intercom, tracking pixels | medium/low |
@@ -242,7 +242,7 @@ Apart from the clone, OSV/GuardDog-verify, the GitHub trust lookup and your own 
 
 ## Example output (abridged)
 ```
-repobeagle 1.102.0  |  tests/fixtures/trap-npm
+repobeagle 1.103.0  |  tests/fixtures/trap-npm
   VERDICT: RED    2 critical / 2 high findings, e.g. npm lifecycle script 'postinstall' runs automatically on install (package.json:8)
   CRITICAL [agent-checks] package.json:8
            npm lifecycle script 'postinstall' runs automatically on install

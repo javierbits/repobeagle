@@ -577,6 +577,7 @@ TELEMETRY_RULES = [
     ("session-replay", "high", "Contentsquare", _telem_rx(r"contentsquare|content-square")),
     ("session-replay", "high", "Quantum Metric", _telem_rx(r"quantummetric|quantum-metric")),
     ("session-replay", "high", "rrweb", _telem_rx(r"\brrweb\b|@rrweb/")),
+    ("session-replay", "high", "Sentry Replay", _telem_rx(r"replaysSessionSampleRate|replaysOnErrorSampleRate|replayIntegration")),
     ("session-replay", "high", "Glassbox", _telem_rx(r"\bglassbox\b")),
     ("session-replay", "medium", "Medallia", _telem_rx(r"\bmedallia\b")),
     # product / web analytics
