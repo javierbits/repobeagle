@@ -1235,6 +1235,9 @@ def check_privacy(root, p, text, privacy, own=()):
                 feat = m.group(1)
                 _priv_add(privacy, "android-feature", "info", feat, r, i, line,
                           f"Manifest declares hardware feature {feat}: the app is expected to use that sensor/capability.")
+            if re.search(r'android:usesCleartextTraffic\s*=\s*"true"', line):
+                _priv_add(privacy, "android-cleartext", "medium", "usesCleartextTraffic", r, i, line,
+                          "App allows plaintext HTTP: requests and metadata can be read or modified on the way.")
             for m in re.finditer(r'<uses-permission(?:-sdk-23)?[^>]*android:name="android\.permission\.([A-Z_0-9]+)"', line):
                 perm = m.group(1)
                 if perm in ANDROID_IGNORE:
@@ -1725,6 +1728,10 @@ def check_privacy_signals(root, p, text, privacy, masks):
                       + (f" and {', '.join(flags)}" if flags else "")
                       + (f" for {', '.join(purposes)}" if purposes else "") + ".")
     if ext in (".plist", ".entitlements") or p.name.endswith(".plist"):
+        ats = re.search(r"<key>NS(?:AllowsArbitraryLoads|ExceptionAllowsInsecureHTTPLoads)(?:InWebContent|InMedia)?</key>\s*<true\s*/>", text)
+        if ats:
+            _priv_add(privacy, "ios-cleartext", "medium", "ATS disabled", r, text[:ats.start()].count("\n") + 1,
+                      ats.group(0), "App Transport Security allows plaintext HTTP (NSAllowsArbitraryLoads): cleartext requests are permitted.")
         for m in PURPOSE_STR_RE.finditer(text):
             key, body = m.group(1), re.sub(r"\s+", " ", m.group(2)).strip()
             _priv_add(privacy, "ios-purpose-string", "info", key, r, text[:m.start()].count("\n") + 1, body[:140],
@@ -1747,6 +1754,7 @@ def privacy_findings(privacy):
         "extension-permission": 49, "extension-resource": 50, "extension-connectable": 51,
         "android-permission": 52, "android-feature": 53, "undisclosed-vendor": 54, "privacy-doc": 55,
         "telemetry-identify": 56, "session-replay-mask": 57,
+        "android-cleartext": 58, "ios-cleartext": 59,
     }
     down = {"high": "medium", "medium": "low", "low": "info"}
     fs = []
@@ -2314,7 +2322,8 @@ def privacy_summary(findings):
                    "ios-api-category", "ios-data-type", "ios-purpose-string"}
     storage = {"cookie-write", "cookie-flags", "cookie-lifetime", "browser-storage", "tracking-cookie", "client-id"}
     consent = {"consent-manager", "consent-gating", "consent-order", "consent-mode", "consent-state", "dnt-respect"}
-    network = {"insecure-endpoint", "external-endpoint", "referrer-policy", "permissions-policy", "iframe-allow"}
+    network = {"insecure-endpoint", "external-endpoint", "referrer-policy", "permissions-policy", "iframe-allow",
+               "android-cleartext", "ios-cleartext"}
     transparency = {"privacy-doc", "store-disclosure", "undisclosed-vendor"}
     for f in findings:
         if f.get("tool") not in ("telemetry", "privacy"):
