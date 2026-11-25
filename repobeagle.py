@@ -1132,9 +1132,15 @@ def check_privacy(root, p, text, privacy, own=()):
                 if not all(x.lower() in line.lower() for x in reqs):
                     _priv_add(privacy, "cookie-flags", "low", prefix + " prefix without required flags", r, i, line,
                               f"Cookie name {prefix} requires {' and '.join(reqs)}; without them browsers may reject it or it is sent insecurely.")
-        if SET_COOKIE_RE.search(line) and not SET_COOKIE_READ_RE.search(line) and not all(re.search(s, line, re.I) for s in ("httponly", "secure", "samesite")):
-            _priv_add(privacy, "cookie-flags", "low", "Set-Cookie", r, i, line,
-                      "Set-Cookie header without all of HttpOnly/Secure/SameSite: readable by scripts, sent in clear or cross-site.")
+        if SET_COOKIE_RE.search(line) and not SET_COOKIE_READ_RE.search(line):
+            missing = [name for name, pat in (("HttpOnly", r"httponly"), ("Secure", r"secure"), ("SameSite", r"samesite"))
+                       if not re.search(pat, line, re.I)]
+            if missing:
+                _priv_add(privacy, "cookie-flags", "low", "Set-Cookie missing " + "/".join(missing), r, i, line,
+                          "Set-Cookie header without " + "/".join(missing)
+                          + (" (readable by scripts)" if "HttpOnly" in missing else "")
+                          + (" (sent in clear)" if "Secure" in missing else "")
+                          + (" (sent cross-site)" if "SameSite" in missing else "") + ".")
         elif COOKIE_API_RE.search(line):
             window = " ".join(lines[max(0, i - 5):i + 10])
             if not COOKIE_FLAG_WORDS.search(window):
