@@ -19,3 +19,4 @@ document.cookie = "usprivacy=1YNN; path=/";
 document.cookie = "__hssc=1; path=/";
 const replayConfig = { replaysSessionSampleRate: 0.1 };
 const tracingConfig = { tracesSampleRate: 0.2 };
+document.cookie = "seen=1; max-age=0";

@@ -951,6 +951,7 @@ REFERRER_UNSAFE_RE = re.compile(r"(?i)unsafe-url")
 JS_IMPORT_URL_RE = re.compile(r"(?i)\b(?:import|from)\s*\(?\s*[\"']((?:https?:)?//[^\"']+)")
 SCRIPT_RE = re.compile(r"(?i)<script[^>]+src\s*=\s*[\"']((?:https?:)?//[^\"']+)")
 MEDIA_RE = re.compile(r"(?i)<(?:img|source|video|audio|picture)\b[^>]*\bsrc\s*=\s*[\"']((?:https?:)?//[^\"']+)")
+POSTER_RE = re.compile(r"(?i)<video\b[^>]*\bposter\s*=\s*[\"']((?:https?:)?//[^\"']+)")
 CSS_IMPORT_RE = re.compile(r"(?i)@import\s+(?:url\()?\s*[\"']?((?:https?:)?//[^\"')\s]+)")
 SRCSET_RE = re.compile(r"(?i)<(?:img|source)\b[^>]*\bsrcset\s*=\s*[\"']([^\"']+)")
 LINK_CSS_RE = re.compile(r"(?i)<link[^>]+rel\s*=\s*[\"']stylesheet[\"'][^>]+href\s*=\s*[\"']((?:https?:)?//[^\"']+)")
@@ -1163,6 +1164,9 @@ def check_privacy(root, p, text, privacy, own=()):
             if days is None:
                 _priv_add(privacy, "cookie-lifetime", "info", "session cookie", r, i, line,
                           "Cookie without a usable Max-Age/Expires: session-scoped (better for privacy).")
+            elif days == 0:
+                _priv_add(privacy, "cookie-lifetime", "info", "cookie deletion (Max-Age=0)", r, i, line,
+                          "Zero lifetime deletes the cookie; a common logout/cleanup pattern.")
             elif days > 365:
                 _priv_add(privacy, "cookie-lifetime", "low", "cookie lifetime > 1 year", r, i, line,
                           f"Cookie lives {days} days: long-lived identifiers outlive their purpose; shorten where possible.")
@@ -1267,6 +1271,12 @@ def check_privacy(root, p, text, privacy, own=()):
                     _priv_add(privacy, "third-party-media", "info" if host in THIRD_PARTY_CDN or _known_host(host) else "low",
                               host, r, i, line,
                               f"Media loaded from {host}: it sees your IP and the page URL, and may set/send cookies or beacons.")
+            for m in POSTER_RE.finditer(line):
+                host = _host_of(m.group(1))
+                if host and not _endpoint_noise(host) and host not in NON_NET_HOSTS and not _is_own(host, own):
+                    _priv_add(privacy, "third-party-media", "info" if host in THIRD_PARTY_CDN or _known_host(host) else "low",
+                              host, r, i, line,
+                              f"Video poster image loaded from {host}: it sees your IP and the page URL.")
             for m in LINK_CSS_RE.finditer(line):
                 host = _host_of(m.group(1))
                 if host and not _endpoint_noise(host) and host not in NON_NET_HOSTS and not _is_own(host, own):
