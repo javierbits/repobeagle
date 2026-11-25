@@ -535,7 +535,8 @@ def check_obfuscation_deps(root, p, text, findings):
 # Privacy: telemetry, analytics, crash reporting, OTEL exporters
 # ----------------------------------------------------------------------------
 LOCKFILE_RE = re.compile(r"(?i)(^|/)(package-lock\.json|npm-shrinkwrap\.json|yarn\.lock|pnpm-lock\.yaml|bun\.lockb?|"
-                         r"Cargo\.lock|poetry\.lock|Pipfile\.lock|uv\.lock|go\.sum|composer\.lock|Gemfile\.lock|gradle\.lockfile)$")
+                         r"Cargo\.lock|poetry\.lock|Pipfile\.lock|uv\.lock|go\.sum|composer\.lock|Gemfile\.lock|gradle\.lockfile|"
+                         r"pubspec\.lock|mix\.lock|Package\.resolved|packages\.lock\.json)$")
 
 def _telem_rx(p): return re.compile(p, re.I)
 
@@ -671,12 +672,13 @@ TELEMETRY_OPTOUT_RE = re.compile(
 DNT_RE = re.compile(r"(?i)(navigator\.doNotTrack|\bdoNotTrack\b|globalPrivacyControl|\bGPC\b|\bDNT\b|Sec-GPC)")
 
 TELEMETRY_PACKAGES = [
-    ("crash", "Sentry", ("sentry", "sentry-sdk", "sentry-go", "@sentry/")),
+    ("crash", "Sentry", ("sentry", "sentry-sdk", "sentry-go", "sentry-", "sentry_", "@sentry/")),
+    ("analytics", "Firebase Analytics", ("firebase-analytics", "firebase_analytics", "firebase/analytics")),
     ("apm", "OpenTelemetry (OTEL)", ("opentelemetry", "opentelemetry-", "@opentelemetry/", "go.opentelemetry.io/otel", "otel")),
-    ("analytics", "PostHog", ("posthog", "posthog-js", "posthog-python")),
+    ("analytics", "PostHog", ("posthog", "posthog-js", "posthog-python", "posthog_")),
     ("analytics", "Segment", ("@segment/", "analytics-node", "segment")),
-    ("analytics", "Mixpanel", ("mixpanel", "mixpanel-")),
-    ("analytics", "Amplitude", ("amplitude", "@amplitude/")),
+    ("analytics", "Mixpanel", ("mixpanel", "mixpanel-", "mixpanel_")),
+    ("analytics", "Amplitude", ("amplitude", "amplitude_", "@amplitude/")),
     ("analytics", "Google Analytics", ("react-ga", "react-ga4", "ga-", "@google-analytics/", "gtag")),
     ("analytics", "Plausible", ("plausible", "plausible-", "@plausible/")),
     ("analytics", "Umami", ("umami", "umami-")),
@@ -721,6 +723,28 @@ def lockfile_packages(p, text):
                 parts = line.split()
                 if len(parts) >= 2:
                     out.add(parts[0])
+        elif name == "Gemfile.lock":
+            out.update(re.findall(r'(?m)^ {4}([A-Za-z0-9_.-]+) \(', text))
+        elif name == "Pipfile.lock":
+            d = json.loads(text)
+            for sec in ("default", "develop"):
+                out.update((d.get(sec) or {}).keys())
+        elif name == "pubspec.lock":
+            out.update(re.findall(r'(?m)^  ([a-z0-9_]+):', text))
+        elif name == "mix.lock":
+            out.update(re.findall(r'(?m)^\s*"([^"]+)"\s*:\s*\{:', text))
+        elif name == "Package.resolved":
+            d = json.loads(text)
+            for pin in d.get("pins") or []:
+                if isinstance(pin, dict):
+                    nm = pin.get("identity") or pin.get("package")
+                    if nm:
+                        out.add(nm)
+        elif name == "packages.lock.json":
+            d = json.loads(text)
+            for tf in (d.get("dependencies") or {}).values():
+                if isinstance(tf, dict):
+                    out.update(tf.keys())
         elif name == "composer.lock":
             d = json.loads(text)
             for sec in ("packages", "packages-dev"):

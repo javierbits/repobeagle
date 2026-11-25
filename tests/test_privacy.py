@@ -73,4 +73,15 @@ check("mode only mismatch", not rb.privacy_mode_consistent(mixed))
 check("mode excluded consistent", rb.privacy_mode_consistent(excl))
 check("mode full no constraint", rb.privacy_mode_consistent({"findings": [{"tool": "gitleaks"}]}))
 
+with tempfile.TemporaryDirectory() as td:
+    def lock(name, body):
+        f = Path(td) / name; f.write_text(body); return rb.lockfile_packages(f, body)
+    check("Gemfile.lock packages", "sentry-ruby" in lock("Gemfile.lock", "GEM\n  specs:\n    sentry-ruby (5.1.0)\n"))
+    check("Pipfile.lock packages", "sentry-sdk" in lock("Pipfile.lock", '{"default": {"sentry-sdk": {"version": "1"}}}'))
+    check("pubspec.lock packages", "sentry_flutter" in lock("pubspec.lock", 'packages:\n  sentry_flutter:\n    version: "7.0"\n'))
+    check("mix.lock packages", "sentry" in lock("mix.lock", '%{\n  "sentry": {:hex, :sentry, "1.0"},\n}'))
+    check("Package.resolved packages", "sentry-cocoa" in lock("Package.resolved", '{"pins": [{"identity": "sentry-cocoa"}]}'))
+    check("packages.lock.json packages", "Sentry" in lock("packages.lock.json", '{"dependencies": {"net8.0": {"Sentry": {}}}}'))
+    check("sentry gem matches", any(rb._pkg_is("sentry-ruby", pat) for pat in ("sentry-",)))
+
 sys.exit(fail)
