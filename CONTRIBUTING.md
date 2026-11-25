@@ -97,7 +97,10 @@ These are non-negotiable because they *are* the product:
 - **No verdict changes without a flag or a profile.** New detection is welcome; silently
   making honest repositories red is not.
 - **Determinism.** Same input, same findings, same order. No locale-, time- or
-  `dict`-order-dependent output. Timings live in `meta`, never in the verdict.
+  `dict`-order-dependent output. Timings live in `meta`, never in the verdict. The
+  normalized core (`normalize_findings()` / `report_fingerprint()`) is what
+  `arch.yml` and `verify --rescan` compare; adding a finding field means deciding
+  whether it belongs there, and `tests/test_determinism.py` covers both directions.
 - **Privacy by default.** Snippets and titles of privacy/telemetry findings are redacted
   (`redact_pii`). If you add a field that can contain PII, redact it or document why not.
 - **Never extract archives, never follow symlinks** unless you are in `safe_extract`-style
