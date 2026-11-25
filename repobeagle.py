@@ -596,7 +596,7 @@ TELEMETRY_RULES = [
     ("analytics", "medium", "Intercom", _telem_rx(r"intercom\.(?:io|com)|intercom-")),
     ("analytics", "low", "Tracking pixel", _telem_rx(r"1x1\.(gif|png)|pixel\.gif|\btracking[ -]pixel\b")),
     # crash / error reporting
-    ("crash", "medium", "Sentry", _telem_rx(r"sentry\.io|@sentry/|sentry_sdk|\bsentry[-_]")),
+    ("crash", "medium", "Sentry", _telem_rx(r"sentry\.io|@sentry/|sentry_sdk|sentry\.properties|\bsentry[-_.]")),
     ("crash", "medium", "Bugsnag", _telem_rx(r"\bbugsnag\b")),
     ("crash", "medium", "Rollbar", _telem_rx(r"\brollbar\b")),
     ("crash", "medium", "Raygun", _telem_rx(r"\braygun\b")),
@@ -610,7 +610,7 @@ TELEMETRY_RULES = [
     ("crash", "medium", "Bugsplat", _telem_rx(r"\bbugsplat\b")),
     # APM / tracing
     ("apm", "medium", "OpenTelemetry (OTEL)", _telem_rx(r"opentelemetry|\botel\b|\botel[._/-]|\botlp\b")),
-    ("apm", "low", "Datadog (APM)", _telem_rx(r"datadoghq|dd-trace|\bddtrace\b|datadog-agent|@datadog/")),
+    ("apm", "low", "Datadog (APM)", _telem_rx(r"datadoghq|dd-trace|\bddtrace\b|datadog")),
     ("apm", "low", "New Relic", _telem_rx(r"newrelic|new-relic|nr-data\.net")),
     ("apm", "low", "Elastic APM", _telem_rx(r"elastic-apm|@elastic/apm|elastic_apm")),
     ("apm", "low", "Honeycomb", _telem_rx(r"honeycomb\.io|honeycombio|libhoney")),
@@ -644,7 +644,7 @@ TELEMETRY_OPTOUT_RE = re.compile(
     r"(?i)(DO_NOT_TRACK|NEXT_TELEMETRY_DISABLED|NUXT_TELEMETRY_DISABLED|ASTRO_TELEMETRY_DISABLED|GATSBY_TELEMETRY_DISABLED|"
     r"TURBO_TELEMETRY_DISABLED|DOTNET_CLI_TELEMETRY_OPTOUT|HOMEBREW_NO_ANALYTICS|CHECKPOINT_DISABLE|"
     r"NG_CLI_ANALYTICS\s*[=:]\s*(false|off)|telemetry\s*[=:]\s*(false|off)|disable[_-]?telemetry|no[_-]?telemetry|"
-    r"analytics\s*[=:]\s*(false|off))")
+    r"analytics\s*[=:]\s*(false|off)|TELEMETRY_OPTOUT|DISABLE_TELEMETRY|NO_?TELEMETRY|--no-?telemetry|disable[_-]?analytics)")
 DNT_RE = re.compile(r"(?i)(navigator\.doNotTrack|\bdoNotTrack\b|globalPrivacyControl|\bGPC\b|\bDNT\b|Sec-GPC)")
 
 TELEMETRY_PACKAGES = [
@@ -1038,6 +1038,14 @@ def check_privacy(root, p, text, privacy):
                 if v in ("<all_urls>", "*://*/*"):
                     _priv_add(privacy, "extension-permission", "high", "content_scripts:<all_urls>", r, _line_of(text, v), v,
                               "Content script runs on every page; it can read page content and inject into it.")
+        ec = (manifest.get("externally_connectable") or {}).get("matches") or []
+        if ec:
+            broad = any(v in ("<all_urls>", "*://*/*") for v in ec)
+            _priv_add(privacy, "extension-connectable", "low" if broad else "info",
+                      "externally_connectable" + (":<all_urls>" if broad else ""), r,
+                      _line_of(text, "externally_connectable"), f"matches {ec}",
+                      "Websites may send messages to the extension: any site can talk to it (fingerprinting vector)."
+                      if broad else "Only listed sites may message the extension.")
         for war in manifest.get("web_accessible_resources") or []:
             matches = (war.get("matches") if isinstance(war, dict) else None) or []
             res = (war.get("resources") if isinstance(war, dict) else None) or []
@@ -1081,7 +1089,7 @@ PHONE_RE = re.compile(r"(?<![A-Za-z0-9+])\+\d[\d ().-]{6,14}\d")
 IMPORT_NET_PY = re.compile(r"\b(requests|httpx|aiohttp|urllib3)\.\w+\s*\(|\burlopen\s*\(|socket\.socket\s*\(|\bhttp\.client\.")
 IMPORT_NET_JS = re.compile(r"(\bfetch\s*\(|\baxios[.(]|\$\.ajax\s*\(|navigator\.geolocation)")
 IP_LOG_RE = re.compile(r"(?i)(req\.ip\b|request\.remote_addr|remote_addr|REMOTE_ADDR|RemoteAddr|X-Forwarded-For|"
-                       r"HTTP_X_FORWARDED_FOR|X_FORWARDED_FOR|True-Client-IP|CF-Connecting-IP|client_ip|\bip_address\b)")
+                       r"HTTP_X_FORWARDED_FOR|X_FORWARDED_FOR|X-Real-IP|True-Client-IP|CF-Connecting-IP|client_ip|remoteAddress|\bip_address\b)")
 IP_LOG_SINK_RE = re.compile(r"(?i)(log|logger|print|puts|console|info|warn|debug|write|store|save|insert|persist|db|audit)")
 TRACKING_PARAM_RE = re.compile(r"[?&](utm_[a-z_]+|gclid|dclid|gbraid|wbraid|fbclid|msclkid|twclid|mc_cid|mc_eid|"
                                r"mkt_tok|vero_id|oly_enc_id|_hsenc|_hsmi|srsltid|igshid|si|_ga|_gl|gclsrc|dclsrc)=")
@@ -1369,7 +1377,7 @@ def privacy_findings(privacy):
              "browser-storage": 36, "consent-manager": 37, "consent-mode": 38, "consent-state": 39,
              "referrer-policy": 40, "permissions-policy": 41,
              "iframe-allow": 42,
-             "extension-resource": 43, "undisclosed-vendor": 44, "privacy-doc": 45}
+             "extension-connectable": 43, "extension-resource": 44, "undisclosed-vendor": 45, "privacy-doc": 46}
     down = {"high": "medium", "medium": "low", "low": "info"}
     fs = []
     for (rule, key), t in sorted(privacy.items(), key=lambda kv: (order.get(kv[1]["rule"], 9), kv[1]["key"])):

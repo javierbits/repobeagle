@@ -38,5 +38,10 @@
         "<all_urls>"
       ]
     }
-  ]
+  ],
+  "externally_connectable": {
+    "matches": [
+      "<all_urls>"
+    ]
+  }
 }
