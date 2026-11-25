@@ -191,7 +191,9 @@ feat(cli): --version and self-update checks
 ## Adding a dependency or scanner
 
 - Pin it (`constraints.txt`) and pin the base image by digest; `image.yml` builds and
-  signs. Transitive pip dependencies are pinned by hash when the full lock lands (#2).
+  signs. Transitive pip dependencies are pinned by SHA-256 in `requirements.lock`
+  (`pip --require-hashes`); regenerating the lock is part of the bump, see
+  `README.md#toolchain-pins-and-reproducibility`.
 - Downloaded binaries need a SHA-256 entry in `checksums.txt`; `install.sh` refuses
   unknown artifacts.
 - Update `THIRD-PARTY-NOTICES` when you add a redistributed component.

@@ -307,10 +307,25 @@ Run `tests/run_tests.sh`, or `tests/run_tests.sh --offline` for the fixtures onl
 | tests/fixtures/ignore-suppressed (`.repobeagleignore` silences a `curl\|sh`, finding stays in JSON as suppressed) | GREEN |
 | tests/test_trust.py (offline trust-signal unit tests) | pass |
 | tests/test_privacy.py (redaction, card check, privacy summary, first-party inference, suppression units) | pass |
+| tests/test_toolchain.py (scanner pins, drift detection, lock/constraints consistency) | pass |
 | psf/requests, tj/commander.js | GREEN/YELLOW |
 | invariantlabs-ai/mcp-injection-experiments | RED (MCP tool poisoning / exfil instructions) |
 | juice-shop/juice-shop | YELLOW (control: intentionally vulnerable code, not malicious) |
 | DataDog/malicious-software-packages-dataset | YELLOW: about 29.7k malware-sample zips are listed via ls-tree and flagged as uninspectable. They are never downloaded or extracted. |
+
+## Toolchain pins and reproducibility
+The image installs exactly what `constraints.txt` pins, through `requirements.lock`: a universal `uv` lock carrying a SHA-256 for every wheel of every transitive dependency of semgrep, guarddog and bandit. `Dockerfile` installs it with `pip install --require-hashes`, so a weekly rebuild cannot resolve a newer dependency tree than the reviewed one. gitleaks is a release tarball pinned by `ARG GITLEAKS_VERSION` in the same `Dockerfile` and verified against `checksums.txt`; the base image is pinned by multi-arch digest. A report records what actually ran in `meta.tools`; `verify` warns when a stored report's scanner versions differ from these pins, and the `toolchain` workflow rebuilds the image and fails if `meta.tools` disagrees with the pins or changes between two runs of one build.
+
+To bump a scanner, do all of this in one PR:
+
+1. Update the version in `constraints.txt` (pip scanners) or `ARG GITLEAKS_VERSION` (gitleaks), and the matching `install.sh`/`checksums.txt` lines for downloaded artifacts.
+2. Regenerate the lock:
+   ```bash
+   uv pip compile --universal --generate-hashes --python-version 3.12 \
+     --no-header --no-annotate --no-emit-index-url constraints.txt -o requirements.lock
+   ```
+3. `./install.sh --build-local`, then scan `tests/fixtures/trap-npm`: it must stay RED and `meta.tools` must name the new versions.
+4. Bump `VERSION` and push the tag; `image.yml` builds amd64+arm64, signs the image and publishes it.
 
 ## What it catches, and what it doesn't
 **Catches**: obvious install-time payloads, credential theft patterns, hidden or invisible agent instructions, MCP tool poisoning, over-privileged agent configs, committed secrets, known-vulnerable or known-malicious dependencies, obfuscated loaders, dangerous C APIs, and weak Go crypto or injectable SQL built by concatenation. Also flags **telemetry and trackers** (analytics, session replay, ad pixels, crash reporting, APM/OTEL, dev-tool and transitive dependency telemetry) and **privacy signals** (device fingerprinting, Android/browser-extension/macOS permissions, plaintext endpoints, cookie flags, IP logging, PII in logs/source, tracking parameters, consent managers, Do-Not-Track handling, iOS/macOS privacy manifests, missing privacy policy) so you know what a repo reports, to whom, and whether it documents an opt-out.
