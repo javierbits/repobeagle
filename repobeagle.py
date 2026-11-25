@@ -1328,7 +1328,7 @@ MASK_KEYS_RE = re.compile(r"(?i)\b(maskAllInputs|mask_all_inputs|maskInputOption
                           r"mask_text_selector|maskAllText|maskTextFn|unmaskAllInputs|mask_?pii|"
                           r"data-hj-suppress|data-clarity-mask|maskTextClass)\b")
 PII_LOG_RE = re.compile(r"(?i)(console\.(log|info|warn|error|debug|trace|table|dir)|log(ger)?\.(info|warn|error|debug|exception|critical)|"
-                        r"\bprint|printf|puts|fmt\.Print|tracing::(info|warn|error|debug)|log\.\w+|"
+                        r"\bprint(?:f)?\b|\bputs\b|fmt\.Print|tracing::(info|warn|error|debug)|log\.\w+|"
                         r"println!|eprintln!|log::(?:info|warn|error|debug)|System\.out\.print|Log\.[dviwe]\s*\(|"
                         r"error_log|print_r|var_dump|\bdd\(|logger\.Log|slog\.\w+|zap\.(?:info|warn|error|debug))")
 PII_WORD_RE = re.compile(r"(?i)\b(e-?mail|phone|mobile|mobile_?number|phone_?number|ssn|social security|address|street|zip|zip_?code|postal|"
