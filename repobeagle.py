@@ -1084,9 +1084,11 @@ def check_privacy(root, p, text, privacy, own=()):
                 archived = "web.archive.org/web/" in line[:pos]
                 url_value = bool(re.search(r"(?i)\bnew\s+URL\(|\bURL\((?:string:)?[\"']|\bURL\s*=\s*[\"']", line))
                 tag_ctx = None
+                tag_window = line
                 if not re.search(r"(?i)<(img|video|source|audio|picture|script|iframe|link)\b", line) and \
                         re.search(r"(?i)\b(?:src|href)\s*=", line):
                     back = "\n".join(lines[max(0, i - 6):i])
+                    tag_window = back + "\n" + line + "\n" + "\n".join(lines[i:i + 3])
                     cand = []
                     for pat, ctx in ((r"<(?:img|video|source|audio|picture)\b", "media"), (r"<script\b", "script"),
                                      (r"<iframe\b", "embed"), (r"<link\b", "link")):
@@ -1134,8 +1136,10 @@ def check_privacy(root, p, text, privacy, own=()):
                               host, r, i, line,
                               f"Script attribute on a tag opened above loads executable code from {host}.")
                 elif tag_ctx == "embed":
-                    _priv_add(privacy, "third-party-embed", "low", host, r, i, line,
-                              f"Embed attribute on a tag opened above includes content/code from {host}.")
+                    safe = bool(re.search(r"(?i)\bsandbox\b", tag_window))
+                    _priv_add(privacy, "third-party-embed", "info" if safe else "low", host, r, i, line,
+                              f"Embed attribute on a tag opened above includes content/code from {host}."
+                              + (" Sandboxed, which limits what it can do." if safe else ""))
                 elif tag_ctx == "stylesheet":
                     _priv_add(privacy, "third-party-stylesheet", "info" if host in THIRD_PARTY_CDN else "low",
                               host, r, i, line,
