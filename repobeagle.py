@@ -1301,6 +1301,7 @@ FINGERPRINT_RULES = [
     ("timezone", "low", r"resolvedOptions\(\)\.timeZone|Intl\.DateTimeFormat|toLocaleString\(", "Timezone/locale: narrows down the user's location and language."),
 ]
 FINGERPRINT_MEANING = "Device-fingerprinting signal: combine several and a browser can be recognized without cookies."
+IDENTIFY_RE = re.compile(r"(?i)\.(identify|setUser(?:Id|Email|Properties)?|alias)\s*\(|\bSentry\.setUser\b")
 PII_LOG_RE = re.compile(r"(?i)(console\.(log|info|warn|error|debug|trace|table|dir)|log(ger)?\.(info|warn|error|debug|exception|critical)|"
                         r"\bprint|printf|puts|fmt\.Print|tracing::(info|warn|error|debug)|log\.\w+|"
                         r"println!|eprintln!|log::(?:info|warn|error|debug)|System\.out\.print|Log\.[dviwe]\s*\(|"
@@ -1563,6 +1564,11 @@ def check_privacy_signals(root, p, text, privacy):
                 _priv_add(privacy, "pii-log", "info" if masked else "low", "logged object likely containing PII", r, i, line,
                           ("The logged object is already masked/redacted." if masked else
                            "The logged argument name suggests personal data (user/account/profile/…); verify the destination and retention."))
+        if not comment:
+            for m in IDENTIFY_RE.finditer(line):
+                _priv_add(privacy, "telemetry-identify", "low", m.group(1).lower(), r, i, line,
+                          f"Call to {m.group(1)}() sends a user identifier/attributes to the analytics or crash SDK; "
+                          "check what the payload includes and whether the user can opt out.")
         if not comment and not re.match(r"\s*\(", line):
             for m in TRACKING_COOKIE_RE.finditer(line):
                 name = m.group(1)
@@ -1722,6 +1728,7 @@ def privacy_findings(privacy):
         "consent-manager": 45, "referrer-policy": 46, "permissions-policy": 47, "iframe-allow": 48,
         "extension-permission": 49, "extension-resource": 50, "extension-connectable": 51,
         "android-permission": 52, "android-feature": 53, "undisclosed-vendor": 54, "privacy-doc": 55,
+        "telemetry-identify": 56,
     }
     down = {"high": "medium", "medium": "low", "low": "info"}
     fs = []
@@ -2261,13 +2268,15 @@ def privacy_profile(summary):
         bits.append(f"{perms} permission scope(s)")
     if consent:
         bits.append(f"{consent} consent signal(s)")
+    if summary.get("identity"):
+        bits.append(f"{len(summary['identity'])} identity-sharing call(s)")
     return "Privacy profile: " + ", ".join(bits)
 
 def privacy_summary(findings):
     """Structured 'what kind' overview of privacy findings, for the report and JSON."""
     groups = {"trackers": {}, "pii": [], "permissions": [], "fingerprinting": [], "storage": [],
               "consent": [], "vendor": [], "first_party": [], "network": [], "retention": [], "uploads": [],
-              "transparency": []}
+              "transparency": [], "identity": []}
 
     def add(group, value):
         if value and value not in groups[group]:
@@ -2285,7 +2294,9 @@ def privacy_summary(findings):
             continue
         rule, _, key = f["title"].partition(": ")
         key = (key or rule).replace(" (transitive)", "")
-        if rule.startswith("telemetry-"):
+        if rule == "telemetry-identify":
+            add("identity", key)
+        elif rule.startswith("telemetry-"):
             kind = rule[len("telemetry-"):]
             vals = groups["trackers"].setdefault(kind, [])
             if key not in vals:

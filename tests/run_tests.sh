@@ -26,7 +26,7 @@ RULES="go-generate-fetch rust-build-rs node-gyp-action pip-build-hook install-ti
   check tests/fixtures/trap-build "YELLOW|RED" $L
 RULES="magic-mismatch typosquat-dep high-entropy-blob minified-outside-dist" \
   check tests/fixtures/trap-binary "YELLOW|RED" $L
-RULES="telemetry-session-replay telemetry-analytics telemetry-crash telemetry-apm" \
+RULES="telemetry-session-replay telemetry-analytics telemetry-crash telemetry-apm telemetry-identify" \
   check tests/fixtures/trap-telemetry "YELLOW|RED" $L
 RULES="third-party-cdn insecure-endpoint cookie-write browser-storage consent-manager android-permission extension-permission cookie-flags fingerprint pii-log pii-email pii-phone pii-address pii-postcode import-time-network import-time-storage ip-logging android-feature tracking-params pii-in-url privacy-doc browser-capability macos-entitlement client-id ios-tracking ios-tracking-domain ios-api-category ios-data-type dnt-respect consent-order data-retention upload-surface upload-limit store-disclosure referrer-policy permissions-policy tracking-cookie pii-ssn pii-card ios-purpose-string consent-mode consent-state vendor-pii extension-connectable first-party-endpoint third-party-embed third-party-form third-party-script third-party-preconnect third-party-preload third-party-stylesheet third-party-media cookie-lifetime iframe-allow extension-resource undisclosed-vendor telemetry-crash telemetry-analytics telemetry-session-replay telemetry-ads" \
   check tests/fixtures/trap-privacy "YELLOW|RED" $L
