@@ -1,0 +1,32 @@
+# Regression gate: the offline suite must pass on every push and PR.
+# It needs no Docker image, no network scanners and no repository code executed.
+name: ci
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  offline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      # Syntax-level lint only: the scanner is a single 3.4k-line module and the
+      # fixtures intentionally contain odd code, so style rules would be noise.
+      - name: Byte-compile the scanner and tools
+        run: python3 -m py_compile repobeagle.py tools/make_badge.py tests/test_banner.py tests/test_trust.py tests/test_privacy.py
+      - name: Lint for syntax errors and undefined names
+        run: |
+          python3 -m pip install --quiet ruff
+          ruff check --no-cache --select E9,F63,F7,F82 repobeagle.py tools tests/*.py
+      - name: Offline regression suite (fixtures only; no image, no OSV, no trust API)
+        run: tests/run_tests.sh --offline
