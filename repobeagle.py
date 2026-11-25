@@ -1228,6 +1228,18 @@ def check_privacy(root, p, text, privacy, own=()):
                               + ("sent in clear" if "Secure" in missing else "")
                               + ("; " if len(missing) > 1 else "")
                               + ("sent cross-site" if "SameSite" in missing else "") + ".")
+                xm = re.search(r"(?i)\bexpires\s*:\s*([0-9]+)\b", window)
+                if xm:
+                    days = int(xm.group(1))
+                    if days == 0:
+                        _priv_add(privacy, "cookie-lifetime", "info", "cookie deletion (expires: 0)", r, i, line,
+                                  "js-cookie expires:0 deletes the cookie.")
+                    elif days > 365:
+                        _priv_add(privacy, "cookie-lifetime", "low", "cookie lifetime > 1 year", r, i, line,
+                                  f"js-cookie expires:{days} (days) lives over a year: long-lived identifiers outlive their purpose.")
+                    else:
+                        _priv_add(privacy, "cookie-lifetime", "info", "short-lived cookie", r, i, line,
+                                  f"js-cookie expires in {days} days.")
         if STORAGE_RE.search(line):
             _priv_add(privacy, "browser-storage", "info", "localStorage/sessionStorage", r, i, line,
                       "Data stored in the browser: survives reloads (localStorage) and can be used to track the user.")
