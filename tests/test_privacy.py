@@ -22,6 +22,8 @@ check("email outside authority", not rb._in_url_authority("contact user@host now
 check("address via the 1104 ignored", not rb.ADDRESS_INTL_RE.search("via the 1104"))
 check("address Via Roma kept", bool(rb.ADDRESS_INTL_RE.search("Via Roma 12")))
 check("address US", bool(rb.ADDRESS_RE.search("221B Baker Street")))
+check("address prose ignored", not rb.ADDRESS_RE.search("2 gives your words a fresh place"))
+check("address license kept", bool(rb.ADDRESS_RE.search("51 Franklin Street, Fifth Floor")))
 check("address DE", bool(rb.ADDRESS_INTL_RE.search("Hauptstraße 12")))
 check("address PO box", bool(rb.ADDRESS_INTL_RE.search("P.O. Box 42")))
 

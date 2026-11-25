@@ -1342,8 +1342,8 @@ BROWSER_CAPABILITIES = [
 ]
 CLIENT_ID_RE = re.compile(r"(?i)\b(client_?id|device_?id|visitor_?id|anonymous_?id|distinct_?id|installation_?id)\b")
 CLIENT_ID_CONTEXT_RE = re.compile(r"(?i)(localStorage|sessionStorage|document\.cookie|cookie|uuid|randomUUID|nanoid|v4\s*\(|guid)")
-ADDRESS_RE = re.compile(r"(?i)\b\d{1,6}[A-Za-z]?\s+[A-Z][\w.'-]*(?:\s+[A-Z][\w.'-]*){0,4}\s+"
-                        r"(?:street|st|road|rd|avenue|ave|boulevard|blvd|lane|ln|drive|dr|way|court|ct|place|pl|square|sq)\b")
+ADDRESS_RE = re.compile(r"(?<!\w)\d{1,6}[A-Za-z]?\s+[A-Z][\w.'-]*(?:\s+[A-Z][\w.'-]*){0,4}\s+"
+                        r"(?i:street|st|road|rd|avenue|ave|boulevard|blvd|lane|ln|drive|dr|way|court|ct|place|pl|square|sq)\b")
 ADDRESS_INTL_RE = re.compile(r"(?<![\w.-])(?:"
                              r"[A-Z][\w.'-]*(?i:stra(?:ß|ss)e|str\.|weg|platz|gasse|allee|laan)\s+\d{1,5}[a-z]?|"
                              r"(?:Rue|Via|Calle|Avenida|Rua|Ulica)\s+[A-Z][\w.'-]*(?:\s+[A-Z][\w.'-]*){0,3}\s+\d{1,5}|"
@@ -1581,7 +1581,7 @@ def check_privacy_signals(root, p, text, privacy):
                 _priv_add(privacy, "pii-phone", "info", f"{m.group(1).lower()}:" + m.group(2).strip(), r, i, line,
                           f"{m.group(1).lower()}: link exposes a phone number by design (contact info, not a leak).")
             m = PHONE_RE.search(line)
-            if m:
+            if m and ext not in (".css", ".scss", ".sass", ".less", ".map"):
                 _priv_add(privacy, "pii-phone", "low", m.group(0).strip(), r, i, line,
                           "Hardcoded phone number in source/config (personal data); check it is intentional.")
             m = ADDRESS_RE.search(line) or ADDRESS_INTL_RE.search(line)
