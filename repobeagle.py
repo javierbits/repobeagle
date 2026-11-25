@@ -833,7 +833,8 @@ COOKIE_WRITE_RE = re.compile(r"document\.cookie\s*=")
 STORAGE_RE = re.compile(r"(?i)(localStorage|sessionStorage)\.(setItem|removeItem)|\bindexedDB\b")
 CONSENT_RE = re.compile(r"(?i)(onetrust|optanon|cookiebot|osano|cookieyes|klaro|tarteaucitron|cookieconsent|"
                         r"consent-manager|quantcast|didomi|usercentrics|borlabs|iubenda|complianz|axeptio|cookiehub|"
-                        r"cookieinformation|termly|consentmanager|sirdata|civic|usercentrics\.eu)")
+                        r"cookieinformation|termly|consentmanager|sirdata|civic|usercentrics\.eu|sourcepoint|"
+                        r"sp-prod\.net|privacy-mgmt\.com|trustarc|truste\.com|cookiepro|\bfides\b|cookiefirst)")
 SET_COOKIE_RE = re.compile(r"(?i)['\"]set-cookie['\"]")
 SET_COOKIE_READ_RE = re.compile(r"(?i)(\.get|\.getheader|header\(\)\.get)\([^)]*['\"]set-cookie")
 
@@ -1440,7 +1441,8 @@ PII_OBJECT_RE = re.compile(r"(?i)\b(user|users|account|customer|profile|session|
 
 CONSENT_MODE_RE = re.compile(r"(?i)(\b(?:analytics|ad|functionality|personalization)_storage\b|consent_?mode|ad_user_data|ad_personalization)")
 CONSENT_STATE_RE = re.compile(r"(?i)(?<![\w.-])(OptanonConsent|OptanonAlertBoxClosed|CookieConsentV2|CookieConsent|"
-                               r"cookieyes-consent|cc_cookie|borlabs-cookie|euconsent-v2|didomi_token)(?=[=;'\"\s,)]|$)")
+                               r"cookieyes-consent|cc_cookie|borlabs-cookie|euconsent-v2|didomi_token|usprivacy|"
+                               r"__cmpconsent|_iub_cs[\w-]*)(?=[=;'\"\s,)]|$)")
 TRACKING_COOKIE_RE = re.compile(r"(?i)(?<![\w.])(_ga_[A-Z0-9]+|_gac_[A-Za-z0-9]+|_ga|_gid|_gat|_gcl_au|_gcl_aw|"
                                 r"_fbp|_fbc|_hj\w*|ajs_\w*|__utm[a-z]|__hstc|hubspotutk|intercom-[\w-]+|mp_\w+|"
                                 r"amplitude_id\w*|ph_\w+|_clck|_clsk|_uetvid|_uetsid|_ttp|_rdt_uuid|li_sugr|"
@@ -1616,7 +1618,9 @@ def check_privacy_signals(root, p, text, privacy, masks):
                 vendor = {"optanonconsent": "OneTrust", "optanonalertboxclosed": "OneTrust",
                           "cookieyes-consent": "CookieYes", "cc_cookie": "CookieConsent",
                           "euconsent-v2": "IAB TCF", "didomi_token": "Didomi",
-                          "borlabs-cookie": "Borlabs"}.get(m.group(1).lower())
+                          "borlabs-cookie": "Borlabs", "usprivacy": "IAB US Privacy",
+                          "__cmpconsent": "IAB TCF", "_iub_cs": "Iubenda"}.get(
+                              m.group(1).lower() if not m.group(1).lower().startswith("_iub_cs") else "_iub_cs")
                 key = f"{m.group(1)} ({vendor})" if vendor else m.group(1)
                 _priv_add(privacy, "consent-state", "info", key, r, i, line,
                           "Consent state is stored client-side in this cookie: changing it controls the CMP.")
