@@ -1296,7 +1296,7 @@ def check_privacy(root, p, text, privacy, own=()):
                               f"Preconnect/DNS-prefetch to {host}: the browser opens a connection (IP, TLS) before any consent or request.")
             for m in FORM_RE.finditer(line):
                 host = _host_of(m.group(1))
-                if host and not _endpoint_noise(host) and host not in NON_NET_HOSTS:
+                if host and not _endpoint_noise(host) and host not in NON_NET_HOSTS and not _is_own(host, own):
                     _priv_add(privacy, "third-party-form", "low", host, r, i, line,
                               f"Form action posts user data to {host}; verify what it collects and its policy.")
         if ext in (".js", ".mjs", ".cjs", ".ts", ".tsx", ".jsx", ".vue", ".svelte", ".astro"):

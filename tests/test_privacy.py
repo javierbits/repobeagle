@@ -94,4 +94,7 @@ check("sdk opt-out call", bool(rb.TELEMETRY_OPTOUT_RE.search("posthog.opt_out_ca
 check("sdk opt-out setter", bool(rb.TELEMETRY_OPTOUT_RE.search("analytics.setOptOut(true)")))
 check("tracking false", bool(rb.TELEMETRY_OPTOUT_RE.search("trackingEnabled: false")))
 
+check("own host match", rb._is_own("www.widget.dev", {"widget.dev"}))
+check("foreign host mismatch", not rb._is_own("api.other.dev", {"widget.dev"}))
+
 sys.exit(fail)
