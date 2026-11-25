@@ -86,7 +86,7 @@ Severity follows privacy impact, so a default `balanced` scan goes YELLOW when a
 | `cookie-write`, `cookie-flags` | `document.cookie =` writes, the js-cookie `Cookies.set/remove` API, `Set-Cookie` headers (reads via `.get()` excluded) and framework setters (`set_cookie(`, `res.cookie(`, `setcookie(`, `setCookie(`) missing `HttpOnly`/`Secure`/`SameSite` (header-flag matching is case-insensitive and the title names the missing flag); JS cookies are checked for `Secure`/`SameSite` only, `__Host-`/`__Secure-` cookie names must carry their required flags (a prose mention is ignored), and `Partitioned`/CHIPS is noted as positive `info` | low/info |
 | `browser-storage` | `localStorage`/`sessionStorage` writes (methods and direct property assignment) and `indexedDB`: persistent client-side identifiers | info |
 | `third-party-cdn` | assets loaded from third-party font/CDN hosts (Google Fonts, Bunny, Fontshare, jsDelivr, unpkg, …: they see your IP and the page URL) | low |
-| `third-party-embed` | `<iframe>`/`<embed>`/`<object>`/`<video>` pointing at another host: it runs third-party code, sees your IP and can set its own cookies; `info` when `sandbox`ed or `credentialless` | low/info |
+| `third-party-embed` | `<iframe>`/`<embed>`/`<object>` pointing at another host (video/audio are media): it runs third-party code, sees your IP and can set its own cookies; `info` when `sandbox`ed or `credentialless` | low/info |
 | `iframe-allow` | an embedded frame delegates `camera`, `microphone`, `geolocation`, clipboard, display-capture, USB/serial, … to the third party via `allow=` (also when the iframe tag is split across lines) | medium |
 | `third-party-form` | `<form action="https://other">`: user input is posted to a third party (own/related domains are excluded, like other endpoint rules) | low |
 | `third-party-script` | `<script src="//other">` or ESM `import … from "https://other"`: executable third-party code (info for known CDNs); own/related domains are skipped | low/info |
@@ -242,7 +242,7 @@ Apart from the clone, OSV/GuardDog-verify, the GitHub trust lookup and your own 
 
 ## Example output (abridged)
 ```
-repobeagle 1.129.0  |  tests/fixtures/trap-npm
+repobeagle 1.130.0  |  tests/fixtures/trap-npm
   VERDICT: RED    2 critical / 2 high findings, e.g. npm lifecycle script 'postinstall' runs automatically on install (package.json:8)
   CRITICAL [agent-checks] package.json:8
            npm lifecycle script 'postinstall' runs automatically on install

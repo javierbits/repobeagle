@@ -947,7 +947,7 @@ KNOWN_SUFFIXES = (".githubusercontent.com", ".googleapis.com", ".gstatic.com", "
 def _known_host(host):
     return host in KNOWN_HOSTS or host.endswith(KNOWN_SUFFIXES)
 
-EMBED_RE = re.compile(r"(?is)<(iframe|embed|object|video)\b([^>]*)>")
+EMBED_RE = re.compile(r"(?is)<(iframe|embed|object)\b([^>]*)>")
 SRC_ATTR_RE = re.compile(r"(?i)\bsrc\s*=\s*[\"']([^\"']+)")
 ALLOW_ATTR_RE = re.compile(r"(?i)\ballow\s*=\s*[\"']([^\"']*)")
 SANDBOX_RE = re.compile(r"(?i)\bsandbox\b")
