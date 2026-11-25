@@ -1,7 +1,8 @@
 # End-to-end proof of the SARIF path: export a fixture report, upload it to GitHub
-# code scanning twice, and assert that the second identical upload does not duplicate
-# alerts (dedupe works through the stable partialFingerprints). Fixture alerts are
-# deliberate: trap-npm is malicious by design.
+# code scanning twice (once per job — the action allows one run per job per
+# tool/category), then assert that the alerts stay at the unique-fingerprint count,
+# i.e. the second identical analysis dedupes instead of duplicating. Fixture alerts
+# are deliberate: trap-npm is malicious by design.
 name: sarif
 on:
   push:
@@ -29,9 +30,13 @@ concurrency:
   group: sarif-${{ github.ref }}
   cancel-in-progress: true
 jobs:
-  code-scanning:
+  upload:
+    strategy:
+      fail-fast: false
+      matrix:
+        run: [1, 2]
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -43,45 +48,55 @@ jobs:
           python3 repobeagle.py scan tests/fixtures/trap-npm --no-color --json out/report.json --no-osv --no-trust || true
           python3 repobeagle.py export out/report.json --format sarif -o out/report.sarif
           python3 -c 'import json;d=json.load(open("out/report.sarif"));print("results:", len(d["runs"][0]["results"]))'
-      - name: Upload SARIF to code scanning (first run)
+      - name: Upload SARIF to code scanning
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: out/report.sarif
           category: repobeagle-trap-npm
-      - name: Wait until the alerts are processed
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sarif-${{ matrix.run }}
+          path: out/report.sarif
+          retention-days: 1
+
+  dedupe:
+    needs: upload
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: sarif-1
+          path: out
+      - name: Both identical uploads must dedupe to the unique fingerprints
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           expected="$(python3 -c 'import json;d=json.load(open("out/report.sarif"));print(len({r["partialFingerprints"]["repobeagle/v1"] for r in d["runs"][0]["results"]}))')"
-          echo "EXPECTED=$expected" >> "$GITHUB_ENV"
-          # Alerts live on the ref that was analysed: refs/pull/<n>/merge for a PR,
+          # Analyses and alerts live on the analysed ref: refs/pull/<n>/merge for a PR,
           # refs/heads/main for a push. The API defaults to the default branch.
+          analyses="repos/$GITHUB_REPOSITORY/code-scanning/analyses?per_page=100&ref=$GITHUB_REF&tool_name=repobeagle"
           alerts="repos/$GITHUB_REPOSITORY/code-scanning/alerts?per_page=100&ref=$GITHUB_REF&tool_name=repobeagle"
-          echo "query: $alerts"
-          for i in $(seq 1 24); do
-            n=$(gh api "$alerts" --jq 'length' 2>/dev/null || true)
-            echo "attempt $i: alerts=${n:-none} expected=$expected"
-            if [ "${n:-0}" -ge "$expected" ]; then exit 0; fi
+          n=0
+          for i in $(seq 1 36); do
+            n=$(gh api "$analyses" --jq 'length' 2>/dev/null || true)
+            echo "attempt $i: analyses=${n:-none} (need 2)"
+            if [ "${n:-0}" -ge 2 ]; then break; fi
             sleep 5
           done
-          echo "the upload produced no alerts"; exit 1
-      - name: Upload the identical SARIF again
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: out/report.sarif
-          category: repobeagle-trap-npm
-      - name: A duplicate upload must not add alerts
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-          alerts="repos/$GITHUB_REPOSITORY/code-scanning/alerts?per_page=100&ref=$GITHUB_REF&tool_name=repobeagle"
-          sleep 30                                  # let the second analysis be processed
-          n=$(gh api "$alerts" --jq 'length')
-          echo "alerts after the duplicate upload: $n (unique fingerprints: $EXPECTED)"
-          if [ "$n" -ne "$EXPECTED" ]; then
-            echo "dedupe failed: $n alerts for $EXPECTED fingerprints"
-            exit 1
-          fi
-          echo "PASS alerts deduplicated across identical uploads"
+          if [ "${n:-0}" -lt 2 ]; then echo "both analyses are not visible"; exit 1; fi
+          for i in $(seq 1 24); do
+            a=$(gh api "$alerts" --jq 'length' 2>/dev/null || true)
+            echo "attempt $i: alerts=${a:-none} unique fingerprints=$expected"
+            if [ "${a:-0}" -eq "$expected" ]; then
+              echo "PASS $a alerts for $expected fingerprints: the duplicate upload deduped"
+              exit 0
+            fi
+            if [ "${a:-0}" -gt "$expected" ]; then
+              echo "dedupe failed: $a alerts for $expected fingerprints"
+              exit 1
+            fi
+            sleep 5
+          done
+          echo "no alerts appeared"; exit 1
