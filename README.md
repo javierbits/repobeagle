@@ -98,7 +98,7 @@ Severity follows privacy impact, so a default `balanced` scan goes YELLOW when a
 | `consent-manager` | OneTrust/Optanon (`cookielaw.org`, `otSDKStub`), Cookiebot, Osano, CookieYes, Klaro, tarteaucitron, Didomi, Usercentrics, Iubenda, Sourcepoint, TrustArc, CookiePro, Fides, CookieFirst, Civic (`civicuk.com`), … (positive signal: tracking should be gated on consent) | info |
 | `external-endpoint` | inventory of remote hosts in code/config/HTML, including `ws://`/`wss://` sockets and protocol-relative `//host/…`; known platforms/registries/CDNs are `info`, unknown third parties are `low`; comments (including inline `# …` / `// …`), docs/test fixtures and translation catalogs are `info`; `.invalid`/`.test`/`.example`/`.localhost` are ignored | info/low |
 | `first-party-endpoint` | hosts belonging to the repo itself, inferred from `CNAME`, `package.json`, `pyproject.toml`, `setup.cfg`, `Cargo.toml`, `pubspec.yaml` or `composer.json`; classified as first-party and not counted against third-party checks | info |
-| `macos-entitlement` | macOS `*.entitlements` capabilities granted without a per-use prompt: location, camera, microphone, photo library, contacts, calendars, Bluetooth, USB, network, user-selected/Downloads/Desktop/Documents/all files (read-only variants included), Apple Events automation | high/medium/low |
+| `macos-entitlement` | macOS `*.entitlements` capabilities granted without a per-use prompt: location, camera, microphone, photo library, contacts, calendars, Bluetooth, USB, user-selected/Downloads/Desktop/Documents/all files (read-only variants included), Apple Events automation; plain network client/server access is `info` | high/medium/low |
 | `browser-capability` | web APIs that touch user data: clipboard read, geolocation, camera/microphone (`getUserMedia`, `enumerateDevices`), screen capture (`getDisplayMedia`, `MediaRecorder`), notifications, history (`pushState`), USB/serial/Bluetooth, cross-site storage access | medium/low |
 | `client-id` | named persistent identifiers (`client_id`, `device_id`, `visitor_id`, `anonymous_id`, `distinct_id`, `installation_id`) stored in cookies/localStorage or generated as UUIDs | low |
 | `fingerprint` | device fingerprinting: dedicated libraries (`fingerprintjs`, `botd`), canvas/WebGL/audio/font probing, WebRTC (peer sees your public IP), screen geometry, UA/cores/memory/plugins, timezone/locale, battery/network state | high/medium/low |
@@ -242,7 +242,7 @@ Apart from the clone, OSV/GuardDog-verify, the GitHub trust lookup and your own 
 
 ## Example output (abridged)
 ```
-repobeagle 1.117.0  |  tests/fixtures/trap-npm
+repobeagle 1.118.0  |  tests/fixtures/trap-npm
   VERDICT: RED    2 critical / 2 high findings, e.g. npm lifecycle script 'postinstall' runs automatically on install (package.json:8)
   CRITICAL [agent-checks] package.json:8
            npm lifecycle script 'postinstall' runs automatically on install
