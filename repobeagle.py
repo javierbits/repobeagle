@@ -1160,6 +1160,9 @@ CMP_LOAD_RE = CONSENT_RE
 PII_OBJECT_RE = re.compile(r"(?i)\b(user|users|account|customer|profile|session|member|subscriber|person|lead|contact|"
                            r"request|response|body|payload|form|form_?data|req)\b")
 
+CONSENT_MODE_RE = re.compile(r"(?i)(\b(?:analytics|ad|functionality|personalization)_storage\b|consent_?mode|ad_user_data|ad_personalization)")
+CONSENT_STATE_RE = re.compile(r"(?i)(?<![\w.-])(OptanonConsent|OptanonAlertBoxClosed|CookieConsentV2|CookieConsent|"
+                               r"cookieyes-consent|cc_cookie|borlabs-cookie|euconsent-v2|didomi_token)(?=[=;'\"\s,)]|$)")
 TRACKING_COOKIE_RE = re.compile(r"(?i)(?<![\w.-])(_ga_[A-Z0-9]+|_gac_[A-Za-z0-9]+|_ga|_gid|_gat|_gcl_au|_gcl_aw|"
                                 r"_fbp|_fbc|_hj\w*|ajs_\w*|__utm[a-z]|__hstc|hubspotutk|intercom-[\w-]+|mp_\w+|"
                                 r"amplitude_id\w*|ph_\w+|_clck|_clsk|_uetvid|_uetsid|_ttp|_rdt_uuid|li_sugr|"
@@ -1233,6 +1236,10 @@ def check_privacy_signals(root, p, text, privacy):
             for key, sev, rx, meaning in FINGERPRINT_RULES:
                 if re.search(rx, line):
                     _priv_add(privacy, "fingerprint", sev, key, r, i, line, FINGERPRINT_MEANING)
+            m = CONSENT_MODE_RE.search(line)
+            if m:
+                _priv_add(privacy, "consent-mode", "info", m.group(1).lower(), r, i, line,
+                          "Google Consent Mode signals: analytics/ad storage can be denied until the user consents.")
             if TRACKER_INIT_RE.search(line) and tracker_at is None:
                 tracker_at = i
             if CMP_LOAD_RE.search(line) and cmp_at is None:
@@ -1258,6 +1265,10 @@ def check_privacy_signals(root, p, text, privacy):
                 if vendor:
                     _priv_add(privacy, "tracking-cookie", "low", vendor, r, i, line,
                               f"Cookie '{name}' belongs to {vendor}: it persists an identifier on the device.")
+            m = CONSENT_STATE_RE.search(line)
+            if m:
+                _priv_add(privacy, "consent-state", "info", m.group(1), r, i, line,
+                          "Consent state is stored client-side in this cookie: changing it controls the CMP.")
             m = SSN_RE.search(line)
             if m and ext not in PII_SKIP_EXT:
                 _priv_add(privacy, "pii-ssn", "low", m.group(0), r, i, line,
@@ -1355,9 +1366,10 @@ def privacy_findings(privacy):
              "upload-limit": 22, "store-disclosure": 23, "tracking-params": 24, "insecure-endpoint": 25,
              "android-permission": 26, "extension-permission": 27, "cookie-flags": 28, "cookie-write": 29,
              "third-party-cdn": 30, "third-party-embed": 31, "third-party-form": 32, "third-party-script": 33, "cookie-lifetime": 34, "external-endpoint": 35,
-             "browser-storage": 36, "consent-manager": 37, "referrer-policy": 38, "permissions-policy": 39,
-             "iframe-allow": 40,
-             "extension-resource": 41, "undisclosed-vendor": 42, "privacy-doc": 43}
+             "browser-storage": 36, "consent-manager": 37, "consent-mode": 38, "consent-state": 39,
+             "referrer-policy": 40, "permissions-policy": 41,
+             "iframe-allow": 42,
+             "extension-resource": 43, "undisclosed-vendor": 44, "privacy-doc": 45}
     down = {"high": "medium", "medium": "low", "low": "info"}
     fs = []
     for (rule, key), t in sorted(privacy.items(), key=lambda kv: (order.get(kv[1]["rule"], 9), kv[1]["key"])):
@@ -1517,6 +1529,11 @@ def run_agent_checks(root):
         findings.append(finding("privacy", "low", "(repo)", 0, "data-retention: data collected but no retention/expiry setting found",
                                  "no retention/ttl/expiry/delete_after value in the repo",
                                  "Personal data is collected but nothing says when it is deleted; check the privacy policy."))
+    ga = any("Google Analytics" in f["title"] for f in tf)
+    if ga and any(f["title"].startswith("consent-manager") for f in pf) and "consent-mode" not in rules:
+        findings.append(finding("privacy", "low", "(repo)", 0, "consent-mode: Google Analytics with a CMP but no Consent Mode",
+                                 "no analytics_storage/ad_storage consent signals found",
+                                 "Google requires Consent Mode v2 in the EEA; without it tags may run before consent."))
     if "upload-surface" in rules and "upload-limit" not in rules:
         findings.append(finding("privacy", "low", "(repo)", 0, "upload-limit: uploads accepted with no size cap found",
                                  "no max file/body size setting in the repo",
