@@ -562,7 +562,8 @@ TELEMETRY_RULES = [
     ("session-replay", "high", "OpenReplay", _telem_rx(r"\bopenreplay\b")),
     ("session-replay", "high", "Datadog RUM/Replay", _telem_rx(r"@datadog/browser|datadoghq\.com|datadog-rum|\bdd-rum\b")),
     # product / web analytics
-    ("analytics", "medium", "Google Analytics", _telem_rx(r"google-analytics\.com|googletagmanager\.com|\bgtag\s*\(|\bUA-\d{4,}-\d+\b")),
+    ("analytics", "medium", "Google Tag Manager", _telem_rx(r"googletagmanager\.com|\bGTM-[A-Z0-9]{4,}\b")),
+    ("analytics", "medium", "Google Analytics", _telem_rx(r"google-analytics\.com|\bgtag\s*\(|\bUA-\d{4,}-\d+\b|\bG-[A-Z0-9]{6,}\b")),
     ("analytics", "medium", "Plausible", _telem_rx(r"plausible\.io|@plausible/|plausible-analytics")),
     ("analytics", "medium", "Umami", _telem_rx(r"umami\.is|umami-analytics|data-website-id")),
     ("analytics", "medium", "Matomo/Piwik", _telem_rx(r"matomo|piwik|\b_paq\b")),
@@ -1151,9 +1152,10 @@ FINGERPRINT_RULES = [
     ("timezone", "low", r"resolvedOptions\(\)\.timeZone|Intl\.DateTimeFormat|toLocaleString\(", "Timezone/locale: narrows down the user's location and language."),
 ]
 FINGERPRINT_MEANING = "Device-fingerprinting signal: combine several and a browser can be recognized without cookies."
-PII_LOG_RE = re.compile(r"(?i)(console\.(log|info|warn|error|debug)|log(ger)?\.(info|warn|error|debug|exception|critical)|"
+PII_LOG_RE = re.compile(r"(?i)(console\.(log|info|warn|error|debug|trace|table|dir)|log(ger)?\.(info|warn|error|debug|exception|critical)|"
                         r"\bprint|printf|puts|fmt\.Print|tracing::(info|warn|error|debug)|log\.\w+|"
-                        r"println!|eprintln!|log::(?:info|warn|error|debug)|System\.out\.print|Log\.[dviwe]\s*\()")
+                        r"println!|eprintln!|log::(?:info|warn|error|debug)|System\.out\.print|Log\.[dviwe]\s*\(|"
+                        r"error_log|print_r|var_dump|\bdd\(|logger\.Log)")
 PII_WORD_RE = re.compile(r"(?i)\b(e-?mail|phone|mobile|mobile_?number|phone_?number|ssn|social security|address|street|zip|zip_?code|postal|"
                          r"username|user_?name|nickname|passport|iban|"
                          r"credit ?card|card_?number|dob|birthday|birth_?date|full_?name|first_?name|last_?name|"

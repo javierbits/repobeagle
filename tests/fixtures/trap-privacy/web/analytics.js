@@ -19,3 +19,4 @@ document.cookie = "promo=1; expires=Wed, 21 Oct 2037 07:28:00 GMT; path=/";
 gtag('consent', 'default', {analytics_storage: 'denied', ad_storage: 'denied'});
 const oneTrust = "OptanonConsent=groups=1";
 fetch("https://widget.dev/api?email=user%40widget.dev");
+console.dir(user);
