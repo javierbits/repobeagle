@@ -2561,6 +2561,20 @@ def run_in_docker(src, out):
     except Exception:
         raise SystemExit("container scan failed: " + (r.stderr or r.stdout)[-600:])
 
+def verdict_consistent(report):
+    """True when stored verdict/counts match the findings under the declared profile."""
+    v = report.get("verdict")
+    meta = report.get("meta") or {}
+    prof = meta.get("profile")
+    if not v or not prof:
+        return True
+    fs = [f for f in report.get("findings") or [] if isinstance(f, dict) and not f.get("suppressed")]
+    try:
+        rv, _, rc = verdict(fs, prof, report.get("ai_review"))
+    except Exception:
+        return True
+    return rv == v and (not report.get("counts") or report.get("counts") == rc)
+
 def privacy_summary_consistent(report):
     """True when the stored privacy_summary matches what the findings imply (skipped for older tool versions)."""
     stored = report.get("privacy_summary")
@@ -3091,6 +3105,8 @@ def cmd_verify(a):
             print(f"  warning:   findings do not match meta.privacy_mode={mode!r}")
         if not privacy_summary_consistent(d):
             print("  warning:   privacy_summary does not match the findings")
+        if not verdict_consistent(d):
+            print("  warning:   verdict/counts do not match the findings")
         summary = d.get("privacy_summary") or privacy_summary(d.get("findings") or [])
         if summary:
             parts = []

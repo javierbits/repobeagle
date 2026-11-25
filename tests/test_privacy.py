@@ -111,4 +111,10 @@ check("upload sink java", bool(rb.UPLOAD_SINK_RE.search("public void upload(Mult
 check("upload limit singular", bool(rb.UPLOAD_LIMIT_RE.search("express.json({ limit: '1mb' })")))
 check("upload limit max", bool(rb.UPLOAD_LIMIT_RE.search("client_max_body_size 10m;")))
 
+fs_v = [{"tool": "privacy", "title": "pii-email: a@b.c", "severity": "low", "file": "x", "line": 1, "snippet": "", "meaning": ""}]
+_v, _w, _c = rb.verdict(fs_v, "balanced", None)
+check("verdict consistent", rb.verdict_consistent({"verdict": _v, "counts": _c, "findings": fs_v, "meta": {"profile": "balanced"}}))
+check("verdict mismatch", not rb.verdict_consistent({"verdict": "RED", "counts": _c, "findings": fs_v, "meta": {"profile": "balanced"}}))
+check("verdict suppressed ignored", rb.verdict_consistent({"verdict": rb.verdict([], "balanced", None)[0], "findings": [dict(fs_v[0], suppressed=True)], "meta": {"profile": "balanced"}}))
+
 sys.exit(fail)
