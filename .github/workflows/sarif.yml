@@ -55,8 +55,12 @@ jobs:
           set -euo pipefail
           expected="$(python3 -c 'import json;d=json.load(open("out/report.sarif"));print(len({r["partialFingerprints"]["repobeagle/v1"] for r in d["runs"][0]["results"]}))')"
           echo "EXPECTED=$expected" >> "$GITHUB_ENV"
+          # Alerts live on the ref that was analysed: refs/pull/<n>/merge for a PR,
+          # refs/heads/main for a push. The API defaults to the default branch.
+          alerts="repos/$GITHUB_REPOSITORY/code-scanning/alerts?per_page=100&ref=$GITHUB_REF&tool_name=repobeagle"
+          echo "query: $alerts"
           for i in $(seq 1 24); do
-            n=$(gh api "repos/$GITHUB_REPOSITORY/code-scanning/alerts?tool_name=repobeagle&per_page=100" --jq 'length' 2>/dev/null || true)
+            n=$(gh api "$alerts" --jq 'length' 2>/dev/null || true)
             echo "attempt $i: alerts=${n:-none} expected=$expected"
             if [ "${n:-0}" -ge "$expected" ]; then exit 0; fi
             sleep 5
@@ -72,8 +76,9 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
+          alerts="repos/$GITHUB_REPOSITORY/code-scanning/alerts?per_page=100&ref=$GITHUB_REF&tool_name=repobeagle"
           sleep 30                                  # let the second analysis be processed
-          n=$(gh api "repos/$GITHUB_REPOSITORY/code-scanning/alerts?tool_name=repobeagle&per_page=100" --jq 'length')
+          n=$(gh api "$alerts" --jq 'length')
           echo "alerts after the duplicate upload: $n (unique fingerprints: $EXPECTED)"
           if [ "$n" -ne "$EXPECTED" ]; then
             echo "dedupe failed: $n alerts for $EXPECTED fingerprints"
