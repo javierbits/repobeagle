@@ -67,6 +67,18 @@ def rel(root, p):
 def _is_comment(line):
     return line.lstrip().startswith(("//", "#", "*", "/*", "<!--", ";", "--"))
 
+def _in_line_comment(line, pos):
+    """True when the host at pos sits in an inline comment (URLs contain // after the scheme colon)."""
+    before = line[:pos]
+    if "#" in before:
+        return True
+    i = before.find("//")
+    while i != -1:
+        if i == 0 or before[i - 1] != ":":
+            return True
+        i = before.find("//", i + 2)
+    return False
+
 # ----------------------------------------------------------------------------
 # Agent-specific checks (pure Python)
 # ----------------------------------------------------------------------------
@@ -1050,8 +1062,8 @@ def check_privacy(root, p, text, privacy, own=()):
             for scheme, host, pos in hosts:
                 if host in NON_NET_HOSTS or _endpoint_noise(host):
                     continue
-                if "#" in line[:pos]:
-                    continue      # inline comment: "256 # https://dev.mysql.com/..."
+                if _in_line_comment(line, pos):
+                    continue      # inline comment: "256 # https://dev.mysql.com/..." or "// http://..."
 
                 if any(rx.search(host) for _, _, _, rx in TELEMETRY_RULES):
                     continue          # already reported by the telemetry check
