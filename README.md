@@ -22,6 +22,8 @@ git clone https://github.com/javierbits/repobeagle && cd repobeagle
 `install.sh` is idempotent. It does the following:
 - Checks that Docker is available and pulls (or builds) the image.
 - Installs `osv-scanner`, which runs on the host because it needs network. Arch is detected from `uname -m`: aarch64 gets `linux_arm64`, x86_64 gets `linux_amd64`.
+- Pins every downloaded artifact to an exact version and verifies its SHA-256 against `checksums.txt`; an artifact without a checksum is refused rather than installed. `image.yml` keyless-signs the image by digest and the installer checks that signature (set `BEAGLE_REQUIRE_SIGNATURE=1` to make an unsigned image fatal; tags published before signing only warn).
+- Pins the scanner image too: base image by multi-arch digest, scanner versions in `constraints.txt`. Every report records the exact versions in `meta.tools`, so a diff between two reports is a diff of the code, not of the toolchain. Bumping either is deliberate.
 - Writes a thin `~/.local/bin/repobeagle` wrapper.
 
 If Docker isn't available, it installs the host tools automatically, and scans run with `--no-docker`.
@@ -35,14 +37,47 @@ Set `BEAGLE_IMAGE` to use a different tag (e.g. `ghcr.io/javierbits/repobeagle:l
 
 ## Usage
 ```bash
-repobeagle scan <git-url | local-dir> [--strict|--balanced|--relaxed] [--keep] [--json out.json]
-                [--no-docker] [--no-osv] [--verify-deps] [--all] [--min-severity info|low|medium|high|critical] [--no-color]
+repobeagle scan <git-url | local-dir> [--ref <branch|tag|sha>] [--since <rev>] [--strict|--balanced|--relaxed] [--keep] [--json out.json]
+                [--no-docker] [--no-osv] [--offline-vulnerabilities] [--verify-deps] [--all] [--min-severity info|low|medium|high|critical] [--no-color]
                 [--privacy-only | --no-privacy] [--no-redact]
 repobeagle privacy <git-url | local-dir> [same scan options]
+repobeagle explain <report.json>
+repobeagle diff <old.json> <new.json> [--min-severity medium] [--json out.json]
+repobeagle export <report.json> [--format sarif|markdown|json] [-o out]
+repobeagle map <git-url | local-dir | --report r.json> [--strict|--relaxed] [--network]
+repobeagle web <http(s):// | file://> [--assets N] [--json out.json]
+repobeagle mcp
+repobeagle db [--update] [dir]
 repobeagle --version | version
 repobeagle update [--check]
 ```
+`repobeagle explain` takes a report produced by `scan --json` and prints the threshold arithmetic behind its verdict — which profile threshold was met, the margin to the next tier, and the largest rule contributors. It never re-scans and touches no network, so it works on a report someone shared with you.
+
+`repobeagle diff` compares two reports and classifies what the change added or removed, matching on rule id + file so line moves and re-indentation are not counts as changes. It exits 1 when an added finding is at or above `--min-severity` (default `medium`), which is the gate to use in CI: keep yesterday's report, scan the PR, and fail only on *new* findings. Like `explain`, it never re-scans.
+`repobeagle export` converts a stored report to SARIF 2.1.0 (GitHub code scanning, Azure DevOps, VS Code), a Markdown table for a PR comment, or normalized JSON. Every finding carries a stable `partialFingerprints` value and, when suppressed, an explicit SARIF suppression, so accepted findings stay visible but dismissed. The scan workflow uploads it when `upload-sarif: true`.
 Exit code: 0 = GREEN, 1 = YELLOW, 2 = RED. Colour turns off when output isn't a terminal or `NO_COLOR` is set.
+
+`repobeagle map <target>` answers a different question: not "is it safe?" but "what can it touch?". It lists remote hosts, secret paths (`~/.ssh`, `.env`, wallet and cloud credential files), subprocesses, environment variables, client storage, install hooks and permission scopes, each with the first `file:line`. It is computed by the same offline scan (`meta.capabilities` in `--json`), can render an existing report with `--report r.json`, and never executes repository code; `--network` additionally runs OSV and GitHub trust lookups. This is the view to read before running something in your own shell, and the one to diff between two versions.
+
+`repobeagle web <url>` runs the same privacy rules against a live page instead of a repository: it fetches once (no JavaScript, no crawling, 2 MB cap), treats the page's own host as first-party, and reports the third-party hosts, trackers, cookies, PII in URLs/forms, framing and permission delegation it sees. `--assets N` also fetches up to N same-origin scripts/stylesheets so inline-ESM imports and CSS `@import`/`url()` are inspected. The report is marked `meta.mode = "web (fetched once, no JS executed)"`, `meta.url` and `meta.fetched`; `file://` works, which is how the test suite covers it offline.
+
+Reports also state their own blind spot: `meta.coverage` records source bytes inspected, files scanned, why the rest was skipped (archive, binary, oversize, unreadable, unsupported extension) and the top unscanned extensions. The printed report shows the same as a `Coverage:` line, and `coverage-low` (low) fires when under 60% of source bytes were inspected on a repo with at least 20 files. A GREEN verdict over files nobody parsed is not evidence of safety, and this is the field to check before trusting one.
+
+`--ref <branch|tag|sha>` pins a scan to an exact object instead of the default branch and records `meta.ref` plus the resolved 40-character `meta.commit`, so a report is comparable with a later re-scan of the same commit. It applies to git URLs; a local directory is copied as-is and `meta.commit` stays null. (Bumping the image digest also changes the toolchain, which `meta.tools` records.)
+
+`--since <rev>` narrows the scan to the files a diff touched (`git diff --diff-filter=AM` against that revision), plus root manifests and `.repobeagleignore` for context, and materializes only those paths — so a PR-sized change is scanned in seconds instead of the whole tree. `meta.scope` records `changed_files`, `listed_files` and `checked_out`, and the report prints a `scope:` line: this is a diff verdict, not a full-repo one, and the two must not be mixed up.
+
+Findings whose fix is mechanical carry a `remediation` field and a `fix:` line in the report (and a Fix column in the Markdown export). It is one deterministic next action, not a suggestion: pin the action to a SHA, add the cookie flags, use `pull_request`, run `npm ci --ignore-scripts`, and so on. Rules with no obvious single fix deliberately carry none.
+
+OSV normally queries osv.dev, which makes two scans of the same commit differ by the day. `repobeagle db --update <dir>` downloads the offline vulnerability databases for the ecosystems in that directory (they live in `$XDG_CACHE_HOME/osv-scalibr`), and `scan --offline-vulnerabilities` uses them instead: no network, and `meta.osv_db{path,updated,bytes}` records which database was used. `repobeagle db` alone prints that status without touching the network.
+
+### Use from an AI agent (MCP)
+
+`repobeagle mcp` runs a Model Context Protocol server over stdio, so an agent can check a repository before it clones or installs it. Tools: `scan_repo` (URL or directory, profile, privacy-only, network on/off), `verify_badge` (signature + freshness) and `explain_report` (threshold arithmetic of a stored report). JSON-RPC 2.0, one message per line, logs to stderr only, and it still never executes repository code. Reports are kept under `$XDG_CACHE_HOME/repobeagle/mcp` (20 most recent) so a client can read the full JSON.
+
+```json
+{"mcpServers": {"repobeagle": {"command": "repobeagle", "args": ["mcp"]}}}
+```
 
 `repobeagle privacy <target>` is the same as `scan --privacy-only`: a privacy audit that only reports privacy/telemetry findings. OSV vulnerability scanning and GitHub trust signals are skipped automatically in this mode (their findings would be filtered anyway), and the report notes that. Reports record `meta.privacy_mode` (`full`, `only` or `excluded`), and a privacy-only badge carries `"privacy_only": true` so consumers know the verdict basis. Each `--json` finding carries a stable `rule` id (the title prefix, e.g. `telemetry-analytics`, `pii-email`) for filtering/automation. `--privacy-only` does it inline, `--no-privacy` drops those findings, `--no-redact` shows raw PII in snippets instead of the default masking. `--min-severity` filters only the printed findings (verdict/counts and `--json` still cover everything). `--version`/`version` print the installed version and image tag. `repobeagle update --check` reports installed vs latest (exit 10 when an update exists); `repobeagle update` pulls the latest release image (refreshing it even when the code is current), runs `git pull --ff-only` in a checkout and then `install.sh`, and retargets a stale wrapper (e.g. one still pointing at `jvr0x` or an old tag). A `BEAGLE_IMAGE` exported by the shell still overrides the wrapper default; `--version` flags that case. Scans check GitHub's release API at most once a day (cached under `~/.cache/repobeagle`) and print an update notice to stderr; set `BEAGLE_NO_UPDATE_CHECK=1` to disable or `BEAGLE_UPDATE_INTERVAL` (seconds) to change the cadence. The check never contacts the scanned repo.
 
@@ -168,11 +203,13 @@ jobs:
       contents: write   # publishes the repobeagle badge branch (optional)
       statuses: write   # sets the repobeagle/scan commit status (optional)
       id-token: write   # required: keyless-signs the report with Sigstore
+      security-events: write  # only for upload-sarif (GitHub code scanning)
     uses: javierbits/repobeagle/.github/workflows/scan.yml@main
     with:
       profile: balanced   # strict | balanced | relaxed
       fail-on-red: false  # true = the job fails on a RED verdict (PR gate)
       privacy-only: false # true = publish a privacy-audit verdict
+      upload-sarif: false # true = publish findings to GitHub code scanning (add security-events: write)
 ```
 
 Then add the badge; after a tag push, a per-tag badge also exists:
