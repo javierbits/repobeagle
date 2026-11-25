@@ -1621,10 +1621,10 @@ ADDRESS_INTL_RE = re.compile(r"(?<![\w.-])(?:"
 RETENTION_RE = re.compile(r"(?i)\b(data[_-]?retention|retention[_-]?(?:days|period|policy)?|log[_-]?retention|retain(?:ed)?|"
                            r"ttl[_-]?(?:seconds|secs|days)?|expir(?:y|es|ation)|purge[_-]?after|delete[_-]?after)\b"
                            r"\s*[:=]?\s*\d")
-UPLOAD_SINK_RE = re.compile(r"(?i)(multipart/form-data|UploadFile|FileUpload|req\.files\b|request\.FILES|multer|"
+UPLOAD_SINK_RE = re.compile(r"(?i)(multipart/form-data|UploadFile|FileUpload|MultipartFile|req\.files\b|request\.FILES|multer|"
                             r"formidable|busboy|\bupload\b|files\[\])")
 UPLOAD_LIMIT_RE = re.compile(r"(?i)(max[_-]?(?:file|upload|content|body)[_-]?(?:size|length)?|client_max_body_size|"
-                             r"MAX_CONTENT_LENGTH|limits\s*[:=]|fileSizeLimit|maxBytes|sizeLimit|body[_-]?limit|"
+                             r"MAX_CONTENT_LENGTH|limits?\s*[:=]|fileSizeLimit|maxBytes|sizeLimit|body[_-]?limit|"
                              r"LimitRequestBody)")
 IOS_DATA_TYPE_RE = re.compile(r"NSPrivacyCollectedDataType([A-Z][A-Za-z]+)")
 IOS_DATA_TYPE_NAMES = {

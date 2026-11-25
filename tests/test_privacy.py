@@ -107,4 +107,8 @@ check("ip header cf", bool(rb.IP_LOG_RE.search('headers.get("CF-Pseudo-IPv4")'))
 check("ip header fastly", bool(rb.IP_LOG_RE.search("Fastly-Client-IP")))
 check("ip header xclient", bool(rb.IP_LOG_RE.search("X-Client-IP")))
 
+check("upload sink java", bool(rb.UPLOAD_SINK_RE.search("public void upload(MultipartFile file)")))
+check("upload limit singular", bool(rb.UPLOAD_LIMIT_RE.search("express.json({ limit: '1mb' })")))
+check("upload limit max", bool(rb.UPLOAD_LIMIT_RE.search("client_max_body_size 10m;")))
+
 sys.exit(fail)

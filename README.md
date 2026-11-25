@@ -123,7 +123,7 @@ Severity follows privacy impact, so a default `balanced` scan goes YELLOW when a
 | `tracking-params` | URLs carrying `utm_*`, `fbclid`, `gclid`, `msclkid`, `ttclid`, `yclid`, `li_fat_id`, `s_kwcid`, `epik`, `gad_source`, `gad_campaignid`, `mc_eid`, `_gl`, `gclsrc`, … campaign/linker parameters; `low` in code/config, `info` for links in docs | low/info |
 | `pii-in-url` | URLs with personal data in the query (`?email=`/`?email_address=`, `?phone=`/`?phone_number=`, `?name=`, `?user_id=`, `?account_id=`, `?address=`, …): leaks via Referer, access logs, proxies and browser history; `low` in code, `info` for docs links | low/info |
 | `data-retention` | retention/expiry windows in config/code (`retention_days`, `ttl`, `expires`, `delete_after`, …); `low` when the repo collects data but no retention setting exists | info/low |
-| `upload-surface`, `upload-limit` | endpoints accepting files/request bodies, and size caps (`max_file_size`, `MAX_CONTENT_LENGTH`, `client_max_body_size`, `LimitRequestBody`, `limits:`, …); `low` when uploads have no cap | info/low |
+| `upload-surface`, `upload-limit` | endpoints accepting files/request bodies (incl. Java `MultipartFile`), and size caps (`max_file_size`, `MAX_CONTENT_LENGTH`, `client_max_body_size`, `LimitRequestBody`, `limits:`/`limit:`, …); `low` when uploads have no cap | info/low |
 | `store-disclosure` | browser-extension data-collection declarations (Firefox `data_collection_permissions`); info when disclosures only exist on the store | info |
 | `referrer-policy` | `Referrer-Policy` header, `<meta name="referrer">`, `referrerpolicy=` attributes, `fetch(..., {referrerPolicy})` or `rel="noreferrer"`; `low` when third-party requests exist without one or with `unsafe-url` (the full URL leaks in `Referer`) | info/low |
 | `permissions-policy` | `Permissions-Policy` header; `low` when camera/microphone/geolocation/screen/clipboard APIs are used without one | info/low |
@@ -244,7 +244,7 @@ Apart from the clone, OSV/GuardDog-verify, the GitHub trust lookup and your own 
 
 ## Example output (abridged)
 ```
-repobeagle 1.146.0  |  tests/fixtures/trap-npm
+repobeagle 1.147.0  |  tests/fixtures/trap-npm
   VERDICT: RED    2 critical / 2 high findings, e.g. npm lifecycle script 'postinstall' runs automatically on install (package.json:8)
   CRITICAL [agent-checks] package.json:8
            npm lifecycle script 'postinstall' runs automatically on install
