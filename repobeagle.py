@@ -586,6 +586,14 @@ TELEMETRY_RULES = [
     ("analytics", "medium", "Pendo", _telem_rx(r"\bpendo\b")),
     ("analytics", "medium", "Optimizely", _telem_rx(r"\boptimizely\b")),
     ("analytics", "medium", "VWO", _telem_rx(r"vwo\.com|visualwebsiteoptimizer|_vwo_code")),
+    ("analytics", "medium", "HubSpot", _telem_rx(r"hs-scripts\.com|hsforms\.(?:net|com)|hubspotutk|\bhubspot\b")),
+    ("analytics", "medium", "Klaviyo", _telem_rx(r"\bklaviyo\b")),
+    ("analytics", "medium", "Braze", _telem_rx(r"\bbraze\b|appboy")),
+    ("analytics", "medium", "OneSignal", _telem_rx(r"\bonesignal\b")),
+    ("analytics", "medium", "Customer.io", _telem_rx(r"customer\.io|customerio")),
+    ("analytics", "medium", "Tealium", _telem_rx(r"\btealium\b|tiq\.js")),
+    ("analytics", "medium", "Mailchimp", _telem_rx(r"mailchimp|chimpstatic")),
+    ("analytics", "medium", "Intercom", _telem_rx(r"intercom\.(?:io|com)|intercom-")),
     ("analytics", "low", "Tracking pixel", _telem_rx(r"1x1\.(gif|png)|pixel\.gif|\btracking[ -]pixel\b")),
     # crash / error reporting
     ("crash", "medium", "Sentry", _telem_rx(r"sentry\.io|@sentry/|sentry_sdk|\bsentry[-_]")),
@@ -1033,7 +1041,7 @@ IP_LOG_RE = re.compile(r"(?i)(req\.ip\b|request\.remote_addr|remote_addr|REMOTE_
                        r"CF-Connecting-IP|client_ip|\bip_address\b)")
 IP_LOG_SINK_RE = re.compile(r"(?i)(log|logger|print|puts|console|info|warn|debug|write|store|save|insert|persist|db|audit)")
 TRACKING_PARAM_RE = re.compile(r"[?&](utm_[a-z_]+|gclid|dclid|gbraid|wbraid|fbclid|msclkid|twclid|mc_cid|mc_eid|"
-                               r"mkt_tok|vero_id|oly_enc_id|_hsenc|_hsmi|srsltid|igshid|si)=")
+                               r"mkt_tok|vero_id|oly_enc_id|_hsenc|_hsmi|srsltid|igshid|si|_ga|_gl|gclsrc|dclsrc)=")
 PRIVACY_DOC_NAMES = {"privacy.md", "privacy.txt", "privacy.rst", "privacy.markdown", "privacy-policy.md",
                       "privacy_policy.md", "privacy_policy.txt", "privacyinfo.xcprivacy"}
 PRIVACY_DOC_RE = re.compile(r"(?i)(^|/)(privacy|privacy[-_.]?policy)(\.(md|markdown|txt|rst|html|adoc))?$|\.xcprivacy$")
