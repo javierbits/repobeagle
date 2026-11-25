@@ -836,6 +836,13 @@ KNOWN_SUFFIXES = (".githubusercontent.com", ".googleapis.com", ".gstatic.com", "
 def _known_host(host):
     return host in KNOWN_HOSTS or host.endswith(KNOWN_SUFFIXES)
 
+EMBED_RE = re.compile(r"(?i)<(?:iframe|embed|object|video)[^>]+src\s*=\s*[\"']((?:https?:)?//[^\"']+)")
+FORM_RE = re.compile(r"(?i)<form[^>]+action\s*=\s*[\"']((?:https?:)?//[^\"']+)")
+
+def _host_of(url):
+    m = re.match(r"(?i)(?:https?:)?//([a-z0-9][a-z0-9.-]*[a-z0-9])", url.strip())
+    return m.group(1).lower() if m else None
+
 REFERRER_POLICY_RE = re.compile(r"(?i)(referrer-?policy|referrerpolicy\s*=|rel\s*=\s*[\"'][^\"']*noreferrer|"
                              r"<meta[^>]+name\s*=\s*[\"']referrer)")
 PERMISSIONS_POLICY_RE = re.compile(r"(?i)(permissions-?policy)")
@@ -927,8 +934,19 @@ def check_privacy(root, p, text, privacy):
         if PERMISSIONS_POLICY_RE.search(line):
             _priv_add(privacy, "permissions-policy", "info", "policy", r, i, line,
                       "Permissions-Policy present: browser features can be denied to third parties/iframes.")
+        if ext in (".html", ".htm", ".svelte", ".vue", ".jsx", ".tsx", ".astro"):
+            for m in EMBED_RE.finditer(line):
+                host = _host_of(m.group(1))
+                if host and not _endpoint_noise(host) and host not in NON_NET_HOSTS:
+                    _priv_add(privacy, "third-party-embed", "low", host, r, i, line,
+                              f"Embeds content from {host}: it runs third-party code, sees your IP and can set its own cookies.")
+            for m in FORM_RE.finditer(line):
+                host = _host_of(m.group(1))
+                if host and not _endpoint_noise(host) and host not in NON_NET_HOSTS:
+                    _priv_add(privacy, "third-party-form", "low", host, r, i, line,
+                              f"Form action posts user data to {host}; verify what it collects and its policy.")
         if p.name == "AndroidManifest.xml":
-            for m in re.finditer(r'<uses-permission[^>]*android:name="android\.permission\.([A-Z_0-9]+)"', line):
+            for m in re.finditer(r'<uses-permission(?:-sdk-23)?[^>]*android:name="android\.permission\.([A-Z_0-9]+)"', line):
                 perm = m.group(1)
                 if perm in ANDROID_IGNORE:
                     continue
@@ -1259,8 +1277,9 @@ def privacy_findings(privacy):
              "consent-gating": 18, "consent-order": 19, "data-retention": 20, "upload-surface": 21,
              "upload-limit": 22, "store-disclosure": 23, "tracking-params": 24, "insecure-endpoint": 25,
              "android-permission": 26, "extension-permission": 27, "cookie-flags": 28, "cookie-write": 29,
-             "third-party-cdn": 30, "external-endpoint": 31, "browser-storage": 32, "consent-manager": 33,
-             "referrer-policy": 34, "permissions-policy": 35, "undisclosed-vendor": 36, "privacy-doc": 37}
+             "third-party-cdn": 30, "third-party-embed": 31, "third-party-form": 32, "external-endpoint": 33,
+             "browser-storage": 34, "consent-manager": 35, "referrer-policy": 36, "permissions-policy": 37,
+             "undisclosed-vendor": 38, "privacy-doc": 39}
     down = {"high": "medium", "medium": "low", "low": "info"}
     fs = []
     for (rule, key), t in sorted(privacy.items(), key=lambda kv: (order.get(kv[1]["rule"], 9), kv[1]["key"])):
