@@ -1045,7 +1045,8 @@ def check_privacy(root, p, text, privacy, own=()):
     if LOCKFILE_RE.search(r) or ext in PROSE_EXT:
         return
     is_doc = ext in DOC_EXT or bool(re.search(r"(?i)(^|/)docs?/", r))
-    test_path = bool(TEST_PATH.search(r))
+    is_i18n = bool(I18N_FILE_RE.search(r))
+    test_path = bool(TEST_PATH.search(r) or TEST_FILE_RE.search(r))
     scan_endpoints = ext in ENDPOINT_EXT or p.name in ENDPOINT_NAMES or p.name.startswith(".env")
     web = ext in (".js", ".mjs", ".cjs", ".ts", ".tsx", ".jsx", ".vue", ".svelte", ".astro", ".html", ".htm")
     is_manifest = p.name == "manifest.json"
@@ -1075,11 +1076,12 @@ def check_privacy(root, p, text, privacy, own=()):
                 if scheme in ("http", "ws"):
                     requested = re.search(r"(?i)(fetch\s*\(|curl|wget|requests\.|urlopen|src\s*=|href\s*=|action\s*=|XMLHttpRequest|axios|WebSocket|\.get\s*\()", line)
                     _priv_add(privacy, "insecure-endpoint",
-                              "info" if test_path or (is_doc and not requested) else ("medium" if requested else "low"),
+                              "info" if (test_path or is_i18n) or (is_doc and not requested) else ("medium" if requested else "low"),
                               host, r, i, line,
                               f"Plaintext {scheme}:// to {host}: "
                               + ("requests and metadata are not encrypted in transit." if requested else
                                  "reference URL in docs, not a request." if is_doc else
+                                 "translation-string link, not a runtime request." if is_i18n else
                                  "test fixture URL, not a runtime request." if test_path else
                                  "reference URL, not a request in this line."))
                 elif re.search(r"(?i)url\(\s*[\"']?$", line[:pos]) and not re.match(r"\s*@import", line):
@@ -1098,9 +1100,10 @@ def check_privacy(root, p, text, privacy, own=()):
                     _priv_add(privacy, "external-endpoint", "info", host, r, i, line,
                               f"Network destination {host} (known platform/infrastructure).")
                 else:
-                    _priv_add(privacy, "external-endpoint", "info" if (is_doc or test_path) else "low", host, r, i, line,
+                    _priv_add(privacy, "external-endpoint", "info" if (is_doc or test_path or is_i18n) else "low", host, r, i, line,
                               f"Unknown third-party host {host}: "
                               + ("docs link; not fetched at runtime." if is_doc else
+                                 "translation-string link." if is_i18n else
                                  "test fixture URL." if test_path else
                                  "verify what it receives and whether it sets cookies/tracks."))
         if COOKIE_WRITE_RE.search(line):
