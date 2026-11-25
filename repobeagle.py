@@ -1215,6 +1215,19 @@ def check_privacy(root, p, text, privacy, own=()):
             _priv_add(privacy, "cookie-write", "low", "js-cookie" if js_cookie else "document.cookie", r, i, line,
                       "JavaScript writes a cookie (persistent client-side identifier; check lifetime and consent)."
                       + (" Detected via the js-cookie library." if js_cookie else ""))
+            if js_cookie and "Cookies.remove" not in line:
+                window = " ".join(lines[max(0, i - 2):i + 3])
+                missing = []
+                if not re.search(r"(?i)\bsecure\s*:\s*(?:true|1)", window):
+                    missing.append("Secure")
+                if not re.search(r"(?i)\bsameSite\s*:", window):
+                    missing.append("SameSite")
+                if missing:
+                    _priv_add(privacy, "cookie-flags", "low", "js-cookie missing " + "/".join(missing), r, i, line,
+                              f"js-cookie write without {'/'.join(missing)} in its options: "
+                              + ("sent in clear" if "Secure" in missing else "")
+                              + ("; " if len(missing) > 1 else "")
+                              + ("sent cross-site" if "SameSite" in missing else "") + ".")
         if STORAGE_RE.search(line):
             _priv_add(privacy, "browser-storage", "info", "localStorage/sessionStorage", r, i, line,
                       "Data stored in the browser: survives reloads (localStorage) and can be used to track the user.")
