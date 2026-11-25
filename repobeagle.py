@@ -1050,6 +1050,9 @@ def check_privacy(root, p, text, privacy, own=()):
             for scheme, host, pos in hosts:
                 if host in NON_NET_HOSTS or _endpoint_noise(host):
                     continue
+                if "#" in line[:pos]:
+                    continue      # inline comment: "256 # https://dev.mysql.com/..."
+
                 if any(rx.search(host) for _, _, _, rx in TELEMETRY_RULES):
                     continue          # already reported by the telemetry check
                 if _is_comment(line):
@@ -1688,8 +1691,10 @@ def check_privacy_signals(root, p, text, privacy, masks):
                 if re.search(r"(?i)@(example\.(com|org|net)|(?:[\w-]+\.)*sentry\.io)$", addr):
                     continue          # example domains and Sentry DSNs are not personal emails
                 role = PII_ROLE_RE.match(addr.split("@", 1)[0])
-                _priv_add(privacy, "pii-email", "info" if role else "low", addr.lower(), r, i, line,
+                metadata = p.name in ("package.json", "composer.json", "pyproject.toml", "Cargo.toml") or ext == ".gemspec"
+                _priv_add(privacy, "pii-email", "info" if (role or metadata) else "low", addr.lower(), r, i, line,
                           ("Role mailbox (support@, noreply@, …): not personal data." if role else
+                           "Package metadata email: published by design on the registry." if metadata else
                            "Hardcoded email address (a person's PII or a DSN); check it is intended to be public."))
                 break
             m = MAILTO_RE.search(line)
@@ -1937,7 +1942,11 @@ def run_agent_checks(root):
         check_privacy(root, p, text, privacy, own)
         check_privacy_signals(root, p, text, privacy, masks)
     tf = telemetry_findings(telemetry, optouts, optouts_code)
+    tracking_kinds = {"telemetry-analytics", "telemetry-ads", "telemetry-session-replay", "telemetry-crash", "telemetry-apm"}
+    tracked = {f["title"].split(":")[0] for f in tf} & tracking_kinds
     pf = privacy_findings(privacy)
+    if not tracked:
+        pf = [f for f in pf if not f["title"].startswith("telemetry-identify")]
     findings += tf + pf
     vendor_names = {f["title"].split(": ", 1)[1].replace(" (transitive)", "") for f in tf if f["title"].startswith("telemetry-")}
     if privacy_doc and vendor_names and prose:
@@ -1947,8 +1956,6 @@ def run_agent_checks(root):
             findings.append(finding("privacy", "info", "(repo)", 0, "undisclosed-vendor: trackers not named in any doc",
                                      ", ".join(missing[:6]) + (" …" if len(missing) > 6 else ""),
                                      "The repo has a privacy doc/README but these detected vendors are not named there; check the policy discloses them."))
-    tracking_kinds = {"telemetry-analytics", "telemetry-ads", "telemetry-session-replay", "telemetry-crash", "telemetry-apm"}
-    tracked = {f["title"].split(":")[0] for f in tf} & tracking_kinds
     dnt = any(o == "Do-Not-Track" or o.startswith("DO_NOT_TRACK") for o in optouts_code)
     dnt_documented = dnt or any(o == "Do-Not-Track" or o.startswith("DO_NOT_TRACK") for o in optouts)
     if tracked:
