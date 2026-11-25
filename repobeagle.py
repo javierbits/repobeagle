@@ -1258,7 +1258,8 @@ PII_WORD_RE = re.compile(r"(?i)\b(e-?mail|phone|mobile|mobile_?number|phone_?num
                          r"ip_?address|remote_addr|user_?agent|geo|latitude|longitude)"
                          r"\b")
 EMAIL_RE = re.compile(r"[\w.+-]+@[a-z0-9-]+(?:\.[a-z0-9-]+)+", re.I)
-EMAIL_IGNORE = {"git@github.com", "noreply@github.com", "users.noreply.github.com", "actions@github.com"}
+EMAIL_IGNORE = {"git@github.com", "noreply@github.com", "actions@github.com"}
+EMAIL_IGNORE_RE = re.compile(r"(?i)@users\.noreply\.github\.com$")
 PHONE_RE = re.compile(r"(?<![A-Za-z0-9+])\+\d[\d ().-]{6,14}\d")
 IMPORT_NET_PY = re.compile(r"\b(requests|httpx|aiohttp|urllib3)\.\w+\s*\(|\burlopen\s*\(|socket\.socket\s*\(|\bhttp\.client\.")
 IMPORT_NET_JS = re.compile(r"(\bfetch\s*\(|\baxios[.(]|\$\.ajax\s*\(|navigator\.geolocation)")
@@ -1325,9 +1326,9 @@ CLIENT_ID_RE = re.compile(r"(?i)\b(client_?id|device_?id|visitor_?id|anonymous_?
 CLIENT_ID_CONTEXT_RE = re.compile(r"(?i)(localStorage|sessionStorage|document\.cookie|cookie|uuid|randomUUID|nanoid|v4\s*\(|guid)")
 ADDRESS_RE = re.compile(r"(?i)\b\d{1,6}[A-Za-z]?\s+[A-Z][\w.'-]*(?:\s+[A-Z][\w.'-]*){0,4}\s+"
                         r"(?:street|st|road|rd|avenue|ave|boulevard|blvd|lane|ln|drive|dr|way|court|ct|place|pl|square|sq)\b")
-ADDRESS_INTL_RE = re.compile(r"(?i)(?<![\w.-])(?:"
-                             r"[A-Z][\w.'-]*(?:stra(?:ß|ss)e|str\.|weg|platz|gasse|allee|laan)\s+\d{1,5}[a-z]?|"
-                             r"(?:rue|via|calle|avenida|rua|ulica)\s+[A-Z][\w.'-]*(?:\s+[A-Z][\w.'-]*){0,3}\s+\d{1,5}|"
+ADDRESS_INTL_RE = re.compile(r"(?<![\w.-])(?:"
+                             r"[A-Z][\w.'-]*(?i:stra(?:ß|ss)e|str\.|weg|platz|gasse|allee|laan)\s+\d{1,5}[a-z]?|"
+                             r"(?:Rue|Via|Calle|Avenida|Rua|Ulica)\s+[A-Z][\w.'-]*(?:\s+[A-Z][\w.'-]*){0,3}\s+\d{1,5}|"
                              r"P\.?\s?O\.?\s?Box\s+\d{1,8})(?![\w])")
 RETENTION_RE = re.compile(r"(?i)\b(data[_-]?retention|retention[_-]?(?:days|period|policy)?|log[_-]?retention|retain(?:ed)?|"
                            r"ttl[_-]?(?:seconds|secs|days)?|expir(?:y|es|ation)|purge[_-]?after|delete[_-]?after)\b"
@@ -1440,7 +1441,12 @@ def check_privacy_signals(root, p, text, privacy):
                 addr = m.group(0)
                 if (m.start() and line[m.start() - 1] in "/:") or _in_url_authority(line, m.start()):
                     continue          # srcset densities and URL userinfo such as user:pass@host
-                if addr.lower() in EMAIL_IGNORE or addr.lower().endswith((".example", ".invalid", ".local")):
+                if addr.lower() in EMAIL_IGNORE or EMAIL_IGNORE_RE.search(addr):
+                    continue
+                domain = addr.rsplit("@", 1)[-1]
+                if re.fullmatch(r"\d{1,3}(?:\.\d{1,3}){3}", domain):
+                    continue
+                if addr.lower().endswith((".example", ".invalid", ".local")):
                     continue
                 if line[max(0, m.start() - 7):m.start()].lower() == "mailto:":
                     continue          # already reported as a mailto: link
@@ -1517,7 +1523,14 @@ def check_privacy_signals(root, p, text, privacy):
                 addr = m.group(0)
                 if (m.start() and line[m.start() - 1] in "/:") or _in_url_authority(line, m.start()):
                     continue          # srcset densities and URL userinfo such as user:pass@host
-                if addr.lower() in EMAIL_IGNORE or addr.lower().endswith((".example", ".invalid", ".local")):
+                if addr.lower() in EMAIL_IGNORE or EMAIL_IGNORE_RE.search(addr):
+                    continue
+                domain = addr.rsplit("@", 1)[-1]
+                if re.fullmatch(r"\d{1,3}(?:\.\d{1,3}){3}", domain):
+                    continue          # user@10.0.0.2 is an SSH login, not an email
+                if m.end() < len(line) and line[m.end()] == ":" and addr.split("@", 1)[0].lower() in ("git", "ssh", "hg"):
+                    continue          # git@host:repo scp syntax
+                if addr.lower().endswith((".example", ".invalid", ".local")):
                     continue
                 if re.search(r"(?i)@(example\.(com|org|net)|(?:[\w-]+\.)*sentry\.io)$", addr):
                     continue          # example domains and Sentry DSNs are not personal emails
