@@ -750,6 +750,8 @@ def check_telemetry(root, p, text, telemetry, optouts):
             optouts.add("Do-Not-Track")
         if prose or _is_comment(line):
             continue          # a comment mentioning a vendor is a note, not a request
+        if re.match(r'\s*\("(?:ads|analytics|session-replay|crash|apm|devtool)",', line):
+            continue          # a vendor table entry is a definition, not usage
         for kind, sev, vendor, rx in TELEMETRY_RULES:
             key = (kind, vendor, "direct")
             if key in telemetry:
@@ -1491,7 +1493,7 @@ def check_privacy_signals(root, p, text, privacy):
                 _priv_add(privacy, "pii-log", "info" if masked else "low", "logged object likely containing PII", r, i, line,
                           ("The logged object is already masked/redacted." if masked else
                            "The logged argument name suggests personal data (user/account/profile/…); verify the destination and retention."))
-        if not comment:
+        if not comment and not re.match(r"\s*\(", line):
             for m in TRACKING_COOKIE_RE.finditer(line):
                 name = m.group(1)
                 if name.upper() in ("IDE", "NID") and not re.search(r"(?i)cookie", line):
