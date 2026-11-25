@@ -126,4 +126,10 @@ check("vercel speed package", any(rb._pkg_is("@vercel/speed-insights", x) for x 
 check("embrace package", any(rb._pkg_is("@embrace-io/web-sdk", x) for x in pat["Embrace"]))
 check("instabug package", any(rb._pkg_is("instabug-reactnative", x) for x in pat["Instabug"]))
 
+pat = {v: pats for k, v, pats in rb.TELEMETRY_PACKAGES}
+check("heap package", any(rb._pkg_is("heap-analytics", x) for x in pat["Heap Analytics"]))
+check("onesignal package", any(rb._pkg_is("onesignal-cordova-plugin", x) for x in pat["OneSignal"]))
+check("braze package", any(rb._pkg_is("@braze/web-sdk", x) for x in pat["Braze"]))
+check("pendo package", any(rb._pkg_is("pendo-ios", x) for x in pat["Pendo"]))
+
 sys.exit(fail)
