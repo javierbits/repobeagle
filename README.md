@@ -41,7 +41,7 @@ repobeagle scan <git-url | local-dir> [--ref <branch|tag|sha>] [--since <rev>] [
                 [--no-docker] [--no-osv] [--offline-vulnerabilities] [--verify-deps] [--all] [--min-severity info|low|medium|high|critical] [--no-color]
                 [--baseline old.json [--baseline-min-severity medium]] [--privacy-only | --no-privacy] [--no-redact]
 repobeagle privacy <git-url | local-dir> [same scan options]
-repobeagle explain <report.json>
+repobeagle explain <report.json> [--accept RULE...] [--target green|yellow] [--write [--ignore-file FILE] [--reason TEXT]]
 repobeagle diff <old.json> <new.json> [--min-severity medium] [--json out.json]
 repobeagle export <report.json> [--format sarif|markdown|json] [-o out]
 repobeagle map <git-url | local-dir | --report r.json> [--strict|--relaxed] [--network]
@@ -52,6 +52,16 @@ repobeagle --version | version
 repobeagle update [--check]
 ```
 `repobeagle explain` takes a report produced by `scan --json` and prints the threshold arithmetic behind its verdict — which profile threshold was met, the margin to the next tier, and the largest rule contributors. It never re-scans and touches no network, so it works on a report someone shared with you.
+
+It also plans the decision: `--accept <rule>…` (rule ids or globs, the same matching as `.repobeagleignore`) simulates accepting them and prints the verdict after, plus the counts that remain — accepting rules must not hide the fact that findings remain, so the remaining counts are always printed. `--target green|yellow` chooses whole rules itself, each step the rule that moves the verdict closest to the target (lighter rules win ties), and stops when the target is reached. `--write` appends the accepted/planned rule ids to `.repobeagleignore` (or `--ignore-file FILE`) with a reason comment (default: `reviewed with repobeagle explain --write`), skipping ids that are already there, so the next scan suppresses them. If the AI review sets the verdict independently of the findings, the planner says the target cannot be reached that way. Example:
+
+```console
+$ repobeagle explain report.json --target yellow
+planner:
+  planned (each step the rule that moves the verdict closest to the target): Vulnerable dependency (3 finding(s))
+  after the plan: YELLOW  (remaining findings: critical 0, high 2, medium 4)
+  target yellow: reached
+```
 
 `repobeagle diff` compares two reports and classifies what the change added or removed, matching on rule id + file so line moves and re-indentation are not counts as changes. It exits 1 when an added finding is at or above `--min-severity` (default `medium`), which is the gate to use in CI: keep yesterday's report, scan the PR, and fail only on *new* findings. Like `explain`, it never re-scans. `scan --baseline old.json --baseline-min-severity high` does the scan and the same gate in one command: it exits 1 only when the scan added a finding at/above the threshold, and the verdict exit code is deliberately not used in that mode. `--baseline-min-severity` is separate from `--min-severity`, which only controls printing.
 `repobeagle export` converts a stored report to SARIF 2.1.0 (GitHub code scanning, Azure DevOps, VS Code), a Markdown table for a PR comment, or normalized JSON. Every finding carries a stable `partialFingerprints` value and, when suppressed, an explicit SARIF suppression, so accepted findings stay visible but dismissed. The scan workflow uploads it when `upload-sarif: true`.

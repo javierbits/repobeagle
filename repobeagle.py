@@ -8,6 +8,7 @@ NEVER executes repository code. Stdlib only (scanners are external binaries).
 """
 import argparse, hashlib, json, os, platform, re, shutil, subprocess, sys, tempfile, time, unicodedata
 import urllib.error, urllib.parse, urllib.request
+from fnmatch import fnmatchcase
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -2944,7 +2945,87 @@ def verdict(findings, profile, ai):
         why = "No significant findings from any scanner"
     return v, why, counts
 
-def explain_report(d):
+def _explain_rule(f):
+    """Stable rule id of a stored finding ('rule' is recorded by current reports; older titles are parsed)."""
+    return str(f.get("rule") or str(f.get("title") or "?").split(":")[0].split(" (")[0])
+
+def _explain_counts(findings):
+    c = {s: sum(1 for f in findings if f.get("severity") == s) for s in SEV_ORDER}
+    return ", ".join(f"{k} {c[k]}" for k in SEV_ORDER if c[k]) or "none"
+
+def planner_apply(findings, patterns):
+    """Splits findings by accepted rule ids or globs (same fnmatch semantics as .repobeagleignore)."""
+    keep, drop = [], []
+    for f in findings:
+        rule = _explain_rule(f)
+        if any(fnmatchcase(rule, p) or fnmatchcase(str(f.get("title") or ""), p) for p in patterns):
+            drop.append(f)
+        else:
+            keep.append(f)
+    return keep, drop
+
+def planner_rules(findings):
+    """Whole-rule groups, least severe first (lowest worst severity, then largest, then id)."""
+    groups = {}
+    for f in findings:
+        groups.setdefault(_explain_rule(f), []).append(f)
+    return sorted(groups.items(), key=lambda kv: (max(SEV_ORDER.get(f.get("severity"), 0) for f in kv[1]),
+                                                 -len(kv[1]), kv[0]))
+
+def _planner_pressure(findings, profile, ai=None):
+    """Distance to the target tier: (verdict rank, findings above the binding threshold)."""
+    v, _, counts = verdict(findings, profile, ai)
+    prof = PROFILES[profile]
+    at_least = lambda s: sum(n for k, n in counts.items() if SEV_ORDER[k] >= SEV_ORDER[s])
+    if v == "RED":
+        for s, n in prof["red"]:
+            if at_least(s) >= n:
+                return 2, at_least(s) - n + 1
+    if v == "YELLOW":
+        return 1, at_least(prof["yellow"])
+    return 0, 0
+
+def planner_plan(findings, profile, ai, target):
+    """Accepts whole rules, each step the one that moves the verdict closest to the target; lighter rules win ties."""
+    rank = {"GREEN": 0, "YELLOW": 1, "RED": 2}
+    target = str(target).upper()
+    remaining, plan = list(findings), []
+    groups = planner_rules(findings)
+    while rank[verdict(remaining, profile, ai)[0]] > rank[target]:
+        best = None
+        for rule, fs in groups:
+            cand = [f for f in remaining if _explain_rule(f) != rule]
+            if len(cand) == len(remaining):
+                continue                       # already accepted
+            score = _planner_pressure(cand, profile, ai) + (
+                max(SEV_ORDER.get(f.get("severity"), 0) for f in fs), rule)
+            if best is None or score < best[0]:
+                best = (score, rule, fs)
+        if best is None:
+            break
+        plan.append((best[1], best[2]))
+        remaining = [f for f in remaining if _explain_rule(f) != best[1]]
+    return plan, remaining, verdict(remaining, profile, ai)[0]
+
+def write_suppressions(path, rules, reason=""):
+    """Appends one rule id per line with a reason comment to the ignore file. Returns (added, already present)."""
+    p = Path(path)
+    try:
+        existing = p.read_text(encoding="utf-8") if p.exists() else ""
+    except OSError:
+        existing = ""
+    have = {ln.split("#", 1)[0].strip() for ln in existing.splitlines()}
+    add = [r for r in rules if r and r not in have]
+    if not add:
+        return 0, len(rules)
+    reason = " ".join(str(reason or "").split()) or "reviewed with repobeagle explain"
+    with p.open("a", encoding="utf-8") as fh:
+        if existing and not existing.endswith("\n"):
+            fh.write("\n")
+        fh.write(f"# accepted by `repobeagle explain --write`: {reason}\n" + "\n".join(add) + "\n")
+    return len(add), len(rules) - len(add)
+
+def explain_report(d, accept=(), target=None, write=False, ignore_file=None, reason=""):
     """Explains a stored report's verdict from its counts and profile, including the margin. Pure: never re-scans."""
     meta = d.get("meta") if isinstance(d.get("meta"), dict) else {}
     prof_name = meta.get("profile")
@@ -2991,11 +3072,52 @@ def explain_report(d):
     top = sorted(rules.items(), key=lambda kv: (-kv[1], kv[0]))[:10]
     if top:
         print("largest contributors: " + ", ".join(f"{r} x{n}" for r, n in top))
+    if accept or target:
+        rank = {"GREEN": 0, "YELLOW": 1, "RED": 2}
+        fs = [f for f in d.get("findings") or [] if isinstance(f, dict) and not f.get("suppressed")
+              and f.get("severity") in SEV_ORDER]
+        patterns = list(accept or [])
+        if patterns:
+            keep, dropped = planner_apply(fs, patterns)
+            matched = sorted({_explain_rule(f) for f in dropped})
+            unmatched = [p for p in patterns if not any(fnmatchcase(_explain_rule(f), p) for f in dropped)]
+            print("planner:")
+            print(f"  accepted: {len(dropped)} finding(s) from {len(matched)} rule(s)"
+                  + (f" ({', '.join(matched)})" if matched else "")
+                  + (f"; unmatched: {', '.join(unmatched)}" if unmatched else ""))
+            print(f"  after accepting: {verdict(keep, prof_name, d.get('ai_review'))[0]}"
+                  f"  (remaining findings: {_explain_counts(keep)})")
+        else:
+            keep, dropped = list(fs), []
+            print("planner:")
+        planned, remaining, v_plan = planner_plan(keep, prof_name, d.get("ai_review"), target) if target else ([], keep, None)
+        if target:
+            if not planned:
+                print(f"  target {target}: already satisfied by the accepted rules"
+                      if patterns else f"  target {target}: already satisfied")
+            else:
+                print("  planned (each step the rule that moves the verdict closest to the target): "
+                      + ", ".join(f"{r} ({len(g)} finding(s))" for r, g in planned))
+                reached = rank[v_plan] <= rank[str(target).upper()]
+                print(f"  after the plan: {v_plan}  (remaining findings: {_explain_counts(remaining)})")
+                print(f"  target {target}: {'reached' if reached else 'NOT reached'}"
+                      + ("" if reached else " (the AI review sets the verdict independently of the findings)"))
+        if write:
+            rules_to_write = sorted({r for r, _ in planned} | {_explain_rule(f) for f in dropped})
+            if not rules_to_write:
+                print("  write: nothing to add")
+            else:
+                ipath = ignore_file or SUPPRESS_FILE
+                added, skipped = write_suppressions(ipath, rules_to_write, reason)
+                print(f"  write: {added} rule(s) appended to {ipath}" + (f", {skipped} already present" if skipped else ""))
     return 0
 
 
 def cmd_explain(a):
-    """Prints how a stored report's verdict follows from the profile thresholds. No scan, no network."""
+    """Prints how a stored report's verdict follows from the profile thresholds, and simulates accepting rules. No scan, no network."""
+    if getattr(a, "write", False) and not (getattr(a, "accept", None) or getattr(a, "target", None)):
+        print("explain: --write needs --accept or --target (nothing selected)", file=sys.stderr)
+        return 1
     try:
         d = json.loads(Path(a.report).read_text())
     except OSError as ex:
@@ -3004,7 +3126,12 @@ def cmd_explain(a):
     except json.JSONDecodeError as ex:
         print(f"explain: {a.report} is not valid JSON: {ex}", file=sys.stderr)
         return 1
-    return explain_report(d) if isinstance(d, dict) else (print("explain: report root is not an object", file=sys.stderr) or 1)
+    if not isinstance(d, dict):
+        print("explain: report root is not an object", file=sys.stderr)
+        return 1
+    return explain_report(d, accept=getattr(a, "accept", None) or (), target=getattr(a, "target", None),
+                          write=getattr(a, "write", False), ignore_file=getattr(a, "ignore_file", None),
+                          reason=getattr(a, "reason", ""))
 
 
 REMEDIATION = [
@@ -4224,6 +4351,16 @@ def main():
     v.add_argument("--no-color", action="store_true")
     ex = sp.add_parser("explain", help="explain how a stored report's verdict follows from its profile thresholds")
     ex.add_argument("report", help="report.json produced by 'scan --json'")
+    ex.add_argument("--accept", nargs="+", metavar="RULE", default=[],
+                    help="simulate accepting these rule ids or globs and print the verdict after (no re-scan)")
+    ex.add_argument("--target", choices=["green", "yellow"],
+                    help="plan the smallest set of whole rules to accept (least severe first) to reach this verdict")
+    ex.add_argument("--write", action="store_true",
+                    help="append the accepted/planned rules to the ignore file, with a reason comment")
+    ex.add_argument("--ignore-file", default=SUPPRESS_FILE, metavar="FILE",
+                    help=f"file written by --write (default: {SUPPRESS_FILE})")
+    ex.add_argument("--reason", default="reviewed with repobeagle explain --write",
+                    help="reason comment stored by --write")
     df = sp.add_parser("diff", help="compare two stored reports; exit 1 when the change added findings at/above --min-severity")
     df.add_argument("old", help="baseline report.json")
     df.add_argument("new", help="current report.json")
