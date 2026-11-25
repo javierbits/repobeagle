@@ -1423,7 +1423,7 @@ def privacy_findings(privacy):
              "upload-limit": 22, "store-disclosure": 23, "tracking-params": 24, "insecure-endpoint": 25,
              "android-permission": 26, "extension-permission": 27, "cookie-flags": 28, "cookie-write": 29,
              "third-party-cdn": 30, "third-party-embed": 31, "third-party-form": 32, "first-party-endpoint": 33,
-             "third-party-script": 34, "cookie-lifetime": 35, "external-endpoint": 35,
+             "third-party-script": 34, "cookie-lifetime": 35, "external-endpoint": 36,
              "browser-storage": 36, "consent-manager": 37, "consent-mode": 38, "consent-state": 39,
              "referrer-policy": 40, "permissions-policy": 41,
              "iframe-allow": 42,
