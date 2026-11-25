@@ -3321,7 +3321,9 @@ def main():
     if len(sys.argv) >= 2 and sys.argv[1] == "_inner":
         inner(sys.argv[2], sys.argv[3]); return 0
     if "--version" in sys.argv[1:] or "-V" in sys.argv[1:]:
-        src = " (BEAGLE_IMAGE set)" if os.environ.get("BEAGLE_IMAGE") else ""
+        envimg = os.environ.get("BEAGLE_IMAGE")
+        default = f"ghcr.io/javierbits/repobeagle:{RELEASE}"
+        src = " (BEAGLE_IMAGE set)" if envimg and envimg != default else ""
         print(f"RepoBeagle {VERSION}\nimage: {IMAGE}{src}")
         problem = image_problem()
         if problem:
