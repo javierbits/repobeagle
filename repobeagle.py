@@ -2163,7 +2163,8 @@ def privacy_profile(summary):
 def privacy_summary(findings):
     """Structured 'what kind' overview of privacy findings, for the report and JSON."""
     groups = {"trackers": {}, "pii": [], "permissions": [], "fingerprinting": [], "storage": [],
-              "consent": [], "vendor": [], "network": [], "retention": [], "uploads": [], "transparency": []}
+              "consent": [], "vendor": [], "first_party": [], "network": [], "retention": [], "uploads": [],
+              "transparency": []}
 
     def add(group, value):
         if value and value not in groups[group]:
@@ -2198,7 +2199,9 @@ def privacy_summary(findings):
             add("consent", key)
         elif rule in ("vendor-pii",):
             add("vendor", key)
-        elif rule in network or rule.startswith(("third-party-", "first-party-")):
+        elif rule == "first-party-endpoint":
+            add("first_party", key)
+        elif rule in network or rule.startswith("third-party-"):
             add("network", key)
         elif rule == "data-retention":
             add("retention", key)
