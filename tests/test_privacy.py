@@ -117,4 +117,8 @@ check("verdict consistent", rb.verdict_consistent({"verdict": _v, "counts": _c, 
 check("verdict mismatch", not rb.verdict_consistent({"verdict": "RED", "counts": _c, "findings": fs_v, "meta": {"profile": "balanced"}}))
 check("verdict suppressed ignored", rb.verdict_consistent({"verdict": rb.verdict([], "balanced", None)[0], "findings": [dict(fs_v[0], suppressed=True)], "meta": {"profile": "balanced"}}))
 
+hist = [rx for k, sev, rx, m in rb.BROWSER_CAPABILITIES if k == "browsing history"][0]
+check("history bare window ignored", not re.search(hist, "window.history.back()") if (re := __import__("re")) else False)
+check("history length matched", bool(__import__("re").search(hist, "if (history.length > 1)")))
+
 sys.exit(fail)
