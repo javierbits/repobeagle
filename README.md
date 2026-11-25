@@ -12,10 +12,10 @@ You give it a git URL or a local folder and get a **GREEN / YELLOW / RED** verdi
 **RepoBeagle never runs repo code.** It never runs installs or builds, and it never extracts archives.
 
 ## Install (DGX Spark / any Linux, arm64 or x86_64)
-The scanners ship as a prebuilt **public** multi-arch image (no login needed), `ghcr.io/javierbits/repobeagle` (linux/amd64 + linux/arm64). It's built by `.github/workflows/image.yml` on every push to main, on `v*` release tags, weekly, and on manual dispatch. Release tags get `v1.35.0`-style and `stable` tags; main also gets `latest`, `sha-<commit>` and the ISO week (e.g. `2026-W42`). `install.sh` and `repobeagle` default to the image matching the `VERSION` file (currently `v1.35.0`).
+The scanners ship as a prebuilt **public** multi-arch image (no login needed), `ghcr.io/javierbits/repobeagle` (linux/amd64 + linux/arm64). It's built by `.github/workflows/image.yml` on every push to main, on `v*` release tags, weekly, and on manual dispatch. Release tags get `v1.36.0`-style and `stable` tags; main also gets `latest`, `sha-<commit>` and the ISO week (e.g. `2026-W42`). `install.sh` and `repobeagle` default to the image matching the `VERSION` file (currently `v1.36.0`).
 ```bash
 git clone https://github.com/javierbits/repobeagle && cd repobeagle
-./install.sh                   # docker pull ghcr.io/javierbits/repobeagle:v1.35.0 + install the repobeagle wrapper
+./install.sh                   # docker pull ghcr.io/javierbits/repobeagle:v1.36.0 + install the repobeagle wrapper
 ./install.sh --build-local     # fallback: build the same image locally from the Dockerfile
 ./install.sh --local-tools     # also install gitleaks/semgrep/guarddog/bandit on the host for --no-docker
 ```
@@ -97,7 +97,7 @@ Severity follows privacy impact, so a default `balanced` scan goes YELLOW when a
 | `import-time-storage` | cookie/`localStorage` writes at JS module top level: they run on load, before user interaction or consent | low |
 | `ip-logging` | request IP (`req.ip`, `remote_addr`, `X-Forwarded-For`, `HTTP_X_FORWARDED_FOR`, `True-Client-IP`, …) written to logs or storage; `info` when the same line/window masks, truncates or hashes it | low/info |
 | `pii-log` | log/print statements naming personal data, and logged arguments whose name suggests a person (`console.log(user)`, `console.dir(user)`, `logger.info(account)`, `log::info!`, `println!`, `System.out.print`, `error_log`, `print_r`, …); `info` when the same line masks/redacts/hashes the value | low/info |
-| `pii-email`, `pii-phone`, `pii-address`, `pii-ssn`, `pii-card` | hardcoded email addresses, E.164 phone numbers, `tel:` links, postal addresses, US SSNs and payment card numbers (Luhn + issued IIN prefix) in source/config; example/test values and decimal fractions ignored, role mailboxes and `tel:` links are `info` | low/info |
+| `pii-email`, `pii-phone`, `pii-address`, `pii-ssn`, `pii-card` | hardcoded email addresses, E.164 phone numbers, `tel:`/`mailto:` links, postal addresses, US SSNs and payment card numbers (Luhn + issued IIN prefix) in source/config; example/test values and decimal fractions ignored, role mailboxes and `tel:`/`mailto:` links are `info` | low/info |
 | `tracking-cookie` | known tracking cookie names (`_ga`, GA4 `_ga_<container>`, `_gac_*`, legacy `__utm*`, `_gid`, `_gcl_au`, `_fbp`, `_hj*`, `ajs_*`, `__hstc`, `intercom-*`, `mp_*`, `ph_*`, `_clck`, `_uetvid`, `_ttp`, `IDE`, `NID`, …) mapped to their vendor | low |
 | `ios-tracking`, `ios-tracking-domain`, `ios-data-type` | Apple privacy manifest (`PrivacyInfo.xcprivacy`): `NSPrivacyTracking`, declared tracking domains, and every `NSPrivacyCollectedDataType` with linked/tracking flags and declared purposes (analytics, advertising, app functionality, …) | low/info |
 | `ios-api-category` | Apple required-reason API categories declared in `PrivacyInfo.xcprivacy` (UserDefaults, FileTimestamp, SystemBootTime, DiskSpace, ActiveKeyboards, …) | info |
@@ -117,7 +117,7 @@ Severity follows privacy impact, so a default `balanced` scan goes YELLOW when a
 | `privacy-doc` | `info` when a privacy policy/manifest exists anywhere in the repo (`PRIVACY.md`, `docs/privacy-policy.md`, `PrivacyInfo.xcprivacy`, …) or the README links an external policy; `low` when data leaves the repo but no policy is shipped or linked | info/low |
 | `undisclosed-vendor` | detected telemetry vendors that are not named in any README/privacy doc, when the repo ships one | info |
 
-Findings from the `privacy`/`telemetry` checks have their snippets **and titles redacted by default** (emails `s***@domain`, cards `4111 **** **** 1111`, phones `+46 ***** 567`, SSNs `***-**-6789`) so a published badge report does not republish the PII it found. `--no-redact` prints the raw line; `meta.pii_redacted` records the mode.
+Findings from the `privacy`/`telemetry` checks have their snippets **and titles redacted by default** (emails `s***@domain`, cards `4111 **** **** 1111`, phones `+46 ***** 567`, SSNs `***-**-6789`) so a published badge report does not republish the PII it found. The report prints a redaction notice when it applies, `verify` prints `snippets: redacted by scanner` (or `raw`), `--no-redact` shows raw values and `meta.pii_redacted` records the mode.
 
 Test fixtures and fake hosts (`example.com`, single-label names, private ranges) are excluded or downgraded so the checks don't drown a verdict in noise. `target/` build output is skipped like `dist/` and `build/`.
 
@@ -164,7 +164,7 @@ Then add the badge; after a tag push, a per-tag badge also exists:
 
 ```markdown
 ![RepoBeagle](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/OWNER/REPO/repobeagle/badge.json)
-![RepoBeagle v1.35.0](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/OWNER/REPO/repobeagle/badge-v1.35.0.json)
+![RepoBeagle v1.36.0](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/OWNER/REPO/repobeagle/badge-v1.36.0.json)
 ```
 
 The workflow publishes a `repobeagle` branch containing `badge.json` (shields.io endpoint), a self-hosted `badge.svg` fallback and the full `report.json` (plus `report-<sha>.json` per commit and per-tag copies), so every finding is one click away from the badge. Inputs: `profile`, `fail-on-red`, `privacy-only`, `badge-branch` (empty string disables publishing), `set-status` (default true) and `tools-ref` (toolchain ref, default `main`; the `VERSION` file there pins the scanned image).
@@ -177,7 +177,7 @@ The badge is produced by the author's own CI, so on its own it is self-attested.
 repobeagle verify javierbits/javierbits.github.io
 #   signature: VALID  policy: official scan.yml (main or v* tag)
 #   report:    YELLOW  0 critical / 6 high / 1 medium / 56 low
-#   scanned:   a7cb435002de at javierbits/javierbits.github.io (image ghcr.io/javierbits/repobeagle:v1.35.0)
+#   scanned:   a7cb435002de at javierbits/javierbits.github.io (image ghcr.io/javierbits/repobeagle:v1.36.0)
 #   freshness: UP TO DATE (HEAD a7cb435002de)
 ```
 
@@ -229,7 +229,7 @@ Apart from the clone, OSV/GuardDog-verify, the GitHub trust lookup and your own 
 
 ## Example output (abridged)
 ```
-repobeagle 1.35.0  |  tests/fixtures/trap-npm
+repobeagle 1.36.0  |  tests/fixtures/trap-npm
   VERDICT: RED    2 critical / 2 high findings, e.g. npm lifecycle script 'postinstall' runs automatically on install (package.json:8)
   CRITICAL [agent-checks] package.json:8
            npm lifecycle script 'postinstall' runs automatically on install

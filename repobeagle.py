@@ -1272,6 +1272,7 @@ TRACKING_COOKIE_VENDORS = [
 ]
 SSN_RE = re.compile(r"\b\d{3}-\d{2}-\d{4}\b")
 TEL_LINK_RE = re.compile(r"(?i)href\s*=\s*[\"']tel:([+0-9 ().-]+)")
+MAILTO_RE = re.compile(r"(?i)href\s*=\s*[\"']mailto:([^\"?\s]+)")
 CARD_RE = re.compile(r"(?<![\d.])(?:\d{13,19}|\d{4}(?:[ ]\d{4}){3}|\d{4}[ -]\d{4}[ -]\d{4}[ -]\d{4}|\d{4}[ -]\d{6}[ -]\d{5})(?![\d.])")
 HASHY_RE = re.compile(r"(?i)(sha\d*|md5|hash|uuid|commit|0x[0-9a-f]+)")
 PII_SKIP_EXT = {".svg", ".sfd", ".glif", ".css", ".scss", ".map", ".lock", ".woff", ".woff2"}
@@ -1383,6 +1384,10 @@ def check_privacy_signals(root, p, text, privacy):
                           ("Role mailbox (support@, noreply@, …): not personal data." if role else
                            "Hardcoded email address (a person's PII or a DSN); check it is intended to be public."))
                 break
+            m = MAILTO_RE.search(line)
+            if m:
+                _priv_add(privacy, "pii-email", "info", "mailto:" + m.group(1).lower(), r, i, line,
+                          "mailto: link exposes an email address by design (contact info, not a leak).")
             m = TEL_LINK_RE.search(line)
             if m:
                 _priv_add(privacy, "pii-phone", "info", "tel:" + m.group(1).strip(), r, i, line,
@@ -2105,6 +2110,8 @@ def report(meta, findings, v, why, counts, notes, ai, use_color, maxn=40):
     if meta.get("suppressed"):
         print(C("2", f"  suppressed {meta['suppressed']} finding(s) via {SUPPRESS_FILE} (kept in --json with suppressed=true)"))
     if meta.get("privacy_summary"):
+        if meta.get("pii_redacted") and any(f["tool"] in ("privacy", "telemetry") for f in findings):
+            print(C("2", "  PII in snippets/titles is redacted; use --no-redact to show raw values."))
         print(C("1", "Privacy summary:"))
         for group, vals in meta["privacy_summary"].items():
             if isinstance(vals, dict):
@@ -2423,6 +2430,7 @@ def cmd_verify(a):
         scanned = str(meta.get("scanned_sha", ""))
         if scanned:
             print(f"  scanned:   {scanned[:12]} at {meta.get('scanned_repo', '?')} (image {meta.get('image_ref', '?')})")
+        print(f"  snippets:  {'redacted by scanner' if meta.get('pii_redacted') else 'raw'}")
         summary = d.get("privacy_summary") or privacy_summary(d.get("findings") or [])
         if summary:
             parts = []

@@ -32,7 +32,7 @@ RULES="third-party-cdn insecure-endpoint cookie-write browser-storage consent-ma
   check tests/fixtures/trap-privacy "YELLOW|RED" $L
 j=$(mktemp); $RG scan tests/fixtures/trap-privacy --no-color --json "$j" $L >/dev/null 2>&1
 python3 -c "import json,sys;d=json.load(open('$j'));s=d.get('privacy_summary') or {};ok=bool(s.get('trackers',{}).get('session-replay')) and bool(s.get('pii'));print('PASS privacy summary' if ok else 'FAIL privacy summary');sys.exit(0 if ok else 1)" || fail=1
-python3 -c "import json,sys;d=json.load(open('$j'));e=[x for x in d['findings'] if x['title'].startswith('pii-email')];ok=bool(e) and 's***@widget.dev' in e[0]['snippet'] and 's***@widget.dev' in e[0]['title'];print('PASS PII redacted in snippets' if ok else 'FAIL PII redaction');sys.exit(0 if ok else 1)" || fail=1
+python3 -c "import json,sys;d=json.load(open('$j'));e=[x for x in d['findings'] if x['title'].startswith('pii-email')];ok=any('s***@widget.dev' in x['snippet'] and 's***@widget.dev' in x['title'] for x in e);print('PASS PII redacted in snippets' if ok else 'FAIL PII redaction');sys.exit(0 if ok else 1)" || fail=1
 python3 tools/make_badge.py "$j" --endpoint "$j.badge" >/dev/null 2>&1
 python3 -c "import json,sys;d=json.load(open('$j.badge'));ok=bool(d.get('privacy',{}).get('trackers'));print('PASS badge privacy counts' if ok else 'FAIL badge privacy counts');sys.exit(0 if ok else 1)" || fail=1
 rm -f "$j.badge"
