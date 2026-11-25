@@ -25,3 +25,5 @@ Cookies.set("seen", "1");
 const [picked] = await showOpenFilePicker();
 const pay = new PaymentRequest([{ supportedMethods: "basic-card" }], details);
 const touch = navigator.maxTouchPoints > 0;
+navigator.serviceWorker.register("/sw.js");
+await navigator.share({ url: location.href });

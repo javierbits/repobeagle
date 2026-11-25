@@ -99,7 +99,7 @@ Severity follows privacy impact, so a default `balanced` scan goes YELLOW when a
 | `external-endpoint` | inventory of remote hosts in code/config/HTML, including `ws://`/`wss://` sockets and protocol-relative `//host/…`; known platforms/registries/CDNs are `info`, unknown third parties are `low`; URL values (`new URL(...)`, Swift `URL(string:)`/`URL(…)`) are `info`; comments (including inline `# …` / `// …`), docs/test fixtures and translation catalogs are `info`; `.invalid`/`.test`/`.example`/`.localhost` are ignored | info/low |
 | `first-party-endpoint` | hosts belonging to the repo itself, inferred from `CNAME`, `package.json`, `pyproject.toml`, `setup.cfg`, `Cargo.toml`, `pubspec.yaml` or `composer.json`; classified as first-party and not counted against third-party checks | info |
 | `macos-entitlement` | macOS `*.entitlements` capabilities granted without a per-use prompt: location, camera, microphone, photo library, contacts, calendars, Bluetooth, USB, user-selected/Downloads/Desktop/Documents/all files (read-only variants included), Apple Events automation; plain network client/server access is `info` | high/medium/low |
-| `browser-capability` | web APIs that touch user data: clipboard read, geolocation, camera/microphone (`getUserMedia`, `enumerateDevices`), screen capture (`getDisplayMedia`, `MediaRecorder`), notifications, history (`pushState`), USB/serial/Bluetooth, cross-site storage access, file pickers, payment request/Apple Pay | medium/low |
+| `browser-capability` | web APIs that touch user data: clipboard read, geolocation, camera/microphone (`getUserMedia`, `enumerateDevices`), screen capture (`getDisplayMedia`, `MediaRecorder`), notifications, history (`pushState`), USB/serial/Bluetooth, cross-site storage access, file pickers, payment request/Apple Pay, service workers, share sheet | medium/low |
 | `client-id` | named persistent identifiers (`client_id`, `device_id`, `visitor_id`, `anonymous_id`, `distinct_id`, `installation_id`) stored in cookies/localStorage or generated as UUIDs | low |
 | `fingerprint` | device fingerprinting: dedicated libraries (`fingerprintjs`, `botd`), canvas/WebGL/audio/font probing, WebRTC (peer sees your public IP), screen geometry, UA/cores/memory/plugins, implicit timezone/locale (`toLocaleString()` without explicit locale), battery/network state | high/medium/low |
 | `import-time-network` | network calls at module scope (Python module body, JS top level) that run before you call anything | medium/low |
@@ -242,7 +242,7 @@ Apart from the clone, OSV/GuardDog-verify, the GitHub trust lookup and your own 
 
 ## Example output (abridged)
 ```
-repobeagle 1.123.0  |  tests/fixtures/trap-npm
+repobeagle 1.124.0  |  tests/fixtures/trap-npm
   VERDICT: RED    2 critical / 2 high findings, e.g. npm lifecycle script 'postinstall' runs automatically on install (package.json:8)
   CRITICAL [agent-checks] package.json:8
            npm lifecycle script 'postinstall' runs automatically on install

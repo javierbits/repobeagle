@@ -1491,6 +1491,10 @@ BROWSER_CAPABILITIES = [
      "Asks the user for local files/directories (chosen files are read by the page)."),
     ("payment", "medium", r"\bPaymentRequest\b|ApplePaySession|requestPayment\s*\(",
      "Reads payment details/instrument data from the browser's autofill."),
+    ("service worker", "low", r"navigator\.serviceWorker|serviceWorker\.register\s*\(",
+     "Registers a service worker that persists and can intercept requests."),
+    ("share sheet", "low", r"navigator\.share\s*\(",
+     "Hands content to another app chosen by the user."),
 ]
 CLIENT_ID_RE = re.compile(r"(?i)\b(client_?id|device_?id|visitor_?id|anonymous_?id|distinct_?id|installation_?id)\b")
 CLIENT_ID_CONTEXT_RE = re.compile(r"(?i)(localStorage|sessionStorage|document\.cookie|cookie|uuid|randomUUID|nanoid|v4\s*\(|guid)")
