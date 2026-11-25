@@ -3389,12 +3389,14 @@ MCP_PROTOCOL = "2024-11-05"
 
 MCP_TOOLS = [
     {"name": "scan_repo",
-     "description": "Statically scan a git URL or local directory and return the GREEN/YELLOW/RED verdict with the top findings. Never executes repository code.",
+     "description": "Statically scan a git URL or local directory and return the GREEN/YELLOW/RED verdict with the top findings. Never executes repository code. Blocking: the call returns when the scan finishes (default budget 1800 s).",
      "inputSchema": {"type": "object", "required": ["target"], "properties": {
          "target": {"type": "string", "description": "git URL (https/ssh) or existing local directory"},
          "profile": {"type": "string", "enum": ["strict", "balanced", "relaxed"], "description": "verdict thresholds (default balanced)"},
          "privacy_only": {"type": "boolean", "description": "report only privacy/telemetry findings"},
-         "network": {"type": "boolean", "description": "run OSV vulnerability and GitHub trust lookups (default true)"}}}},
+         "network": {"type": "boolean", "description": "run OSV vulnerability and GitHub trust lookups (default true)"},
+         "timeout_seconds": {"type": "integer", "minimum": 5, "maximum": 1800,
+                             "description": "kill the scan after this many seconds (default 1800); clients must allow at least this long for the reply"}}}},
     {"name": "verify_badge",
      "description": "Verify a published repobeagle badge: Sigstore signature, report freshness against HEAD, and report self-consistency.",
      "inputSchema": {"type": "object", "required": ["repo"], "properties": {
@@ -3429,13 +3431,23 @@ def mcp_scan(a):
     prof = a.get("profile") or "balanced"
     if prof not in PROFILES:
         raise ValueError(f"profile must be one of {sorted(PROFILES)}")
+    try:
+        timeout = int(a.get("timeout_seconds", 1800))
+    except (TypeError, ValueError):
+        raise ValueError("timeout_seconds must be an integer number of seconds")
+    if not 5 <= timeout <= 1800:
+        raise ValueError("timeout_seconds must be between 5 and 1800")
     work = _mcp_workdir()
     rep = work / "report.json"
     args = ["scan", target, "--json", str(rep), "--no-color"]
     if prof != "balanced": args.append("--" + prof)
     if a.get("privacy_only"): args.append("--privacy-only")
     if a.get("network") is False: args += ["--no-osv", "--no-trust"]
-    r = _mcp_exec(args)
+    try:
+        r = _mcp_exec(args, timeout=timeout)
+    except subprocess.TimeoutExpired:
+        raise RuntimeError(f"scan exceeded timeout_seconds={timeout}; the process was killed. "
+                           "Raise timeout_seconds for huge repositories.")
     try:
         d = json.loads(rep.read_text())
     except Exception:

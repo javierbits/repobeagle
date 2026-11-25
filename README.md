@@ -83,11 +83,27 @@ OSV normally queries osv.dev, which makes two scans of the same commit differ by
 
 ### Use from an AI agent (MCP)
 
-`repobeagle mcp` runs a Model Context Protocol server over stdio, so an agent can check a repository before it clones or installs it. Tools: `scan_repo` (URL or directory, profile, privacy-only, network on/off), `verify_badge` (signature + freshness) and `explain_report` (threshold arithmetic of a stored report). JSON-RPC 2.0, one message per line, logs to stderr only, and it still never executes repository code. Reports are kept under `$XDG_CACHE_HOME/repobeagle/mcp` (20 most recent) so a client can read the full JSON.
+`repobeagle mcp` runs a Model Context Protocol server over stdio, so an agent can check a repository before it clones or installs it. Tools: `scan_repo` (URL or directory, profile, privacy-only, network on/off, `timeout_seconds`), `verify_badge` (signature + freshness) and `explain_report` (threshold arithmetic of a stored report). JSON-RPC 2.0, one message per line, logs to stderr only, and it still never executes repository code. Reports are kept under `$XDG_CACHE_HOME/repobeagle/mcp` (20 most recent, pruned) so a client can read the full JSON, and the wire schemas are exercised by the official MCP Python SDK in `tests/test_mcp_interop.py`.
 
 ```json
 {"mcpServers": {"repobeagle": {"command": "repobeagle", "args": ["mcp"]}}}
 ```
+
+Per-tool examples (raw calls; a client SDK hides the transport):
+
+```jsonc
+// scan_repo: verdict + top findings, report path kept for explain_report
+{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"scan_repo","arguments":{
+  "target":"https://github.com/some/agent-skill","profile":"balanced","network":false,"timeout_seconds":600}}}
+// explain_report: thresholds and the margin to the next tier, from the stored report
+{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"explain_report","arguments":{"report":"<path from scan_repo>"}}}
+// verify_badge: Sigstore signature, freshness and self-consistency of a published badge (needs network)
+{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"verify_badge","arguments":{"repo":"owner/repo"}}}
+```
+
+**Blocking, timeouts and cancellation.** Requests are handled one at a time and in order. `scan_repo` returns only when the scan finishes: the default budget is 1800 s and `timeout_seconds` (5–1800) bounds it — on expiry the scan process is killed and the call comes back with `isError`, naming the timeout. `notifications/cancelled` is accepted but cannot interrupt an in-flight scan (it is read between messages), so a client that gives up should kill the process; no progress notifications are sent yet. `scan_repo` with `network: false` and `explain_report` are offline apart from the clone of a URL target; `verify_badge` needs the network.
+
+**Tool schema stability.** The `inputSchema` of the three tools is part of the contract: the interop test asserts the wire schemas equal `MCP_TOOLS`, so removing or renaming an argument is a breaking change (document it with the ruleset/version note); adding an optional argument is fine.
 
 `repobeagle privacy <target>` is the same as `scan --privacy-only`: a privacy audit that only reports privacy/telemetry findings. OSV vulnerability scanning and GitHub trust signals are skipped automatically in this mode (their findings would be filtered anyway), and the report notes that. Reports record `meta.privacy_mode` (`full`, `only` or `excluded`), and a privacy-only badge carries `"privacy_only": true` so consumers know the verdict basis. Each `--json` finding carries a stable `rule` id (the title prefix, e.g. `telemetry-analytics`, `pii-email`) for filtering/automation. `--privacy-only` does it inline, `--no-privacy` drops those findings, `--no-redact` shows raw PII in snippets instead of the default masking. `--min-severity` filters only the printed findings (verdict/counts and `--json` still cover everything). `--version`/`version` print the installed version and image tag. `repobeagle update --check` reports installed vs latest (exit 10 when an update exists); `repobeagle update` pulls the latest release image (refreshing it even when the code is current), runs `git pull --ff-only` in a checkout and then `install.sh`, and retargets a stale wrapper (e.g. one still pointing at `jvr0x` or an old tag). A `BEAGLE_IMAGE` exported by the shell still overrides the wrapper default; `--version` flags that case. Scans check GitHub's release API at most once a day (cached under `~/.cache/repobeagle`) and print an update notice to stderr; set `BEAGLE_NO_UPDATE_CHECK=1` to disable or `BEAGLE_UPDATE_INTERVAL` (seconds) to change the cadence. The check never contacts the scanned repo.
 
@@ -366,6 +382,7 @@ The rule-pair check is automatic: `tests/test_rule_fixtures.py` parses the `RULE
 | tests/test_explain.py (verdict arithmetic per profile, planner transitions, `--write`) | pass |
 | tests/test_determinism.py (normalization: order/timings/paths ignored, real changes caught) | pass |
 | tests/test_sarif_schema.py (export validates against the vendored OASIS SARIF 2.1.0 schema; purity) | pass |
+| tests/test_mcp_interop.py (official MCP SDK: initialize, schemas, scan_repo, explain_report, invalid args, unknown tool) | pass |
 | tests/test_markdown_snapshot.py (PR-comment snapshot, pipe/newline escaping, suppression, truncation) | pass |
 | tests/test_rule_fixtures.py (positive fixture fires every declared rule; control-clean fires none) | pass |
 | tests/test_fuzz.py (bounded Hypothesis targets: `decode_tags`, `redact_pii`, `check_unicode`, `check_markdown_hidden`) | pass |
