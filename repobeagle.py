@@ -1096,9 +1096,11 @@ def check_privacy(root, p, text, privacy, own=()):
                         if ms:
                             cand.append((ms[-1].start(), ctx))
                     if cand:
-                        _, tag_ctx = max(cand)
+                        best = max(cand)
+                        tag_ctx = best[1]
+                        tag_window = back[best[0]:] + "\n" + line + "\n" + "\n".join(lines[i:i + 3])
                     if tag_ctx == "link":
-                        relm = re.search(r"(?i)\brel\s*=\s*[\"']([^\"']+)", back + "\n" + line)
+                        relm = re.search(r"(?i)\brel\s*=\s*[\"']([^\"']+)", tag_window)
                         relv = relm.group(1).lower() if relm else ""
                         tag_ctx = ("stylesheet" if "stylesheet" in relv else
                                    "preload" if ("preload" in relv or "prefetch" in relv or "modulepreload" in relv) else
@@ -1140,6 +1142,15 @@ def check_privacy(root, p, text, privacy, own=()):
                     _priv_add(privacy, "third-party-embed", "info" if safe else "low", host, r, i, line,
                               f"Embed attribute on a tag opened above includes content/code from {host}."
                               + (" Sandboxed, which limits what it can do." if safe else ""))
+                    am = ALLOW_ATTR_RE.search(tag_window)
+                    if am:
+                        perms = [x.strip().split(";")[0].strip() for x in am.group(1).split(";") if x.strip()]
+                        risky = [x for x in perms if x.split()[0].lower() in
+                                 ("camera", "microphone", "geolocation", "clipboard-read", "clipboard-write",
+                                  "display-capture", "midi", "serial", "usb", "web-share")]
+                        if risky:
+                            _priv_add(privacy, "iframe-allow", "medium", host, r, i, line,
+                                      f"iframe delegates {', '.join(risky)} to {host}: the embedded page can use that capability.")
                 elif tag_ctx == "stylesheet":
                     _priv_add(privacy, "third-party-stylesheet", "info" if host in THIRD_PARTY_CDN else "low",
                               host, r, i, line,
