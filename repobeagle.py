@@ -1103,7 +1103,7 @@ def check_privacy(root, p, text, privacy, own=()):
                 tag_ctx = None
                 tag_window = line
                 if not re.search(r"(?i)<(img|video|source|audio|picture|script|iframe|link)\b", line) and \
-                        re.search(r"(?i)\b(?:src|href|srcset|action)\s*=", line):
+                        re.search(r"(?i)\b(?:src|href|srcset|poster|action)\s*=", line):
                     back = "\n".join(lines[max(0, i - 6):i])
                     tag_window = back + "\n" + line + "\n" + "\n".join(lines[i:i + 3])
                     cand = []

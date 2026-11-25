@@ -92,7 +92,7 @@ Severity follows privacy impact, so a default `balanced` scan goes YELLOW when a
 | `third-party-form` | `<form action="https://other">` including tags split across lines: user input is posted to a third party (own/related domains are excluded, like other endpoint rules) | low |
 | `third-party-script` | `<script src="//other">` (incl. inline `<script>` ESM imports) or `import … from "https://other"`: executable third-party code (info for known CDNs); own/related domains are skipped | low/info |
 | `third-party-preconnect` | `<link rel="preconnect">`/`dns-prefetch` to another host: the browser opens a connection (IP, TLS) before any consent or request | low/info |
-| `third-party-media` | `<img>`/`<video>` (incl. `poster`)/`<source>`/`<audio>` (including `srcset`) and CSS `url()` assets from another host (own/related domains are classified as first-party): they see your IP and page URL; known CDNs are `info`, unknown hosts `low`; `@import` stays `third-party-stylesheet` | low/info |
+| `third-party-media` | `<img>`/`<video>` (incl. `poster`, also tags split across lines)/`<source>`/`<audio>` (including `srcset`) and CSS `url()` assets from another host (own/related domains are classified as first-party): they see your IP and page URL; known CDNs are `info`, unknown hosts `low`; `@import` stays `third-party-stylesheet` | low/info |
 | `third-party-stylesheet` | `<link rel="stylesheet">` or CSS `@import` from another host: it sees your IP/referrer and pulls fonts/images from its servers; known CDNs `info`, unknown `low` | low/info |
 | `third-party-preload` | `<link rel="preload"/"prefetch"/"modulepreload">` from another host: fetches bytes before needed, revealing your IP early | low/info |
 | `cookie-lifetime` | cookies with `Max-Age`/`Expires` (RFC 1123, ISO 8601, unix epoch) over one year (`low`) or under it / session-scoped / already expired / deleted with `Max-Age=0` (`info`) | low/info |
@@ -243,7 +243,7 @@ Apart from the clone, OSV/GuardDog-verify, the GitHub trust lookup and your own 
 
 ## Example output (abridged)
 ```
-repobeagle 1.140.0  |  tests/fixtures/trap-npm
+repobeagle 1.141.0  |  tests/fixtures/trap-npm
   VERDICT: RED    2 critical / 2 high findings, e.g. npm lifecycle script 'postinstall' runs automatically on install (package.json:8)
   CRITICAL [agent-checks] package.json:8
            npm lifecycle script 'postinstall' runs automatically on install
