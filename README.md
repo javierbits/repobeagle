@@ -78,7 +78,7 @@ Noise is classified, not hidden in the JSON: every `meta.capabilities` entry car
 
 `repobeagle web <url>` runs the same privacy rules against a live page instead of a repository: it fetches once (no JavaScript, no crawling, 2 MB cap), treats the page's own host as first-party, and reports the third-party hosts, trackers, cookies, PII in URLs/forms, framing and permission delegation it sees. `--assets N` also fetches up to N same-origin scripts/stylesheets so inline-ESM imports and CSS `@import`/`url()` are inspected. The report is marked `meta.mode = "web (fetched once, no JS executed)"`, `meta.url` and `meta.fetched`; `file://` works, which is how the test suite covers it offline.
 
-Reports also state their own blind spot: `meta.coverage` records source bytes inspected, files scanned, why the rest was skipped (archive, binary, oversize, unreadable, unsupported extension) and the top unscanned extensions. The printed report shows the same as a `Coverage:` line, and `coverage-low` (low) fires when under 60% of source bytes were inspected on a repo with at least 20 files. A GREEN verdict over files nobody parsed is not evidence of safety, and this is the field to check before trusting one.
+Reports also state their own blind spot: `meta.coverage` records the source bytes covered by language-aware rules, files scanned, why the rest was not read (archive, binary, oversize, unreadable), the top unscanned extensions with no language rules, and `languages` with `inspected` and `no_rules` buckets (a C/C++, Elixir or Zig repository shows up there: its files may be read by the universal text checks, but no language-specific rules ran on them). The printed report shows the same as a `Coverage:` line, including `no language rules for: …`, and `coverage-low` (severity `low`) fires when under 60% of source bytes were covered on a repository with at least 20 files. Decision, deliberately: `coverage-low` does **not** raise the balanced or relaxed verdict (a `low` finding leaves them GREEN), but `--strict` turns that YELLOW — the field is still the first thing to read before trusting a GREEN. A GREEN verdict over files nobody parsed is not evidence of safety.
 
 `--ref <branch|tag|sha>` pins a scan to an exact object instead of the default branch and records `meta.ref` plus the resolved 40-character `meta.commit`, so a report is comparable with a later re-scan of the same commit. It applies to git URLs; a local directory is copied as-is and `meta.commit` stays null. (Bumping the image digest also changes the toolchain, which `meta.tools` records.)
 
@@ -383,6 +383,7 @@ The rule-pair check is automatic: `tests/test_rule_fixtures.py` parses the `RULE
 | tests/fixtures/trap-gha, trap-markdown, trap-build, trap-binary, trap-telemetry, trap-privacy (one trap per check family; each rule name must fire) | YELLOW/RED |
 | tests/fixtures/control-clean (pinned actions, minified bundle in `public/`, normal README with comment/details/alt text, real deps), `--strict` | GREEN |
 | tests/fixtures/control-empty, control-doc-hosts, control-archive-only (capability edges: no files, docs-only hosts, uninspectable archive) | GREEN / GREEN / YELLOW |
+| tests/fixtures/control-binary-only, control-oversize-only (coverage edges: nothing readable) | GREEN / GREEN |
 | tests/fixtures/ignore-suppressed (`.repobeagleignore` silences a `curl\|sh`, finding stays in JSON as suppressed) | GREEN |
 | tests/test_trust.py (offline trust-signal unit tests) | pass |
 | tests/test_privacy.py (redaction, card check, privacy summary, first-party inference, suppression units) | pass |
@@ -392,6 +393,7 @@ The rule-pair check is automatic: `tests/test_rule_fixtures.py` parses the `RULE
 | tests/test_sarif_schema.py (export validates against the vendored OASIS SARIF 2.1.0 schema; purity) | pass |
 | tests/test_mcp_interop.py (official MCP SDK: initialize, schemas, scan_repo, explain_report, invalid args, unknown tool) | pass |
 | tests/test_capabilities.py (empty/doc-only/archive-only repos, doc/test collapsing, trace hook, `map --ref`) | pass |
+| tests/test_coverage.py (accounting arithmetic, skip reasons, language blind spots, the 20-file/60% decision) | pass |
 | tests/test_markdown_snapshot.py (PR-comment snapshot, pipe/newline escaping, suppression, truncation) | pass |
 | tests/test_rule_fixtures.py (positive fixture fires every declared rule; control-clean fires none) | pass |
 | tests/test_fuzz.py (bounded Hypothesis targets: `decode_tags`, `redact_pii`, `check_unicode`, `check_markdown_hidden`) | pass |
