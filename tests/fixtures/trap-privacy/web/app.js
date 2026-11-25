@@ -16,3 +16,4 @@ const live = new WebSocket("ws://socket.widget.dev/live");
 const secureLive = new WebSocket("wss://rt.other-cdn.dev/live");
 const replay = { maskAllInputs: true };
 document.cookie = "usprivacy=1YNN; path=/";
+document.cookie = "__hssc=1; path=/";
