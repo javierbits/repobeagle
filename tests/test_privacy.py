@@ -26,6 +26,7 @@ check("address prose ignored", not rb.ADDRESS_RE.search("2 gives your words a fr
 check("address license kept", bool(rb.ADDRESS_RE.search("51 Franklin Street, Fifth Floor")))
 check("address DE", bool(rb.ADDRESS_INTL_RE.search("Hauptstraße 12")))
 check("address PO box", bool(rb.ADDRESS_INTL_RE.search("P.O. Box 42")))
+check("reserved tld ignored", rb._endpoint_noise("example.invalid") and not rb._endpoint_noise("example.org"))
 
 check("luhn visa", rb._card_number_ok("4111 1111 1111 1111"))
 check("rejects timestamp", not rb._card_number_ok("1700000000000"))

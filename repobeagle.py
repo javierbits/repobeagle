@@ -855,9 +855,11 @@ PRIVATE_HOST_RE = re.compile(r"(?i)(^10\.|^192\.168\.|^127\.|^169\.254\.|^172\.(
                              r"^100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\.|\.local$|\.lan$|\.internal$|\.localhost$|"
                              r"^\[?fe80:|^\[?fc|^\[?fd)")
 
+RESERVED_TLD_RE = re.compile(r"(?i)\.(invalid|test|example|localhost)$")
+
 def _endpoint_noise(host):
-    """Local/LAN hosts and single-label names are not third parties and have nothing to leak."""
-    return bool(PRIVATE_HOST_RE.search(host)) or "." not in host
+    """Local/LAN/reserved hosts and single-label names are not third parties and have nothing to leak."""
+    return bool(PRIVATE_HOST_RE.search(host)) or bool(RESERVED_TLD_RE.search(host)) or "." not in host
 
 KNOWN_HOSTS = {
     "github.com", "gitlab.com", "bitbucket.org", "raw.githubusercontent.com", "gist.github.com",
