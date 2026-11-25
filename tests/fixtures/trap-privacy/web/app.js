@@ -7,3 +7,4 @@ import { getAnalytics } from 'firebase/analytics';
 const af = 'https://app.appsflyer.com/id123';
 import { chart } from 'https://cdn.unknown-cdn.dev/chart.js';
 const secureCookie = "__Host-_ga=1";
+fetch("https://api.widget.dev/v2/ping?ttclid=abc");

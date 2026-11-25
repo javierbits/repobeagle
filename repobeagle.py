@@ -762,6 +762,11 @@ def check_telemetry(root, p, text, telemetry, optouts, optouts_code):
         if re.match(r'\s*\("(?:ads|analytics|session-replay|crash|apm|devtool)",', line):
             continue          # a vendor table entry is a definition, not usage
         for kind, sev, vendor, rx in TELEMETRY_RULES:
+            if vendor == "Tracking pixel" and p.suffix.lower() not in (
+                    ".html", ".htm", ".css", ".scss", ".less", ".js", ".jsx", ".ts", ".tsx",
+                    ".vue", ".svelte", ".astro", ".php"):
+                if not re.search(r"(?i)(src\s*=|href\s*=|url\(|content\s*=|\bpixel\b|\bbeacon\b|tracking)", line):
+                    continue      # a literal like 1x1.png in test data is not a beacon
             key = (kind, vendor, "direct")
             if key in telemetry:
                 if rx.search(line):
@@ -1316,7 +1321,8 @@ IP_LOG_RE = re.compile(r"(?i)(req\.ip\b|request\.remote_addr|remote_addr|REMOTE_
 IP_LOG_SINK_RE = re.compile(r"(?i)(log|logger|print|puts|console|info|warn|debug|write|store|save|insert|persist|db|audit)")
 PII_URL_RE = re.compile(r"(?i)[?&](e?-?mail|phone|mobile|tel|name|first_?name|last_?name|full_?name|username|"
                          r"user_?name|address|street|zip|zip_?code|postal|ssn|dob|birthdate|birthday|gender)=")
-TRACKING_PARAM_RE = re.compile(r"[?&](utm_[a-z_]+|gclid|dclid|gbraid|wbraid|fbclid|msclkid|twclid|mc_cid|mc_eid|"
+TRACKING_PARAM_RE = re.compile(r"[?&](utm_[a-z_]+|gclid|dclid|gbraid|wbraid|fbclid|msclkid|twclid|ttclid|yclid|"
+                               r"li_fat_id|s_kwcid|epik|rb_clickid|wickedid|sc_cid|irclickid|mc_cid|mc_eid|"
                                r"mkt_tok|vero_id|oly_enc_id|_hsenc|_hsmi|srsltid|igshid|si|_ga|_gl|gclsrc|dclsrc)=")
 PRIVACY_DOC_NAMES = {"privacy.md", "privacy.txt", "privacy.rst", "privacy.markdown", "privacy-policy.md",
                       "privacy_policy.md", "privacy_policy.txt", "privacyinfo.xcprivacy"}
