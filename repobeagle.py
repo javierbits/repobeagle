@@ -2484,22 +2484,28 @@ def main():
         inner(sys.argv[2], sys.argv[3]); return 0
     ap = argparse.ArgumentParser(prog="repobeagle", description="RepoBeagle: Static safety gate for untrusted repos (never executes repo code).")
     sp = ap.add_subparsers(dest="cmd", required=True)
+    def add_scan_args(s, privacy_modes=True):
+        s.add_argument("target")
+        g = s.add_mutually_exclusive_group()
+        g.add_argument("--strict", action="store_true"); g.add_argument("--balanced", action="store_true"); g.add_argument("--relaxed", action="store_true")
+        s.add_argument("--keep", action="store_true", help="keep the temp clone")
+        s.add_argument("--json", metavar="FILE")
+        s.add_argument("--no-docker", action="store_true", help="run scanners locally instead of in the container")
+        s.add_argument("--no-osv", action="store_true", help="skip OSV (avoids sending package names to osv.dev)")
+        s.add_argument("--verify-deps", action="store_true", help="GuardDog-verify deps from requirements.txt/package.json (downloads packages, static only)")
+        s.add_argument("--no-trust", action="store_true", help="skip GitHub trust signals (unauthenticated public API)")
+        s.add_argument("--all", action="store_true", help="print all findings")
+        s.add_argument("--no-redact", action="store_true", help="show raw emails/phones/cards in privacy finding snippets")
+        if privacy_modes:
+            pv = s.add_mutually_exclusive_group()
+            pv.add_argument("--privacy-only", action="store_true", help="report only privacy/telemetry findings")
+            pv.add_argument("--no-privacy", action="store_true", help="drop privacy/telemetry findings")
+        s.add_argument("--no-color", action="store_true")
+
     s = sp.add_parser("scan", help="scan a git URL or local directory")
-    s.add_argument("target")
-    g = s.add_mutually_exclusive_group()
-    g.add_argument("--strict", action="store_true"); g.add_argument("--balanced", action="store_true"); g.add_argument("--relaxed", action="store_true")
-    s.add_argument("--keep", action="store_true", help="keep the temp clone")
-    s.add_argument("--json", metavar="FILE")
-    s.add_argument("--no-docker", action="store_true", help="run scanners locally instead of in the container")
-    s.add_argument("--no-osv", action="store_true", help="skip OSV (avoids sending package names to osv.dev)")
-    s.add_argument("--verify-deps", action="store_true", help="GuardDog-verify deps from requirements.txt/package.json (downloads packages, static only)")
-    s.add_argument("--no-trust", action="store_true", help="skip GitHub trust signals (unauthenticated public API)")
-    s.add_argument("--all", action="store_true", help="print all findings")
-    s.add_argument("--no-redact", action="store_true", help="show raw emails/phones/cards in privacy finding snippets")
-    pv = s.add_mutually_exclusive_group()
-    pv.add_argument("--privacy-only", action="store_true", help="report only privacy/telemetry findings")
-    pv.add_argument("--no-privacy", action="store_true", help="drop privacy/telemetry findings")
-    s.add_argument("--no-color", action="store_true")
+    add_scan_args(s)
+    pr = sp.add_parser("privacy", help="privacy audit: report only privacy/telemetry findings")
+    add_scan_args(pr, privacy_modes=False)
     v = sp.add_parser("verify", help="verify a published repobeagle badge (signature + freshness); exit 0 valid/current, 1 invalid, 2 stale")
     v.add_argument("target", nargs="?", help="github repo slug or URL whose repobeagle branch holds the badge")
     v.add_argument("--branch", default="repobeagle", help="badge branch name (default: repobeagle)")
@@ -2510,6 +2516,9 @@ def main():
     v.add_argument("--no-color", action="store_true")
     sp.add_parser("version")
     a = ap.parse_args()
+    if a.cmd == "privacy":
+        a.privacy_only, a.no_privacy = True, False
+        return cmd_scan(a)
     if a.cmd == "verify":
         return cmd_verify(a)
     if a.cmd == "version":
