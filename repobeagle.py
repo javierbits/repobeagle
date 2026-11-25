@@ -1075,11 +1075,16 @@ def check_privacy(root, p, text, privacy, own=()):
                     continue          # a reference URL in a comment is not a request
                 if scheme in ("http", "ws"):
                     requested = re.search(r"(?i)(fetch\s*\(|curl|wget|requests\.|urlopen|src\s*=|href\s*=|action\s*=|XMLHttpRequest|axios|WebSocket|\.get\s*\()", line)
+                    xml_ref = re.search(r"(?i)(xmlns|schemaLocation|setFeature|DOCTYPE|noNamespaceSchemaLocation)", line)
+                    archived = "web.archive.org/web/" in line[:pos]
                     _priv_add(privacy, "insecure-endpoint",
-                              "info" if (test_path or is_i18n) or (is_doc and not requested) else ("medium" if requested else "low"),
+                              "info" if (xml_ref or archived or test_path or is_i18n) or (is_doc and not requested)
+                              else ("medium" if requested else "low"),
                               host, r, i, line,
                               f"Plaintext {scheme}:// to {host}: "
-                              + ("requests and metadata are not encrypted in transit." if requested else
+                              + ("XML namespace/schema identifier, not a fetched URL." if xml_ref else
+                                 "historical URL inside a web.archive.org link." if archived else
+                                 "requests and metadata are not encrypted in transit." if requested else
                                  "reference URL in docs, not a request." if is_doc else
                                  "translation-string link, not a runtime request." if is_i18n else
                                  "test fixture URL, not a runtime request." if test_path else
