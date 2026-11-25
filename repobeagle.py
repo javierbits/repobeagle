@@ -747,7 +747,7 @@ def check_telemetry(root, p, text, telemetry, optouts, optouts_code):
     # Prose mentions vendors without using them ("alternative to Sentry"), so only opt-outs count there.
     prose = (p.suffix.lower() in PROSE_EXT or (p.suffix.lower() == ".txt" and bool(re.search(r"(?i)(^|/)docs?/", r)))
              or bool(AUTHORS_FILE_RE.search(r)) or bool(LICENSE_FILE_RE.search(r)))
-    test_src = bool(TEST_SRC_RE.search(r))
+    test_src = bool(TEST_SRC_RE.search(r)) and not r.startswith("tests/fixtures/")
     for i, line in enumerate(text.split("\n"), 1):
         if len(line) > 2000:
             continue
@@ -761,8 +761,8 @@ def check_telemetry(root, p, text, telemetry, optouts, optouts_code):
                 optouts_code.add("Do-Not-Track")
         if prose or _is_comment(line):
             continue          # a comment mentioning a vendor is a note, not a request
-        if test_src:
-            continue          # test code lists/uses vendors to exercise them; the shipped code is what matters
+        if test_src or I18N_FILE_RE.search(r):
+            continue          # test/i18n files list words that happen to match vendor names; shipped behaviour is what matters
         if re.match(r'\s*\("(?:ads|analytics|session-replay|crash|apm|devtool)",', line):
             continue          # a vendor table entry is a definition, not usage
         for kind, sev, vendor, rx in TELEMETRY_RULES:
@@ -810,7 +810,9 @@ def telemetry_findings(telemetry, optouts, optouts_code):
 # Privacy: third-party endpoints, browser storage/cookies, platform permissions
 # ----------------------------------------------------------------------------
 PROSE_EXT = {".md", ".mdx", ".markdown", ".rst", ".adoc"}
-TEST_SRC_RE = re.compile(r"(?i)(^|/)(tests?|__tests__|spec)/(?!fixtures/)")
+TEST_SRC_RE = re.compile(r"(?i)(^|/)(tests?|__tests__|spec)/")
+I18N_FILE_RE = re.compile(r"(?i)(^|/)(locales?|i18n|translations?|l10n)/")
+PACKAGE_MANAGER_RE = re.compile(r'"packageManager"\s*:')
 AUTHORS_FILE_RE = re.compile(r"(?i)(^|/)(authors|contributors|credits|thanks)(\.\w+)?$")
 LICENSE_FILE_RE = re.compile(r"(?i)(^|/)(licen[cs]e|copying|notice)([.-][^/]*)?$")
 
@@ -1439,7 +1441,7 @@ CONSENT_STATE_RE = re.compile(r"(?i)(?<![\w.-])(OptanonConsent|OptanonAlertBoxCl
 TRACKING_COOKIE_RE = re.compile(r"(?i)(?<![\w.])(_ga_[A-Z0-9]+|_gac_[A-Za-z0-9]+|_ga|_gid|_gat|_gcl_au|_gcl_aw|"
                                 r"_fbp|_fbc|_hj\w*|ajs_\w*|__utm[a-z]|__hstc|hubspotutk|intercom-[\w-]+|mp_\w+|"
                                 r"amplitude_id\w*|ph_\w+|_clck|_clsk|_uetvid|_uetsid|_ttp|_rdt_uuid|li_sugr|"
-                                r"bcookie|lidc|_pin_unauth|_epik|_scid|\bfr|personalization_id|guest_id|__gads|__gpi|_tt_enable_cookie|IDE|NID)(?=[=;'\"\s,)]|$)")
+                                r"bcookie|lidc|_pin_unauth|_epik|_scid|\bfr(?==)|personalization_id|guest_id|__gads|__gpi|_tt_enable_cookie|IDE|NID)(?=[=;'\"\s,)]|$)")
 VENDOR_PII_RE = re.compile(r"(?i)(send_?default_?pii\s*[:=]\s*true|person_?profiles\s*[:=]\s*[\"']always[\"']|"
                             r"anonymize_?ip\s*[:=]\s*false|store_?ip\s*[:=]\s*true|track_?ip\s*[:=]\s*true)")
 VENDOR_PII_SAFE_RE = re.compile(r"(?i)(send_?default_?pii\s*[:=]\s*false|person_?profiles\s*[:=]\s*[\"'](?:never|identified_only)[\"']|"
@@ -1621,7 +1623,10 @@ def check_privacy_signals(root, p, text, privacy, masks):
                         _priv_add(privacy, "pii-card", "low", m.group(0).strip(), r, i, line,
                                   "Payment card number that passes the Luhn check: personal data in source/config.")
                         break
+            version_string = bool(PACKAGE_MANAGER_RE.search(line))   # "yarn@4.18.1" is a version, not an email
             for m in EMAIL_RE.finditer(line):
+                if version_string:
+                    break
                 addr = m.group(0)
                 if (m.start() and line[m.start() - 1] in "/:") or _in_url_authority(line, m.start()):
                     continue          # srcset densities and URL userinfo such as user:pass@host
