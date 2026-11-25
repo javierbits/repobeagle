@@ -26,3 +26,21 @@ jobs:
         run: python3 -m pip install --quiet -r requirements-dev.txt
       - name: Online corpus (psf/requests, tj/commander.js, an MCP-poisoned repo, juice-shop, a malware dataset)
         run: tests/run_tests.sh
+      - name: Real-site web regression (one public page, privacy-only)
+        run: |
+          python3 repobeagle.py web https://example.com --json /tmp/web.json --no-color || true
+          python3 - <<'PY'
+          import json
+          import sys
+          import urllib.parse
+          d = json.load(open("/tmp/web.json"))
+          m = d.get("meta") or {}
+          f = m.get("fetched") or {}
+          host = urllib.parse.urlsplit(m.get("url", "")).netloc
+          ok = (m.get("mode", "").startswith("web") and m.get("privacy_mode") == "only"
+                and host == "example.com" and f.get("page_bytes", 0) > 0
+                and "final_url" in f and d.get("verdict") in ("GREEN", "YELLOW"))
+          print("PASS real-site web regression" if ok
+                else f"FAIL real-site web regression: url={m.get('url')} fetched={f} verdict={d.get('verdict')}")
+          sys.exit(0 if ok else 1)
+          PY
