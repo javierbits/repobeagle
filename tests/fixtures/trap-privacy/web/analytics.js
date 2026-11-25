@@ -21,3 +21,5 @@ const oneTrust = "OptanonConsent=groups=1";
 fetch("https://widget.dev/api?email=user%40widget.dev");
 console.dir(user);
 fetch("https://widget.dev/ping", {referrerPolicy: "no-referrer"});
+fbq('init', '123');
+const criteo = 'https://static.criteo.net/js/ld/ld.js';
