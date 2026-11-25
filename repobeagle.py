@@ -7,7 +7,7 @@ NEVER executes repository code. Stdlib only (scanners are external binaries).
   repobeagle verify <github-repo> [--branch repobeagle] [--expect-sha SHA]
 """
 import argparse, hashlib, json, os, platform, re, shutil, subprocess, sys, tempfile, time, unicodedata
-import urllib.error, urllib.request
+import urllib.error, urllib.parse, urllib.request
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -2302,6 +2302,33 @@ def run_agent_checks(root):
 # ----------------------------------------------------------------------------
 # External scanners (run inside container or locally): gitleaks, semgrep, guarddog
 # ----------------------------------------------------------------------------
+_TOOL_VERSIONS = {}
+
+def tool_version(name):
+    """Best-effort version of a scanner, cached for the process. Never raises, never scans."""
+    if name in _TOOL_VERSIONS:
+        return _TOOL_VERSIONS[name]
+    v = None
+    try:
+        from importlib.metadata import version as _pkg_version
+        v = _pkg_version(name)          # semgrep/guarddog/bandit in the image's env
+    except Exception:
+        pass
+    if not v:
+        exe = shutil.which(name)
+        if exe:
+            try:
+                r = subprocess.run([exe, "version" if name == "gitleaks" else "--version"],
+                                   capture_output=True, text=True, timeout=20)
+                m = re.search(r"\b\d+\.\d+(?:\.\d+)?\b", (r.stdout or "") + "\n" + (r.stderr or ""))
+                v = m.group(0) if m else None
+            except Exception:
+                v = None
+    if v:
+        v = str(v).strip()
+    _TOOL_VERSIONS[name] = v
+    return v
+
 def _run(cmd, timeout=900, env=None):
     try:
         e = dict(os.environ, SEMGREP_ENABLE_VERSION_CHECK="0", SEMGREP_SEND_METRICS="off", **(env or {}))
@@ -2430,6 +2457,86 @@ def scan_bandit(src, out):
                           re.sub(r"\s+", " ", (r.get("code") or "")).strip()[:160], r.get("issue_text") or ""))
     return fs, None
 
+CAP_NET = re.compile(r"https?://([A-Za-z0-9._-]+\.[A-Za-z]{2,})")
+CAP_PROC = re.compile(r"(?i)(subprocess\.(?:run|Popen|call|check_output|check_call)|os\.(?:system|popen)|\bchild_process\b|\.execFile\(|\bexec\s*\(|Runtime\.getRuntime\(\)\.exec|Command::new)")
+CAP_STORE = re.compile(r"(?i)(localStorage|sessionStorage|document\.cookie|indexedDB|Set-Cookie)")
+CAP_ENV = re.compile(r"(?i)(?:os\.environ(?:\.get)?\s*[\[(]\s*['\"]([A-Z0-9_]{2,})|process\.env\.([A-Za-z0-9_]+)|env::var\(\s*\"([A-Za-z0-9_]+)\")")
+CAP_FS = re.compile(r"(?i)(~?/\.ssh|(?<![\w.-])id_(rsa|ed25519)|(?<![\w.-])\.env(?!\.example|\.sample|\.template)|(?<![\w.-])\.aws/credentials|(?<![\w.-])\.npmrc|(?<![\w.-])\.netrc|(?<![\w.-])\.pypirc|(?<![\w.-])\.docker/config\.json|(?<![\w.-])\.kube/config|\.gnupg|wallet\.dat|Login\s+Data|cookies\.sqlite|\$HOME|expanduser|homedir\(\))")
+CAP_SECTIONS = ("network", "filesystem", "processes", "environment", "storage")
+CAP_LIMIT = 60
+CAP_FILES = 20000
+
+def scan_capabilities(root):
+    """Inventory of what the repo can touch: hosts, secret paths, subprocesses, env vars, storage. Cheap regexes, never executes code."""
+    caps = {k: {} for k in CAP_SECTIONS}
+    files = 0
+    def add(section, value, relpath, line):
+        e = caps[section].get(value)
+        if e:
+            e["count"] += 1
+        elif sum(len(v) for v in caps.values()) < CAP_LIMIT * len(CAP_SECTIONS):
+            caps[section][value] = {"value": value, "file": relpath, "line": line, "count": 1}
+    for p in iter_files(root):
+        files += 1
+        if files > CAP_FILES:
+            break
+        if p.suffix.lower() not in CODE_EXT | DOC_EXT and p.suffix.lower() not in (".json", ".yml", ".yaml", ".toml", ".xml", ".plist", ".gradle", ".cfg", ".ini"):
+            continue
+        text = read_text(p)
+        if text is None:
+            continue
+        r = rel(root, p)
+        for i, line in enumerate(text.splitlines(), 1):
+            if len(line) > 2000 or _is_comment(line):
+                continue
+            for m in CAP_NET.finditer(line):
+                add("network", m.group(1).lower(), r, i)
+            for m in CAP_PROC.finditer(line):
+                add("processes", m.group(0).lower(), r, i)
+            for m in CAP_STORE.finditer(line):
+                add("storage", m.group(0), r, i)
+            for m in CAP_FS.finditer(line):
+                add("filesystem", m.group(0).lstrip("/"), r, i)
+            for m in CAP_ENV.finditer(line):
+                add("environment", next(g for g in m.groups() if g), r, i)
+    return {"files": files, **{k: sorted(v.values(), key=lambda e: (-e["count"], e["value"]))[:CAP_LIMIT] for k, v in caps.items()}}
+
+COVERAGE_EXTS = CODE_EXT | DOC_EXT | {".json", ".yml", ".yaml", ".toml", ".xml", ".plist", ".cfg", ".ini", ".conf", ".env", ".tf"}
+
+def scan_coverage(root):
+    """What the scan actually inspected: source bytes, and why the rest was skipped. Never executes code."""
+    total = scanned = 0
+    bytes_total = bytes_scanned = 0
+    reasons = {"archive": 0, "binary": 0, "oversize": 0, "unreadable": 0, "unsupported": 0}
+    exts = {}
+    for p in iter_files(root):
+        total += 1
+        try:
+            size = p.stat().st_size
+        except OSError:
+            size = 0
+        bytes_total += size
+        ext = p.suffix.lower()
+        if ext in ARCHIVE_EXT:
+            reasons["archive"] += 1; continue
+        if ext in BINARY_EXT:
+            reasons["binary"] += 1; continue
+        if ext not in COVERAGE_EXTS:
+            reasons["unsupported"] += 1
+            exts[ext or "(none)"] = exts.get(ext or "(none)", 0) + 1
+            continue
+        if size > MAX_FILE:
+            reasons["oversize"] += 1; continue
+        text = read_text(p)
+        if text is None:
+            reasons["binary"] += 1; continue
+        scanned += 1
+        bytes_scanned += size
+    pct = round(100.0 * bytes_scanned / bytes_total, 1) if bytes_total else 100.0
+    return {"files_total": total, "files_scanned": scanned, "bytes_total": bytes_total,
+            "bytes_scanned": bytes_scanned, "bytes_scanned_pct": pct, "skipped": reasons,
+            "unscanned_extensions": sorted(exts.items(), key=lambda kv: (-kv[1], kv[0]))[:12]}
+
 def inner(src, out):
     """Runs offline scanners + agent checks. Used inside the container or locally."""
     out = Path(out); out.mkdir(parents=True, exist_ok=True)
@@ -2442,19 +2549,39 @@ def inner(src, out):
             fs, note = [], f"{name} crashed: {ex}"
         result["findings"] += fs
         result["tools"][name] = {"findings": len(fs), "seconds": round(time.time() - t, 1), "ok": note is None or "skipped" in (note or "")}
+        ver = tool_version(name)
+        if ver: result["tools"][name]["version"] = ver
         if note: result["notes"].append(note)
     t = time.time()
     fs, n = run_agent_checks(src)
     result["findings"] += fs
     result["tools"]["agent-checks"] = {"findings": len(fs), "seconds": round(time.time() - t, 1), "ok": True, "files": n}
+    t = time.time()
+    try:
+        result["capabilities"] = scan_capabilities(src)
+    except Exception as ex:
+        result["notes"].append(f"capability map failed: {ex}")
+    try:
+        cov = scan_coverage(src)
+        result["coverage"] = cov
+        if cov["files_total"] >= 20 and cov["bytes_scanned_pct"] < 60:
+            result["findings"].append(finding("agent-checks", "low", "(repo)", 0,
+                f"Coverage-low: only {cov['bytes_scanned_pct']}% of source bytes were inspected",
+                f"{cov['files_scanned']}/{cov['files_total']} files",
+                "Large or unsupported files are skipped, so a GREEN verdict over them is not evidence of safety."))
+    except Exception as ex:
+        result["notes"].append(f"coverage accounting failed: {ex}")
     (out / "inner.json").write_text(json.dumps(result))
     return result
 
 # ----------------------------------------------------------------------------
 # Host-side: OSV (needs network) + guarddog verify (needs network)
 # ----------------------------------------------------------------------------
-def scan_osv(src):
-    res = _run(["osv-scanner", "scan", "source", "-r", "--format", "json", str(src)], timeout=600)
+def scan_osv(src, offline=False):
+    argv = ["osv-scanner", "scan", "source", "-r", "--format", "json"]
+    if offline:
+        argv += ["--offline", "--offline-vulnerabilities"]      # local DBs only, no osv.dev lookup
+    res = _run(argv + [str(src)], timeout=600)
     if res is None: return [], "osv-scanner not installed (skipped)"
     if res == "timeout": return [], "osv-scanner timed out"
     if "no package sources found" in (res.stdout + res.stderr).lower():
@@ -2558,11 +2685,18 @@ def ai_review(src, findings):
 # ----------------------------------------------------------------------------
 # Orchestration
 # ----------------------------------------------------------------------------
-def fetch(target, work):
+CONTEXT_FILES = ("package.json", "package-lock.json", "pnpm-lock.yaml", "yarn.lock", "pyproject.toml", "setup.cfg",
+                 "requirements.txt", "poetry.lock", "Pipfile", "Cargo.toml", "Cargo.lock", "go.mod", "go.sum",
+                 "composer.json", "pubspec.yaml", "CNAME", ".repobeagleignore")
+
+def fetch(target, work, ref=None, since=None):
     dest = Path(work) / "src"
     if os.path.isdir(target):
+        for flag, value in (("--ref", ref), ("--since", since)):
+            if value:
+                raise SystemExit(f"{flag} {value!r} needs a git URL; a local directory is copied as-is")
         shutil.copytree(target, dest, symlinks=True, ignore=shutil.ignore_patterns(".git"))
-        return dest, "local path (copied)"
+        return dest, "local path (copied)", None
     if not re.match(r"^(https?://|git@|ssh://)", target):
         raise SystemExit(f"refusing target {target!r}: use an https/ssh git URL or an existing local directory")
     env = dict(os.environ, GIT_TERMINAL_PROMPT="0", GIT_LFS_SKIP_SMUDGE="1", GIT_ALLOW_PROTOCOL="https:http:ssh",
@@ -2578,19 +2712,45 @@ def fetch(target, work):
         if r.returncode != 0:
             raise SystemExit("git failed: " + r.stderr.strip()[-400:])
         return r.stdout
+    def resolve(rev):
+        git(["fetch", "--depth", "1", "--filter=blob:none", "--no-tags", "origin", rev], cwd=dest)
+        return git(["rev-parse", "FETCH_HEAD"], cwd=dest).strip()
     # 1) blobless shallow clone: commits + trees only, no file contents yet
     git(["clone", "--depth", "1", "--filter=blob:none", "--no-checkout", "--no-recurse-submodules",
          "--single-branch", "--no-tags", "--", target, str(dest)])
-    # 2) list files from the tree (no blobs downloaded); archives/binaries are recorded but never fetched
-    names = git(["ls-tree", "-r", "--name-only", "HEAD"], cwd=dest).splitlines()
-    skipped = [n for n in names if n.lower().endswith(ARCHIVE_EXT) or Path(n).suffix.lower() in BINARY_EXT]
-    # 3) sparse checkout that excludes archives/binaries -> only text/source blobs are downloaded
+    tip = git(["rev-parse", "HEAD"], cwd=dest).strip()
+    if ref:
+        # 2a) pin an exact branch/tag/commit: fetch just that object, then work from it
+        tip = resolve(ref)
+    base = resolve(since) if since else None
+    # 3) list files from the tree (no blobs downloaded); archives/binaries are recorded but never fetched
+    names = git(["ls-tree", "-r", "--name-only", tip], cwd=dest).splitlines()
+    present = set(names)
+    binary = lambda n: n.lower().endswith(ARCHIVE_EXT) or Path(n).suffix.lower() in BINARY_EXT
+    skipped = [n for n in names if binary(n)]
+    if base:
+        # 4a) changed-files scope: materialize only what the diff touched, plus root manifests for context
+        changed = [p for p in git(["diff", "--name-only", "--diff-filter=AM", base, tip], cwd=dest).splitlines() if p in present]
+        keep = [p for p in dict.fromkeys(changed + [c for c in CONTEXT_FILES if c in present]) if not binary(p)]
+        for i in range(0, len(keep), 100):
+            git(["checkout", "-q", tip, "--"] + keep[i:i + 100], cwd=dest)
+        (Path(work) / "scope.json").write_text(json.dumps(
+            {"scope": "changed", "since": since, "changed_files": len(changed), "listed_files": len(names),
+             "checked_out": len(keep)}))
+        how = (f"git clone --depth 1 --filter=blob:none @ {ref or 'HEAD'} + diff since {since} "
+               f"({len(changed)} changed files, {len(skipped)} archives/binaries listed, not downloaded)")
+        shutil.rmtree(dest / ".git", ignore_errors=True)
+        (Path(work) / "skipped.json").write_text(json.dumps(skipped))
+        return dest, how, tip
+    # 4b) full scope: sparse checkout that excludes archives/binaries -> only text/source blobs are downloaded
     pats = ["/*"] + [f"!*{e}" for e in ARCHIVE_EXT] + [f"!*{e}" for e in BINARY_EXT]
     git(["sparse-checkout", "set", "--no-cone"] + pats, cwd=dest)
-    git(["checkout", "-q", "HEAD"], cwd=dest)
+    git(["checkout", "-q", tip], cwd=dest)
+    commit = git(["rev-parse", "HEAD"], cwd=dest).strip()
     shutil.rmtree(dest / ".git", ignore_errors=True)
     (Path(work) / "skipped.json").write_text(json.dumps(skipped))
-    return dest, f"git clone --depth 1 --filter=blob:none + sparse checkout ({len(skipped)} archives/binaries listed, not downloaded)"
+    how = f"git clone --depth 1 --filter=blob:none{f' @ {ref}' if ref else ''} + sparse checkout ({len(skipped)} archives/binaries listed, not downloaded)"
+    return dest, how, commit
 
 def docker_ok():
     if not shutil.which("docker"): return False
@@ -2748,6 +2908,578 @@ def verdict(findings, profile, ai):
         why = "No significant findings from any scanner"
     return v, why, counts
 
+def explain_report(d):
+    """Explains a stored report's verdict from its counts and profile, including the margin. Pure: never re-scans."""
+    meta = d.get("meta") if isinstance(d.get("meta"), dict) else {}
+    prof_name = meta.get("profile")
+    if prof_name not in PROFILES:
+        print(f"explain: no known profile in the report (found {prof_name!r})", file=sys.stderr)
+        return 1
+    findings = [f for f in d.get("findings") or [] if isinstance(f, dict) and not f.get("suppressed")]
+    counts = d.get("counts")
+    if not isinstance(counts, dict) or not counts:
+        counts = {s: sum(1 for f in findings if f.get("severity") == s) for s in SEV_ORDER}
+    prof = PROFILES[prof_name]
+
+    def at_least(sev):
+        return sum(n for k, n in counts.items() if SEV_ORDER.get(k, 0) >= SEV_ORDER[sev])
+
+    stored = d.get("verdict")
+    rv, why, _ = verdict(findings, prof_name, d.get("ai_review"))
+    print(f"report {d.get('version', '?')}  |  profile {prof_name}  |  verdict {stored or '?'}")
+    print("counts: " + (", ".join(f"{k} {counts[k]}" for k in SEV_ORDER if counts.get(k)) or "none"))
+    if stored and stored != rv:
+        print(f"warning: stored verdict {stored} does not match the findings under {prof_name} ({rv})", file=sys.stderr)
+    print("thresholds:")
+    for sev, n in prof["red"]:
+        got = at_least(sev)
+        print(f"  RED    {sev}+ >= {n}: {got} present {'(met)' if got >= n else '(not met)'}")
+    ysev, ygot = prof["yellow"], at_least(prof["yellow"])
+    print(f"  YELLOW {ysev}+ >= 1: {ygot} present {'(met)' if ygot else '(not met)'}")
+    print(f"decision: {rv}" + (f" ({why})" if why else ""))
+    if rv == "RED":
+        for sev, n in prof["red"]:
+            got = at_least(sev)
+            if got >= n:
+                print(f"to leave RED: remove {got - n + 1} finding(s) at {sev}+ (at most {n - 1} may remain)")
+                break
+    elif rv == "YELLOW":
+        print(f"to reach GREEN: remove all {ygot} finding(s) at {ysev}+")
+    else:
+        room = [f"{max(0, n - 1 - at_least(sev))} more {sev}+" for sev, n in prof["red"]]
+        print("headroom: " + ", ".join(room) + f", {max(0, 1 - ygot)} more {ysev}+ (then YELLOW/RED)")
+    rules = {}
+    for f in findings:
+        rule = str(f.get("title", "")).split(":")[0].split(" (")[0] or "?"
+        rules[rule] = rules.get(rule, 0) + 1
+    top = sorted(rules.items(), key=lambda kv: (-kv[1], kv[0]))[:10]
+    if top:
+        print("largest contributors: " + ", ".join(f"{r} x{n}" for r, n in top))
+    return 0
+
+
+def cmd_explain(a):
+    """Prints how a stored report's verdict follows from the profile thresholds. No scan, no network."""
+    try:
+        d = json.loads(Path(a.report).read_text())
+    except OSError as ex:
+        print(f"explain: cannot read {a.report}: {ex}", file=sys.stderr)
+        return 1
+    except json.JSONDecodeError as ex:
+        print(f"explain: {a.report} is not valid JSON: {ex}", file=sys.stderr)
+        return 1
+    return explain_report(d) if isinstance(d, dict) else (print("explain: report root is not an object", file=sys.stderr) or 1)
+
+
+REMEDIATION = [
+    (r"(?i)^Download-and-execute", "pin a version and verify a checksum; avoid `curl … | sh` in install hooks and scripts"),
+    (r"(?i)^npm lifecycle script", "run `npm ci --ignore-scripts`, or review the script; `postinstall` runs automatically on every install"),
+    (r"(?i)^Code reads secrets/credentials", "keep the secret out of the path that also reaches the network, or make that call opt-in"),
+    (r"(?i)^gha-pwn-request", "use `pull_request` (read-only token) or stop checking out the PR head in `pull_request_target`"),
+    (r"(?i)^gha-unpinned-action", "pin `uses:` to a full 40-character commit SHA"),
+    (r"(?i)^gha-write-permissions", "add a least-privilege `permissions:` block to the workflow"),
+    (r"(?i)^gha-secret-echo", "stop echoing secrets; rely on masking and scope `env:` to the step that needs it"),
+    (r"(?i)^gha-privileged-trigger", "prefer `pull_request`, and check who can push to `workflow_run` upstream branches"),
+    (r"(?i)^typosquat-dep", "verify the package name against the registry before adding it"),
+    (r"(?i)^install-time-(network|storage)", "move the side effect out of module scope or gate it behind a flag"),
+    (r"(?i)^install-hook", "review the hook; run installs with scripts disabled where the tool allows it"),
+    (r"(?i)^insecure-endpoint", "use https:// / wss://"),
+    (r"(?i)^(android|ios)-cleartext", "use TLS, or scope the cleartext exception to the hosts that need it"),
+    (r"(?i)^cookie-flags", "set `Secure; HttpOnly; SameSite=Lax` (or Strict) when writing the cookie"),
+    (r"(?i)^cookie-write", "prefer HttpOnly cookies set by the server when the value is not needed in JS"),
+    (r"(?i)^(android-permission|android-feature)", "request the permission at first use, and add `android:maxSdkVersion` if only old versions need it"),
+    (r"(?i)^extension-permission", "narrow the host match pattern, or move the permission to `optional_*`"),
+    (r"(?i)^macos-entitlement", "drop the entitlement or add a per-use prompt (camera, microphone, location)"),
+    (r"(?i)^telemetry-session-replay", "load the replay SDK only after consent, and enable input/text masking"),
+    (r"(?i)^telemetry-", "gate the SDK behind consent, or disable it with its documented opt-out"),
+    (r"(?i)^(third-party-|tracking-cookie|client-id|fingerprint)", "self-host the asset, or document and gate the host behind consent"),
+    (r"(?i)^pii-(email|phone|address|postcode|ssn|card)", "move the value to config/env, or mark it as an example so the rule can ignore it"),
+    (r"(?i)^(pii-log|ip-logging)", "log an id instead of the object; truncate/hash the address before logging"),
+    (r"(?i)^(pii-in-url|tracking-params)", "strip the parameter before it reaches logs/referers, or use a POST body instead"),
+    (r"(?i)^coverage-low", "inspect the large or unsupported files manually; the verdict does not cover them"),
+    (r"(?i)^MALICIOUS package", "remove or replace the package; check the registry advisory"),
+    (r"(?i)^Vulnerable dependency", "upgrade to a version past the advisory range"),
+]
+
+_REMEDIATION_RE = [(re.compile(p), text) for p, text in REMEDIATION]
+
+def remediation_for(f):
+    """One deterministic, well-understood next action per finding, or None when none is obvious."""
+    for rx, text in _REMEDIATION_RE:
+        if rx.search(str(f.get("title") or "")) or rx.search(_rule_of(f)):
+            return text
+    return None
+
+def _rule_of(f):
+    return str(f.get("title", "")).split(":")[0].split(" (")[0] or "?"
+
+def diff_reports(old, new):
+    """Compares two reports at (rule, file) granularity so line drift is not a change. Returns added, removed, counts."""
+    def active(d):
+        return [f for f in (d.get("findings") or [])
+                if isinstance(f, dict) and not f.get("suppressed") and f.get("severity") in SEV_ORDER]
+    def index(d):
+        out = {}
+        for f in active(d):
+            out.setdefault((_rule_of(f), f.get("file") or "?"), []).append(f)
+        return out
+    o, n = index(old), index(new)
+    order = lambda f: (-SEV_ORDER[f["severity"]], f.get("file") or "", f.get("line") or 0)
+    added = sorted((fs[0] for k, fs in n.items() if k not in o), key=order)
+    removed = sorted((fs[0] for k, fs in o.items() if k not in n), key=order)
+    return added, removed, sum(len(v) for v in o.values()), sum(len(v) for v in n.values())
+
+def cmd_diff(a):
+    """Compares two stored reports and fails when the change added findings at/above --min-severity. Never scans."""
+    try:
+        old = json.loads(Path(a.old).read_text())
+        new = json.loads(Path(a.new).read_text())
+    except OSError as ex:
+        print(f"diff: cannot read report: {ex}", file=sys.stderr); return 1
+    except json.JSONDecodeError as ex:
+        print(f"diff: a report is not valid JSON: {ex}", file=sys.stderr); return 1
+    if not isinstance(old, dict) or not isinstance(new, dict):
+        print("diff: report roots must be JSON objects", file=sys.stderr); return 1
+    mo, mn = old.get("meta") or {}, new.get("meta") or {}
+    if mo.get("ruleset") and mn.get("ruleset") and mo["ruleset"] != mn["ruleset"]:
+        print(f"diff: reports were produced by different rulesets ({mo['ruleset']} vs {mn['ruleset']}); "
+              "added/removed may include rule changes", file=sys.stderr)
+    added, removed, old_n, new_n = diff_reports(old, new)
+    thr = SEV_ORDER[a.min_severity]
+    gated = [f for f in added if SEV_ORDER.get(f["severity"], 0) >= thr]
+    C = (lambda code, s: f"\033[{code}m{s}\033[0m") if (color_enabled() and not a.no_color) else (lambda code, s: s)
+    vc = {"RED": "1;41;97", "YELLOW": "1;43;30", "GREEN": "1;42;30"}
+    show = lambda v: C(vc[v], v) if v in vc else (v or "?")
+    print(f"baseline: {show(old.get('verdict'))}  profile {mo.get('profile', '?')}  findings {old_n}  ({a.old})")
+    print(f"current:  {show(new.get('verdict'))}  profile {mn.get('profile', '?')}  findings {new_n}  ({a.new})")
+    print(f"added {len(added)}, removed {len(removed)} (matching on rule + file; line moves are not changes)")
+    sc = {"critical": "1;91", "high": "91", "medium": "93", "low": "96", "info": "37"}
+    for label, items in (("added", added), ("removed", removed)):
+        for f in items[:50]:
+            loc = f"{f['file']}:{f['line']}" if f.get("line") else f"{f.get('file')}"
+            print(f"  {label:<7} {C(sc[f['severity']], f['severity'].upper().ljust(8))} {f['title']}  [{loc}]")
+        if len(items) > 50:
+            print(f"  {label:<7} ... {len(items) - 50} more")
+    if a.json:
+        Path(a.json).write_text(json.dumps({
+            "old": {"verdict": old.get("verdict"), "profile": mo.get("profile"), "ruleset": mo.get("ruleset"), "findings": old_n},
+            "new": {"verdict": new.get("verdict"), "profile": mn.get("profile"), "ruleset": mn.get("ruleset"), "findings": new_n},
+            "added": added, "removed": removed,
+            "gate": {"min_severity": a.min_severity, "added": len(gated)}}, indent=2))
+        print(f"[repobeagle] diff JSON written to {a.json}", file=sys.stderr)
+    if gated:
+        print(C("1;91", f"gate: {len(gated)} new finding(s) at/above {a.min_severity}"))
+        return 1
+    print(f"gate: no new findings at/above {a.min_severity}")
+    return 0
+
+
+_SARIF_LEVEL = {"critical": "error", "high": "error", "medium": "warning", "low": "note", "info": "note"}
+SARIF_SCHEMA = "https://json.schemastore.org/sarif-2.1.0.json"
+
+def sarif_report(d):
+    """Converts a stored report to SARIF 2.1.0 for GitHub code scanning and editors. Pure: never re-scans."""
+    meta = d.get("meta") if isinstance(d.get("meta"), dict) else {}
+    rules, results = {}, []
+    fs = [f for f in (d.get("findings") or []) if isinstance(f, dict) and f.get("severity") in SEV_ORDER]
+    fs.sort(key=lambda f: (-SEV_ORDER[f["severity"]], f.get("file") or "", f.get("line") or 0))
+    for f in fs:
+        rule, sev = _rule_of(f), f["severity"]
+        rules.setdefault(rule, {"id": rule, "name": rule, "shortDescription": {"text": rule},
+                                 "defaultConfiguration": {"level": _SARIF_LEVEL[sev]}, "properties": {"severity": sev}})
+        loc = {"artifactLocation": {"uri": f.get("file") or "."}}
+        if f.get("line"):
+            try: loc["region"] = {"startLine": max(1, int(f["line"]))}
+            except (TypeError, ValueError): pass
+        msg = (f.get("title") or rule)
+        if f.get("snippet"): msg += " — " + str(f["snippet"])
+        r = {"ruleId": rule, "level": _SARIF_LEVEL[sev], "message": {"text": msg[:1000]},
+             "locations": [{"physicalLocation": loc}],
+             "partialFingerprints": {"repobeagle/v1": hashlib.sha256(
+                 f"{rule}|{f.get('file')}|{f.get('title')}|{f.get('snippet') or ''}".encode()).hexdigest()},
+             "properties": {"tool": f.get("tool"), "severity": sev, "line": f.get("line") or 0,
+                            "remediation": f.get("remediation")}}
+        if f.get("suppressed"):
+            r["suppressions"] = [{"kind": "external", "justification": f"suppressed via {SUPPRESS_FILE}"}]
+        results.append(r)
+    run = {"tool": {"driver": {"name": "repobeagle", "version": VERSION,
+                               "informationUri": "https://github.com/javierbits/repobeagle",
+                               "rules": [rules[k] for k in sorted(rules)]}},
+           "invocations": [{"executionSuccessful": True}],
+           "results": results,
+           "properties": {"verdict": d.get("verdict"), "profile": meta.get("profile"),
+                          "privacy_mode": meta.get("privacy_mode"), "ruleset": meta.get("ruleset")}}
+    return {"$schema": SARIF_SCHEMA, "version": "2.1.0", "runs": [run]}
+
+def markdown_report(d):
+    """Renders a stored report as a Markdown table suitable for a PR comment. Pure."""
+    meta = d.get("meta") if isinstance(d.get("meta"), dict) else {}
+    c = d.get("counts") or {}
+    out = [f"## RepoBeagle: {d.get('verdict') or '?'}", "",
+           f"`{meta.get('target', '?')}` · profile `{meta.get('profile', '?')}` · "
+           f"{c.get('critical', 0)} critical / {c.get('high', 0)} high / {c.get('medium', 0)} medium / {c.get('low', 0)} low",
+           ""]
+    fs = [f for f in (d.get("findings") or []) if isinstance(f, dict) and not f.get("suppressed") and f.get("severity") in SEV_ORDER]
+    fs.sort(key=lambda f: (-SEV_ORDER[f["severity"]], f.get("file") or "", f.get("line") or 0))
+    if fs:
+        out += ["| Severity | Rule | Location | Finding | Fix |", "|---|---|---|---|---|"]
+        for f in fs[:200]:
+            loc = f"{f.get('file')}:{f.get('line')}" if f.get("line") else (f.get("file") or "?")
+            cell = lambda s: str(s).replace("|", "\\|").replace("\n", " ")[:200]
+            out.append(f"| {f['severity']} | `{cell(_rule_of(f))}` | `{cell(loc)}` | {cell(f.get('title') or '')} | {cell(f.get('remediation') or '')} |")
+        if len(fs) > 200:
+            out.append(f"| … | | | {len(fs) - 200} more (see the JSON report) | |")
+    else:
+        out.append("No findings.")
+    if d.get("why"):
+        out += ["", str(d["why"])]
+    return "\n".join(out) + "\n"
+
+def cmd_export(a):
+    """Converts a stored report to SARIF, Markdown or normalized JSON. Never scans, never touches the network."""
+    try:
+        d = json.loads(Path(a.report).read_text())
+    except OSError as ex:
+        print(f"export: cannot read {a.report}: {ex}", file=sys.stderr); return 1
+    except json.JSONDecodeError as ex:
+        print(f"export: {a.report} is not valid JSON: {ex}", file=sys.stderr); return 1
+    if not isinstance(d, dict):
+        print("export: report root must be a JSON object", file=sys.stderr); return 1
+    if a.format == "sarif":
+        text = json.dumps(sarif_report(d), indent=2)
+    elif a.format == "markdown":
+        text = markdown_report(d)
+    else:
+        text = json.dumps(d, indent=2)
+    if not text.endswith("\n"):
+        text += "\n"
+    if a.out:
+        Path(a.out).write_text(text)
+        print(f"[repobeagle] {a.format} written to {a.out}", file=sys.stderr)
+    else:
+        sys.stdout.write(text)
+    return 0
+
+
+MCP_PROTOCOL = "2024-11-05"
+
+MCP_TOOLS = [
+    {"name": "scan_repo",
+     "description": "Statically scan a git URL or local directory and return the GREEN/YELLOW/RED verdict with the top findings. Never executes repository code.",
+     "inputSchema": {"type": "object", "required": ["target"], "properties": {
+         "target": {"type": "string", "description": "git URL (https/ssh) or existing local directory"},
+         "profile": {"type": "string", "enum": ["strict", "balanced", "relaxed"], "description": "verdict thresholds (default balanced)"},
+         "privacy_only": {"type": "boolean", "description": "report only privacy/telemetry findings"},
+         "network": {"type": "boolean", "description": "run OSV vulnerability and GitHub trust lookups (default true)"}}}},
+    {"name": "verify_badge",
+     "description": "Verify a published repobeagle badge: Sigstore signature, report freshness against HEAD, and report self-consistency.",
+     "inputSchema": {"type": "object", "required": ["repo"], "properties": {
+         "repo": {"type": "string", "description": "github slug, e.g. owner/repo"}}}},
+    {"name": "explain_report",
+     "description": "Explain how a stored report's verdict follows from its profile thresholds, including the margin to the next tier.",
+     "inputSchema": {"type": "object", "required": ["report"], "properties": {
+         "report": {"type": "string", "description": "path to a report.json produced by 'scan --json' (the scan_repo tool returns one)"}}}},
+]
+
+def _mcp_exec(args, timeout=1800):
+    cmd = [sys.executable, os.path.abspath(__file__)] + args
+    r = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
+    return r
+
+def _mcp_workdir():
+    """Report directory under the user cache, pruned to the 20 most recent scans."""
+    base = Path(os.environ.get("XDG_CACHE_HOME") or (Path(os.environ.get("HOME") or "/tmp") / ".cache")) / "repobeagle" / "mcp"
+    base.mkdir(parents=True, exist_ok=True)
+    try:
+        old = sorted((p for p in base.iterdir() if p.is_dir()), key=lambda p: p.stat().st_mtime)
+        for p in old[:-19]:
+            shutil.rmtree(p, ignore_errors=True)
+    except OSError:
+        pass
+    return Path(tempfile.mkdtemp(prefix="scan-", dir=base))
+
+def mcp_scan(a):
+    target = a.get("target")
+    if not isinstance(target, str) or not target:
+        raise ValueError("target is required")
+    prof = a.get("profile") or "balanced"
+    if prof not in PROFILES:
+        raise ValueError(f"profile must be one of {sorted(PROFILES)}")
+    work = _mcp_workdir()
+    rep = work / "report.json"
+    args = ["scan", target, "--json", str(rep), "--no-color"]
+    if prof != "balanced": args.append("--" + prof)
+    if a.get("privacy_only"): args.append("--privacy-only")
+    if a.get("network") is False: args += ["--no-osv", "--no-trust"]
+    r = _mcp_exec(args)
+    try:
+        d = json.loads(rep.read_text())
+    except Exception:
+        raise RuntimeError((r.stderr or r.stdout or "scan produced no report")[-800:])
+    meta = d.get("meta") or {}
+    fs = [f for f in d.get("findings") or [] if isinstance(f, dict) and not f.get("suppressed")]
+    top = sorted(fs, key=lambda f: -SEV_ORDER.get(f.get("severity"), 0))[:15]
+    return {"target": target, "verdict": d.get("verdict"), "counts": d.get("counts"), "why": d.get("why"),
+            "privacy_profile": meta.get("privacy_profile"), "findings_total": len(fs),
+            "findings": [{"severity": f.get("severity"), "rule": _rule_of(f), "file": f.get("file"),
+                          "line": f.get("line"), "title": f.get("title")} for f in top],
+            "report": str(rep)}
+
+def mcp_server(a):
+    """JSON-RPC 2.0 over stdio (MCP): tools only, no prompts. stdlib only, never executes repo code."""
+    for line in sys.stdin:
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            msg = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if not isinstance(msg, dict):
+            continue
+        method, mid = msg.get("method"), msg.get("id")
+        params = msg.get("params") or {}
+        if method in ("notifications/initialized", "notifications/cancelled"):
+            continue
+        if method == "initialize":
+            res = {"protocolVersion": params.get("protocolVersion") or MCP_PROTOCOL,
+                   "capabilities": {"tools": {}},
+                   "serverInfo": {"name": "repobeagle", "version": VERSION}}
+        elif method == "ping":
+            res = {}
+        elif method == "tools/list":
+            res = {"tools": MCP_TOOLS}
+        elif method == "tools/call":
+            name = params.get("name")
+            args = params.get("arguments") or {}
+            try:
+                if name == "scan_repo":
+                    payload = mcp_scan(args)
+                elif name == "verify_badge":
+                    repo = args.get("repo")
+                    if not isinstance(repo, str) or not repo: raise ValueError("repo is required")
+                    r = _mcp_exec(["verify", repo])
+                    payload = {"repo": repo, "exit_code": r.returncode,
+                               "output": ((r.stdout or "") + (r.stderr or ""))[-2000:]}
+                elif name == "explain_report":
+                    path = args.get("report")
+                    if not isinstance(path, str) or not path: raise ValueError("report is required")
+                    r = _mcp_exec(["explain", path])
+                    payload = {"report": path, "exit_code": r.returncode,
+                               "explanation": ((r.stdout or "") + (r.stderr or ""))[-4000:]}
+                else:
+                    raise KeyError(str(name))
+                res = {"content": [{"type": "text", "text": json.dumps(payload, indent=2)}]}
+            except Exception as ex:
+                res = {"content": [{"type": "text", "text": f"{type(ex).__name__}: {ex}"}], "isError": True}
+        else:
+            if mid is not None:
+                sys.stdout.write(json.dumps({"jsonrpc": "2.0", "id": mid,
+                                             "error": {"code": -32601, "message": f"method not found: {method}"}}) + "\n")
+                sys.stdout.flush()
+            continue
+        if mid is None:
+            continue
+        sys.stdout.write(json.dumps({"jsonrpc": "2.0", "id": mid, "result": res}) + "\n")
+        sys.stdout.flush()
+    return 0
+
+
+def render_capabilities(d, label):
+    """Prints what the target can touch: hosts, secret paths, subprocesses, env vars, storage, hooks, permissions."""
+    meta = d.get("meta") if isinstance(d.get("meta"), dict) else {}
+    caps = meta.get("capabilities") or {}
+    print(f"RepoBeagle capabilities: {label}")
+    if not caps:
+        print("  (no capability data: report predates the map, or the pass failed)")
+        return 0
+    print(f"  scanned: {meta.get('files', '?')} file(s), profile {meta.get('profile', '?')}, verdict {d.get('verdict', '?')}")
+    names = {"network": "network hosts", "filesystem": "filesystem / secret paths", "processes": "subprocesses",
+             "environment": "environment variables", "storage": "client storage"}
+    for key in ("network", "filesystem", "processes", "environment", "storage"):
+        items = caps.get(key) or []
+        if not items:
+            continue
+        print(f"  {names[key]} ({len(items)}):")
+        for e in items[:8]:
+            where = f"[{e.get('file')}:{e.get('line')}]"
+            print(f"    {e.get('value')}  {where}" + (f" x{e['count']}" if (e.get("count") or 1) > 1 else ""))
+        if len(items) > 8:
+            print(f"    ... {len(items) - 8} more (see meta.capabilities in --json)")
+    fs = [f for f in (d.get("findings") or []) if isinstance(f, dict) and not f.get("suppressed")]
+
+    def section(title, match):
+        sel = [f for f in fs if match(_rule_of(f), f.get("title") or "")]
+        if not sel:
+            return
+        print(f"  {title} ({len(sel)}):")
+        for f in sel[:8]:
+            print(f"    {f.get('severity')}: {f.get('title')}  [{f.get('file')}:{f.get('line')}]")
+        if len(sel) > 8:
+            print(f"    ... {len(sel) - 8} more")
+
+    section("install hooks", lambda r, t: re.search(r"(?i)\b(postinstall|preinstall|prepare|lifecycle script|install hook|build hook)\b", t) is not None)
+    section("permissions / capabilities", lambda r, t: r.startswith(("android-permission", "android-feature", "extension-permission", "macos-entitlement", "browser-capability")))
+    section("telemetry vendors", lambda r, t: r.startswith("telemetry-"))
+    return 0
+
+def cmd_map(a):
+    """Scans (or reads a report) and prints the capability inventory. Never executes repository code."""
+    if a.report:
+        try:
+            d = json.loads(Path(a.report).read_text())
+        except (OSError, json.JSONDecodeError) as ex:
+            print(f"map: cannot read {a.report}: {ex}", file=sys.stderr); return 1
+        return render_capabilities(d, a.report)
+    if not a.target:
+        print("map: give a target or --report", file=sys.stderr); return 1
+    work = tempfile.mkdtemp(prefix="repobeagle-map-")
+    _WORKDIRS.add(work)
+    rep = Path(work) / "report.json"
+    args = ["scan", a.target, "--json", str(rep), "--no-color"]
+    if a.strict: args.append("--strict")
+    elif a.relaxed: args.append("--relaxed")
+    if not a.network: args += ["--no-osv", "--no-trust"]
+    if a.no_docker: args.append("--no-docker")
+    r = _mcp_exec(args)
+    try:
+        d = json.loads(rep.read_text())
+    except Exception:
+        print("map: scan produced no report: " + ((r.stderr or r.stdout or "")[-600:]), file=sys.stderr)
+        return 1
+    return render_capabilities(d, a.target)
+
+
+WEB_MAX_BYTES = 2_000_000
+WEB_UA = f"repobeagle/{VERSION} (+https://github.com/javierbits/repobeagle)"
+
+def _web_get(url, timeout=20):
+    req = urllib.request.Request(url, headers={"User-Agent": WEB_UA, "Accept": "text/html,text/css,*/*"})
+    with urllib.request.urlopen(req, timeout=timeout) as resp:
+        return resp.read(WEB_MAX_BYTES + 1)
+
+def cmd_web(a):
+    """Fetches one page (plus N same-origin assets), runs the existing privacy rules on the bytes, never executes JS."""
+    url = a.url.strip()
+    scheme = url.split(":", 1)[0].lower()
+    if scheme not in ("http", "https", "file"):
+        print(f"web: unsupported scheme {scheme!r}; use http(s):// or file://", file=sys.stderr)
+        return 1
+    work = tempfile.mkdtemp(prefix="repobeagle-web-")
+    _WORKDIRS.add(work)
+    src = Path(work) / "page"
+    src.mkdir()
+    notes = []
+    try:
+        data = _web_get(url, a.timeout)
+    except Exception as ex:
+        print(f"web: cannot fetch {url}: {ex}", file=sys.stderr)
+        return 1
+    if len(data) > WEB_MAX_BYTES:
+        notes.append(f"page truncated at {WEB_MAX_BYTES} bytes")
+        data = data[:WEB_MAX_BYTES]
+    html = data.decode("utf-8", errors="replace")
+    (src / "index.html").write_text(html)
+    netloc = urllib.parse.urlsplit(url).netloc
+    if netloc:
+        (src / "CNAME").write_text(netloc)          # first-party inference: own host is not "third party"
+    fetched = {"page_bytes": len(data), "assets": 0}
+    if a.assets > 0:
+        refs = re.findall(r'(?i)<script[^>]+src\s*=\s*["\']([^"\']+)', html) + \
+               re.findall(r'(?i)<link[^>]+rel\s*=\s*["\']stylesheet["\'][^>]*href\s*=\s*["\']([^"\']+)', html)
+        seen = set()
+        for ref in refs:
+            if fetched["assets"] >= a.assets:
+                break
+            full = urllib.parse.urljoin(url, ref.strip())
+            if full in seen or not full.startswith(("http://", "https://", "file://")):
+                continue
+            seen.add(full)
+            if netloc and urllib.parse.urlsplit(full).netloc != netloc:
+                continue                            # same-origin only unless file://
+            try:
+                body = _web_get(full, a.timeout)
+            except Exception as ex:
+                notes.append(f"asset fetch failed: {full} ({type(ex).__name__})")
+                continue
+            ext = Path(urllib.parse.urlsplit(full).path).suffix if Path(urllib.parse.urlsplit(full).path).suffix in (".js", ".css") else ".txt"
+            (src / f"asset-{fetched['assets']:03d}{ext}").write_text(body[:WEB_MAX_BYTES].decode("utf-8", errors="replace"))
+            fetched["assets"] += 1
+    rep = Path(work) / "report.json"
+    args = ["scan", str(src), "--privacy-only", "--no-docker",
+            "--json", str(rep), "--no-color"]
+    if a.strict: args.append("--strict")
+    elif a.relaxed: args.append("--relaxed")
+    r = _mcp_exec(args)
+    try:
+        d = json.loads(rep.read_text())
+    except Exception:
+        print("web: scan produced no report: " + ((r.stderr or r.stdout or "")[-600:]), file=sys.stderr)
+        return 1
+    meta = d.get("meta") or {}
+    meta.update(target=url, url=url, mode="web (fetched once, no JS executed)", fetched=fetched)
+    d["meta"] = meta
+    d.setdefault("notes", [])
+    if notes: d["notes"] = list(d.get("notes") or []) + notes
+    if a.json:
+        Path(a.json).write_text(json.dumps(d, indent=2))
+        print(f"[repobeagle] JSON written to {a.json}", file=sys.stderr)
+    print(banner(color_enabled(sys.stderr) and not a.no_color), file=sys.stderr)
+    report(meta, d.get("findings") or [], d.get("verdict") or "GREEN", d.get("why") or "",
+           d.get("counts") or {s: 0 for s in SEV_ORDER}, d.get("notes") or [], d.get("ai_review"),
+           color_enabled() and not a.no_color, 10**6 if a.all else 40, a.min_severity)
+    return {"GREEN": 0, "YELLOW": 1, "RED": 2}.get(d.get("verdict"), 2)
+
+
+def osv_db_dir():
+    """Where osv-scanner caches its offline vulnerability databases."""
+    return Path(os.environ.get("XDG_CACHE_HOME") or (Path(os.environ.get("HOME") or "/tmp") / ".cache")) / "osv-scalibr"
+
+def osv_db_info():
+    base, out = osv_db_dir(), {"path": str(osv_db_dir()), "ecosystems": [], "bytes": 0, "updated": None}
+    try:
+        for p in sorted(base.glob("*/all.zip")):
+            st = p.stat()
+            out["ecosystems"].append({"ecosystem": p.parent.name, "bytes": st.st_size})
+            out["bytes"] += st.st_size
+            stamp = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(st.st_mtime))
+            out["updated"] = max(out["updated"] or "", stamp)
+    except OSError:
+        pass
+    return out
+
+def cmd_db(a):
+    """Status or refresh of the local OSV database. Host-side only; the scan itself stays offline."""
+    info = osv_db_info()
+    if not a.update:
+        print(f"OSV offline database: {info['path']}")
+        if info["ecosystems"]:
+            for e in info["ecosystems"]:
+                print(f"  {e['ecosystem']}: {e['bytes'] // 1024 // 1024} MB")
+            print(f"  updated: {info['updated']}  ({info['bytes'] // 1024 // 1024} MB total)")
+            print("  use: repobeagle scan <target> --offline-vulnerabilities")
+        else:
+            print("  no databases downloaded; run: repobeagle db --update <dir-with-lockfiles>")
+        return 0
+    target = a.target or "."
+    print(f"downloading OSV databases for the ecosystems in {target} ...", file=sys.stderr)
+    r = _run(["osv-scanner", "scan", "source", "--offline-vulnerabilities", "--download-offline-databases",
+              "-r", target], timeout=int(os.environ.get("BEAGLE_DB_TIMEOUT", "1800")))
+    if r is None:
+        print("db: osv-scanner not installed; run ./install.sh", file=sys.stderr); return 1
+    if r == "timeout":
+        print("db: osv-scanner timed out (set BEAGLE_DB_TIMEOUT to raise the limit)", file=sys.stderr); return 1
+    info = osv_db_info()
+    if not info["ecosystems"]:
+        print("db: no database was downloaded (does the target contain a lockfile or manifest?)", file=sys.stderr)
+        print((r.stderr or r.stdout or "")[-400:], file=sys.stderr)
+        return 1
+    for e in info["ecosystems"]:
+        print(f"  {e['ecosystem']}: {e['bytes'] // 1024 // 1024} MB")
+    print(f"updated: {info['updated']} ({info['bytes'] // 1024 // 1024} MB total) at {info['path']}")
+    return 0
+
+
 ACTIONS = {
     "RED": ["Do NOT install, build, run, or point an AI agent at this repo.",
             "Review each critical/high finding at the file:line shown; if confirmed, report the repo/package to GitHub / npm / PyPI.",
@@ -2802,11 +3534,26 @@ def report(meta, findings, v, why, counts, notes, ai, use_color, maxn=40, min_se
     sc = {"critical": "1;91", "high": "91", "medium": "93", "low": "96", "info": "37"}
     print(C("1", f"\nRepoBeagle {VERSION}  |  {meta['target']}"))
     print(f"mode: {meta['mode']}   profile: {meta['profile']}   files: {meta['files']}   time: {meta['seconds']}s")
+    if (meta.get("scope") or {}).get("scope") == "changed":
+        scp = meta["scope"]
+        print(C("1", f"  scope: changed files only ({scp.get('changed_files')} since {scp.get('since')}); "
+                     "pre-existing findings elsewhere are not re-reported"))
     print(f"tools: " + ", ".join(f"{k}({t['findings']}{'' if t['ok'] else ' !'})" for k, t in meta["tools"].items()))
     print("\n" + C(vc, f"  VERDICT: {v}  ") + "  " + why)
     print(f"  critical {counts['critical']}  high {counts['high']}  medium {counts['medium']}  low {counts['low']}\n")
     if meta.get("suppressed"):
         print(C("2", f"  suppressed {meta['suppressed']} finding(s) via {SUPPRESS_FILE} (kept in --json with suppressed=true)"))
+    caps = meta.get("capabilities") or {}
+    bits = [f"{len(caps[k])} {label}" for k, label in (("network", "host(s)"), ("filesystem", "secret path(s)"),
+                                                       ("processes", "subprocess(es)"), ("environment", "env var(s)"),
+                                                       ("storage", "storage use(s)")) if caps.get(k)]
+    if bits:
+        print(C("1", "  Capabilities: " + ", ".join(bits) + "  (repobeagle map for detail)"))
+    cov = meta.get("coverage") or {}
+    if cov:
+        sk = ", ".join(f"{n} {k}" for k, n in (cov.get("skipped") or {}).items() if n)
+        print(f"  Coverage: {cov.get('bytes_scanned_pct', '?')}% of source bytes "
+              f"({cov.get('files_scanned', '?')}/{cov.get('files_total', '?')} files)" + (f"; not inspected: {sk}" if sk else ""))
     if meta.get("privacy_summary"):
         prof = privacy_profile(meta["privacy_summary"])
         if prof:
@@ -2838,6 +3585,7 @@ def report(meta, findings, v, why, counts, notes, ai, use_color, maxn=40, min_se
         print(f"           {f['title']}")
         if f["snippet"]: print(f"           > {f['snippet'][:140]}")
         if f["meaning"]: print(f"           {C('2', f['meaning'][:200])}")
+        if f.get("remediation"): print(f"           {C('2', 'fix: ' + f['remediation'][:180])}")
     if len(fs) > maxn: print(f"  ... {len(fs) - maxn} more (use --json or --all)")
     print(C("1", "\nRecommended actions:"))
     for a in ACTIONS[v]: print(f"  - {a}")
@@ -2942,6 +3690,7 @@ def cmd_scan(a):
     t0 = time.time()
     profile = "strict" if a.strict else "relaxed" if a.relaxed else "balanced"
     skipped = []
+    osv_meta = {}
     if getattr(a, "privacy_only", False):
         # privacy-only filters non-privacy findings anyway, so skip the work/network for them
         if not getattr(a, "no_osv", False):
@@ -2957,7 +3706,7 @@ def cmd_scan(a):
             _WORKDIRS.add(work)          # atexit / signal handlers remove it on any exit path
         os.chmod(work, 0o700)
         print(f"[repobeagle] fetching {a.target} ...", file=sys.stderr)
-        src, how = fetch(a.target, work)
+        src, how, commit = fetch(a.target, work, getattr(a, "ref", None), getattr(a, "since", None))
         out = Path(work) / "out"; out.mkdir()
         use_docker = not a.no_docker and docker_ok()
         if not a.no_docker and not use_docker:
@@ -2975,9 +3724,17 @@ def cmd_scan(a):
                     else "Prebuilt binary/compiled artifact (not downloaded/inspected)", n,
                     "Archives/binaries are never downloaded or extracted; their contents cannot be vetted."))
         if not a.no_osv:
-            t = time.time(); fs, note = scan_osv(src)
+            t = time.time(); fs, note = scan_osv(src, getattr(a, "offline_vulnerabilities", False))
             findings += fs; tools["osv-scanner"] = {"findings": len(fs), "seconds": round(time.time() - t, 1), "ok": note is None}
+            ver = tool_version("osv-scanner")
+            if ver: tools["osv-scanner"]["version"] = ver
             if note: notes.append(note)
+            if getattr(a, "offline_vulnerabilities", False):
+                osv_meta["offline_vulnerabilities"] = True
+                osv_meta["osv_db"] = osv_db_info()
+                if not osv_meta["osv_db"]["ecosystems"]:
+                    notes.append(f"offline OSV database missing at {osv_meta['osv_db']['path']}; "
+                                 "run 'repobeagle db --update <dir-with-lockfiles>' for deterministic results")
         if not a.no_trust:
             t = time.time(); fs, note = trust_signals(a.target)
             findings += fs
@@ -3001,6 +3758,9 @@ def cmd_scan(a):
                     f["title"] = redact_pii(f["title"])
         for f in findings:
             f["rule"] = f["title"].split(":")[0].split(" (")[0]
+            rem = remediation_for(f)
+            if rem:
+                f["remediation"] = rem
         ignored = load_suppressions(src)
         active, suppressed = apply_suppressions(findings, ignored) if ignored else (findings, [])
         if suppressed:
@@ -3011,10 +3771,23 @@ def cmd_scan(a):
         v, why, counts = verdict(active, profile, ai)
         privacy_mode = "only" if a.privacy_only else "excluded" if a.no_privacy else "full"
         summary = privacy_summary(active)
-        meta = {"target": a.target, "fetched_via": how, "mode": "docker (--network none, read-only)" if use_docker else "local (no docker)",
+        meta = {"target": a.target, "ref": getattr(a, "ref", None), "commit": commit,
+                "fetched_via": how, "mode": "docker (--network none, read-only)" if use_docker else "local (no docker)",
                 "profile": profile, "files": tools.get("agent-checks", {}).get("files"), "seconds": round(time.time() - t0, 1),
                 "tools": tools, "suppressed": len(suppressed), "pii_redacted": not a.no_redact,
                 "privacy_mode": privacy_mode, "ruleset": RULESET}
+        meta.update(osv_meta)
+        caps = res.get("capabilities")
+        if caps: meta["capabilities"] = caps
+        if res.get("coverage"): meta["coverage"] = res["coverage"]
+        scope_file = Path(work) / "scope.json"
+        if scope_file.exists():
+            try:
+                meta["scope"] = json.loads(scope_file.read_text())
+                notes.append(f"scope: changed files only ({meta['scope']['changed_files']} changed since "
+                             f"{meta['scope']['since']}); findings elsewhere in the repo are not re-reported")
+            except (OSError, ValueError):
+                pass
         if summary:
             meta["privacy_summary"] = summary
             meta["privacy_profile"] = privacy_profile(summary)
@@ -3333,12 +4106,16 @@ def main():
     sp = ap.add_subparsers(dest="cmd", required=True)
     def add_scan_args(s, privacy_modes=True):
         s.add_argument("target")
+        s.add_argument("--ref", metavar="REV", help="git branch, tag or commit to scan (default: the remote's default branch)")
+        s.add_argument("--since", metavar="REV", help="only scan files changed since this revision (requires a git URL)")
         g = s.add_mutually_exclusive_group()
         g.add_argument("--strict", action="store_true"); g.add_argument("--balanced", action="store_true"); g.add_argument("--relaxed", action="store_true")
         s.add_argument("--keep", action="store_true", help="keep the temp clone")
         s.add_argument("--json", metavar="FILE")
         s.add_argument("--no-docker", action="store_true", help="run scanners locally instead of in the container")
         s.add_argument("--no-osv", action="store_true", help="skip OSV (avoids sending package names to osv.dev)")
+        s.add_argument("--offline-vulnerabilities", action="store_true",
+                       help="use the local OSV database instead of osv.dev (see 'repobeagle db')")
         s.add_argument("--verify-deps", action="store_true", help="GuardDog-verify deps from requirements.txt/package.json (downloads packages, static only)")
         s.add_argument("--no-trust", action="store_true", help="skip GitHub trust signals (unauthenticated public API)")
         s.add_argument("--all", action="store_true", help="print all findings")
@@ -3363,6 +4140,40 @@ def main():
     v.add_argument("--expect-sha", help="commit SHA the report must cover (default: HEAD of the target repo)")
     v.add_argument("--identity-regexp", default=VERIFY_IDENTITY, help="allowed signing workflow identity")
     v.add_argument("--no-color", action="store_true")
+    ex = sp.add_parser("explain", help="explain how a stored report's verdict follows from its profile thresholds")
+    ex.add_argument("report", help="report.json produced by 'scan --json'")
+    df = sp.add_parser("diff", help="compare two stored reports; exit 1 when the change added findings at/above --min-severity")
+    df.add_argument("old", help="baseline report.json")
+    df.add_argument("new", help="current report.json")
+    df.add_argument("--min-severity", choices=list(SEV_ORDER), default="medium",
+                    help="fail when an added finding is at/above this severity (default: medium)")
+    df.add_argument("--json", metavar="FILE", help="write the added/removed findings as JSON")
+    df.add_argument("--no-color", action="store_true")
+    xp = sp.add_parser("export", help="convert a stored report to SARIF (code scanning), Markdown or JSON")
+    xp.add_argument("report", help="report.json produced by 'scan --json'")
+    xp.add_argument("--format", choices=["sarif", "markdown", "json"], default="sarif")
+    xp.add_argument("-o", "--out", metavar="FILE", help="write to FILE instead of stdout")
+    sp.add_parser("mcp", help="run an MCP server over stdio: scan_repo, verify_badge, explain_report")
+    mp = sp.add_parser("map", help="show what a repo can touch: hosts, secret paths, subprocesses, env vars, storage, hooks")
+    mp.add_argument("target", nargs="?", help="git URL or local directory")
+    mp.add_argument("--report", metavar="FILE", help="render an existing report.json instead of scanning")
+    g = mp.add_mutually_exclusive_group()
+    g.add_argument("--strict", action="store_true"); g.add_argument("--relaxed", action="store_true")
+    mp.add_argument("--network", action="store_true", help="also run OSV and GitHub trust lookups (slower; the map itself is offline)")
+    mp.add_argument("--no-docker", action="store_true")
+    wb = sp.add_parser("web", help="privacy audit of a live page: fetched once, never executes its JavaScript")
+    wb.add_argument("url", help="http(s):// or file:// URL")
+    wb.add_argument("--assets", type=int, default=0, metavar="N", help="also fetch up to N same-origin scripts/stylesheets (default 0)")
+    g = wb.add_mutually_exclusive_group()
+    g.add_argument("--strict", action="store_true"); g.add_argument("--relaxed", action="store_true")
+    wb.add_argument("--json", metavar="FILE")
+    wb.add_argument("--all", action="store_true", help="print all findings")
+    wb.add_argument("--min-severity", choices=list(SEV_ORDER), default="info")
+    wb.add_argument("--no-color", action="store_true")
+    wb.add_argument("--timeout", type=int, default=20, metavar="SECONDS")
+    dbp = sp.add_parser("db", help="show or refresh the local OSV offline vulnerability database")
+    dbp.add_argument("target", nargs="?", default=".", help="directory whose ecosystems to download (default: .)")
+    dbp.add_argument("--update", action="store_true", help="download/refresh the database (needs network)")
     ap.add_argument("-V", "--version", action="store_true", help="print the installed version and image tag")
     sp.add_parser("version")
     up = sp.add_parser("update", help="pull the latest release and reinstall")
@@ -3373,6 +4184,20 @@ def main():
         return cmd_scan(a)
     if a.cmd == "verify":
         return cmd_verify(a)
+    if a.cmd == "explain":
+        return cmd_explain(a)
+    if a.cmd == "diff":
+        return cmd_diff(a)
+    if a.cmd == "export":
+        return cmd_export(a)
+    if a.cmd == "mcp":
+        return mcp_server(a)
+    if a.cmd == "map":
+        return cmd_map(a)
+    if a.cmd == "web":
+        return cmd_web(a)
+    if a.cmd == "db":
+        return cmd_db(a)
     if a.cmd == "update":
         return cmd_update(a)
     if a.cmd == "version":

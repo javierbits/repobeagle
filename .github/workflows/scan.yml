@@ -56,11 +56,17 @@ on:
         required: false
         default: "main"
         type: string
+      upload-sarif:
+        description: "Upload findings to GitHub code scanning (needs security-events: write)"
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: write
   statuses: write
   id-token: write
+  security-events: write   # only used when upload-sarif is true; harmless otherwise
 
 jobs:
   scan:
@@ -134,6 +140,17 @@ jobs:
       - name: Attach provenance to the report
         run: |
           python3 -c 'import json,os,sys;p=sys.argv[1];d=json.load(open(p));m=d.setdefault("meta",{});m.update(image_ref=os.environ["IMAGE_REF"],image_digest=os.environ["IMAGE_DIGEST"],toolchain_ref=os.environ["TOOLS_REF"],run_url=os.environ["RUN_URL"],scanned_repo=os.environ["GITHUB_REPOSITORY"],scanned_sha=os.environ["GITHUB_SHA"]);json.dump(d,open(p,"w"),indent=2)' "$OUT/beagle.json"
+
+      - name: Export SARIF
+        if: inputs.upload-sarif
+        run: python3 "$TOOLS/repobeagle.py" export "$OUT/beagle.json" --format sarif -o "$OUT/beagle.sarif"
+
+      - name: Upload findings to GitHub code scanning
+        if: inputs.upload-sarif
+        continue-on-error: true            # needs security-events: write and code scanning enabled
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: ${{ env.OUT }}/beagle.sarif
 
       - name: Make badge
         run: |
