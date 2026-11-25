@@ -1,0 +1,6 @@
+[package]
+name = "widget"
+
+[dependencies]
+sentry = "0.31.0"
+serde = "1"

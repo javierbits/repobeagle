@@ -616,7 +616,7 @@ TELEMETRY_RULES = [
                                                         r"height\s*=\s*[\"']?1[\"']?\s+width\s*=\s*[\"']?1[\"']?|"
                                                         r"width:\s*1px[^\"']*height:\s*1px")),
     # crash / error reporting
-    ("crash", "medium", "Sentry", _telem_rx(r"sentry\.io|@sentry/|sentry_sdk|sentry\.properties|\bsentry[-_.]")),
+    ("crash", "medium", "Sentry", _telem_rx(r"sentry\.io|@sentry/|sentry_sdk|sentry\.properties|\bsentry\b")),
     ("crash", "medium", "Bugsnag", _telem_rx(r"\bbugsnag\b")),
     ("crash", "medium", "Rollbar", _telem_rx(r"\brollbar\b")),
     ("crash", "medium", "Raygun", _telem_rx(r"\braygun\b")),
