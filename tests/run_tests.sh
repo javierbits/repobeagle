@@ -57,6 +57,7 @@ python3 -c "import json,sys;b=json.load(open('$j.badge'));print('PASS badge mark
 rm -f "$j" "$j.badge"
 python3 tests/test_trust.py || fail=1
 python3 tests/test_banner.py || fail=1
+python3 tests/test_privacy.py || fail=1
 tests/test_cleanup.sh || fail=1
 if [[ "${1:-}" != "--offline" ]]; then
   check https://github.com/psf/requests                              "GREEN|YELLOW"

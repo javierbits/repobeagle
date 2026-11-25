@@ -570,6 +570,7 @@ TELEMETRY_RULES = [
     ("session-replay", "high", "Datadog RUM/Replay", _telem_rx(r"@datadog/browser|datadoghq\.com|datadog-rum|\bdd-rum\b")),
     ("session-replay", "high", "Contentsquare", _telem_rx(r"contentsquare|content-square")),
     ("session-replay", "high", "Quantum Metric", _telem_rx(r"quantummetric|quantum-metric")),
+    ("session-replay", "high", "rrweb", _telem_rx(r"\brrweb\b|@rrweb/")),
     ("session-replay", "high", "Glassbox", _telem_rx(r"\bglassbox\b")),
     ("session-replay", "medium", "Medallia", _telem_rx(r"\bmedallia\b")),
     # product / web analytics
@@ -821,7 +822,8 @@ ANDROID_PERMS = {
     "READ_MEDIA_VISUAL_USER_SELECTED": ("info", "user-selected photos only (Android 14 partial access)"),
 }
 EXT_HIGH = {"tabs", "history", "cookies", "webRequest", "bookmarks", "downloads", "management", "clipboardRead",
-            "geolocation", "nativeMessaging", "declarativeNetRequest", "topSites", "sessions", "readingList"}
+            "geolocation", "nativeMessaging", "declarativeNetRequest", "topSites", "sessions", "readingList",
+            "debugger", "webNavigation", "proxy", "privacy", "unlimitedStorage", "background"}
 ANDROID_IGNORE = {"INTERNET", "ACCESS_NETWORK_STATE", "ACCESS_WIFI_STATE", "VIBRATE", "WAKE_LOCK", "FOREGROUND_SERVICE"}
 
 def _priv_add(privacy, rule, sev, key, r, line_no, line, meaning):
