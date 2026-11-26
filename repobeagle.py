@@ -6,6 +6,7 @@ NEVER executes repository code. Stdlib only (scanners are external binaries).
                   [--json out.json] [--no-docker] [--verify-deps] [--no-osv] [--no-trust]
                   [--html out.html] [--sbom sbom.json]
   repobeagle verify <github-repo> [--branch repobeagle] [--expect-sha SHA]
+  repobeagle feedback <report.json> (--false-positive|--miss) [--rule RULE] [--file FILE[:LINE]] [--attach] [--no-open]
 """
 import argparse, base64, difflib, hashlib, json, os, platform, re, shutil, subprocess, sys, tempfile, time, unicodedata, uuid, zipfile
 import urllib.error, urllib.parse, urllib.request
@@ -3197,6 +3198,133 @@ def explain_report(d, accept=(), target=None, write=False, ignore_file=None, rea
     return 0
 
 
+# --- Feedback loop: prefilled, re-redacted GitHub issue ------------------------------
+FEEDBACK_REPO = "javierbits/repobeagle"
+FEEDBACK_URL_MAX = 7500   # GitHub rejects very long issue URLs; keep the body inside this budget
+FEEDBACK_SNIPPET_CHARS = 600
+FEEDBACK_TITLE_CHARS = 160
+
+def _finding_rule(f):
+    return str(f.get("rule") or str(f.get("title") or "").split(":", 1)[0]).strip()
+
+def _finding_ref(f):
+    return f"{f.get('file')}:{f.get('line')}"
+
+def select_finding(report, rule=None, file=None):
+    """(finding, error) for `--rule`/`--file`: exactly one finding or a message naming the candidates."""
+    findings = [f for f in report.get("findings") or [] if isinstance(f, dict) and not f.get("suppressed")]
+    if rule:
+        findings = [f for f in findings if _finding_rule(f) == rule]
+    if file:
+        findings = [f for f in findings if _finding_ref(f) == file or str(f.get("file")) == file]
+    if not findings:
+        rules_found = sorted({_finding_rule(f) for f in (report.get("findings") or []) if isinstance(f, dict)})[:40]
+        what = (f"rule {rule!r}" + (f" at {file!r}" if file else "")) if rule else "the selection"
+        return None, f"no finding for {what}; rules in this report: {', '.join(rules_found) or '(none)'}"
+    if len(findings) > 1:
+        refs = ", ".join(sorted({_finding_ref(f) for f in findings})[:20])
+        what = f"rule {rule!r}" if rule else "the selection"
+        return None, f"{len(findings)} findings for {what}; pick one with --file ({refs})"
+    return findings[0], ""
+
+def _feedback_title(finding, kind):
+    rule = _finding_rule(finding)
+    label = "false positive" if kind == "false-positive" else "miss"
+    short = redact_pii(str(finding.get("title") or "")).strip()
+    if short.startswith(rule + ":"):
+        short = short[len(rule) + 1:].strip()
+    return f"[{label}] {rule}" + (f": {short}" if short else "")[:FEEDBACK_TITLE_CHARS]
+
+def _feedback_body(report, finding, kind, snippet, attach, cut):
+    meta = report.get("meta") or {}
+    rule = _finding_rule(finding)
+    kind_label = "false positive" if kind == "false-positive" else "missed finding"
+    title = redact_pii(str(finding.get("title") or ""))[:FEEDBACK_TITLE_CHARS]
+    lines = [f"**Kind**: {kind_label}",
+             f"**Rule**: `{rule}`",
+             f"**Location**: `{_finding_ref(finding)}`",
+             f"**Severity**: {finding.get('severity')}"]
+    if title:
+        lines += ["", "**Finding title** (re-redacted):", "", "> " + title.replace("\n", " ")]
+    meaning = redact_pii(str(finding.get("meaning") or ""))[:400]
+    if meaning:
+        lines += ["", "**What the rule says**: " + meaning.replace("\n", " ")]
+    lines += ["", "**Snippet** (re-redacted):", "", "```text", snippet or "(no snippet)", "```"]
+    if cut:
+        lines += ["_Snippet truncated to keep the issue URL under GitHub's limit._"]
+    scan = (f"repobeagle {VERSION} \u00b7 profile {meta.get('profile')} \u00b7 ruleset `{meta.get('ruleset')}`"
+            f" \u00b7 target `{meta.get('target')}`")
+    if meta.get("commit"):
+        scan += f" \u00b7 commit `{meta.get('commit')}`"
+    if meta.get("ref"):
+        scan += f" \u00b7 ref `{meta.get('ref')}`"
+    lines += ["", "**Scan**: " + scan + f" \u00b7 image `{IMAGE}`",
+              f"**PII**: report scan redacted snippets: {'yes' if meta.get('pii_redacted', True) else 'no'}"
+              " \u2014 re-redacted here by `repobeagle feedback` regardless.", "",
+              "**Why this is wrong**:", ""]
+    if attach:
+        doc = json.dumps(report, indent=1, sort_keys=True)
+        lines += ["<details><summary>Full report (attached with --attach)</summary>", "", "```json", doc, "```", "", "</details>"]
+    return "\n".join(lines)
+
+def feedback_url(report, finding, kind, repo=FEEDBACK_REPO, attach=False):
+    """(url, notes): prefilled new-issue URL whose body is always re-redacted and fits GitHub's URL budget."""
+    raw_snippet = redact_pii(str(finding.get("snippet") or ""))
+    snippet = raw_snippet[:FEEDBACK_SNIPPET_CHARS]
+    cut = len(raw_snippet) > len(snippet)
+    title = _feedback_title(finding, kind)
+    base = f"https://github.com/{repo}/issues/new"
+    notes = ["snippet truncated to keep the issue URL under GitHub's limit"] if cut else []
+    def build(snip, with_attach, truncated):
+        body = _feedback_body(report, finding, kind, snip, with_attach, truncated)
+        return f"{base}?{urllib.parse.urlencode({'title': title[:200], 'body': body, 'labels': 'bug'})}"
+    url = build(snippet, attach, cut)
+    if len(url) > FEEDBACK_URL_MAX and attach:
+        url = build(snippet, False, cut)
+        notes.append("full report dropped from the issue body (too long); the URL stays under GitHub's limit")
+    while len(url) > FEEDBACK_URL_MAX and len(snippet) > 40:
+        snippet = snippet[:max(40, len(snippet) * 2 // 3)]
+        cut = True
+        url = build(snippet, False, cut)
+    if len(url) > FEEDBACK_URL_MAX:
+        overflow = len(url) - FEEDBACK_URL_MAX
+        body = _feedback_body(report, finding, kind, snippet, False, cut)
+        body = body[:max(200, len(body) - overflow - 40)].rstrip() + "\n\n\u2026 (truncated to fit the issue URL)"
+        url = f"{base}?{urllib.parse.urlencode({'title': title[:200], 'body': body, 'labels': 'bug'})}"
+        notes.append("body truncated to fit the issue URL")
+    return url, notes
+
+def cmd_feedback(a):
+    """Opens (or prints) a prefilled GitHub issue for one finding. Reads a stored report; never scans, never needs the network."""
+    try:
+        d = json.loads(Path(a.report).read_text())
+    except OSError as ex:
+        print(f"feedback: cannot read {a.report}: {ex}", file=sys.stderr)
+        return 1
+    except json.JSONDecodeError as ex:
+        print(f"feedback: {a.report} is not valid JSON: {ex}", file=sys.stderr)
+        return 1
+    if not isinstance(d, dict):
+        print("feedback: report root is not an object", file=sys.stderr)
+        return 1
+    finding, err = select_finding(d, a.rule, a.file)
+    if err:
+        print(f"feedback: {err}", file=sys.stderr)
+        return 1
+    kind = "false-positive" if a.false_positive else "miss"
+    url, notes = feedback_url(d, finding, kind, repo=a.repo, attach=a.attach)
+    print(url)
+    for note in notes:
+        print(f"feedback: {note}", file=sys.stderr)
+    if not a.no_open:
+        try:
+            import webbrowser
+            webbrowser.open(url)
+        except Exception:
+            pass
+        print("feedback: opened the prefilled issue in your browser (--no-open only prints the URL)", file=sys.stderr)
+    return 0
+
 def cmd_explain(a):
     """Prints how a stored report's verdict follows from the profile thresholds, and simulates accepting rules. No scan, no network."""
     if getattr(a, "write", False) and not (getattr(a, "accept", None) or getattr(a, "target", None)):
@@ -5595,6 +5723,16 @@ def main():
     dbp.add_argument("--update", action="store_true", help="download/refresh the database (needs network)")
     ap.add_argument("-V", "--version", action="store_true", help="print the installed version and image tag")
     sp.add_parser("version")
+    fb = sp.add_parser("feedback", help="open a prefilled, re-redacted GitHub issue for a finding")
+    fb.add_argument("report")
+    fg = fb.add_mutually_exclusive_group(required=True)
+    fg.add_argument("--false-positive", action="store_true", help="the rule fired but the finding is not a problem")
+    fg.add_argument("--miss", action="store_true", help="the rule missed a problem it should have reported")
+    fb.add_argument("--rule", help="rule id to report (default: the report's only finding)")
+    fb.add_argument("--file", help="file or file:line to disambiguate several findings of the rule")
+    fb.add_argument("--attach", action="store_true", help="attach the full report JSON to the issue body")
+    fb.add_argument("--repo", default=FEEDBACK_REPO, help="GitHub repository to open the issue in")
+    fb.add_argument("--no-open", action="store_true", help="only print the URL; do not launch a browser")
     up = sp.add_parser("update", help="pull the latest release and reinstall")
     up.add_argument("--check", action="store_true", help="only report installed/latest and exit 10 when an update exists")
     a = ap.parse_args()
@@ -5613,6 +5751,8 @@ def main():
         return cmd_fix(a)
     if a.cmd == "explain":
         return cmd_explain(a)
+    if a.cmd == "feedback":
+        return cmd_feedback(a)
     if a.cmd == "diff":
         return cmd_diff(a)
     if a.cmd == "export":
