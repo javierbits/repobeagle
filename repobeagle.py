@@ -1261,6 +1261,260 @@ def own_domains(root):
         pass
     return found
 
+CONFIG_FILE = ".repobeagle.yml"
+
+class ConfigError(Exception):
+    """Invalid repository policy config: fail loudly, never silently ignore a typo."""
+
+_RULE_IDS: set[str] | None = None
+
+def known_rule_ids():
+    """Built-in rule ids: literals in this module, telemetry families and the OSV titles (R4-lite until a registry ships)."""
+    global _RULE_IDS
+    if _RULE_IDS is None:
+        ids = set(re.findall(r'"([a-z][a-z0-9-]{2,}): ', Path(__file__).read_text(encoding="utf-8")))
+        ids |= {f"telemetry-{kind}" for kind, *_ in TELEMETRY_RULES}
+        ids |= set(PRIVACY_RULE_ORDER)
+        ids |= {"Vulnerable dependency", "MALICIOUS package", "custom-check"}
+        _RULE_IDS = ids
+    return _RULE_IDS
+
+def _strip_yaml_comment(line):
+    quote = None
+    for i, ch in enumerate(line):
+        if quote:
+            if ch == quote:
+                quote = None
+        elif ch in "\"'":
+            quote = ch
+        elif ch == "#" and (i == 0 or line[i - 1].isspace()):
+            return line[:i]
+    return line
+
+def _yaml_scalar(value):
+    v = value.strip()
+    if not v:
+        return ""
+    if len(v) >= 2 and v[0] == v[-1] and v[0] in "\"'":
+        if v[0] == '"':
+            try:
+                return json.loads(v)
+            except ValueError:
+                return v[1:-1]
+        return v[1:-1].replace("''", "'")
+    if v in ("true", "false"):
+        return v == "true"
+    if v in ("null", "~"):
+        return None
+    return v
+
+def _yaml_inline(value):
+    """Scalar, or an inline `[a, b]` list of scalars (quotes respected). JSON is accepted as a YAML subset."""
+    v = value.strip()
+    if not (v.startswith("[") and v.endswith("]")):
+        return _yaml_scalar(v)
+    inner = v[1:-1].strip()
+    if not inner:
+        return []
+    out, cur, quote = [], [], None
+    for ch in inner:
+        if quote:
+            cur.append(ch)
+            if ch == quote:
+                quote = None
+        elif ch in "\"'":
+            quote = ch
+            cur.append(ch)
+        elif ch == ",":
+            out.append("".join(cur).strip())
+            cur = []
+        else:
+            cur.append(ch)
+    if quote:
+        raise ValueError("unterminated quoted string in an inline list")
+    tail = "".join(cur).strip()
+    if tail:
+        out.append(tail)
+    return [_yaml_scalar(x) for x in out if x != ""]
+
+def parse_yaml_subset(text):
+    """Block mappings/lists, scalars and inline lists (the subset a policy file needs); comments and blank lines."""
+    lines = []
+    for n, raw in enumerate(text.splitlines(), 1):
+        if raw[:len(raw) - len(raw.lstrip(" \t"))].find("\t") >= 0:
+            raise ValueError(f"line {n}: use spaces, not tabs, for indentation")
+        stripped = _strip_yaml_comment(raw).rstrip()
+        if not stripped.strip():
+            continue
+        indent = len(stripped) - len(stripped.lstrip(" "))
+        lines.append({"indent": indent, "text": stripped.strip(), "line": n})
+
+    def block(i, indent):
+        if i >= len(lines) or lines[i]["indent"] < indent:
+            return {}, i
+        if lines[i]["text"].startswith("- "):
+            return seq(i, indent)
+        out: dict[str, Any] = {}
+        while i < len(lines) and lines[i]["indent"] == indent and not lines[i]["text"].startswith("- "):
+            entry = lines[i]
+            if ":" not in entry["text"]:
+                raise ValueError(f"line {entry['line']}: expected 'key: value'")
+            key, _, rest = entry["text"].partition(":")
+            key, rest = key.strip(), rest.strip()
+            if not key:
+                raise ValueError(f"line {entry['line']}: empty key")
+            i += 1
+            if rest:
+                out[key] = _yaml_inline(rest)
+            elif i < len(lines) and lines[i]["indent"] > indent:
+                out[key], i = block(i, lines[i]["indent"])
+            elif i < len(lines) and lines[i]["indent"] == indent and lines[i]["text"].startswith("- "):
+                out[key], i = seq(i, indent)
+            else:
+                out[key] = {}
+        return out, i
+
+    def seq(i, indent):
+        out: list[Any] = []
+        while i < len(lines) and lines[i]["indent"] == indent and lines[i]["text"].startswith("-"):
+            entry = lines[i]
+            body = entry["text"][1:].strip()
+            i += 1
+            if not body:
+                if i < len(lines) and lines[i]["indent"] > indent:
+                    value, i = block(i, lines[i]["indent"])
+                    out.append(value)
+                else:
+                    out.append(None)
+                continue
+            if ":" in body and body[0] not in "\"[''[{" and not body.startswith(("[", '{"')):
+                key, _, rest = body.partition(":")
+                item: dict[str, Any] = {key.strip(): _yaml_inline(rest) if rest.strip() else {}}
+                if i < len(lines) and lines[i]["indent"] > indent:
+                    more, i = block(i, lines[i]["indent"])
+                    if not isinstance(more, dict):
+                        raise ValueError(f"line {entry['line']}: list item mixes a mapping with a scalar list")
+                    item.update(more)
+                out.append(item)
+            else:
+                out.append(_yaml_inline(body))
+        return out, i
+
+    if not lines:
+        return {}
+    doc, end = block(0, lines[0]["indent"])
+    if end != len(lines):
+        raise ValueError(f"line {lines[end]['line']}: unexpected indentation")
+    return doc
+
+def load_repo_config(root):
+    """Validated `.repobeagle.yml` (or JSON) or None. Unknown rule ids/severities/profiles are errors, not no-ops."""
+    path = Path(root) / CONFIG_FILE
+    try:
+        text = path.read_text(encoding="utf-8")
+    except OSError:
+        return None
+    try:
+        doc = json.loads(text)
+    except ValueError:
+        try:
+            doc = parse_yaml_subset(text)
+        except ValueError as ex:
+            raise ConfigError(f"{CONFIG_FILE}: {ex}")
+    if not isinstance(doc, dict):
+        raise ConfigError(f"{CONFIG_FILE}: the top level must be a mapping")
+    cfg: dict[str, Any] = {"path": CONFIG_FILE, "sha256": hashlib.sha256(text.encode("utf-8")).hexdigest(),
+                           "rules": {}, "hosts": [], "custom_checks": []}
+    profile = doc.get("profile")
+    if profile is not None:
+        if profile not in PROFILES:
+            raise ConfigError(f"{CONFIG_FILE}: unknown profile {profile!r} (use {', '.join(PROFILES)})")
+        cfg["profile"] = profile
+    rules = doc.get("rules") or {}
+    if not isinstance(rules, dict):
+        raise ConfigError(f"{CONFIG_FILE}: `rules` must map rule ids to severities")
+    known = known_rule_ids()
+    for rule, severity in rules.items():
+        if not isinstance(rule, str) or not rule:
+            raise ConfigError(f"{CONFIG_FILE}: rule ids must be non-empty strings")
+        if severity not in SEV_ORDER:
+            raise ConfigError(f"{CONFIG_FILE}: rule {rule!r} has unknown severity {severity!r} "
+                              f"(use {', '.join(SEV_ORDER)})")
+        if any(ch in rule for ch in "*?["):
+            if not any(fnmatchcase(k, rule) for k in known):
+                raise ConfigError(f"{CONFIG_FILE}: rule glob {rule!r} matches no known rule id")
+        elif rule not in known:
+            near = difflib.get_close_matches(rule, sorted(known), n=3, cutoff=0.5)
+            raise ConfigError(f"{CONFIG_FILE}: unknown rule id {rule!r}" + (f" (did you mean {', '.join(near)}?)" if near else ""))
+        cfg["rules"][rule] = severity
+    hosts = doc.get("hosts") or []
+    if isinstance(hosts, str):
+        hosts = [hosts]
+    if not isinstance(hosts, list) or not all(isinstance(h, str) and h.strip() for h in hosts):
+        raise ConfigError(f"{CONFIG_FILE}: `hosts` must be a list of host names")
+    cfg["hosts"] = [h.strip().lower() for h in hosts]
+    checks = doc.get("custom_checks") or []
+    if isinstance(checks, dict):
+        checks = [checks]
+    if not isinstance(checks, list):
+        raise ConfigError(f"{CONFIG_FILE}: `custom_checks` must be a list")
+    for idx, chk in enumerate(checks, 1):
+        where = f"{CONFIG_FILE}: custom_checks[{idx}]"
+        if not isinstance(chk, dict):
+            raise ConfigError(f"{where} must be a mapping")
+        paths = chk.get("paths")
+        if isinstance(paths, str):
+            paths = [paths]
+        if not isinstance(paths, list) or not paths or not all(isinstance(x, str) and x.strip() for x in paths):
+            raise ConfigError(f"{where}.paths must be a non-empty list of globs")
+        pattern = chk.get("pattern")
+        if not isinstance(pattern, str) or not pattern:
+            raise ConfigError(f"{where}.pattern must be a non-empty regex")
+        try:
+            compiled = re.compile(pattern)
+        except re.error as ex:
+            raise ConfigError(f"{where}.pattern does not compile: {ex}")
+        severity = chk.get("severity")
+        if severity not in SEV_ORDER:
+            raise ConfigError(f"{where}.severity must be one of {', '.join(SEV_ORDER)}")
+        meaning = chk.get("meaning")
+        if not isinstance(meaning, str) or not meaning.strip():
+            raise ConfigError(f"{where}.meaning must be a one-sentence reason")
+        rid = str(chk.get("id") or f"check-{idx}")
+        if not re.fullmatch(r"[A-Za-z0-9_.-]+", rid):
+            raise ConfigError(f"{where}.id must match [A-Za-z0-9_.-]+")
+        cfg["custom_checks"].append({"id": rid, "paths": paths, "pattern": pattern, "_compiled": compiled,
+                                     "severity": severity, "meaning": meaning.strip()})
+    return cfg
+
+def run_custom_checks(root, checks):
+    """Findings from `custom_checks` (paths + regex + severity + meaning), capped per check, path-sorted."""
+    findings: list[dict] = []
+    root = Path(root)
+    for chk in checks:
+        matched = 0
+        for glob in chk["paths"]:
+            for p in sorted(root.glob(glob)):
+                if not p.is_file():
+                    continue
+                text = read_text(p)
+                if not text:
+                    continue
+                for lineno, line in enumerate(text.splitlines(), 1):
+                    if not chk["_compiled"].search(line):
+                        continue
+                    matched += 1
+                    if matched <= 20:
+                        findings.append(finding("custom", chk["severity"], rel(root, p), lineno,
+                                                 f"custom-check: {chk['id']} — {chk['meaning']}",
+                                                 line.strip()[:200], chk["meaning"]))
+        if matched > 20:
+            findings.append(finding("custom", chk["severity"], "(repo)", 0,
+                                     f"custom-check: {chk['id']} matched {matched - 20} more line(s)",
+                                     f"{matched} matches total",
+                                     "Only the first 20 matches are shown per custom check; narrow the pattern or paths."))
+    return findings
+
 def _is_own(host, own):
     return any(host == d or host.endswith("." + d) for d in own)
 
@@ -2329,6 +2583,12 @@ def run_agent_checks(root, deadline=None, state=None):
     masks: set[str] = set()
     privacy_doc = None
     own = own_domains(root)
+    try:
+        policy = load_repo_config(root) or {}
+    except ConfigError:
+        policy = {}
+    for host in policy.get("hosts") or []:
+        own.add(host)
     prose: list[str] = []
     nfiles = 0
     def check_one(p):
@@ -2870,11 +3130,11 @@ def tree_digest(root):
         h.update(b"\0")
     return h.hexdigest()
 
-def analysis_cache_key(src, commit, use_docker, since=None):
-    """Content-addressed key: tree (commit for git targets), ruleset, image, mode, scope, tool version."""
+def analysis_cache_key(src, commit, use_docker, since=None, config_sha=""):
+    """Content-addressed key: tree (commit for git targets), ruleset, image, mode, scope, tool and policy config."""
     parts = {"v": CACHE_VERSION, "tree": commit or tree_digest(src), "ruleset": RULESET,
              "image": _local_image_digest(IMAGE) or IMAGE,
-             "docker": bool(use_docker), "since": since or "", "tool": VERSION}
+             "docker": bool(use_docker), "since": since or "", "tool": VERSION, "config": config_sha}
     return hashlib.sha256(json.dumps(parts, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
 
 def cache_load(key):
@@ -4821,7 +5081,7 @@ def osv_db_warning(meta):
 HEAD_FILES = ("package.json", "package-lock.json", "pnpm-lock.yaml", "yarn.lock", "requirements.txt",
               "pyproject.toml", "setup.py", "setup.cfg", "Cargo.toml", "go.mod", "Gemfile", "pom.xml",
               "SKILL.md", "mcp.json", ".mcp.json", "README.md", "PRIVACY.md", "SECURITY.md", "LICENSE",
-              ".repobeagleignore", ".github/CODEOWNERS", ".github/PULL_REQUEST_TEMPLATE.md")
+              ".repobeagleignore", ".repobeagle.yml", ".github/CODEOWNERS", ".github/PULL_REQUEST_TEMPLATE.md")
 HEAD_DIRS = (".github/workflows",)
 HEAD_MAX_BYTES = 400_000
 
@@ -4953,7 +5213,7 @@ def head_collect_api(slug, token=None, use_cache=True):
 class HeadError(Exception):
     """A head/gate target could not produce a report (bad target, no metadata, checks failure)."""
 
-def head_report(target, profile="balanced", token="", use_cache=True):
+def head_report(target, profile="balanced", token="", use_cache=True, profile_defaulted=False):
     """Metadata-only report for one target (GitHub contents API or a local dir). No clone, no scanners, no repo code."""
     m = GITHUB_REPO_RE.match(target)
     slug = f"{m.group(1)}/{m.group(2)}" if m else (target if re.fullmatch(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+", target) else None)
@@ -4987,6 +5247,14 @@ def head_report(target, profile="balanced", token="", use_cache=True):
             findings, nfiles = run_agent_checks(src, None, agent_state)
         except Exception as ex:
             raise HeadError(f"checks failed: {type(ex).__name__}: {ex}")
+        try:
+            repo_config = load_repo_config(src)
+        except ConfigError as ex:
+            raise HeadError(str(ex))
+        if repo_config and repo_config.get("profile") and profile_defaulted:
+            profile = str(repo_config["profile"])
+        if repo_config and repo_config["custom_checks"]:
+            findings += run_custom_checks(src, repo_config["custom_checks"])
         caps = scan_capabilities(src)
         cov = scan_coverage(src)
         raw_count = len(findings)
@@ -4996,6 +5264,13 @@ def head_report(target, profile="balanced", token="", use_cache=True):
             rem = remediation_for(f)
             if rem:
                 f["remediation"] = rem
+        if repo_config and repo_config["rules"]:
+            for f in findings:
+                rule = _explain_rule(f)
+                new_sev = next((sev for pattern, sev in repo_config["rules"].items()
+                                 if fnmatchcase(rule, pattern)), None)
+                if new_sev:
+                    f["severity"] = new_sev
         entries = load_suppressions(src)
         active, suppressed, expired = apply_suppressions(findings, entries) if entries else (findings, [], [])
         if suppressed:
@@ -5016,6 +5291,10 @@ def head_report(target, profile="balanced", token="", use_cache=True):
                 "suppressed": len(suppressed), "suppressions": suppression_meta(entries),
                 "scope": scope, "capabilities": caps, "coverage": cov, "ruleset": RULESET,
                 "privacy_mode": "full", "pii_redacted": True}
+        if repo_config:
+            meta["config"] = {"path": CONFIG_FILE, "profile": repo_config.get("profile"),
+                              "rules": repo_config["rules"], "hosts": repo_config["hosts"],
+                              "custom_checks": len(repo_config["custom_checks"])}
         if summary:
             meta["privacy_summary"] = summary
             meta["privacy_profile"] = privacy_profile(summary)
@@ -5032,7 +5311,8 @@ def cmd_head(a):
     profile = "strict" if a.strict else "relaxed" if a.relaxed else "balanced"
     token = os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN") or ""
     try:
-        d, notes, source = head_report(a.target, profile, token, use_cache=not a.no_cache)
+        d, notes, source = head_report(a.target, profile, token, use_cache=not a.no_cache,
+                                        profile_defaulted=not (a.strict or a.relaxed))
     except HeadError as ex:
         print(f"head: {ex}", file=sys.stderr)
         return 1
@@ -5884,6 +6164,8 @@ def cmd_scan(a):
     osv_meta: dict[str, Any] = {}
     skipped = []
     profile = "strict" if a.strict else "relaxed" if a.relaxed else "balanced"
+    profile_explicit = bool(getattr(a, "strict", False) or getattr(a, "balanced", False) or getattr(a, "relaxed", False))
+    config_note = ""
     baseline = None
     if getattr(a, "baseline", None):
         try:
@@ -5909,6 +6191,22 @@ def cmd_scan(a):
         os.chmod(work, 0o700)
         print(f"[repobeagle] fetching {a.target} ...", file=sys.stderr)
         src, how, commit = fetch(a.target, work, getattr(a, "ref", None), getattr(a, "since", None))
+        try:
+            repo_config = load_repo_config(src)
+        except ConfigError as ex:
+            print(f"scan: {ex}", file=sys.stderr)
+            return 1
+        if repo_config:
+            if repo_config.get("profile") and not profile_explicit:
+                profile = str(repo_config["profile"])
+            parts = [f"profile {profile}"] if repo_config.get("profile") else []
+            if repo_config["rules"]:
+                parts.append(f"{len(repo_config['rules'])} rule override(s)")
+            if repo_config["hosts"]:
+                parts.append(f"{len(repo_config['hosts'])} allowed host(s)")
+            if repo_config["custom_checks"]:
+                parts.append(f"{len(repo_config['custom_checks'])} custom check(s)")
+            config_note = f"config: {CONFIG_FILE} applied" + (f" ({', '.join(parts)})" if parts else "")
         analysis_deadline = time.monotonic() + max_seconds if max_seconds else None
         analysis_complete = True
         out = Path(work) / "out"; out.mkdir()
@@ -5917,7 +6215,8 @@ def cmd_scan(a):
             print(f"[repobeagle] docker image {IMAGE} not available -> local fallback (run ./install.sh, or ./install.sh --build-local)", file=sys.stderr)
         print(f"[repobeagle] scanning ({'docker --network none' if use_docker else 'local'}) ...", file=sys.stderr)
         cache_state = "disabled" if getattr(a, "no_cache", False) else "miss"
-        cache_key = analysis_cache_key(src, commit, use_docker, getattr(a, "since", None))
+        cache_key = analysis_cache_key(src, commit, use_docker, getattr(a, "since", None),
+                                        repo_config["sha256"] if repo_config else "")
         res = cache_load(cache_key) if cache_state == "miss" else None
         cache_note = ""
         if res is not None:
@@ -5952,6 +6251,13 @@ def cmd_scan(a):
         findings, notes, tools = res["findings"], res["notes"], res["tools"]
         if cache_note:
             notes.append(cache_note)
+        if config_note:
+            notes.append(config_note)
+        if repo_config and repo_config["custom_checks"]:
+            custom = run_custom_checks(src, repo_config["custom_checks"])
+            findings += custom
+            notes.append(f"config: {len(repo_config['custom_checks'])} custom check(s) ran, "
+                         f"{len(custom)} finding(s)")
         sk = Path(work) / "skipped.json"
         if sk.exists():
             for n in json.loads(sk.read_text()):
@@ -6003,6 +6309,16 @@ def cmd_scan(a):
             if note: notes.append(note)
         if skipped:
             notes.append("privacy-only: skipped non-privacy stages (" + ", ".join(skipped) + ")")
+        if repo_config and repo_config["rules"]:
+            graded = 0
+            for f in findings:
+                rule = _explain_rule(f)
+                new_sev = next((sev for pattern, sev in repo_config["rules"].items()
+                                 if fnmatchcase(rule, pattern)), None)
+                if new_sev and f.get("severity") != new_sev:
+                    f["severity"] = new_sev
+                    graded += 1
+            notes.append(f"config: {graded} finding(s) re-graded by {CONFIG_FILE} rule overrides")
         raw_count = len(findings)
         findings = collapse(dedupe(findings))
         if getattr(a, "privacy_only", False):
@@ -6044,6 +6360,10 @@ def cmd_scan(a):
                 "tools": tools, "suppressed": len(suppressed), "suppressions": suppression_meta(entries),
                 "pii_redacted": not a.no_redact, "privacy_mode": privacy_mode, "ruleset": RULESET,
                 "complete": complete, "cache": cache_state}
+        if repo_config:
+            meta["config"] = {"path": CONFIG_FILE, "profile": repo_config.get("profile"),
+                              "rules": repo_config["rules"], "hosts": repo_config["hosts"],
+                              "custom_checks": len(repo_config["custom_checks"])}
         meta.update(osv_meta)
         caps = res.get("capabilities")
         if caps: meta["capabilities"] = caps

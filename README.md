@@ -48,6 +48,26 @@ Requirements: `python3 >= 3.10` plus whichever host tools the scan shells out to
 
 macOS: `install.sh` now detects `Darwin` and installs `gitleaks`/`osv-scanner`/`cosign` with Homebrew instead of downloading Linux binaries (it still uses Docker Desktop when available, which runs the same arm64 image). `pipx install .` is the light path on macOS arm64 and needs no container.
 
+## Per-repository policy (`.repobeagle.yml`)
+A repository can declare its policy next to its code. `scan` and the metadata `head` path read `.repobeagle.yml` from the scanned tree, validate it before doing work, and record what was applied in `meta.config`:
+```yaml
+profile: strict          # used when no --strict/--balanced/--relaxed flag is given (an explicit CLI profile wins)
+rules:                   # per-rule severity override, exact id or glob; unknown ids are errors
+  telemetry-devtool: info
+hosts:                   # treated as first-party: no third-party-* findings, endpoints count as own
+  - cdn.example.com
+custom_checks:           # regex checks that emit file:line findings with the configured severity
+  - id: no-print
+    paths: ["src/**/*.py"]
+    pattern: '\bprint\('
+    severity: low
+    meaning: "debug print in library code"
+```
+- JSON is accepted too (it is valid YAML); the built-in parser covers block mappings/lists, inline `[...]` lists, quoted scalars and comments — not anchors or multi-line strings. Errors name the file element (and nearby rule ids for typos).
+- Unknown rule ids, severities or profiles, uncompilable regexes and empty paths/meanings fail the scan (exit 1) instead of being silently ignored.
+- Overridden findings keep their rule id/title and are re-graded before the verdict; the overrides are listed in `meta.config.rules`. Custom checks are capped at 20 matches per check with a summary finding, and their findings use the `custom-check` rule with the configured severity and meaning.
+- The config content is part of the content-addressed analysis cache key, so editing the policy invalidates cached results. Defaults are identical when the file is absent.
+
 ## Usage
 ```bash
 repobeagle scan <git-url | local-dir> [--ref <branch|tag|sha>] [--since <rev>] [--strict|--balanced|--relaxed] [--keep] [--json out.json]
@@ -272,6 +292,7 @@ Severity follows privacy impact, so a default `balanced` scan goes YELLOW when a
 | `submodule-host` | `.gitmodules` entry whose host differs from the repository's origin host (read from `.git/config`): the submodule is pulled from another host, a pivot you did not review here | medium |
 | `submodule-uninspected` | one `info` finding listing the `.gitmodules` entries: fetch runs with `--no-recurse-submodules`, so only `.gitmodules` was inspected, not the submodule code | info |
 | `dockerfile-base-unpinned` | `FROM` without a version tag or `@sha256:` digest, or with the floating `latest` tag (`scratch`, `${ARG}` images and multi-stage aliases are skipped): the base image can change under you | low |
+| `custom-check` | findings from `custom_checks` in `.repobeagle.yml` (paths + regex + severity + meaning; capped at 20 matches per check) | configured |
 | `dependency-confusion` | `pip --extra-index-url` (requirements files, pip config), plaintext npm registry (`.npmrc registry=http://`) or `http://` dependency tarballs, and yarn `resolutions`/npm `overrides`: a dependency can resolve from a lookalike index or have its version forced | medium/low |
 
 Findings from the `privacy`/`telemetry` checks have their snippets **and titles redacted by default** (emails `s***@domain`, cards `4111 **** **** 1111`, phones `+46 ***** 567` and `(415****132`, SSNs `***-**-6789`) so a published badge report does not republish the PII it found. The report prints a redaction notice when it applies, `verify` prints `snippets: redacted by scanner` (or `raw`), `--no-redact` shows raw values and `meta.pii_redacted` records the mode.
