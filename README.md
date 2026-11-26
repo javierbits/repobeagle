@@ -83,6 +83,17 @@ rules:
 - Scan integration: findings carry `tool: "rules"`, the configured severity/meaning and the `remediation`; matches are capped at 20 per rule with a summary finding; `meta.rule_packs` records the files and rule count. An invalid pack aborts the scan (exit 1) and an explicit `.repobeagle.yml` rule override or persona delta applies to pack ids like any other.
 - Packs are additive and regex-only: they cannot express context-sensitive logic, and an id that collides with a built-in rule simply shares the suppression/override namespace.
 
+## Archives and release assets
+Archives are a documented blind spot when they sit inside a repo (they are flagged, never extracted). They can be inspected when they *are* the target, or when they are release assets:
+```bash
+repobeagle scan ./bundle.zip              # zip/tar/tar.gz extracted to the temp dir under limits, then scanned
+repobeagle scan OWNER/REPO --release-assets OWNER/REPO   # latest release's archive assets, same treatment
+```
+- `safe_extract()` rejects absolute paths and `..` members, never creates or follows symlinks (they are recorded as `archive-skipped` findings), and caps entries (`BEAGLE_ARCHIVE_MAX_ENTRIES`, default 5000), per-entry bytes (`BEAGLE_ARCHIVE_MAX_ENTRY_BYTES`, 64 MiB) and total bytes (`BEAGLE_ARCHIVE_MAX_TOTAL_BYTES`, 512 MiB) before and while extracting. Hitting a cap is a `low` `archive-truncated` finding; extraction stops cleanly, so a decompression bomb cannot fill the disk.
+- `.zip`, `.tar`/`.tar.gz`/`.tgz`/`.tar.xz`/`.tar.bz2` and single-file `.gz`/`.xz`/`.bz2` are expanded one level; `.7z`/`.rar`/`.zst` stay flagged as uninspectable, and an encrypted zip keeps its existing finding instead of failing.
+- `--release-assets OWNER/REPO` downloads up to five archive assets of the latest GitHub release (`BEAGLE_ASSET_MAX_BYTES`, 200 MiB each), extracts them under the same limits and scans the contents; their findings carry a `release-assets/<asset>/` path prefix, and `meta.release_assets` records each asset (bytes, entries, extracted, truncated, findings). Download failures degrade to a note.
+- The extracted members are scanned as a normal tree (secrets, workflows, manifests, telemetry); the archive itself is never executed.
+
 ## Personas (`--as`)
 `--as consumer|agent-operator|ci|maintainer` applies a **severity lens** over rule ids before the verdict: the persona's table moves matching findings (globs like `gha-*`) up or down the `info→critical` scale, then the profile thresholds decide the verdict. `repobeagle --list-personas` prints each lens, what it cares about and its deltas. It works on `scan`, `head`, `gate` and `batch` (`meta.persona` records it and the human report prints `persona: …`).
 
@@ -114,7 +125,7 @@ custom_checks:           # regex checks that emit file:line findings with the co
 ```bash
 repobeagle scan <git-url | local-dir> [--ref <branch|tag|sha>] [--since <rev>] [--strict|--balanced|--relaxed] [--keep] [--json out.json]
                 [--no-docker] [--no-osv] [--offline-vulnerabilities] [--verify-deps] [--all] [--min-severity info|low|medium|high|critical] [--no-color]
-                [--no-cache] [--as consumer|agent-operator|ci|maintainer]
+                [--no-cache] [--as consumer|agent-operator|ci|maintainer] [--release-assets OWNER/REPO]
                 [--baseline old.json [--baseline-min-severity medium]] [--privacy-only | --no-privacy] [--no-redact]
                 [--html out.html] [--sbom sbom.json] [--max-seconds SECONDS] [--jobs N]
 repobeagle privacy <git-url | local-dir> [same scan options]
@@ -128,6 +139,7 @@ repobeagle ignore [RULE [--reason TEXT] [--until YYYY-MM-DD]] [--file FILE] [--l
 repobeagle init [dir] [--profile strict|balanced|relaxed] [--badge-branch BRANCH] [--repo OWNER/NAME] [--tools-ref REF] [--dry-run] [--force]
 repobeagle export <report.json> [--format sarif|markdown|html|json] [-o out]
 repobeagle feedback <report.json> (--false-positive|--miss) [--rule RULE] [--file FILE[:LINE]] [--attach] [--no-open] [--repo OWNER/NAME]
+repobeagle scan <archive.zip|archive.tar.gz> [scan flags]
 repobeagle rules lint|test <pack-file-or-dir>...
 repobeagle run [--dry-run|--yes|--force] [--repo TARGET] [scan flags] -- <npx|pnpm dlx|yarn dlx|bunx|pipx run|uvx|cargo install ...>
 repobeagle map <git-url | local-dir | --report r.json> [--strict|--relaxed] [--network]
@@ -593,7 +605,7 @@ Scope: the guarantee covers the offline scanner stages on one commit and one ima
 
 **Misses**:
 - Well-obfuscated or novel logic, and payloads fetched at runtime from innocent-looking URLs.
-- Malicious code inside binaries or archives (flagged, not inspected), and anything in git history older than the shallow clone.
+- Malicious code inside binaries, and inside archives that sit *in* a repo (flagged, not expanded; pass the archive as the target or use `--release-assets` to inspect it). Anything in git history older than the shallow clone.
 - Submodule *content*, which is not fetched: only `.gitmodules` is inspected (branch refs, host, uninspected count), so their code is not scanned.
 - Clever natural-language injection that avoids the keywords (the optional AI review helps here).
 

@@ -10,6 +10,7 @@ NEVER executes repository code. Stdlib only (scanners are external binaries).
   repobeagle gate <entries-file> [--baseline old.json] [--json out.json] [--markdown] [--jobs N] [--report-only]
   repobeagle batch <targets-file> [--jobs N] [--json DIR] [scan profile/offline flags]
   repobeagle run [--dry-run|--yes|--force] [--repo TARGET] [scan flags] -- <npx|pnpm dlx|pipx run|uvx|cargo install ...>
+  repobeagle scan <archive.zip|archive.tar.gz>   # extracted under limits, then scanned
 """
 import argparse, base64, difflib, hashlib, json, os, platform, re, shlex, shutil, signal, subprocess, sys, tempfile, threading, time, unicodedata, uuid, zipfile
 import urllib.error, urllib.parse, urllib.request
@@ -2865,6 +2866,168 @@ BINARY_EXT = {".exe", ".dll", ".so", ".dylib", ".node", ".pyc", ".jar", ".whl", 
 
 ARCHIVE_EXT = (".zip", ".7z", ".rar", ".tar", ".tar.gz", ".tgz", ".tar.xz", ".tar.bz2", ".gz", ".xz", ".bz2", ".zst")
 
+# --- Safe archive extraction: scan archive targets without extracting on the host ---------------
+ARCHIVE_MAX_ENTRIES = int(os.environ.get("BEAGLE_ARCHIVE_MAX_ENTRIES", "5000") or 5000)
+ARCHIVE_MAX_ENTRY_BYTES = int(os.environ.get("BEAGLE_ARCHIVE_MAX_ENTRY_BYTES", str(64 * 1024 * 1024)))
+ARCHIVE_MAX_TOTAL_BYTES = int(os.environ.get("BEAGLE_ARCHIVE_MAX_TOTAL_BYTES", str(512 * 1024 * 1024)))
+TAR_EXTS = (".tar", ".tar.gz", ".tgz", ".tar.xz", ".tar.bz2")
+SINGLE_COMPRESSION = {".gz": "gzip", ".xz": "xz", ".bz2": "bz2"}
+
+def archive_kind(path):
+    """'zip' | 'tar' | 'gzip' | 'xz' | 'bz2' | None (7z/zst/rar stay uninspectable)."""
+    name = str(path).lower()
+    if name.endswith(".zip"):
+        return "zip"
+    if name.endswith(TAR_EXTS):
+        return "tar"
+    for ext, kind in SINGLE_COMPRESSION.items():
+        if name.endswith(ext):
+            return kind
+    return None
+
+def _safe_member_path(name):
+    """A `..`-free relative Path for an archive member name, or None (absolute/traversal/empty)."""
+    raw = str(name).replace("\\", "/")
+    if not raw or raw.startswith("/") or re.match(r"^[A-Za-z]:/", raw):
+        return None
+    p = Path(raw)
+    if not p.parts or any(part == ".." for part in p.parts):
+        return None
+    return p
+
+def _copy_bounded(reader, out_path, limit):
+    """Stream `reader` into out_path without exceeding `limit`; (written, complete)."""
+    written = 0
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(out_path, "wb") as out:
+        while True:
+            chunk = reader.read(256 * 1024)
+            if not chunk:
+                return written, True
+            if written + len(chunk) > limit:
+                out.write(chunk[: limit - written])
+                return limit, False
+            out.write(chunk)
+            written += len(chunk)
+
+def safe_extract(archive, dest):
+    """Extract one level of a zip/tar (or single-file .gz/.xz/.bz2) into `dest` under strict limits.
+
+    Rejects absolute and `..` members, never creates or follows symlinks (they are recorded), caps the
+    entry count, per-entry size and total bytes, and stops cleanly when a cap is hit. Returns a summary;
+    the archive itself is never extracted on the host beyond `dest`.
+    """
+    import bz2, gzip, lzma, stat, tarfile
+    archive = Path(archive)
+    dest = Path(dest)
+    dest.mkdir(parents=True, exist_ok=True)
+    kind = archive_kind(archive)
+    summary = {"archive": str(archive), "format": kind, "encrypted": False, "entries": 0,
+               "extracted": 0, "bytes": 0, "truncated": False, "skipped": []}
+
+    def skip(name, reason):
+        if len(summary["skipped"]) < 25:
+            summary["skipped"].append({"name": str(name), "reason": reason})
+
+    def room():
+        return summary["bytes"] < ARCHIVE_MAX_TOTAL_BYTES and summary["extracted"] < ARCHIVE_MAX_ENTRIES
+
+    if kind == "zip":
+        if zip_encrypted(archive):
+            summary["encrypted"] = True
+            return summary
+        with zipfile.ZipFile(archive) as z:
+            infos = z.infolist()
+            summary["entries"] = len(infos)
+            for info in infos:
+                name = info.filename
+                if not room():
+                    summary["truncated"] = True
+                    skip(name, "size/entry budget reached")
+                    continue
+                relp = _safe_member_path(name.rstrip("/")) if info.is_dir() else _safe_member_path(name)
+                if relp is None:
+                    skip(name, "absolute or '..' path")
+                    continue
+                mode = (info.external_attr >> 16)
+                if stat.S_ISLNK(mode):
+                    skip(name, "symlink (recorded, not created)")
+                    continue
+                if info.is_dir():
+                    (dest / relp).mkdir(parents=True, exist_ok=True)
+                    continue
+                if info.file_size > ARCHIVE_MAX_ENTRY_BYTES:
+                    skip(name, f"entry larger than {ARCHIVE_MAX_ENTRY_BYTES} bytes")
+                    continue
+                remaining = min(ARCHIVE_MAX_ENTRY_BYTES, ARCHIVE_MAX_TOTAL_BYTES - summary["bytes"])
+                with z.open(info) as src:
+                    written, complete = _copy_bounded(src, dest / relp, remaining)
+                summary["bytes"] += written
+                summary["extracted"] += 1
+                if not complete:
+                    summary["truncated"] = True
+                    skip(name, "entry truncated at the byte budget")
+                if written < info.file_size:
+                    summary["truncated"] = True
+    elif kind == "tar":
+        with tarfile.open(archive, mode="r:*") as tf:
+            members = tf.getmembers()
+            summary["entries"] = len(members)
+            for m in members:
+                if not room():
+                    summary["truncated"] = True
+                    skip(m.name, "size/entry budget reached")
+                    continue
+                if m.isdir():
+                    relp = _safe_member_path(m.name)
+                    if relp:
+                        (dest / relp).mkdir(parents=True, exist_ok=True)
+                    continue
+                if m.issym() or m.islnk():
+                    skip(m.name, "symlink/hardlink (recorded, not created)")
+                    continue
+                if not m.isfile():
+                    skip(m.name, "special file (not extracted)")
+                    continue
+                relp = _safe_member_path(m.name)
+                if relp is None:
+                    skip(m.name, "absolute or '..' path")
+                    continue
+                if m.size > ARCHIVE_MAX_ENTRY_BYTES:
+                    skip(m.name, f"entry larger than {ARCHIVE_MAX_ENTRY_BYTES} bytes")
+                    continue
+                tsrc = tf.extractfile(m)
+                if tsrc is None:
+                    skip(m.name, "unreadable member")
+                    continue
+                remaining = min(ARCHIVE_MAX_ENTRY_BYTES, ARCHIVE_MAX_TOTAL_BYTES - summary["bytes"])
+                with tsrc:
+                    written, complete = _copy_bounded(tsrc, dest / relp, remaining)
+                summary["bytes"] += written
+                summary["extracted"] += 1
+                if not complete:
+                    summary["truncated"] = True
+                    skip(m.name, "entry truncated at the byte budget")
+    elif kind in SINGLE_COMPRESSION:
+        out_name = re.sub(r"\.(gz|xz|bz2)$", "", archive.name)
+        try:
+            if kind == "gzip":
+                csrc = gzip.open(archive, "rb")
+            elif kind == "xz":
+                csrc = lzma.open(archive, "rb")
+            else:
+                csrc = bz2.open(archive, "rb")
+            with csrc:
+                written, complete = _copy_bounded(csrc, dest / out_name, ARCHIVE_MAX_ENTRY_BYTES)
+            summary.update({"entries": 1, "extracted": 1, "bytes": written})
+            if not complete:
+                summary["truncated"] = True
+                skip(out_name, "entry truncated at the byte budget")
+        except (OSError, EOFError) as ex:
+            summary["truncated"] = True
+            skip(archive.name, f"unreadable {kind} stream: {ex}")
+    return summary
+
 def zip_encrypted(p):
     """Reads only zip local-file headers (no extraction): general-purpose flag bit 0 = encrypted. 7z/rar: unknown -> None."""
     try:
@@ -3933,6 +4096,22 @@ CONTEXT_FILES = ("package.json", "package-lock.json", "pnpm-lock.yaml", "yarn.lo
 
 def fetch(target, work, ref=None, since=None):
     dest = Path(work) / "src"
+    if os.path.isfile(target):
+        for flag, value in (("--ref", ref), ("--since", since)):
+            if value:
+                raise SystemExit(f"{flag} {value!r} needs a git URL; an archive target is scanned as-is")
+        if not str(target).lower().endswith(ARCHIVE_EXT):
+            raise SystemExit(f"refusing target {target!r}: not a directory, archive or git URL")
+        summary = safe_extract(target, dest)
+        uninspectable = summary["format"] is None or summary["encrypted"]
+        if uninspectable:                          # keep the existing findings for what cannot be expanded
+            dest.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(target, dest / Path(target).name)
+            summary["note"] = ("encrypted zip: contents not inspected" if summary["encrypted"]
+                               else f"{summary['format'] or 'unsupported'} archive: contents not inspected")
+        summary["archive"] = Path(target).name
+        (Path(work) / "archive.json").write_text(json.dumps(summary), encoding="utf-8")
+        return dest, f"archive ({summary['format'] or 'uninspectable'}, extracted under limits)", None
     if os.path.isdir(target):
         for flag, value in (("--ref", ref), ("--since", since)):
             if value:
@@ -5885,7 +6064,7 @@ def cmd_batch(a):
                  "no_redact", "privacy_only", "no_privacy", "no_cache"):
         if getattr(a, flag, False):
             flags.append("--" + flag.replace("_", "-"))
-    for opt in ("min_severity", "max_seconds"):
+    for opt in ("min_severity", "max_seconds", "release_assets"):
         value = getattr(a, opt, None)
         if value is not None:
             flags += ["--" + opt.replace("_", "-"), str(value)]
@@ -6685,6 +6864,72 @@ def cmd_ignore(a):
           + (f" (until {a.until})" if a.until else ""))
     return 0
 
+# --- GitHub release assets: download, extract under limits, scan the contents ------------------
+RELEASE_MAX_ASSETS = 5
+RELEASE_MAX_ASSET_BYTES = int(os.environ.get("BEAGLE_ASSET_MAX_BYTES", str(200 * 1024 * 1024)))
+
+def _github_download(url, dest, limit):
+    """Stream an https(s) URL into `dest`, refusing anything over `limit` bytes; returns bytes written."""
+    req = urllib.request.Request(url, headers={"User-Agent": WEB_UA})
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    written = 0
+    with urllib.request.urlopen(req, timeout=60) as resp, open(dest, "wb") as out:
+        while True:
+            chunk = resp.read(256 * 1024)
+            if not chunk:
+                return written
+            if written + len(chunk) > limit:
+                raise ValueError(f"{url.rsplit('/', 1)[-1]} exceeds {limit} bytes")
+            out.write(chunk)
+            written += len(chunk)
+
+def scan_release_assets(slug, workdir, deadline=None):
+    """(findings, meta) for the latest GitHub release's archive assets. Network; never executes them."""
+    m = re.fullmatch(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+", slug)
+    if not m:
+        raise ValueError(f"{slug!r} is not an owner/repo slug")
+    api = os.environ.get("GITHUB_API_URL") or "https://api.github.com"
+    token = os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN") or ""
+    headers = {"User-Agent": WEB_UA, "Accept": "application/vnd.github+json"}
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    req = urllib.request.Request(f"{api}/repos/{slug}/releases/latest", headers=headers)
+    with urllib.request.urlopen(req, timeout=30) as resp:
+        release = json.loads(resp.read().decode())
+    assets = [a for a in release.get("assets") or []
+              if str(a.get("name") or "").lower().endswith(ARCHIVE_EXT)][:RELEASE_MAX_ASSETS]
+    workdir = Path(workdir)
+    workdir.mkdir(parents=True, exist_ok=True)
+    findings: list[dict] = []
+    meta: list[dict] = []
+    for i, asset in enumerate(assets):
+        name = Path(str(asset.get("name") or f"asset-{i}")).name
+        url = str(asset.get("browser_download_url") or "")
+        if not url.startswith(("http://", "https://")):
+            meta.append({"name": name, "note": "no browser_download_url"})
+            continue
+        target = workdir / f"{i:02d}-{name}"
+        try:
+            written = _github_download(url, target, RELEASE_MAX_ASSET_BYTES)
+            summary = safe_extract(target, workdir / f"{i:02d}")
+        except Exception as ex:
+            meta.append({"name": name, "note": f"{type(ex).__name__}: {ex}"})
+            continue
+        entry = {"name": name, "bytes": written, "format": summary["format"], "entries": summary["entries"],
+                 "extracted": summary["extracted"], "truncated": summary["truncated"], "findings": 0}
+        if summary["format"] is None or summary["encrypted"]:
+            entry["note"] = summary.get("note") or "not inspected"
+            meta.append(entry)
+            continue
+        fs, _ = run_agent_checks(workdir / f"{i:02d}", deadline)
+        for f in fs:
+            if f.get("file") and f["file"] != "(repo)":
+                f["file"] = f"release-assets/{name}/{f['file']}"
+        entry["findings"] = len(fs)
+        findings += fs
+        meta.append(entry)
+    return findings, meta
+
 def cmd_scan(a):
     print(banner(color_enabled(sys.stderr) and not a.no_color), file=sys.stderr)   # stderr keeps stdout reports clean
     t0 = time.time()
@@ -6722,6 +6967,11 @@ def cmd_scan(a):
         os.chmod(work, 0o700)
         print(f"[repobeagle] fetching {a.target} ...", file=sys.stderr)
         src, how, commit = fetch(a.target, work, getattr(a, "ref", None), getattr(a, "since", None))
+        archive_summary = None
+        try:
+            archive_summary = json.loads((Path(work) / "archive.json").read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            pass
         try:
             repo_config = load_repo_config(src)
         except ConfigError as ex:
@@ -6789,6 +7039,30 @@ def cmd_scan(a):
             findings += custom
             notes.append(f"config: {len(repo_config['custom_checks'])} custom check(s) ran, "
                          f"{len(custom)} finding(s)")
+        release_meta: list[dict] = []
+        if getattr(a, "release_assets", None):
+            try:
+                ra_findings, release_meta = scan_release_assets(a.release_assets, Path(work) / "releases",
+                                                                analysis_deadline)
+            except Exception as ex:
+                notes.append(f"release-assets: skipped: {type(ex).__name__}: {ex}")
+            else:
+                findings += ra_findings
+                notes.append(f"release-assets: {len(release_meta)} asset(s) of {a.release_assets} latest release")
+        if archive_summary:
+            notes.append(f"archive: {archive_summary['archive']} ({archive_summary['format'] or 'uninspectable'}): "
+                         f"{archive_summary['extracted']}/{archive_summary['entries']} entries, "
+                         f"{archive_summary['bytes']} bytes extracted")
+            for item in archive_summary["skipped"][:6]:
+                findings.append(finding("agent-checks", "info", archive_summary["archive"], 0,
+                                         f"archive-skipped: {item['name']} ({item['reason']})", "",
+                                         "The archive member was recorded and not extracted; nothing was executed."))
+            if archive_summary["truncated"]:
+                findings.append(finding("agent-checks", "low", archive_summary["archive"], 0,
+                                         "archive-truncated: extraction stopped at the configured limits",
+                                         f"{archive_summary['extracted']}/{archive_summary['entries']} entries, "
+                                         f"{archive_summary['bytes']} bytes",
+                                         "Only the extracted part was inspected; raise BEAGLE_ARCHIVE_* to widen the budget."))
         try:
             packs = load_rule_packs(src)
         except ConfigError as ex:
@@ -6905,6 +7179,10 @@ def cmd_scan(a):
                 "tools": tools, "suppressed": len(suppressed), "suppressions": suppression_meta(entries),
                 "pii_redacted": not a.no_redact, "privacy_mode": privacy_mode, "ruleset": RULESET,
                 "complete": complete, "cache": cache_state}
+        if archive_summary:
+            meta["archive"] = archive_summary
+        if release_meta:
+            meta["release_assets"] = release_meta
         if packs:
             meta["rule_packs"] = {"files": [p["path"] for p in packs],
                                   "rules": sum(len(p["rules"]) for p in packs)}
@@ -7379,6 +7657,8 @@ def main():
         s.add_argument("--json", metavar="FILE")
         s.add_argument("--as", dest="as_persona", choices=sorted(PERSONAS), metavar="PERSONA",
                        help="severity lens: " + ", ".join(sorted(PERSONAS)) + " (see --list-personas)")
+        s.add_argument("--release-assets", metavar="OWNER/REPO",
+                       help="also download, extract and scan the archive assets of this repo's latest GitHub release")
         s.add_argument("--jobs", type=int, default=4, metavar="N",
                        help="run the four external scanners concurrently (default 4; 1 = sequential)")
         s.add_argument("--no-cache", action="store_true",
@@ -7545,6 +7825,7 @@ def main():
     ba.add_argument("--privacy-only", action="store_true"); ba.add_argument("--no-privacy", action="store_true")
     ba.add_argument("--min-severity", choices=list(SEV_ORDER), default=None)
     ba.add_argument("--max-seconds", type=float, metavar="SECONDS")
+    ba.add_argument("--release-assets", metavar="OWNER/REPO")
     ba.add_argument("--no-cache", action="store_true")
     ba.add_argument("--as", dest="as_persona", choices=sorted(PERSONAS), metavar="PERSONA")
     ba.add_argument("--no-color", action="store_true")
