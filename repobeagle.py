@@ -2839,6 +2839,69 @@ def _deadline_left(deadline):
     """Seconds until the deadline (negative once passed), or None when there is no deadline."""
     return None if deadline is None else deadline - time.monotonic()
 
+# --- Content-addressed analysis cache -------------------------------------------------
+CACHE_VERSION = 1
+
+def _cache_root():
+    base = Path(os.environ.get("XDG_CACHE_HOME") or (Path(os.environ.get("HOME") or "/tmp") / ".cache"))
+    return base / "repobeagle" / "results"
+
+def tree_digest(root):
+    """sha256 content address of a local tree: sorted paths, sizes and (bounded) file bytes."""
+    h = hashlib.sha256()
+    root = Path(root)
+    for p in sorted(iter_files(root)):
+        try:
+            st = p.stat()
+        except OSError:
+            continue
+        h.update(rel(root, p).encode("utf-8") + b"\0" + str(st.st_size).encode() + b"\0")
+        try:
+            with open(p, "rb") as fh:
+                if st.st_size <= MAX_FILE:
+                    for chunk in iter(lambda: fh.read(1024 * 1024), b""):
+                        h.update(chunk)
+                else:                                   # oversize: size plus head/tail bytes
+                    h.update(fh.read(65536))
+                    fh.seek(max(0, st.st_size - 65536))
+                    h.update(fh.read(65536))
+        except OSError:
+            h.update(b"<unreadable>")
+        h.update(b"\0")
+    return h.hexdigest()
+
+def analysis_cache_key(src, commit, use_docker, since=None):
+    """Content-addressed key: tree (commit for git targets), ruleset, image, mode, scope, tool version."""
+    parts = {"v": CACHE_VERSION, "tree": commit or tree_digest(src), "ruleset": RULESET,
+             "image": _local_image_digest(IMAGE) or IMAGE,
+             "docker": bool(use_docker), "since": since or "", "tool": VERSION}
+    return hashlib.sha256(json.dumps(parts, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+
+def cache_load(key):
+    try:
+        d = json.loads((_cache_root() / f"{key}.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+    if not isinstance(d, dict) or d.get("cache_version") != CACHE_VERSION:
+        return None
+    result = d.get("result")
+    if not isinstance(result, dict) or not isinstance(result.get("findings"), list):
+        return None
+    return result
+
+def cache_store(key, result):
+    """Atomic 0600 write; a cache failure never fails the scan."""
+    root = _cache_root()
+    try:
+        root.mkdir(parents=True, exist_ok=True)
+        p = root / f"{key}.json"
+        tmp = p.with_name(p.name + ".tmp")
+        tmp.write_text(json.dumps({"cache_version": CACHE_VERSION, "result": result}), encoding="utf-8")
+        os.chmod(tmp, 0o600)
+        os.replace(tmp, p)
+    except OSError:
+        pass
+
 def inner(src, out, deadline=None, jobs=None):
     """Runs offline scanners + agent checks. Used inside the container or locally.
 
@@ -5013,7 +5076,7 @@ def cmd_batch(a):
         return 1
     flags: list[str] = ["--jobs", "1"]          # parallelise targets, not scanners inside each target
     for flag in ("strict", "relaxed", "no_docker", "no_osv", "offline_vulnerabilities", "no_trust",
-                 "no_redact", "privacy_only", "no_privacy"):
+                 "no_redact", "privacy_only", "no_privacy", "no_cache"):
         if getattr(a, flag, False):
             flags.append("--" + flag.replace("_", "-"))
     for opt in ("min_severity", "max_seconds"):
@@ -5853,17 +5916,30 @@ def cmd_scan(a):
         if not a.no_docker and not use_docker:
             print(f"[repobeagle] docker image {IMAGE} not available -> local fallback (run ./install.sh, or ./install.sh --build-local)", file=sys.stderr)
         print(f"[repobeagle] scanning ({'docker --network none' if use_docker else 'local'}) ...", file=sys.stderr)
-        try:
-            if use_docker:
-                # the container has its own 3600 s timeout; cut it at the deadline (partial report)
-                with _scan_alarm(_deadline_left(analysis_deadline)):
-                    res = run_in_docker(src, out, jobs=getattr(a, "jobs", 1))
-            else:
-                res = inner(src, out, deadline=analysis_deadline, jobs=getattr(a, "jobs", 1))   # phases guard themselves
-        except ScanDeadline:
-            res = {"findings": [], "tools": {},
-                   "notes": ["scan stopped at --max-seconds before the analysis phase wrote results"],
-                   "complete": False}
+        cache_state = "disabled" if getattr(a, "no_cache", False) else "miss"
+        cache_key = analysis_cache_key(src, commit, use_docker, getattr(a, "since", None))
+        res = cache_load(cache_key) if cache_state == "miss" else None
+        cache_note = ""
+        if res is not None:
+            cache_state = "hit"
+            cache_note = (f"analysis cache hit ({cache_key[:12]}): tree, ruleset, image and mode unchanged; "
+                           "host-side stages (OSV/trust/verify-deps) are not cached and still run when enabled")
+            print(f"[repobeagle] analysis cache hit {cache_key[:12]} ({_cache_root() / (cache_key + '.json')})",
+                  file=sys.stderr)
+        else:
+            try:
+                if use_docker:
+                    # the container has its own 3600 s timeout; cut it at the deadline (partial report)
+                    with _scan_alarm(_deadline_left(analysis_deadline)):
+                        res = run_in_docker(src, out, jobs=getattr(a, "jobs", 1))
+                else:
+                    res = inner(src, out, deadline=analysis_deadline, jobs=getattr(a, "jobs", 1))   # phases guard themselves
+            except ScanDeadline:
+                res = {"findings": [], "tools": {},
+                       "notes": ["scan stopped at --max-seconds before the analysis phase wrote results"],
+                       "complete": False}
+            if cache_state == "miss" and res.get("complete", True):
+                cache_store(cache_key, res)
         if not res.get("complete", True):
             analysis_complete = False
         def budget_exhausted(phase):
@@ -5874,6 +5950,8 @@ def cmd_scan(a):
                 return True
             return False
         findings, notes, tools = res["findings"], res["notes"], res["tools"]
+        if cache_note:
+            notes.append(cache_note)
         sk = Path(work) / "skipped.json"
         if sk.exists():
             for n in json.loads(sk.read_text()):
@@ -5965,7 +6043,7 @@ def cmd_scan(a):
                 "profile": profile, "files": tools.get("agent-checks", {}).get("files"), "seconds": round(time.time() - t0, 1),
                 "tools": tools, "suppressed": len(suppressed), "suppressions": suppression_meta(entries),
                 "pii_redacted": not a.no_redact, "privacy_mode": privacy_mode, "ruleset": RULESET,
-                "complete": complete}
+                "complete": complete, "cache": cache_state}
         meta.update(osv_meta)
         caps = res.get("capabilities")
         if caps: meta["capabilities"] = caps
@@ -6426,6 +6504,8 @@ def main():
         s.add_argument("--json", metavar="FILE")
         s.add_argument("--jobs", type=int, default=4, metavar="N",
                        help="run the four external scanners concurrently (default 4; 1 = sequential)")
+        s.add_argument("--no-cache", action="store_true",
+                       help="ignore the content-addressed analysis cache (meta.cache=disabled)")
         s.add_argument("--max-seconds", type=float, metavar="SECONDS",
                        help="analysis budget after the tree is fetched: an unfinished scan is written as a partial report "
                             "(meta.complete=false, verdict floor YELLOW)")
@@ -6566,6 +6646,7 @@ def main():
     ba.add_argument("--privacy-only", action="store_true"); ba.add_argument("--no-privacy", action="store_true")
     ba.add_argument("--min-severity", choices=list(SEV_ORDER), default=None)
     ba.add_argument("--max-seconds", type=float, metavar="SECONDS")
+    ba.add_argument("--no-cache", action="store_true")
     ba.add_argument("--no-color", action="store_true")
     ga = sp.add_parser("gate", help="scan a directory listing (one target per line) and fail only on a new RED")
     ga.add_argument("entries", help="entries file: one owner/repo, git URL or local dir per line (# comments) or JSON")

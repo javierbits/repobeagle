@@ -11,13 +11,13 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 import repobeagle as rb
 
-FLAGS = ["--no-docker", "--no-osv", "--no-trust", "--no-color"]
+FLAGS = ["--no-docker", "--no-osv", "--no-trust", "--no-color", "--no-cache"]
 TARGETS = ["tests/fixtures/trap-privacy", "tests/fixtures/trap-gha", "tests/fixtures/trap-supply"]
 
 
 def strip_seconds(o):
     if isinstance(o, dict):
-        return {k: strip_seconds(v) for k, v in o.items() if k != "seconds"}
+        return {k: strip_seconds(v) for k, v in o.items() if k not in ("seconds", "cache")}
     if isinstance(o, list):
         return [strip_seconds(x) for x in o]
     return o
