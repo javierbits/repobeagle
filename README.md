@@ -159,6 +159,7 @@ repobeagle scan <git-url | local-dir> [--ref <branch|tag|sha>] [--since <rev>] [
 repobeagle privacy <git-url | local-dir> [same scan options]
 repobeagle explain <report.json> [--accept RULE...] [--target green|yellow] [--write [--ignore-file FILE] [--reason TEXT]]
 repobeagle diff <old.json> <new.json> [--min-severity medium] [--json out.json]
+repobeagle trend <github-repo | report-dir | report.json...> [--branch BRANCH] [--limit N] [--json out.json]
 repobeagle fix <local-dir> [--dry-run] [--pins FILE] [--no-network] [--json out.json]
 repobeagle head <owner/repo | github-url | local-dir> [--strict|--relaxed] [--json out.json] [--markdown] [--no-cache] [--as PERSONA]
 repobeagle gate <entries-file> [--baseline old.json] [--json out.json] [--markdown] [--jobs N] [--report-only] [--strict|--relaxed] [--as PERSONA]
@@ -191,6 +192,8 @@ planner:
 ```
 
 `repobeagle diff` compares two reports and classifies what the change added or removed, matching on rule id + file so line moves and re-indentation are not counts as changes. It exits 1 when an added finding is at or above `--min-severity` (default `medium`), which is the gate to use in CI: keep yesterday's report, scan the PR, and fail only on *new* findings. Like `explain`, it never re-scans. `scan --baseline old.json --baseline-min-severity high` does the scan and the same gate in one command: it exits 1 only when the scan added a finding at/above the threshold, and the verdict exit code is deliberately not used in that mode. `--baseline-min-severity` is separate from `--min-severity`, which only controls printing.
+`repobeagle trend` reads the per-SHA reports that `scan.yml` already publishes (`report-<sha>.json` on the badge branch) and turns them into a verdict and rule history: ordered verdicts, first RED, per-rule regressions (a rule that appears after a report without it), the current streak, and the reason each malformed or incomparable report was skipped. A local directory of `report-*.json` or explicit report files needs no network; a GitHub slug lists the badge-branch commits (GitHub API, honors `BEAGLE_GITHUB_TOKEN`/`GITHUB_TOKEN`) and fetches the reports those commits name. Reports whose `meta.ruleset` or `version` differs from the newest report are skipped, because their rule ids are not comparable. `--json` emits the same ordered series for charts; no scan is re-run.
+
 `repobeagle fix <local-dir>` rewrites only the findings whose fix is mechanical: an unpinned `uses:` becomes a resolved 40-character commit SHA, and a top-level `permissions: write-all` becomes `contents: read`. It edits the flagged line in place (no YAML re-serialisation, so comments and layout survive), prints a unified diff, and `--dry-run` writes nothing. It never clones (check out the repo first) and never executes repository code.
 
 - Pins are resolved through the GitHub API. `--pins FILE` is a JSON `{owner/repo@ref: sha}` map for airgapped runs and tests; `--no-network` uses only that map, and an action it cannot resolve is skipped with a reason rather than guessed.

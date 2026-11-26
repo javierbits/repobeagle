@@ -1,0 +1,18 @@
+{
+  "version": "1.0.0",
+  "verdict": "GREEN",
+  "why": "no notable findings",
+  "counts": {"critical": 0, "high": 0, "medium": 0, "low": 1, "info": 0},
+  "meta": {
+    "target": "https://github.com/example/trend-fixture",
+    "scanned_sha": "1111111aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "scanned_at": "2026-10-01T00:00:00Z",
+    "ruleset": "abc123abc123",
+    "profile": "balanced"
+  },
+  "findings": [
+    {"tool": "privacy", "severity": "low", "file": "web/index.html", "line": 4,
+     "title": "cookie-flags: cookie set without Secure", "snippet": "Set-Cookie: a=b",
+     "meaning": "The cookie can be sent over plain HTTP."}
+  ]
+}

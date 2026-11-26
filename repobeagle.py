@@ -7,6 +7,7 @@ NEVER executes repository code. Stdlib only (scanners are external binaries).
                   [--html out.html] [--sbom sbom.json] [--trace]
   repobeagle verify <github-repo> [--branch repobeagle] [--expect-sha SHA]
   repobeagle feedback <report.json> (--false-positive|--miss) [--rule RULE] [--file FILE[:LINE]] [--attach] [--no-open]
+  repobeagle trend <github-repo | report-dir> [--branch BRANCH] [--limit N] [--json out.json]
   repobeagle gate <entries-file> [--baseline old.json] [--json out.json] [--markdown] [--jobs N] [--report-only]
   repobeagle batch <targets-file> [--jobs N] [--json DIR] [scan profile/offline flags]
   repobeagle run [--dry-run|--yes|--force] [--repo TARGET] [scan flags] -- <npx|pnpm dlx|pipx run|uvx|cargo install ...>
@@ -14,7 +15,7 @@ NEVER executes repository code. Stdlib only (scanners are external binaries).
 """
 import argparse, base64, difflib, hashlib, json, os, platform, re, shlex, shutil, signal, subprocess, sys, tempfile, threading, time, unicodedata, uuid, zipfile
 import urllib.error, urllib.parse, urllib.request
-from datetime import date
+from datetime import date, datetime, timezone
 from fnmatch import fnmatchcase
 from typing import Any
 from pathlib import Path
@@ -5600,6 +5601,284 @@ def cmd_export(a):
     return 0
 
 
+# ---------------------------------------------------------------------------
+# Trend: verdict/rule history from the per-SHA reports on a badge branch
+# ---------------------------------------------------------------------------
+TREND_COMMIT_RE = re.compile(r"repobeagle:\s+(?:GREEN|YELLOW|RED)\s+for\s+([0-9a-f]{40})\b")
+TREND_VERDICTS = ("GREEN", "YELLOW", "RED")
+TREND_LETTER = {"GREEN": "G", "YELLOW": "Y", "RED": "R"}
+
+def _trend_headers(accept="application/vnd.github+json"):
+    token = os.environ.get("BEAGLE_GITHUB_TOKEN") or os.environ.get("GITHUB_TOKEN") or ""
+    headers = {"User-Agent": "repobeagle", "Accept": accept}
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    return headers
+
+def _trend_get(url, accept="application/vnd.github+json", timeout=30):
+    req = urllib.request.Request(url, headers=_trend_headers(accept))
+    with urllib.request.urlopen(req, timeout=timeout) as resp:
+        return resp.read()
+
+def _trend_epoch(value):
+    """Epoch seconds for an ISO-8601 timestamp, or None when absent/unparsable."""
+    try:
+        dt = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    except (TypeError, ValueError):
+        return None
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt.timestamp()
+
+def _trend_iso(epoch):
+    return datetime.fromtimestamp(epoch, timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+def _trend_count(value):
+    try:
+        return int(value or 0)
+    except (TypeError, ValueError):
+        return 0
+
+def _trend_entry(raw, label, fallback_epoch=None):
+    """One report file -> (entry, None), or (None, reason). Hostile input never raises."""
+    try:
+        d = json.loads(raw)
+    except (ValueError, UnicodeDecodeError):
+        return None, "not valid JSON"
+    if not isinstance(d, dict):
+        return None, "JSON root is not an object"
+    verdict = d.get("verdict")
+    if verdict not in TREND_VERDICTS:
+        return None, "no GREEN/YELLOW/RED verdict"
+    meta: dict[str, Any] = d["meta"] if isinstance(d.get("meta"), dict) else {}
+    counts: dict[str, Any] = d["counts"] if isinstance(d.get("counts"), dict) else {}
+    epoch = _trend_epoch(meta.get("scanned_at")) if meta.get("scanned_at") else None
+    if epoch is None:
+        epoch = fallback_epoch
+    if epoch is None:
+        return None, "no timestamp (meta.scanned_at or file time)"
+    try:
+        at = _trend_iso(epoch)
+    except (OverflowError, OSError, ValueError):
+        return None, "timestamp out of range"
+    rules = sorted({_rule_of(f) for f in (d.get("findings") or [])
+                    if isinstance(f, dict) and not f.get("suppressed") and f.get("severity") in SEV_ORDER})
+    return {
+        "at": at, "epoch": epoch, "file": label,
+        "sha": str(meta.get("scanned_sha") or meta.get("commit") or ""),
+        "verdict": verdict,
+        "counts": {k: _trend_count(counts.get(k)) for k in ("critical", "high", "medium", "low")},
+        "rules": rules,
+        "ruleset": str(meta.get("ruleset") or ""), "version": str(d.get("version") or ""),
+    }, None
+
+def _trend_published(slug, branch, limit):
+    """Read the report-<sha>.json files a badge branch's own commits name, oldest first.
+
+    Ordering and timestamps come from the badge-branch commits (the workflow message names
+    the full scanned SHA); a SHA scanned twice keeps its newest report.
+    """
+    api = os.environ.get("BEAGLE_GITHUB_API", "https://api.github.com").rstrip("/")
+    ref = urllib.parse.quote(branch, safe="")
+    picks: list[tuple[str, str, str]] = []
+    seen: set[str] = set()
+    page = 1
+    while len(picks) < limit and page <= 20:
+        batch = json.loads(_trend_get(f"{api}/repos/{slug}/commits?sha={ref}&per_page=100&page={page}") or b"[]")
+        if not isinstance(batch, list) or not batch:
+            break
+        for c in batch:
+            if len(picks) >= limit:
+                break
+            commit = c.get("commit") if isinstance(c, dict) else None
+            msg = ((commit or {}).get("message") or "").splitlines()[0] if isinstance(commit, dict) else ""
+            m = TREND_COMMIT_RE.search(msg)
+            if not m:
+                continue
+            name = f"report-{m.group(1)[:7]}.json"
+            if name in seen:
+                continue
+            seen.add(name)
+            at = (((commit or {}).get("committer") or {}).get("date") or "") if isinstance(commit, dict) else ""
+            picks.append((at, m.group(1), name))
+        if len(batch) < 100:
+            break
+        page += 1
+    entries, skipped = [], []
+    for at, sha, name in reversed(picks):
+        try:
+            if os.environ.get("BEAGLE_GITHUB_TOKEN") or os.environ.get("GITHUB_TOKEN"):
+                raw = _trend_get(f"{api}/repos/{slug}/contents/{name}?ref={ref}", accept="application/vnd.github.raw")
+            else:
+                try:
+                    raw = _trend_get(f"https://raw.githubusercontent.com/{slug}/{ref}/{name}")
+                except urllib.error.HTTPError as ex:
+                    if ex.code != 404:
+                        raise
+                    raw = _trend_get(f"{api}/repos/{slug}/contents/{name}?ref={ref}", accept="application/vnd.github.raw")
+        except Exception as ex:
+            skipped.append({"file": name, "reason": f"fetch failed: {str(ex)[:140]}"})
+            continue
+        entry, reason = _trend_entry(raw, name, _trend_epoch(at))
+        if entry is None:
+            skipped.append({"file": name, "reason": reason})
+            continue
+        entry["sha"] = entry["sha"] or sha
+        entries.append(entry)
+    return entries, skipped
+
+def _trend_local(files):
+    """Read local report files; ordering falls back to file mtime when meta.scanned_at is absent."""
+    entries, skipped = [], []
+    for p in files:
+        try:
+            raw = p.read_bytes()
+            fallback = p.stat().st_mtime
+        except OSError as ex:
+            skipped.append({"file": str(p), "reason": f"unreadable: {ex}"})
+            continue
+        entry, reason = _trend_entry(raw, str(p), fallback)
+        if entry is None:
+            skipped.append({"file": str(p), "reason": reason})
+            continue
+        entries.append(entry)
+    return entries, skipped
+
+def trend_series(entries, skipped):
+    """Ordered verdict/rule series plus first RED, per-rule regressions and the current streak.
+
+    Reports from another ruleset/version than the newest report are skipped: their rule ids
+    are not comparable, and a ruleset change legitimately resets the series.
+    """
+    entries.sort(key=lambda e: (e["epoch"], e["sha"], e["file"]))
+    if not entries:
+        return {"reports": [], "skipped": skipped, "series": [], "first_red": None,
+                "current": None, "regressions": []}
+    ref = entries[-1]
+    kept = []
+    for e in entries:
+        changed = [k for k in ("ruleset", "version")
+                   if ref[k] and e[k] and e[k] != ref[k]]
+        if changed:
+            skipped.append({"file": e["file"], "reason": f"different {' and '.join(changed)} "
+                                                       f"({e['ruleset'] or e['version']} vs {ref['ruleset'] or ref['version']})"})
+            continue
+        kept.append(e)
+    kept.sort(key=lambda e: (e["epoch"], e["sha"], e["file"]))
+    series = [{"at": e["at"], "sha": e["sha"], "verdict": e["verdict"],
+               "rules": len(e["rules"]), "file": e["file"]} for e in kept]
+    first_red = next((e for e in kept if e["verdict"] == "RED"), None)
+    tail = kept[-1]["verdict"] if kept else None
+    streak = 0
+    since = None
+    for e in reversed(kept):
+        if e["verdict"] != tail:
+            break
+        streak += 1
+        since = e
+    seen = set(kept[0]["rules"]) if kept else set()
+    regressions = []
+    for e in kept[1:]:
+        for rule in e["rules"]:
+            if rule not in seen:
+                regressions.append({"rule": rule, "at": e["at"], "sha": e["sha"], "file": e["file"]})
+        seen.update(e["rules"])
+    if regressions:
+        counts: dict[str, int] = {}
+        for e in kept:
+            for rule in e["rules"]:
+                counts[rule] = counts.get(rule, 0) + 1
+        for r in regressions:
+            r["reports"] = counts.get(r["rule"], 1)
+    return {
+        "reports": kept, "skipped": skipped,
+        "series": series,
+        "first_red": ({"at": first_red["at"], "sha": first_red["sha"], "file": first_red["file"]}
+                      if first_red else None),
+        "current": ({"verdict": tail, "streak": streak,
+                     "since": since["at"] if since else None,
+                     "sha": since["sha"] if since else ""} if kept else None),
+        "regressions": regressions,
+    }
+
+def cmd_trend(a):
+    """Reads the reports already published on a badge branch (or local report files); never scans."""
+    targets = list(a.target)
+    paths = [Path(t) for t in targets]
+    slug = None
+    if all(p.exists() for p in paths):
+        files = []
+        for p in paths:
+            if p.is_dir():
+                found = sorted(p.glob("report-*.json"))
+                if not found:
+                    print(f"trend: no report-*.json in {p}", file=sys.stderr)
+                    return 1
+                files.extend(found)
+            else:
+                files.append(p)
+        entries, skipped = _trend_local(files)
+        label = str(paths[0]) if len(paths) == 1 else f"{targets[0]} … ({len(files)} reports)"
+    elif len(targets) == 1:
+        m = GITHUB_REPO_RE.match(targets[0])
+        slug = f"{m.group(1)}/{m.group(2)}" if m else (
+            targets[0] if re.fullmatch(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+", targets[0]) else None)
+        if not slug:
+            print(f"trend: {targets[0]!r} is neither a local path nor a github repo", file=sys.stderr)
+            return 1
+        try:
+            entries, skipped = _trend_published(slug, a.branch, max(1, a.limit))
+        except urllib.error.HTTPError as ex:
+            hint = " (no badge branch, or no reports pushed yet)" if ex.code == 404 else ""
+            print(f"trend: cannot read {slug}@{a.branch}: HTTP {ex.code}{hint}", file=sys.stderr)
+            return 1
+        except Exception as ex:
+            print(f"trend: cannot read {slug}@{a.branch}: {str(ex)[:160]}", file=sys.stderr)
+            return 1
+        label = f"{slug} (branch {a.branch})"
+    else:
+        print("trend: give one github repo, or local report files/directories (not both)", file=sys.stderr)
+        return 1
+    data = trend_series(entries, skipped)
+    kept = data["reports"]
+    if not kept:
+        print(f"trend: no usable reports ({len(data['skipped'])} skipped)", file=sys.stderr)
+        for s in data["skipped"][:10]:
+            print(f"  {s['file']}: {s['reason']}", file=sys.stderr)
+        return 1
+    C = (lambda code, s: f"\033[{code}m{s}\033[0m") if (color_enabled() and not a.no_color) else (lambda code, s: s)
+    vc = {"RED": "1;41;97", "YELLOW": "1;43;30", "GREEN": "1;42;30"}
+    print(f"repobeagle trend: {label}")
+    print(f"reports: {len(kept)} used, {len(data['skipped'])} skipped "
+          f"({kept[0]['at']} .. {kept[-1]['at']})")
+    print(f"{'scanned at':<21} {'commit':<9} {'verdict':<8} crit/high/med/low")
+    for e in kept:
+        v = C(vc[e["verdict"]], e["verdict"].ljust(8))
+        c = e["counts"]
+        print(f"{e['at']:<21} {(e['sha'][:7] or '?'):<9} {v} "
+              f"{c['critical']}/{c['high']}/{c['medium']}/{c['low']}")
+    print(f"series: {' '.join(TREND_LETTER[e['verdict']] for e in kept)} (oldest -> newest)")
+    fr = data["first_red"]
+    print(f"first RED: {fr['at']} ({fr['sha'][:7] or fr['file']})" if fr else "first RED: none")
+    cur = data["current"]
+    if cur:
+        print(f"current: {cur['verdict']} streak {cur['streak']}"
+              + (f" (since {cur['since']})" if cur["since"] else ""))
+    if data["regressions"]:
+        print("regressions by rule (first seen after a report without it):")
+        for r in data["regressions"]:
+            print(f"  {r['rule']}  {r['at']}  {r['sha'][:7] or '?'}  ({r['reports']} report(s))")
+    else:
+        print("regressions: none")
+    for s in data["skipped"][:10]:
+        print(f"skipped {s['file']}: {s['reason']}")
+    if len(kept) < 3:
+        print("note: a trend needs three or more comparable reports", file=sys.stderr)
+    if a.json:
+        Path(a.json).write_text(json.dumps(data, indent=2))
+        print(f"[repobeagle] JSON written to {a.json}", file=sys.stderr)
+    return 0
+
 MCP_PROTOCOL = "2024-11-05"
 
 MCP_TOOLS = [
@@ -7576,6 +7855,7 @@ def cmd_scan(a):
         meta = {"target": a.target, "ref": getattr(a, "ref", None), "commit": commit,
                 "fetched_via": how, "mode": "docker (--network none, read-only)" if use_docker else "local (no docker)",
                 "profile": profile, "files": tools.get("agent-checks", {}).get("files"), "seconds": round(time.time() - t0, 1),
+                "scanned_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
                 "tools": tools, "suppressed": len(suppressed), "suppressions": suppression_meta(entries),
                 "pii_redacted": not a.no_redact, "privacy_mode": privacy_mode, "ruleset": RULESET,
                 "complete": complete, "cache": cache_state}
@@ -8197,6 +8477,13 @@ def main():
                     help="fail when an added finding is at/above this severity (default: medium)")
     df.add_argument("--json", metavar="FILE", help="write the added/removed findings as JSON")
     df.add_argument("--no-color", action="store_true")
+    tr = sp.add_parser("trend", help="verdict/rule history from the per-SHA reports on a badge branch (or local report files)")
+    tr.add_argument("target", nargs="+", help="github repo slug/URL, a directory of report-*.json, or report files")
+    tr.add_argument("--branch", default="repobeagle", help="badge branch to read (default: repobeagle)")
+    tr.add_argument("--limit", type=int, default=100, metavar="N",
+                    help="maximum published reports to read (default: 100)")
+    tr.add_argument("--json", metavar="FILE", help="write the ordered series and regressions as JSON")
+    tr.add_argument("--no-color", action="store_true")
     xp = sp.add_parser("export", help="convert a stored report to SARIF (code scanning), Markdown or JSON")
     xp.add_argument("report", help="report.json produced by 'scan --json'")
     xp.add_argument("--format", choices=["sarif", "markdown", "html", "json"], default="sarif")
@@ -8315,6 +8602,8 @@ def main():
         return cmd_feedback(a)
     if a.cmd == "diff":
         return cmd_diff(a)
+    if a.cmd == "trend":
+        return cmd_trend(a)
     if a.cmd == "export":
         return cmd_export(a)
     if a.cmd == "mcp":

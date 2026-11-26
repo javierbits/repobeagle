@@ -1210,6 +1210,15 @@ clean environment exits 0 with the scanned count.
 
 ## Built since the backlog was written
 
+- **T10 — done.** `repobeagle trend <owner/repo|report-dir|report.json…>` reads the
+  `report-<sha>.json` files the scan workflow already publishes and prints the ordered
+  verdict series, the first RED, per-rule regressions (first seen after a report without
+  them), the current streak and a reason for every skipped report. Ordering and timestamps
+  come from the badge-branch commits (or `meta.scanned_at`/mtime for local files); reports
+  from another `meta.ruleset`/`version` than the newest are skipped. Malformed JSON is a
+  skip, never a crash. `tests/test_trend.py` asserts the ordering, the regressions, the
+  streak and both skip paths against `tests/fixtures/trend`.
+
 - **R6 — done.** `repobeagle db [--update] [dir]` shows or downloads the OSV offline databases
   (osv-scanner's own cache), and `scan --offline-vulnerabilities` runs without any network
   call while recording `meta.osv_db{path,updated,bytes}`. Verified offline against a
