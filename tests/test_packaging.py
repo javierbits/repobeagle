@@ -19,6 +19,9 @@ check("console entry point is repobeagle:main",
 check("the single module is packaged", pyproject["tool"]["setuptools"]["py-modules"] == ["repobeagle"])
 check("the wheel ships the custom semgrep rules and the version",
       pyproject["tool"]["setuptools"]["data-files"]["share/repobeagle"] == ["rules/custom.yml", "VERSION"])
+check("the wheel ships the agent skill",
+      pyproject["tool"]["setuptools"]["data-files"]["share/repobeagle/skill"] == ["skill/SKILL.md", "skill/mcp.json"]
+      and (ROOT / "skill" / "SKILL.md").is_file() and (ROOT / "skill" / "mcp.json").is_file())
 check("wheel version follows VERSION",
       pyproject["tool"]["setuptools"]["dynamic"]["version"] == {"attr": "repobeagle.VERSION"})
 check("python requirement matches the syntax used", pyproject["project"]["requires-python"] == ">=3.10")
@@ -63,8 +66,9 @@ check("CI runs the pipx acceptance on a macOS arm64 runner",
       and "arm64" in ci)
 
 readme = (ROOT / "README.md").read_text(encoding="utf-8")
-check("README documents the light mode, macOS, the macOS CI acceptance and binaries",
+check("README documents the light mode, macOS, the macOS CI acceptance, binaries and the agent skill",
       "pipx install ." in readme and "Light mode" in readme and "macOS" in readme
-      and "packaging-macos" in readme and "tools/build_binary.sh" in readme)
+      and "packaging-macos" in readme and "tools/build_binary.sh" in readme
+      and "skill/SKILL.md" in readme and "Use it as an agent skill" in readme)
 
 sys.exit(fail)

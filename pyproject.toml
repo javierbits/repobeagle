@@ -37,3 +37,6 @@ version = {attr = "repobeagle.VERSION"}
 # and falls back to <prefix>/share/repobeagle/custom.yml. The image is still the hardened
 # distribution; this is the light mode (host tools, no container).
 "share/repobeagle" = ["rules/custom.yml", "VERSION"]
+# The agent skill ships with the wheel too; agents can point at <prefix>/share/repobeagle/skill/SKILL.md
+# (or the checkout's skill/ directory) and register the MCP server from skill/mcp.json.
+"share/repobeagle/skill" = ["skill/SKILL.md", "skill/mcp.json"]
