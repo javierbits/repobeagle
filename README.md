@@ -136,6 +136,19 @@ custom_checks:           # regex checks that emit file:line findings with the co
 - Overridden findings keep their rule id/title and are re-graded before the verdict; the overrides are listed in `meta.config.rules`. Custom checks are capped at 20 matches per check with a summary finding, and their findings use the `custom-check` rule with the configured severity and meaning.
 - The config content is part of the content-addressed analysis cache key, so editing the policy invalidates cached results. Defaults are identical when the file is absent.
 
+## Use it as an agent skill
+
+`skill/SKILL.md` is a first-party skill that teaches an agent **when** to reach for RepoBeagle (before cloning/installing/running something untrusted, before enabling an MCP server or skill, on dependency PRs, before trusting a badge), **which mode** to use (`head`, `scan`, `run`, `gate`/`batch`, `verify`, `explain`/`diff`, `init`/`feedback`) and **how to read the verdict** — verdict/exit codes, `meta.complete`/`meta.scope`/`meta.tools`, finding fields (including `fixed_in`, `dependency_path`, `package`), suppression state, and the stop rules. `skill/mcp.json` registers the stdio MCP server (`repobeagle mcp`).
+
+```bash
+# pin the same release tag as your agent skill and the scanner
+cp skill/SKILL.md <your-agent-skills-dir>/repobeagle/SKILL.md     # or point your loader at the checkout
+cp skill/mcp.json <your-agent-skills-dir>/repobeagle/mcp.json     # MCP host: registers `repobeagle mcp`
+# light-mode installs ship the same files at <prefix>/share/repobeagle/skill/
+```
+
+The skill is a drift-guarded document: `tests/test_skill.py` extracts every documented `repobeagle …` invocation, asserts its subcommand and flags exist in `--help`, executes every recipe against the fixtures (the `{json}` placeholder is a temp path), and checks every documented JSON field against a real report or the module source. The recipes cover `--version`, `head`, `scan --strict`, `explain --target`, `gate` and `run --repo`; the prose covers the network/partial/trace caveats. When the CLI changes, CI fails until the skill is updated.
+
 ## Usage
 ```bash
 repobeagle scan <git-url | local-dir> [--ref <branch|tag|sha>] [--since <rev>] [--strict|--balanced|--relaxed] [--keep] [--json out.json]

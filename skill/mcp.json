@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "repobeagle": {
+      "command": "repobeagle",
+      "args": ["mcp"]
+    }
+  }
+}
