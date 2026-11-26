@@ -52,5 +52,8 @@ for fixture in ("tests/fixtures/trap-npm", "tests/fixtures/trap-privacy"):
           and all(not r["locations"][0]["physicalLocation"]["artifactLocation"]["uri"].startswith("/") for r in results))
     check(f"{fixture}: exporter is pure and deterministic",
           rb.sarif_report(report) == doc and json.dumps(report, sort_keys=True) == before)
+    with_fix = [f for f in active if f.get("remediation")]
+    check(f"{fixture}: remediation travels as a SARIF property",
+          len(with_fix) == sum(1 for r in results if r["properties"].get("remediation")))
 
 sys.exit(fail)
