@@ -28,7 +28,7 @@ def _color(verdict):
     return COLORS.get(verdict, FALLBACK[0]), HEXES.get(verdict, FALLBACK[1])
 
 
-def endpoint_json(verdict, label, link, privacy=None, privacy_only=False):
+def endpoint_json(verdict, label, link, privacy=None, privacy_only=False, scope=None):
     color, _ = _color(verdict)
     d = {"schemaVersion": 1, "label": label, "message": verdict, "color": color}
     if link:
@@ -37,6 +37,9 @@ def endpoint_json(verdict, label, link, privacy=None, privacy_only=False):
         d["privacy_only"] = True      # verdict covers privacy/telemetry findings only
     if privacy:
         d["privacy"] = privacy
+    if scope:
+        d["scope"] = {"mode": "changed", "since": scope.get("since"),
+                      "changed_files": scope.get("changed_files")}   # diff verdict, not a full-repo one
     return json.dumps(d, indent=2) + "\n"
 
 
@@ -99,9 +102,10 @@ def main():
     out = False
     privacy = privacy_counts(report)
     privacy_only = (report.get("meta") or {}).get("privacy_mode") == "only"
+    scope = (report.get("meta") or {}).get("scope")
     if a.endpoint:
         with open(a.endpoint, "w", encoding="utf-8") as fh:
-            fh.write(endpoint_json(verdict, a.label, a.link, privacy, privacy_only))
+            fh.write(endpoint_json(verdict, a.label, a.link, privacy, privacy_only, scope))
         out = True
     if a.svg:
         with open(a.svg, "w", encoding="utf-8") as fh:

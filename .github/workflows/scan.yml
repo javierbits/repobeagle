@@ -19,6 +19,8 @@
 #         baseline: false     # true = fail only on findings added since the last published report
 #         baseline-min-severity: high  # severity of a new finding that fails the baseline gate
 #         privacy-only: false # true = badge only privacy/telemetry findings
+#         scan-ref: ""        # e.g. a PR head SHA, or refs/pull/<n>/head for a fork PR
+#         changed-since: ""   # e.g. the PR base SHA: scan only the diff (a diff verdict, not full-repo)
 #
 # The badge is self-attested: it lives in this repository. The report is signed
 # with Sigstore keyless signing; the signing identity is THIS workflow file in
@@ -67,6 +69,16 @@ on:
         description: "repobeagle toolchain ref to run (the VERSION file there pins the image)"
         required: false
         default: "main"
+        type: string
+      scan-ref:
+        description: "Scan this branch/tag/commit instead of the default branch (e.g. a PR head SHA or refs/pull/<n>/head)"
+        required: false
+        default: ""
+        type: string
+      changed-since:
+        description: "Only scan files changed since this revision (diff verdict; must be a git-reachable rev, e.g. the PR base SHA)"
+        required: false
+        default: ""
         type: string
       upload-sarif:
         description: "Upload findings to GitHub code scanning (needs security-events: write)"
@@ -153,8 +165,13 @@ jobs:
             *)        S=--balanced ;;
           esac
           if [ "$PRIVACY_ONLY" = "true" ]; then S="$S --privacy-only"; fi
+          if [ -n "$SCAN_REF" ]; then S="$S --ref $SCAN_REF"; fi
+          if [ -n "$CHANGED_SINCE" ]; then S="$S --since $CHANGED_SINCE"; fi
+          # --ref/--since need a git URL; a plain local-directory scan is the default.
+          TARGET=.
+          if [ -n "$SCAN_REF" ] || [ -n "$CHANGED_SINCE" ]; then TARGET="https://github.com/$GITHUB_REPOSITORY"; fi
           set +e
-          python3 "$TOOLS/repobeagle.py" scan . $S --json "$OUT/beagle.json" --no-color
+          python3 "$TOOLS/repobeagle.py" scan $TARGET $S --json "$OUT/beagle.json" --no-color
           rc=$?
           set -e
           if [ ! -s "$OUT/beagle.json" ] || [ "$rc" -gt 2 ]; then
@@ -162,14 +179,16 @@ jobs:
             exit 1
           fi
           python3 -c 'import json,sys;d=json.load(open(sys.argv[1]));print("rc=%d" % ({"GREEN":0,"YELLOW":1,"RED":2}[d["verdict"]],));print("verdict=%s" % d["verdict"])' "$OUT/beagle.json" >> "$GITHUB_OUTPUT"
-          python3 -c 'import json,sys;d=json.load(open(sys.argv[1]));print("verdict:",d["verdict"],d["counts"])' "$OUT/beagle.json"
+          python3 -c 'import json,sys;d=json.load(open(sys.argv[1]));print("verdict:",d["verdict"],d["counts"]);s=(d.get("meta") or {}).get("scope");print("scope:",s) if s else None' "$OUT/beagle.json"
         env:
           PROFILE: ${{ inputs.profile }}
           PRIVACY_ONLY: ${{ inputs.privacy-only }}
+          SCAN_REF: ${{ inputs.scan-ref }}
+          CHANGED_SINCE: ${{ inputs.changed-since }}
 
       - name: Attach provenance to the report
         run: |
-          python3 -c 'import json,os,sys;p=sys.argv[1];d=json.load(open(p));m=d.setdefault("meta",{});m.update(image_ref=os.environ["IMAGE_REF"],image_digest=os.environ["IMAGE_DIGEST"],toolchain_ref=os.environ["TOOLS_REF"],run_url=os.environ["RUN_URL"],scanned_repo=os.environ["GITHUB_REPOSITORY"],scanned_sha=os.environ["GITHUB_SHA"]);json.dump(d,open(p,"w"),indent=2)' "$OUT/beagle.json"
+          python3 -c 'import json,os,sys;p=sys.argv[1];d=json.load(open(p));m=d.setdefault("meta",{});m.update(image_ref=os.environ["IMAGE_REF"],image_digest=os.environ["IMAGE_DIGEST"],toolchain_ref=os.environ["TOOLS_REF"],run_url=os.environ["RUN_URL"],scanned_repo=os.environ["GITHUB_REPOSITORY"],scanned_sha=(m.get("commit") or os.environ["GITHUB_SHA"]));json.dump(d,open(p,"w"),indent=2)' "$OUT/beagle.json"
 
       - name: Export SARIF
         if: inputs.upload-sarif
@@ -236,7 +255,7 @@ jobs:
         continue-on-error: true            # needs statuses: write; degrades gracefully
         run: |
           set -euo pipefail
-          read -r STATE DESC < <(python3 -c 'import json,sys;d=json.load(open(sys.argv[1]));c=d["counts"];v=d["verdict"];print({"GREEN":"success","YELLOW":"neutral","RED":"failure"}[v], "RepoBeagle: %s (%s critical / %s high)" % (v, c["critical"], c["high"]))' "$OUT/beagle.json")
+          read -r STATE DESC < <(python3 -c 'import json,sys;d=json.load(open(sys.argv[1]));c=d["counts"];v=d["verdict"];s=(d.get("meta") or {}).get("scope") or {};print({"GREEN":"success","YELLOW":"neutral","RED":"failure"}[v], "RepoBeagle: %s (%s critical / %s high)%s" % (v,c["critical"],c["high"], (" [diff since %s]" % str(s.get("since"))[:12]) if s else ""))' "$OUT/beagle.json")
           gh api "repos/$GITHUB_REPOSITORY/statuses/$GITHUB_SHA" \
             -f state="$STATE" -f context="repobeagle/scan" -f description="$DESC" \
             -f target_url="$RUN_URL"

@@ -2772,16 +2772,39 @@ def fetch(target, work, ref=None, since=None):
     binary = lambda n: n.lower().endswith(ARCHIVE_EXT) or Path(n).suffix.lower() in BINARY_EXT
     skipped = [n for n in names if binary(n)]
     if base:
-        # 4a) changed-files scope: materialize only what the diff touched, plus root manifests for context
-        changed = [p for p in git(["diff", "--name-only", "--diff-filter=AM", base, tip], cwd=dest).splitlines() if p in present]
+        # 4a) changed-files scope: materialize only what the diff touched, plus root manifests for context.
+        # Renames are followed to their new path and counted; deletions have no content but are recorded.
+        tokens = [t for t in git(["diff", "--name-status", "-z", "--diff-filter=AMRD", base, tip],
+                                  cwd=dest).split("\x00") if t]
+        changed, renamed, deleted = [], 0, 0
+        i = 0
+        while i < len(tokens):
+            code = tokens[i]; i += 1
+            if code[:1] in ("R", "C"):
+                if i + 1 >= len(tokens):
+                    break
+                new = tokens[i + 1]; i += 2
+                renamed += 1
+                if new in present:
+                    changed.append(new)
+            elif code[:1] in ("A", "M", "T"):
+                if i >= len(tokens):
+                    break
+                path = tokens[i]; i += 1
+                if path in present:
+                    changed.append(path)
+            elif code[:1] == "D":
+                deleted += 1; i += 1
+        changed = list(dict.fromkeys(changed))
         keep = [p for p in dict.fromkeys(changed + [c for c in CONTEXT_FILES if c in present]) if not binary(p)]
         for i in range(0, len(keep), 100):
             git(["checkout", "-q", tip, "--"] + keep[i:i + 100], cwd=dest)
         (Path(work) / "scope.json").write_text(json.dumps(
-            {"scope": "changed", "since": since, "changed_files": len(changed), "listed_files": len(names),
-             "checked_out": len(keep)}))
+            {"scope": "changed", "since": since, "changed_files": len(changed), "renamed_files": renamed,
+             "deleted_files": deleted, "listed_files": len(names), "checked_out": len(keep)}))
         how = (f"git clone --depth 1 --filter=blob:none @ {ref or 'HEAD'} + diff since {since} "
-               f"({len(changed)} changed files, {len(skipped)} archives/binaries listed, not downloaded)")
+               f"({len(changed)} changed files, {renamed} renamed, {deleted} deleted, "
+               f"{len(skipped)} archives/binaries listed, not downloaded)")
         shutil.rmtree(dest / ".git", ignore_errors=True)
         (Path(work) / "skipped.json").write_text(json.dumps(skipped))
         return dest, how, tip
@@ -3438,6 +3461,8 @@ MCP_TOOLS = [
          "profile": {"type": "string", "enum": ["strict", "balanced", "relaxed"], "description": "verdict thresholds (default balanced)"},
          "privacy_only": {"type": "boolean", "description": "report only privacy/telemetry findings"},
          "network": {"type": "boolean", "description": "run OSV vulnerability and GitHub trust lookups (default true)"},
+         "ref": {"type": "string", "description": "branch, tag or commit to scan (git URLs only)"},
+         "since": {"type": "string", "description": "only scan files changed since this revision (diff verdict; git URLs only)"},
          "timeout_seconds": {"type": "integer", "minimum": 5, "maximum": 1800,
                              "description": "kill the scan after this many seconds (default 1800); clients must allow at least this long for the reply"}}}},
     {"name": "verify_badge",
@@ -3486,6 +3511,8 @@ def mcp_scan(a):
     if prof != "balanced": args.append("--" + prof)
     if a.get("privacy_only"): args.append("--privacy-only")
     if a.get("network") is False: args += ["--no-osv", "--no-trust"]
+    if a.get("ref"): args += ["--ref", str(a["ref"])]
+    if a.get("since"): args += ["--since", str(a["since"])]
     try:
         r = _mcp_exec(args, timeout=timeout)
     except subprocess.TimeoutExpired:
@@ -3499,7 +3526,8 @@ def mcp_scan(a):
     fs = [f for f in d.get("findings") or [] if isinstance(f, dict) and not f.get("suppressed")]
     top = sorted(fs, key=lambda f: -SEV_ORDER.get(str(f.get("severity")), 0))[:15]
     return {"target": target, "verdict": d.get("verdict"), "counts": d.get("counts"), "why": d.get("why"),
-            "privacy_profile": meta.get("privacy_profile"), "findings_total": len(fs),
+            "scope": meta.get("scope"), "privacy_profile": meta.get("privacy_profile"),
+            "findings_total": len(fs),
             "findings": [{"severity": f.get("severity"), "rule": _rule_of(f), "file": f.get("file"),
                           "line": f.get("line"), "title": f.get("title")} for f in top],
             "report": str(rep)}
