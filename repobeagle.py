@@ -9,8 +9,9 @@ NEVER executes repository code. Stdlib only (scanners are external binaries).
   repobeagle feedback <report.json> (--false-positive|--miss) [--rule RULE] [--file FILE[:LINE]] [--attach] [--no-open]
   repobeagle gate <entries-file> [--baseline old.json] [--json out.json] [--markdown] [--jobs N] [--report-only]
   repobeagle batch <targets-file> [--jobs N] [--json DIR] [scan profile/offline flags]
+  repobeagle run [--dry-run|--yes|--force] [--repo TARGET] [scan flags] -- <npx|pnpm dlx|pipx run|uvx|cargo install ...>
 """
-import argparse, base64, difflib, hashlib, json, os, platform, re, shutil, signal, subprocess, sys, tempfile, threading, time, unicodedata, uuid, zipfile
+import argparse, base64, difflib, hashlib, json, os, platform, re, shlex, shutil, signal, subprocess, sys, tempfile, threading, time, unicodedata, uuid, zipfile
 import urllib.error, urllib.parse, urllib.request
 from datetime import date
 from fnmatch import fnmatchcase
@@ -5661,6 +5662,203 @@ def cmd_head(a):
                color_enabled() and not a.no_color, 10**6 if a.all else 40, a.min_severity)
     return {"GREEN": 0, "YELLOW": 1, "RED": 2}[d["verdict"]]
 
+# --- Install interceptor: scan the package behind a runner command, then run it -----------
+REGISTRY_TTL = 86400
+
+def parse_run_package(argv):
+    """(ecosystem, package) from a wrapped runner command (`npx`, `pnpm dlx`, `pipx run`, ...)."""
+    argv = [str(x).strip() for x in argv]
+    while argv and argv[0] in ("env",):
+        argv = argv[1:]
+    if not argv:
+        return None, None
+    head, rest = argv[0], argv[1:]
+    if head == "npx":
+        eco, args = "npm", rest
+    elif head in ("pnpm", "yarn") and rest[:1] == ["dlx"]:
+        eco, args = "npm", rest[1:]
+    elif head == "bunx":
+        eco, args = "npm", rest
+    elif head == "pipx" and rest[:1] == ["run"]:
+        eco, args = "pypi", rest[1:]
+    elif head == "uvx":
+        eco, args = "pypi", rest
+    elif head == "cargo" and rest[:1] == ["install"]:
+        eco, args = "crates", rest[1:]
+    else:
+        return None, None
+    package = next((t for t in args if t and not t.startswith("-")), "")
+    if not package:
+        return None, None
+    if package.startswith("@"):
+        if package.count("@") >= 2:
+            package = package.rsplit("@", 1)[0]
+    elif "@" in package:
+        package = package.split("@", 1)[0]
+    package = re.split(r"[=<>!~\s]", package, 1)[0]     # pipx/uvx specs: black==24.1.0
+    return eco, package
+
+def _repo_url(value):
+    """A cloneable https URL from a registry 'repository'/'homepage' value, or None."""
+    if not isinstance(value, str):
+        return None
+    url = value.strip()
+    if url.startswith("git+"):
+        url = url[len("git+"):]
+    elif url.startswith("git://"):
+        url = "https://" + url[len("git://"):]
+    elif url.startswith("ssh://git@"):
+        url = "https://" + url[len("ssh://git@"):]
+    elif url.startswith("git@"):
+        url = "https://" + url[len("git@"):].replace(":", "/", 1)
+    url = re.sub(r"\.git$", "", url.rstrip("/"))
+    m = re.match(r"^https?://([^/\s]+)/([^/\s?#]+)/([^/\s?#]+)", url)
+    if not m:
+        return None
+    host, owner, repo = m.group(1), m.group(2), m.group(3)
+    if host == "github.com":
+        return f"https://github.com/{owner}/{repo}"
+    return f"https://{host}/{owner}/{repo}"
+
+def _registry_fetch(url):
+    req = urllib.request.Request(url, headers={"User-Agent": WEB_UA, "Accept": "application/json"})
+    with urllib.request.urlopen(req, timeout=15) as resp:
+        return json.loads(resp.read().decode())
+
+def _registry_cache_path(ecosystem, package):
+    base = Path(os.environ.get("XDG_CACHE_HOME") or (Path(os.environ.get("HOME") or "/tmp") / ".cache"))
+    key = re.sub(r"[^A-Za-z0-9_.-]+", "_", f"{ecosystem}_{package}")
+    return base / "repobeagle" / "registry" / (key + ".json")
+
+def registry_repo(ecosystem, package):
+    """Repository URL for a package from its registry's JSON API; cached with a TTL. Never executes the package."""
+    cache = _registry_cache_path(ecosystem, package)
+    try:
+        ttl = int(os.environ.get("BEAGLE_REGISTRY_TTL", str(REGISTRY_TTL)))
+    except ValueError:
+        ttl = REGISTRY_TTL
+    try:
+        d = json.loads(cache.read_text(encoding="utf-8"))
+        if time.time() - float(d.get("at") or 0) <= ttl:
+            return d.get("repo")
+    except (OSError, ValueError):
+        pass
+    repo = None
+    if ecosystem == "npm":
+        data = _registry_fetch("https://registry.npmjs.org/" + urllib.parse.quote(package, safe="@"))
+        value = data.get("repository")
+        if isinstance(value, dict):
+            value = value.get("url")
+        repo = _repo_url(value) or _repo_url(data.get("homepage"))
+    elif ecosystem == "pypi":
+        data = _registry_fetch("https://pypi.org/pypi/" + urllib.parse.quote(package) + "/json")
+        info = data.get("info") or {}
+        candidates = list((info.get("project_urls") or {}).values()) + [info.get("home_page")]
+        repo = next((r for u in candidates if (r := _repo_url(u or ""))), None)
+    elif ecosystem == "crates":
+        data = _registry_fetch("https://crates.io/api/v1/crates/" + urllib.parse.quote(package))
+        repo = _repo_url((data.get("crate") or {}).get("repository"))
+    try:
+        cache.parent.mkdir(parents=True, exist_ok=True)
+        cache.write_text(json.dumps({"at": time.time(), "package": package, "ecosystem": ecosystem, "repo": repo}),
+                         encoding="utf-8")
+    except OSError:
+        pass
+    return repo
+
+RUN_PASSTHROUGH = ("strict", "relaxed", "no_docker", "no_osv", "offline_vulnerabilities", "no_trust",
+                    "no_cache")
+
+def _print_run_report(doc, repo, stream=None):
+    stream = stream or sys.stderr
+    meta = doc.get("meta") or {}
+    counts = doc.get("counts") or {}
+    print(f"run: scanned {repo}: {doc.get('verdict')} "
+          f"(critical {counts.get('critical', 0)}, high {counts.get('high', 0)}, "
+          f"medium {counts.get('medium', 0)})" + (" [partial]" if meta.get("complete") is False else ""),
+          file=stream)
+    if meta.get("scope"):
+        print(f"run: scope {meta['scope']}", file=stream)
+    top = sorted(doc.get("findings") or [], key=lambda f: -SEV_ORDER.get(str(f.get("severity")), 0))[:3]
+    for f in top:
+        title = str(f.get("title") or "")
+        rule = str(f.get("rule") or title.split(":")[0])
+        if title == rule:
+            title = ""
+        elif title.startswith(rule + ": "):
+            title = title[len(rule) + 2:]
+        print(f"  {str(f.get('severity')).upper():<8} {rule}: {f.get('file')}:{f.get('line')} {title[:140]}".rstrip(),
+              file=stream)
+
+def cmd_run(a):
+    """Install interceptor: scan the package behind a runner command, then run it (or refuse)."""
+    argv = [x for x in (a.command or []) if x != "--"]
+    if not argv:
+        print("run: nothing to run (use: repobeagle run -- npx -y <package>)", file=sys.stderr)
+        return 1
+    eco = pkg = None
+    if not a.repo:
+        eco, pkg = parse_run_package(argv)
+        if not eco:
+            print(f"run: cannot tell which package {argv[0]!r} runs; pass --repo <owner/repo|url|dir>", file=sys.stderr)
+            return 1
+        print(f"run: {argv[0]} {pkg} -> {eco} registry lookup ...", file=sys.stderr)
+        try:
+            repo = registry_repo(eco, pkg)
+        except Exception as ex:
+            print(f"run: {eco} registry lookup for {pkg!r} failed: {type(ex).__name__}: {ex}", file=sys.stderr)
+            return 1
+        if not repo:
+            print(f"run: {eco} package {pkg!r} has no repository URL; pass --repo <owner/repo|url|dir>",
+                  file=sys.stderr)
+            return 1
+    else:
+        repo = a.repo
+    flags = ["--json", "", "--no-color"]
+    for flag in RUN_PASSTHROUGH:
+        if getattr(a, flag, False):
+            flags.append("--" + flag.replace("_", "-"))
+    if getattr(a, "as_persona", None):
+        flags += ["--as", a.as_persona]
+    if getattr(a, "max_seconds", None) is not None:
+        flags += ["--max-seconds", str(a.max_seconds)]
+    with tempfile.TemporaryDirectory() as td:
+        report = Path(td) / "report.json"
+        flags[1] = str(report)
+        print(f"run: scanning {repo} ({eco or 'explicit target'}) ...", file=sys.stderr)
+        scan = subprocess.run([sys.executable, str(Path(__file__).resolve()), "scan", repo,
+                                *flags], capture_output=True, text=True, timeout=3600)
+        try:
+            doc = json.loads(report.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            print("run: the scan produced no report; refusing to run", file=sys.stderr)
+            print("  " + ((scan.stderr or scan.stdout or "")[-400:]).strip(), file=sys.stderr)
+            return 1
+    _print_run_report(doc, repo)
+    verdict = doc.get("verdict")
+    if a.dry_run:
+        return 0
+    if verdict == "RED":
+        if not a.force:
+            print("run: RED verdict, refusing to run (pass --force to override)", file=sys.stderr)
+            return 1
+    elif verdict == "YELLOW":
+        if not (a.force or a.yes):
+            if sys.stdin.isatty():
+                answer = input("run: YELLOW verdict; run it anyway? [y/N] ").strip().lower()
+                if answer not in ("y", "yes"):
+                    print("run: not run", file=sys.stderr)
+                    return 1
+            else:
+                print("run: YELLOW verdict without --yes/--force; refusing to run", file=sys.stderr)
+                return 1
+    elif verdict != "GREEN":
+        if not a.force:
+            print(f"run: unknown verdict {verdict!r}; refusing to run (pass --force)", file=sys.stderr)
+            return 1
+    print("run: executing " + " ".join(shlex.quote(x) for x in argv), file=sys.stderr)
+    return subprocess.run(argv).returncode
+
 # --- Batch full scans: one process per target, bounded concurrency, deterministic reports --------
 def cmd_batch(a):
     """Full-scan every target in a listing, one report each, in parallel. Same code path as `scan`."""
@@ -7320,6 +7518,21 @@ def main():
                           ("test", "run every rule's positive fixtures (must fire) and negative fixtures (must not)")):
         rcmd = rsub.add_parser(cmd_name, help=hlp)
         rcmd.add_argument("path", nargs="+", help="pack file(s) or directories to search for *.yml/*.yaml")
+    rn = sp.add_parser("run", help="scan the package behind a runner command, then run it (or refuse)")
+    rn.add_argument("--repo", metavar="TARGET", help="skip the registry lookup: owner/repo, URL or local dir")
+    rn.add_argument("--dry-run", action="store_true", help="scan and print the verdict without executing")
+    rn.add_argument("--yes", action="store_true", help="approve a YELLOW verdict without prompting (never overrides RED)")
+    rn.add_argument("--force", action="store_true", help="run even on YELLOW/RED (recorded in the output)")
+    rg = rn.add_mutually_exclusive_group()
+    rg.add_argument("--strict", action="store_true"); rg.add_argument("--relaxed", action="store_true")
+    rn.add_argument("--no-docker", action="store_true"); rn.add_argument("--no-osv", action="store_true")
+    rn.add_argument("--offline-vulnerabilities", action="store_true")
+    rn.add_argument("--no-trust", action="store_true"); rn.add_argument("--no-redact", action="store_true")
+    rn.add_argument("--no-cache", action="store_true")
+    rn.add_argument("--as", dest="as_persona", choices=sorted(PERSONAS), metavar="PERSONA")
+    rn.add_argument("--max-seconds", type=float, metavar="SECONDS")
+    rn.add_argument("--no-color", action="store_true")
+    rn.add_argument("command", nargs=argparse.REMAINDER, help="-- the wrapped command (npx/pnpm dlx/yarn dlx/bunx/pipx run/uvx/cargo install)")
     ba = sp.add_parser("batch", help="full-scan every target in a listing, one report each, in parallel")
     ba.add_argument("targets", help="targets file: one git URL, owner/repo or local dir per line (# comments) or JSON")
     ba.add_argument("--jobs", type=int, default=4, metavar="N", help="targets scanned concurrently (default 4)")
@@ -7373,6 +7586,8 @@ def main():
         return cmd_batch(a)
     if a.cmd == "rules":
         return cmd_rules(a)
+    if a.cmd == "run":
+        return cmd_run(a)
     if a.cmd == "ignore":
         return cmd_ignore(a)
     if a.cmd == "init":

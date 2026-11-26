@@ -51,6 +51,18 @@ macOS: `install.sh` now detects `Darwin` and installs `gitleaks`/`osv-scanner`/`
 - The light path is exercised in CI: the `packaging-macos` job runs `pipx install .` on the macOS arm64 runner image (`macos-latest`), then scans `tests/fixtures/trap-npm --no-docker` with the installed console script from outside the checkout. A packaging contract test checks the wheel entry point, the shipped `VERSION`/semgrep rules fallback and the installer's macOS/Homebrew branch.
 - Airgapped hosts: `tools/build_binary.sh` builds a one-file PyInstaller binary (pinned PyInstaller, bundles the module, `VERSION` and the custom semgrep rules) into `dist/repobeagle`; the `binary` workflow publishes linux amd64/arm64 and macOS arm64 artifacts for tags and manual runs. The binary still shells out to the host tools it needs, and the Docker image remains the recommended hardened path.
 
+## Install interceptor (`repobeagle run`)
+The dangerous moment is install, and `npx -y` fetches and runs code before anyone pastes a URL. Prefix the runner with `repobeagle run --` and the package is scanned first:
+```bash
+repobeagle run -- npx -y cowsay            # resolves npm -> github.com/piuccio/cowsay, scans, then runs
+repobeagle run --dry-run -- uvx ruff       # scan only, print the verdict
+repobeagle run --repo owner/repo -- npx -y some-package   # skip the registry lookup
+```
+- Parses `npx`, `pnpm dlx`, `yarn dlx`, `bunx` (npm), `pipx run`/`uvx` (PyPI) and `cargo install` (crates.io); the package name's registry JSON is queried for its repository URL (cached under `$XDG_CACHE_HOME/repobeagle/registry`, `BEAGLE_REGISTRY_TTL`, no package code executed). `--repo` accepts a slug, git URL or local dir when the registry has no repository.
+- The repository is scanned through the normal pipeline (profile/persona/offline flags apply; the hardened image is used when Docker is available). `--dry-run` scans and prints without executing.
+- Policy: **GREEN** runs the command; **YELLOW** prompts on a TTY, refuses in CI unless `--yes`/`--force`; **RED** refuses unless `--force`. A scan failure or refusal exits 1 without running anything; otherwise the wrapped command's exit code passes through unchanged.
+- Limits: only those runners are understood; the scan covers the repository (default branch), not the exact published tarball; a missing scanner tool is a note as usual.
+
 ## Rule packs (`.repobeagle/rules/*.yml`)
 Teams can ship regex rules without editing the scanner. A pack is a versioned file, loaded automatically from the scanned tree (and fetched on the metadata `head` path), whose rules compile into the same finding shape as the built-in checks:
 ```yaml
@@ -117,6 +129,7 @@ repobeagle init [dir] [--profile strict|balanced|relaxed] [--badge-branch BRANCH
 repobeagle export <report.json> [--format sarif|markdown|html|json] [-o out]
 repobeagle feedback <report.json> (--false-positive|--miss) [--rule RULE] [--file FILE[:LINE]] [--attach] [--no-open] [--repo OWNER/NAME]
 repobeagle rules lint|test <pack-file-or-dir>...
+repobeagle run [--dry-run|--yes|--force] [--repo TARGET] [scan flags] -- <npx|pnpm dlx|yarn dlx|bunx|pipx run|uvx|cargo install ...>
 repobeagle map <git-url | local-dir | --report r.json> [--strict|--relaxed] [--network]
 repobeagle web <http(s):// | file://> [--assets N] [--json out.json]
 repobeagle mcp
