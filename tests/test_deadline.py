@@ -23,7 +23,8 @@ def scan(*args, env=None):
 def test_budget_expiry_is_a_partial_report():
     with tempfile.TemporaryDirectory() as td:
         out = Path(td, "r.json")
-        r = scan(FIXTURE, "--max-seconds", "0.001", "--no-docker", "--no-osv", "--no-trust", "--json", str(out))
+        r = scan(FIXTURE, "--max-seconds", "0.001", "--no-cache", "--no-docker", "--no-osv", "--no-trust",
+                 "--json", str(out))
         assert r.returncode == 1, (r.returncode, r.stdout[-400:], r.stderr[-400:])
         assert "Traceback" not in r.stderr, r.stderr[-500:]
         assert "VERDICT: YELLOW (partial)" in r.stdout, r.stdout[-400:]
@@ -45,7 +46,7 @@ def test_budget_expiry_is_a_partial_report():
 def test_per_file_alarm_end_to_end():
     with tempfile.TemporaryDirectory() as td:
         out = Path(td, "r.json")
-        r = scan(FIXTURE, "--no-docker", "--no-osv", "--no-trust", "--json", str(out),
+        r = scan(FIXTURE, "--no-cache", "--no-docker", "--no-osv", "--no-trust", "--json", str(out),
                  env={"BEAGLE_FILE_SECONDS": "0.000001"})
         assert r.returncode == 1, (r.returncode, r.stdout[-400:])
         assert "Traceback" not in r.stderr, r.stderr[-400:]
