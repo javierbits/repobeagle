@@ -55,6 +55,7 @@ repobeagle scan <git-url | local-dir> [--ref <branch|tag|sha>] [--since <rev>] [
 repobeagle privacy <git-url | local-dir> [same scan options]
 repobeagle explain <report.json> [--accept RULE...] [--target green|yellow] [--write [--ignore-file FILE] [--reason TEXT]]
 repobeagle diff <old.json> <new.json> [--min-severity medium] [--json out.json]
+repobeagle fix <local-dir> [--dry-run] [--pins FILE] [--no-network] [--json out.json]
 repobeagle export <report.json> [--format sarif|markdown|json] [-o out]
 repobeagle map <git-url | local-dir | --report r.json> [--strict|--relaxed] [--network]
 repobeagle web <http(s):// | file://> [--assets N] [--json out.json]
@@ -76,6 +77,13 @@ planner:
 ```
 
 `repobeagle diff` compares two reports and classifies what the change added or removed, matching on rule id + file so line moves and re-indentation are not counts as changes. It exits 1 when an added finding is at or above `--min-severity` (default `medium`), which is the gate to use in CI: keep yesterday's report, scan the PR, and fail only on *new* findings. Like `explain`, it never re-scans. `scan --baseline old.json --baseline-min-severity high` does the scan and the same gate in one command: it exits 1 only when the scan added a finding at/above the threshold, and the verdict exit code is deliberately not used in that mode. `--baseline-min-severity` is separate from `--min-severity`, which only controls printing.
+`repobeagle fix <local-dir>` rewrites only the findings whose fix is mechanical: an unpinned `uses:` becomes a resolved 40-character commit SHA, and a top-level `permissions: write-all` becomes `contents: read`. It edits the flagged line in place (no YAML re-serialisation, so comments and layout survive), prints a unified diff, and `--dry-run` writes nothing. It never clones (check out the repo first) and never executes repository code.
+
+- Pins are resolved through the GitHub API. `--pins FILE` is a JSON `{owner/repo@ref: sha}` map for airgapped runs and tests; `--no-network` uses only that map, and an action it cannot resolve is skipped with a reason rather than guessed.
+- Scope-level `permissions: <scope>: write` is deliberately left alone — whether a job needs write access is judgement. `write-all` is the broadest setting, so downgrading that is mechanical and reviewable; a job that needs more can add its own `permissions:` block.
+- Review the printed diff before committing. Opening the PR is the workflow/App's job, not automated by `fix` yet.
+
+Acceptance on `tests/fixtures/trap-gha` (copy, pins or network): both workflow files are rewritten, the re-scan loses `gha-unpinned-action`/`gha-write-permissions` and keeps the judgement findings, and `--dry-run` leaves the tree byte-identical (`tests/test_fix.py` asserts all three).
 `repobeagle export` converts a stored report to SARIF 2.1.0 (GitHub code scanning, Azure DevOps, VS Code), a Markdown table for a PR comment, or normalized JSON. Every finding carries a stable `partialFingerprints` value and, when suppressed, an explicit SARIF suppression, so accepted findings stay visible but dismissed. The scan workflow uploads it when `upload-sarif: true`.
 Exit code: 0 = GREEN, 1 = YELLOW, 2 = RED. Colour turns off when output isn't a terminal or `NO_COLOR` is set.
 
@@ -432,6 +440,7 @@ The rule-pair check is automatic: `tests/test_rule_fixtures.py` parses the `RULE
 | tests/test_remediation.py (rule-id lookup, coverage audit, wording rules, Markdown/SARIF surfacing) | pass |
 | tests/test_osv.py (missing DB note, freshness policy, corrupt zip, verify warning) | pass |
 | tests/test_packaging.py (console script, wheel data files, packaged rules/version fallback, installer OS support) | pass |
+| tests/test_fix.py (dry-run immutability, action pinning, write-all rewrite, idempotence, re-scan improvement) | pass |
 | tests/fixtures/control-vuln (`flask==2.0.0`), used by the cached offline-OSV CI/nightly scan | vulnerable dependency from the local DB |
 | tests/test_markdown_snapshot.py (PR-comment snapshot, pipe/newline escaping, suppression, truncation) | pass |
 | tests/test_rule_fixtures.py (positive fixture fires every declared rule; control-clean fires none) | pass |

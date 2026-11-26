@@ -6,7 +6,7 @@ NEVER executes repository code. Stdlib only (scanners are external binaries).
                   [--json out.json] [--no-docker] [--verify-deps] [--no-osv] [--no-trust]
   repobeagle verify <github-repo> [--branch repobeagle] [--expect-sha SHA]
 """
-import argparse, hashlib, json, os, platform, re, shutil, subprocess, sys, tempfile, time, unicodedata, zipfile
+import argparse, difflib, hashlib, json, os, platform, re, shutil, subprocess, sys, tempfile, time, unicodedata, zipfile
 import urllib.error, urllib.parse, urllib.request
 from fnmatch import fnmatchcase
 from typing import Any
@@ -3420,6 +3420,125 @@ def rescan_difference(signed, fresh, offline_only=True):
         {"findings": normalize_findings(fresh.get("findings"), offline_only=offline_only)})
     return False, added, removed
 
+# --- repobeagle fix: mechanical rewrites only (unpinned actions, write-all) -----------
+FIX_RULES = ("gha-unpinned-action", "gha-write-permissions")
+GH_USES_RE = re.compile(r"^(\s*-?\s*uses:\s*)([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)@([^\s#]+)(.*)$")
+GH_WRITE_ALL_RE = re.compile(r"^(\s*)permissions:\s*write-all\s*(#.*)?$")
+
+def load_action_pins(path):
+    """{owner/repo@ref: sha} overrides for `fix` (airgapped runs and tests); invalid entries are ignored."""
+    try:
+        data = json.loads(Path(path).read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as ex:
+        raise SystemExit(f"fix: cannot read pins {path}: {ex}")
+    return {str(k): str(v) for k, v in (data or {}).items() if re.fullmatch(r"[0-9a-f]{40}", str(v))}
+
+def resolve_action_pin(slug, ref, pins=None, timeout=15):
+    """40-character commit SHA for owner/repo@ref: explicit pins first, then the GitHub API (network)."""
+    if re.fullmatch(r"[0-9a-f]{40}", ref):
+        return ref
+    key = f"{slug}@{ref}"
+    if pins and key in pins:
+        return pins[key]
+    try:
+        req = urllib.request.Request(f"https://api.github.com/repos/{slug}/commits/{ref}",
+                                     headers={"User-Agent": WEB_UA, "Accept": "application/vnd.github+json"})
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            sha = json.loads(resp.read().decode()).get("sha", "")
+    except Exception:
+        return None
+    return sha if re.fullmatch(r"[0-9a-f]{40}", sha) else None
+
+def cmd_fix(a):
+    """Rewrites the mechanical findings in a local checkout (unpinned actions, write-all permissions). Never executes repo code."""
+    target = a.target
+    if not os.path.isdir(target):
+        print(f"fix: {target} is not a directory; fix edits a checkout (clone the URL first)", file=sys.stderr)
+        return 1
+    pins = load_action_pins(a.pins) if a.pins else {}
+    with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as fh:
+        report_path = Path(fh.name)
+    try:
+        r = _mcp_exec(["scan", target, "--json", str(report_path), "--no-color", "--no-docker",
+                       "--no-osv", "--no-trust"])
+        try:
+            report = json.loads(report_path.read_text(encoding="utf-8"))
+        except ValueError:
+            print("fix: scan produced no report: " + ((r.stderr or r.stdout or "")[-600:]), file=sys.stderr)
+            return 1
+    finally:
+        report_path.unlink(missing_ok=True)
+    findings = [f for f in report.get("findings") or []
+                if isinstance(f, dict) and not f.get("suppressed")
+                and str(f.get("title", "")).split(":")[0] in FIX_RULES]
+    by_file: dict[str, list[dict]] = {}
+    for f in findings:
+        by_file.setdefault(str(f.get("file") or ""), []).append(f)
+    fixed, skipped, changed_files, diffs = [], [], [], []
+    for relpath, fs in sorted(by_file.items()):
+        p = Path(target) / relpath
+        try:
+            original = p.read_text(encoding="utf-8")
+        except OSError as ex:
+            skipped.append({"file": relpath, "rule": "?", "reason": f"unreadable: {ex}"})
+            continue
+        lines = original.splitlines(keepends=True)
+        changed = False
+        for f in fs:
+            rule = str(f.get("title", "")).split(":")[0]
+            line_no = int(f.get("line") or 0)
+            if line_no < 1 or line_no > len(lines):
+                skipped.append({"file": relpath, "rule": rule, "reason": "line out of range"})
+                continue
+            line = lines[line_no - 1]
+            if rule == "gha-unpinned-action":
+                m = GH_USES_RE.match(line.rstrip("\n"))
+                if not m:
+                    skipped.append({"file": relpath, "rule": rule, "reason": "no owner/repo@ref on the line"})
+                    continue
+                slug, ref = m.group(2), m.group(3)
+                sha = pins.get(f"{slug}@{ref}") if a.no_network else resolve_action_pin(slug, ref, pins)
+                if not sha:
+                    skipped.append({"file": relpath, "rule": rule, "reason": f"cannot resolve {slug}@{ref}"})
+                    continue
+                new = f"{m.group(1)}{slug}@{sha}{m.group(4)}" + ("\n" if line.endswith("\n") else "")
+                if new != line:
+                    fixed.append({"file": relpath, "line": line_no, "rule": rule,
+                                  "action": f"{slug}@{ref} -> @{sha}"})
+                    lines[line_no - 1] = new
+                    changed = True
+                continue
+            # write-all is the broadest setting and therefore mechanical; scope-level `: write`
+            # stays untouched because the job may genuinely need it.
+            m = GH_WRITE_ALL_RE.match(line.rstrip("\n"))
+            if m:
+                indent = m.group(1)
+                lines[line_no - 1] = f"{indent}permissions:\n{indent}  contents: read" + ("\n" if line.endswith("\n") else "")
+                fixed.append({"file": relpath, "line": line_no, "rule": rule,
+                              "action": "permissions: write-all -> contents: read"})
+                changed = True
+            else:
+                skipped.append({"file": relpath, "rule": rule,
+                                "reason": "scope-level write; the job may need it, review by hand"})
+        if changed:
+            updated = "".join(lines)
+            diff = "".join(difflib.unified_diff(original.splitlines(keepends=True), updated.splitlines(keepends=True),
+                                               fromfile=f"a/{relpath}", tofile=f"b/{relpath}"))
+            diffs.append(diff)
+            changed_files.append(relpath)
+            if not a.dry_run:
+                p.write_text(updated, encoding="utf-8")
+    for diff in diffs:
+        sys.stdout.write(diff)
+    out = {"dry_run": bool(a.dry_run), "changed_files": changed_files, "fixed": fixed, "skipped": skipped}
+    if a.json:
+        Path(a.json).write_text(json.dumps(out, indent=2))
+        print(f"[repobeagle] fix JSON written to {a.json}", file=sys.stderr)
+    verb = "would fix" if a.dry_run else "fixed"
+    print(f"{verb} {len(fixed)} issue(s) in {len(changed_files)} file(s)"
+          + (f"; skipped {len(skipped)} (see --json)" if skipped else ""))
+    return 0
+
 def cmd_diff(a):
     """Compares two stored reports and fails when the change added findings at/above --min-severity. Never scans."""
     try:
@@ -4758,6 +4877,13 @@ def main():
                    help="re-scan the report's pinned commit with this install and compare the normalized findings "
                         "(offline stages; exit 3 when they differ)")
     v.add_argument("--no-color", action="store_true")
+    fx = sp.add_parser("fix", help="rewrite the mechanical findings in a local checkout (unpinned actions, write-all permissions)")
+    fx.add_argument("target", help="local directory to edit (fix never clones; a URL is rejected)")
+    fx.add_argument("--dry-run", action="store_true", help="print the unified diff and write nothing")
+    fx.add_argument("--pins", metavar="FILE", help="JSON {owner/repo@ref: sha} overrides (airgapped runs and tests)")
+    fx.add_argument("--no-network", action="store_true", help="only use --pins; never call the GitHub API")
+    fx.add_argument("--json", metavar="FILE")
+    fx.add_argument("--no-color", action="store_true")
     ex = sp.add_parser("explain", help="explain how a stored report's verdict follows from its profile thresholds")
     ex.add_argument("report", help="report.json produced by 'scan --json'")
     ex.add_argument("--accept", nargs="+", metavar="RULE", default=[],
@@ -4814,6 +4940,8 @@ def main():
         return cmd_scan(a)
     if a.cmd == "verify":
         return cmd_verify(a)
+    if a.cmd == "fix":
+        return cmd_fix(a)
     if a.cmd == "explain":
         return cmd_explain(a)
     if a.cmd == "diff":
