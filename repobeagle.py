@@ -2740,9 +2740,9 @@ def fetch(target, work, ref=None, since=None):
                 raise SystemExit(f"{flag} {value!r} needs a git URL; a local directory is copied as-is")
         shutil.copytree(target, dest, symlinks=True, ignore=shutil.ignore_patterns(".git"))
         return dest, "local path (copied)", None
-    if not re.match(r"^(https?://|git@|ssh://)", target):
-        raise SystemExit(f"refusing target {target!r}: use an https/ssh git URL or an existing local directory")
-    env = dict(os.environ, GIT_TERMINAL_PROMPT="0", GIT_LFS_SKIP_SMUDGE="1", GIT_ALLOW_PROTOCOL="https:http:ssh",
+    if not re.match(r"^(https?://|git@|ssh://|file://)", target):
+        raise SystemExit(f"refusing target {target!r}: use an https/ssh/file git URL or an existing local directory")
+    env = dict(os.environ, GIT_TERMINAL_PROMPT="0", GIT_LFS_SKIP_SMUDGE="1", GIT_ALLOW_PROTOCOL="https:http:ssh:file",
                GIT_CONFIG_NOSYSTEM="1", GIT_ASKPASS="/bin/false", SSH_ASKPASS="/bin/false")
     G = ["git", "-c", "core.hooksPath=/dev/null", "-c", "core.symlinks=false", "-c", "core.fsmonitor=false",
          "-c", "protocol.file.allow=never", "-c", "credential.helper="]
@@ -2757,7 +2757,7 @@ def fetch(target, work, ref=None, since=None):
         return r.stdout
     def resolve(rev):
         git(["fetch", "--depth", "1", "--filter=blob:none", "--no-tags", "origin", rev], cwd=dest)
-        return git(["rev-parse", "FETCH_HEAD"], cwd=dest).strip()
+        return git(["rev-parse", "--verify", "FETCH_HEAD^{commit}"], cwd=dest).strip()
     # 1) blobless shallow clone: commits + trees only, no file contents yet
     git(["clone", "--depth", "1", "--filter=blob:none", "--no-checkout", "--no-recurse-submodules",
          "--single-branch", "--no-tags", "--", target, str(dest)])
@@ -4203,8 +4203,27 @@ def _ensure_cosign():
         return None
     return dest
 
+def rescan_image(meta):
+    """(image, note) for a reproducible re-scan: the report's own image when recorded, else this install's."""
+    img = str(meta.get("image_ref") or "")
+    if img:
+        return img, f"using the report's image {img}"
+    return IMAGE, f"the report records no image_ref; using this install's image {IMAGE}, findings may differ"
+
+def _local_image_digest(image):
+    """sha256 digest of an image present locally, or None (never pulls)."""
+    if not shutil.which("docker"):
+        return None
+    try:
+        r = subprocess.run(["docker", "image", "inspect", image, "--format", "{{index .RepoDigests 0}}"],
+                           capture_output=True, text=True, timeout=30)
+    except Exception:
+        return None
+    out = (r.stdout or "").strip()
+    return "sha256:" + out.split("sha256:", 1)[1] if r.returncode == 0 and "sha256:" in out else None
+
 def _verify_rescan(a, d, slug, color):
-    """Re-scans the report's pinned commit with this install and compares the normalized core.
+    """Re-scans the report's pinned commit, with the report's image when recorded, and compares the normalized core.
 
     Returns an exit code (0 match, 1 failure, 3 mismatch) or None when the report has no pin.
     """
@@ -4214,6 +4233,13 @@ def _verify_rescan(a, d, slug, color):
     if not (re.fullmatch(r"[0-9a-f]{40}", sha) and re.fullmatch(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+", repo)):
         print("  rescan:    SKIPPED (the report has no pinned commit/repo; produced by an older workflow)")
         return None
+    image, image_note = rescan_image(meta)
+    print(f"  rescan:    {image_note}")
+    recorded_digest = str(meta.get("image_digest") or "")
+    if recorded_digest.startswith("sha256:"):
+        local_digest = _local_image_digest(image)
+        if local_digest and local_digest != recorded_digest:
+            print(f"  warning:   the local {image} resolves to {local_digest}, but the report recorded {recorded_digest}")
     work = tempfile.mkdtemp(prefix="repobeagle-rescan-")
     try:
         out = Path(work) / "report.json"
@@ -4229,14 +4255,17 @@ def _verify_rescan(a, d, slug, color):
             args.append("--no-privacy")
         if meta.get("scope"):
             print("  rescan:    note: the report scanned only changed files; the whole commit is rescanned here")
-        print(f"  rescan:    scanning {repo}@{sha[:12]} with this install (offline stages only) ...")
-        r = subprocess.run(args, capture_output=True, text=True, timeout=3600)
+        print(f"  rescan:    scanning {repo}@{sha[:12]} ...")
+        r = subprocess.run(args, capture_output=True, text=True, timeout=3600, env=dict(os.environ, BEAGLE_IMAGE=image))
         try:
             fresh = json.loads(out.read_text(encoding="utf-8"))
         except (OSError, ValueError):
             tail = ((r.stderr or r.stdout).strip().splitlines() or [""])[-1]
             print(f"  rescan:    FAILED (scan exited {r.returncode}): {tail[:200]}")
             return 1
+        fresh_mode = str((fresh.get("meta") or {}).get("mode") or "")
+        if meta.get("mode") and fresh_mode and fresh_mode.split(" ")[0] != str(meta.get("mode")).split(" ")[0]:
+            print(f"  warning:   the report was produced in {meta.get('mode')}; this rescan ran in {fresh_mode}")
         match, added, removed = rescan_difference(d, fresh)
         signed_fp = report_fingerprint(d, offline_only=True)
         fresh_fp = report_fingerprint(fresh, offline_only=True)
