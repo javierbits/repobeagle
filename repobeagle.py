@@ -3212,35 +3212,125 @@ REMEDIATION = [
     (r"(?i)^gha-write-permissions", "add a least-privilege `permissions:` block to the workflow"),
     (r"(?i)^gha-secret-echo", "stop echoing secrets; rely on masking and scope `env:` to the step that needs it"),
     (r"(?i)^gha-privileged-trigger", "prefer `pull_request`, and check who can push to `workflow_run` upstream branches"),
+    (r"(?i)^gha-curl-pipe-shell", "download to a file, verify a checksum, then execute it (avoid `curl … | sh` in workflows)"),
     (r"(?i)^typosquat-dep", "verify the package name against the registry before adding it"),
-    (r"(?i)^install-time-(network|storage)", "move the side effect out of module scope or gate it behind a flag"),
+    (r"(?i)^(install|import)-time-(network|storage)", "move the side effect out of module scope or gate it behind a flag"),
+    (r"(?i)^install-time-fetch", "vendor the artifact into the repo, or make the build step explicit and reproducible"),
     (r"(?i)^install-hook", "review the hook; run installs with scripts disabled where the tool allows it"),
     (r"(?i)^insecure-endpoint", "use https:// / wss://"),
     (r"(?i)^(android|ios)-cleartext", "use TLS, or scope the cleartext exception to the hosts that need it"),
     (r"(?i)^cookie-flags", "set `Secure; HttpOnly; SameSite=Lax` (or Strict) when writing the cookie"),
     (r"(?i)^cookie-write", "prefer HttpOnly cookies set by the server when the value is not needed in JS"),
+    (r"(?i)^cookie-lifetime: cookie lifetime > 1 year", "shorten `Max-Age`/`Expires` to what the identifier actually needs"),
     (r"(?i)^(android-permission|android-feature)", "request the permission at first use, and add `android:maxSdkVersion` if only old versions need it"),
+    (r"(?i)^android-queries", "declare only the packages you resolve, or prefer explicit intents over package visibility"),
     (r"(?i)^extension-permission", "narrow the host match pattern, or move the permission to `optional_*`"),
+    (r"(?i)^extension-connectable", "replace `<all_urls>` in `externally_connectable` with the origins you actually message"),
+    (r"(?i)^extension-resource", "narrow the `web_accessible_resources` match patterns"),
     (r"(?i)^macos-entitlement", "drop the entitlement or add a per-use prompt (camera, microphone, location)"),
     (r"(?i)^telemetry-session-replay", "load the replay SDK only after consent, and enable input/text masking"),
+    (r"(?i)^session-replay-mask", "enable input/text masking in the replay SDK, or load it only after consent"),
     (r"(?i)^telemetry-", "gate the SDK behind consent, or disable it with its documented opt-out"),
     (r"(?i)^(third-party-|tracking-cookie|client-id|fingerprint)", "self-host the asset, or document and gate the host behind consent"),
+    (r"(?i)^consent-(gating|mode|order|state)", "load the tracker only after consent, and keep the consent decision server-side where possible"),
+    (r"(?i)^data-retention", "set an explicit retention period and delete the data when it ends"),
+    (r"(?i)^dnt-respect", "read `navigator.doNotTrack`/`Sec-GPC` before starting analytics, not only your own opt-out"),
+    (r"(?i)^referrer-policy", "send `Referrer-Policy: strict-origin-when-cross-origin` (or `no-referrer`)"),
+    (r"(?i)^permissions-policy", "send a `Permissions-Policy` header that disables features you do not use"),
+    (r"(?i)^iframe-allow", "narrow the iframe's `allow=` to the permissions that frame needs"),
+    (r"(?i)^browser-storage", "clear client storage on logout, or keep only non-identifying values there"),
+    (r"(?i)^browser-capability", "feature-detect and request permission before using the capability"),
+    (r"(?i)^form-method", "use POST for forms carrying user data, or keep the query string out of logs/referrers"),
+    (r"(?i)^(ios-api-category|ios-data-type|ios-purpose-string|ios-tracking)", "align the privacy manifest and purpose strings with what the code actually does"),
+    (r"(?i)^privacy-doc: no privacy policy", "add a PRIVACY.md/policy (or link one) and state what is collected"),
+    (r"(?i)^store-disclosure", "fill the store's data-collection disclosure (`data_collection_permissions`)"),
+    (r"(?i)^undisclosed-vendor", "name the vendor in the privacy docs, or gate it behind consent"),
+    (r"(?i)^upload-limit", "state and enforce the upload size/type limit"),
+    (r"(?i)^upload-surface", "check where the uploaded file is stored and who can read it"),
+    (r"(?i)^vendor-pii", "disable `sendDefaultPii`, or list the fields the vendor receives"),
     (r"(?i)^pii-(email|phone|address|postcode|ssn|card)", "move the value to config/env, or mark it as an example so the rule can ignore it"),
     (r"(?i)^(pii-log|ip-logging)", "log an id instead of the object; truncate/hash the address before logging"),
     (r"(?i)^(pii-in-url|tracking-params)", "strip the parameter before it reaches logs/referers, or use a POST body instead"),
     (r"(?i)^coverage-low", "inspect the large or unsupported files manually; the verdict does not cover them"),
     (r"(?i)^MALICIOUS package", "remove or replace the package; check the registry advisory"),
     (r"(?i)^Vulnerable dependency", "upgrade to a version past the advisory range"),
+    (r"(?i)^Hardcoded secret", "rotate the credential, remove it from the file and ignore that file; git history still has the old value"),
+    (r"(?i)^Bandit B113", "pass an explicit `timeout=` to the `requests` call"),
+    (r"(?i)^Bandit B310", "allowlist the schemes passed to `urlopen`, or use `requests` with a fixed scheme"),
+    (r"(?i)^Bandit ", "read the bandit rule documentation for the flagged call and fix the call site"),
+    (r"(?i)^GuardDog ", "read the flagged package behaviour; pin a version you reviewed, or replace the package"),
+    (r"(?i)^(Asks the agent to act silently)", "state the action in visible text, or explicitly allow it to act without asking"),
+    (r"(?i)^Dangerous flag enabled", "drop `dangerouslySkipPermissions`; approve actions per call, or scope the sandbox"),
+    (r"(?i)^Over-broad tool permission", "replace `*` / `Bash(*)` with the specific tools the agent needs"),
+    (r"(?i)^Remote MCP/plugin server", "confirm the endpoint host over TLS, or run the server locally"),
+    (r"(?i)^MCP server auto-installs", "pin the package (`pkg@1.2.3`) or pre-install it and run the lockfile binary"),
+    (r"(?i)^MCP/plugin server runs", "prefer a protocol-speaking server, or pin the download and verify a checksum"),
+    (r"(?i)^Filesystem access to root/home", "narrow the allowed paths to the repository, or mount the home directory read-only"),
+    (r"(?i)^Instructions to read and send secrets", "point the instruction at a file inside the repo, or say which env vars are safe to read"),
+    (r"(?i)^Invisible Unicode TAG characters|^Zero-width characters|^Bidirectional control characters",
+     "strip the invisible characters (U+200B–U+200F, U+2060–U+2064, U+00AD, or tag characters) unless they are deliberate"),
+    (r"(?i)^go-generate-fetch", "vendor the generated output or make the fetch reproducible (pin a version/checksum)"),
+    (r"(?i)^high-entropy-blob", "confirm the blob's origin (generated asset, certificate, embedded binary), or move it out of the source tree"),
+    (r"(?i)^magic-mismatch", "rename the file to its real type, or check it out with the tool that produced it; the extension is lying"),
+    (r"(?i)^make-just-hooks", "review the Make/just recipe; build targets should build, not download or open sockets"),
+    (r"(?i)^minified-outside-dist", "move minified files under dist/build, or keep the readable source next to them"),
+    (r"(?i)^(node-gyp-action|pip-build-hook|rust-build-rs)", "review the build script/backend; it runs at install or build time"),
+    (r"(?i)^md-", "move the instruction to visible text, or keep it if it is intentionally written for agents"),
+]
+
+# Rules where no single action is right, with the reason. The coverage test requires every
+# rule id seen in the fixtures to appear in REMEDIATION or here.
+NO_REMEDIATION = [
+    (r"(?i)^external-endpoint", "inventory: a reachable host, nothing to change"),
+    (r"(?i)^first-party-endpoint", "inventory: a first-party API call, nothing to change"),
+    (r"(?i)^consent-manager", "positive signal: a consent manager is present"),
+    (r"(?i)^privacy-doc", "positive signal: the policy exists; read it for what it admits"),
+    (r"(?i)^cookie-lifetime", "informational: a session, short, expired or deletion lifetime is fine"),
 ]
 
 _REMEDIATION_RE = [(re.compile(p), text) for p, text in REMEDIATION]
+_NO_REMEDIATION_RE = [(re.compile(p), text) for p, text in NO_REMEDIATION]
 
 def remediation_for(f):
     """One deterministic, well-understood next action per finding, or None when none is obvious."""
+    title = str(f.get("title") or "")
     for rx, text in _REMEDIATION_RE:
-        if rx.search(str(f.get("title") or "")) or rx.search(_rule_of(f)):
+        if rx.search(title) or rx.search(_rule_of(f)):
+            return text
+    if str(f.get("tool") or "") == "semgrep":
+        return "fix what the rule message describes (the rule id is the title; its registry page has an example)"
+    return None
+
+def no_remediation_reason(f):
+    """Why a finding deliberately carries no remediation (the coverage test rejects rules with neither)."""
+    title = str(f.get("title") or "")
+    for rx, text in _NO_REMEDIATION_RE:
+        if rx.search(title) or rx.search(_rule_of(f)):
             return text
     return None
+
+def remediation_audit(findings):
+    """Coverage review per rule id: every finding must have an action or a documented no-action.
+
+    `mixed` is legitimate where one rule family has informational and actionable variants (for
+    example `privacy-doc` present vs missing); `uncovered` fails the coverage test.
+    """
+    out: dict[str, set[str]] = {"fixed": set(), "documented_none": set(), "mixed": set(), "uncovered": set()}
+    groups: dict[str, list[str | None]] = {}
+    for f in findings or []:
+        if not isinstance(f, dict):
+            continue
+        state = "fixed" if remediation_for(f) else "none" if no_remediation_reason(f) else None
+        groups.setdefault(_rule_of(f), []).append(state)
+    for rule, states in groups.items():
+        if None in states:
+            out["uncovered"].add(rule)
+        elif len(set(states)) > 1:
+            out["mixed"].add(rule)
+        else:
+            out["fixed" if states[0] == "fixed" else "documented_none"].add(rule)
+    return {k: sorted(v) for k, v in out.items()}
+
 
 def _rule_of(f):
     return str(f.get("title", "")).split(":")[0].split(" (")[0] or "?"

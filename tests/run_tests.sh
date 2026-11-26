@@ -84,6 +84,7 @@ python3 tests/test_coverage.py || fail=1
 python3 tests/test_web.py || fail=1
 python3 tests/test_refs.py || fail=1
 python3 tests/test_scope.py || fail=1
+python3 tests/test_remediation.py || fail=1
 tests/test_cleanup.sh || fail=1
 # Determinism: the same fixture must produce identical findings (timings excluded).
 d1=$(mktemp); d2=$(mktemp)
