@@ -83,6 +83,13 @@ rules:
 - Scan integration: findings carry `tool: "rules"`, the configured severity/meaning and the `remediation`; matches are capped at 20 per rule with a summary finding; `meta.rule_packs` records the files and rule count. An invalid pack aborts the scan (exit 1) and an explicit `.repobeagle.yml` rule override or persona delta applies to pack ids like any other.
 - Packs are additive and regex-only: they cannot express context-sensitive logic, and an id that collides with a built-in rule simply shares the suppression/override namespace.
 
+## Workspaces and monorepos
+A monorepo is scanned as one tree, but findings and first-party inference respect package boundaries:
+- **Detection**: npm/pnpm/yarn `workspaces`, Cargo `[workspace] members`, `go.work` modules and nested Python projects (`pyproject.toml`/`setup.py`); capped by `BEAGLE_MAX_PACKAGES` (default 50, the report says when the cap was hit). Only declared workspace members are considered, never a guessed directory.
+- **Attribution**: findings whose `file` lies inside a package carry `package` (the manifest name) and `package_path`; the human report prints `package: …`. Findings outside any package belong to the `(root)` bucket. Cross-workspace dependencies stay attributed to the package whose lockfile path produced them.
+- **First-party inference per package**: `own_domains()` is computed per package root (its own `CNAME`/`package.json`/`pyproject.toml`/…, plus `hosts` from `.repobeagle.yml`), so package A's `CNAME` cannot mark package B's host as first-party, and root domains do not leak into packages. `meta.workspace` lists the packages and per-package severity counts (including `(root)`); their sum equals the report's totals.
+- Limits: a workspace member that is not declared by a manifest is treated as part of the enclosing package/root, and one package's lockfile is not expanded into its siblings' attribution beyond its own path.
+
 ## Archives and release assets
 Archives are a documented blind spot when they sit inside a repo (they are flagged, never extracted). They can be inspected when they *are* the target, or when they are release assets:
 ```bash
