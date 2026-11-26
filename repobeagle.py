@@ -1261,6 +1261,76 @@ def own_domains(root):
         pass
     return found
 
+PERSONAS: dict[str, dict[str, Any]] = {
+    "ci": {
+        "label": "CI / supply chain",
+        "description": "Repository CI and dependency risk: workflow shell, install hooks, unpinned bases, dependency confusion",
+        "deltas": [("gha-*", 1), ("Download-and-execute", 1), ("npm lifecycle script", 1),
+                   ("dockerfile-base-unpinned", 1), ("dependency-confusion", 1), ("submodule-*", 1),
+                   ("pip-build-hook", 1), ("go-generate-fetch", 1), ("rust-build-rs", 1),
+                   ("install-time-fetch", 1), ("node-gyp-action", 1), ("make-just-hooks", 1)],
+    },
+    "agent-operator": {
+        "label": "Agent operator",
+        "description": "What an agent will read and obey: hidden instructions, invisible text, tool/MCP permissions",
+        "deltas": [("md-*", 2), ("Invisible Unicode TAG characters", 1), ("Zero-width characters", 1),
+                   ("Dangerous flag enabled", 1), ("Over-broad tool permission / auto-approve", 1),
+                   ("MCP server auto-installs and runs a package at launch", 1),
+                   ("MCP/plugin server runs a raw shell or downloader", 1),
+                   ("Remote MCP/plugin server endpoint", 1),
+                   ("Asks the agent to act silently / without consent", 1),
+                   ("Instructions to read and send secrets/credentials to a URL", 1),
+                   ("Filesystem access to root/home directory", 1)],
+    },
+    "maintainer": {
+        "label": "Repository maintainer",
+        "description": "Repo health: telemetry/privacy noise is turned down, structural findings stay",
+        "deltas": [("telemetry-*", -1), ("privacy-*", -1), ("cookie-*", -1), ("third-party-*", -1),
+                   ("session-replay-mask", -1), ("consent-*", -1), ("dnt-respect", -1),
+                   ("vendor-pii", -1), ("data-retention", -1)],
+    },
+    "consumer": {
+        "label": "End-user / consumer",
+        "description": "Running this on my machine: install payloads and secrets matter more, CI/dev rules matter less",
+        "deltas": [("Download-and-execute", 1), ("npm lifecycle script", 1), ("pip-build-hook", 1),
+                   ("install-time-fetch", 1), ("install-time-network", 1),
+                   ("Prebuilt binary/compiled artifact in repo", 1), ("Password-protected/encrypted archive (uninspectable)", 1),
+                   ("gha-*", -1), ("md-*", -1), ("dockerfile-base-unpinned", -1), ("submodule-*", -1),
+                   ("telemetry-*", 1)],
+    },
+}
+
+def persona_delta(persona, rule):
+    """Sum of the persona's severity deltas matching `rule` (fnmatch globs)."""
+    return sum(int(d) for pattern, d in PERSONAS[persona]["deltas"] if fnmatchcase(rule, pattern))
+
+def shift_severity(severity, delta):
+    """Move a severity by `delta` steps, clamped to info..critical (ascending scale)."""
+    order = ["info", "low", "medium", "high", "critical"]
+    idx = order.index(severity) if severity in order else 0
+    return order[max(0, min(len(order) - 1, idx + delta))]
+
+def apply_persona(findings, persona):
+    """Re-grade findings with the persona's rule deltas (before config overrides and the verdict)."""
+    moved = 0
+    for f in findings:
+        delta = persona_delta(persona, _explain_rule(f))
+        if delta:
+            new_sev = shift_severity(str(f.get("severity") or "info"), delta)
+            if new_sev != f.get("severity"):
+                moved += 1
+            f["severity"] = new_sev
+    return moved
+
+def print_personas():
+    """`--list-personas`: the severity lenses, what they care about and each glob delta."""
+    for name, p in PERSONAS.items():
+        print(f"{name:<15} {p['label']}")
+        print(f"{'':<15} {p['description']}")
+        print(f"{'':<15} deltas: " + ", ".join(f"{pat} {'+' if d > 0 else ''}{d}" for pat, d in p["deltas"]))
+    print("\n`--as <persona>` only re-grades findings; the profile still sets the verdict thresholds. "
+          "Explicit .repobeagle.yml rule overrides win.")
+
 CONFIG_FILE = ".repobeagle.yml"
 
 class ConfigError(Exception):
@@ -1268,14 +1338,52 @@ class ConfigError(Exception):
 
 _RULE_IDS: set[str] | None = None
 
+BUILTIN_DYNAMIC_RULES = (
+    "high-entropy-blob", "magic-mismatch", "minified-outside-dist", "typosquat-dep",
+    "md-comment-instruction", "md-details-instruction", "md-alt-title-instruction",
+    "md-css-hidden", "md-padded-line",
+    "submodule-host", "submodule-uninspected", "submodule-unpinned",
+    "npm lifecycle script 'postinstall' runs automatically on install",
+)
+
+BUILTIN_PHRASE_RULES = (
+    "Asks the agent to act silently / without consent",
+    "Code reads secrets/credentials near a network call",
+    "Coverage-low",
+    "Dangerous flag enabled",
+    "Download-and-execute",
+    "Filesystem access to root/home directory",
+    "GuardDog npm package",
+    "GuardDog pypi package",
+    "Instructions to read and send secrets/credentials to a URL",
+    "Invisible Unicode TAG characters",
+    "MALICIOUS package",
+    "MCP server auto-installs and runs a package at launch",
+    "MCP/plugin server runs a raw shell or downloader",
+    "Over-broad tool permission / auto-approve",
+    "Remote MCP/plugin server endpoint",
+    "Slow-file",
+    "Vulnerable dependency",
+    "custom-check",
+    "npm lifecycle script",
+    "Zero-width characters",
+)
+
 def known_rule_ids():
-    """Built-in rule ids: literals in this module, telemetry families and the OSV titles (R4-lite until a registry ships)."""
+    """Built-in rule ids: hyphenated literals in this module, rule tables, telemetry families, OSV/GuardDog and
+    sentence-style agent findings (R4-lite until the rule registry ships in #23)."""
     global _RULE_IDS
     if _RULE_IDS is None:
-        ids = set(re.findall(r'"([a-z][a-z0-9-]{2,}): ', Path(__file__).read_text(encoding="utf-8")))
+        source = Path(__file__).read_text(encoding="utf-8")
+        ids = set(re.findall(r'"([a-z][a-z0-9-]{2,})"', source))
         ids |= {f"telemetry-{kind}" for kind, *_ in TELEMETRY_RULES}
+        ids |= {f"telemetry-{kind}" for kind, *_ in TELEMETRY_PACKAGES}
         ids |= set(PRIVACY_RULE_ORDER)
-        ids |= {"Vulnerable dependency", "MALICIOUS package", "custom-check"}
+        ids |= set(BUILTIN_PHRASE_RULES)
+        ids |= set(BUILTIN_DYNAMIC_RULES)
+        for rule in MD_RULES:
+            if isinstance(rule, (tuple, list)) and rule and isinstance(rule[0], str):
+                ids.add(rule[0])
         _RULE_IDS = ids
     return _RULE_IDS
 
@@ -5213,7 +5321,7 @@ def head_collect_api(slug, token=None, use_cache=True):
 class HeadError(Exception):
     """A head/gate target could not produce a report (bad target, no metadata, checks failure)."""
 
-def head_report(target, profile="balanced", token="", use_cache=True, profile_defaulted=False):
+def head_report(target, profile="balanced", token="", use_cache=True, profile_defaulted=False, persona=""):
     """Metadata-only report for one target (GitHub contents API or a local dir). No clone, no scanners, no repo code."""
     m = GITHUB_REPO_RE.match(target)
     slug = f"{m.group(1)}/{m.group(2)}" if m else (target if re.fullmatch(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+", target) else None)
@@ -5264,6 +5372,9 @@ def head_report(target, profile="balanced", token="", use_cache=True, profile_de
             rem = remediation_for(f)
             if rem:
                 f["remediation"] = rem
+        if persona:
+            moved = apply_persona(findings, persona)
+            notes.append(f"persona {persona}: {moved} finding(s) re-graded by rule severities")
         if repo_config and repo_config["rules"]:
             for f in findings:
                 rule = _explain_rule(f)
@@ -5291,6 +5402,9 @@ def head_report(target, profile="balanced", token="", use_cache=True, profile_de
                 "suppressed": len(suppressed), "suppressions": suppression_meta(entries),
                 "scope": scope, "capabilities": caps, "coverage": cov, "ruleset": RULESET,
                 "privacy_mode": "full", "pii_redacted": True}
+        if persona:
+            meta["persona"] = {"name": persona, "label": PERSONAS[persona]["label"],
+                               "deltas": [{"match": pat, "delta": d} for pat, d in PERSONAS[persona]["deltas"]]}
         if repo_config:
             meta["config"] = {"path": CONFIG_FILE, "profile": repo_config.get("profile"),
                               "rules": repo_config["rules"], "hosts": repo_config["hosts"],
@@ -5312,7 +5426,8 @@ def cmd_head(a):
     token = os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN") or ""
     try:
         d, notes, source = head_report(a.target, profile, token, use_cache=not a.no_cache,
-                                        profile_defaulted=not (a.strict or a.relaxed))
+                                        profile_defaulted=not (a.strict or a.relaxed),
+                                        persona=getattr(a, "as_persona", "") or "")
     except HeadError as ex:
         print(f"head: {ex}", file=sys.stderr)
         return 1
@@ -5363,6 +5478,8 @@ def cmd_batch(a):
         value = getattr(a, opt, None)
         if value is not None:
             flags += ["--" + opt.replace("_", "-"), str(value)]
+    if getattr(a, "as_persona", None):
+        flags += ["--as", a.as_persona]
     cli = Path(__file__).resolve()
 
     def run_one(index, target):
@@ -5446,10 +5563,10 @@ def load_gate_entries(path):
         raise ValueError(f"{len(out)} entries; the gate accepts at most {GATE_MAX_ENTRIES}")
     return out
 
-def gate_entry(target, profile, token, use_cache=True):
+def gate_entry(target, profile, token, use_cache=True, persona=""):
     """One per-entry verdict for the gate: unfetchable entries are `unknown`, never GREEN."""
     try:
-        d, notes, source = head_report(target, profile, token, use_cache=use_cache)
+        d, notes, source = head_report(target, profile, token, use_cache=use_cache, persona=persona)
     except HeadError as ex:
         return {"target": target, "verdict": "unknown", "why": str(ex), "counts": {}, "findings": [],
                 "source": "unfetchable", "notes": [str(ex)], "seconds": 0.0}
@@ -5459,14 +5576,14 @@ def gate_entry(target, profile, token, use_cache=True):
             "seconds": meta.get("seconds"), "suppressed": meta.get("suppressed"),
             "scope": meta.get("scope")}
 
-def _gate_one(entry, profile, token, use_cache):
+def _gate_one(entry, profile, token, use_cache, persona=""):
     try:
-        return gate_entry(entry, profile, token, use_cache)
+        return gate_entry(entry, profile, token, use_cache, persona)
     except Exception as ex:  # a broken scanner must not take the whole directory down
         return {"target": entry, "verdict": "unknown", "why": f"{type(ex).__name__}: {ex}", "counts": {},
                 "findings": [], "source": "unfetchable", "notes": [str(ex)], "seconds": 0.0}
 
-def gate_report(entries, profile="balanced", token="", baseline=None, jobs=1, use_cache=True):
+def gate_report(entries, profile="balanced", token="", baseline=None, jobs=1, use_cache=True, persona=""):
     """Batch verdicts for a listing; `new_red` is RED now and not RED in the baseline (all RED without one)."""
     baseline_verdicts: dict[str, str] = {}
     if baseline:
@@ -5484,9 +5601,9 @@ def gate_report(entries, profile="balanced", token="", baseline=None, jobs=1, us
     if jobs and jobs > 1:
         from concurrent.futures import ThreadPoolExecutor
         with ThreadPoolExecutor(max_workers=min(jobs, 16)) as pool:
-            rows = list(pool.map(lambda t: _gate_one(t, profile, token, use_cache), entries))
+            rows = list(pool.map(lambda t: _gate_one(t, profile, token, use_cache, persona), entries))
     else:
-        rows = [_gate_one(e, profile, token, use_cache) for e in entries]
+        rows = [_gate_one(e, profile, token, use_cache, persona) for e in entries]
     counts = {v: sum(1 for r in rows if r["verdict"] == v) for v in ("GREEN", "YELLOW", "RED", "unknown")}
     worst = ("RED" if counts["RED"] else "YELLOW" if counts["YELLOW"] else "GREEN" if counts["GREEN"] else "unknown")
     new_red = [r["target"] for r in rows if r["verdict"] == "RED" and baseline_verdicts.get(r["target"]) != "RED"]
@@ -5518,7 +5635,8 @@ def cmd_gate(a):
         print("gate: no entries in the list (one target per line; # starts a comment; JSON also accepted)", file=sys.stderr)
         return 1
     try:
-        d = gate_report(entries, profile, token, baseline=a.baseline, jobs=a.jobs, use_cache=not a.no_cache)
+        d = gate_report(entries, profile, token, baseline=a.baseline, jobs=a.jobs, use_cache=not a.no_cache,
+                        persona=getattr(a, "as_persona", "") or "")
     except ValueError as ex:
         print(f"gate: {ex}", file=sys.stderr)
         return 1
@@ -5639,7 +5757,9 @@ def report(meta, findings, v, why, counts, notes, ai, use_color, maxn=40, min_se
     vc = {"RED": "1;41;97", "YELLOW": "1;43;30", "GREEN": "1;42;30"}[v]
     sc = {"critical": "1;91", "high": "91", "medium": "93", "low": "96", "info": "37"}
     print(C("1", f"\nRepoBeagle {VERSION}  |  {meta['target']}"))
-    print(f"mode: {meta['mode']}   profile: {meta['profile']}   files: {meta['files']}   time: {meta['seconds']}s")
+    persona = (meta.get("persona") or {}).get("name")
+    print(f"mode: {meta['mode']}   profile: {meta['profile']}" + (f"   persona: {persona}" if persona else "")
+          + f"   files: {meta['files']}   time: {meta['seconds']}s")
     if (meta.get("scope") or {}).get("scope") == "changed":
         scp = meta["scope"]
         print(C("1", f"  scope: changed files only ({scp.get('changed_files')} since {scp.get('since')}); "
@@ -6309,6 +6429,10 @@ def cmd_scan(a):
             if note: notes.append(note)
         if skipped:
             notes.append("privacy-only: skipped non-privacy stages (" + ", ".join(skipped) + ")")
+        persona = getattr(a, "as_persona", None)
+        if persona:
+            moved = apply_persona(findings, persona)
+            notes.append(f"persona {persona}: {moved} finding(s) re-graded by rule severities")
         if repo_config and repo_config["rules"]:
             graded = 0
             for f in findings:
@@ -6360,6 +6484,9 @@ def cmd_scan(a):
                 "tools": tools, "suppressed": len(suppressed), "suppressions": suppression_meta(entries),
                 "pii_redacted": not a.no_redact, "privacy_mode": privacy_mode, "ruleset": RULESET,
                 "complete": complete, "cache": cache_state}
+        if getattr(a, "as_persona", None):
+            meta["persona"] = {"name": a.as_persona, "label": PERSONAS[a.as_persona]["label"],
+                               "deltas": [{"match": pat, "delta": d} for pat, d in PERSONAS[a.as_persona]["deltas"]]}
         if repo_config:
             meta["config"] = {"path": CONFIG_FILE, "profile": repo_config.get("profile"),
                               "rules": repo_config["rules"], "hosts": repo_config["hosts"],
@@ -6812,7 +6939,11 @@ def main():
         if problem:
             print(f"warning: {problem}; run ./install.sh to refresh the wrapper", file=sys.stderr)
         return 0
+    if "--list-personas" in sys.argv[1:]:
+        print_personas()
+        return 0
     ap = argparse.ArgumentParser(prog="repobeagle", description="RepoBeagle: Static safety gate for untrusted repos (never executes repo code).")
+    ap.add_argument("--list-personas", action="store_true", help="print the --as severity lenses and exit")
     sp = ap.add_subparsers(dest="cmd", required=True)
     def add_scan_args(s, privacy_modes=True):
         s.add_argument("target")
@@ -6822,6 +6953,8 @@ def main():
         g.add_argument("--strict", action="store_true"); g.add_argument("--balanced", action="store_true"); g.add_argument("--relaxed", action="store_true")
         s.add_argument("--keep", action="store_true", help="keep the temp clone")
         s.add_argument("--json", metavar="FILE")
+        s.add_argument("--as", dest="as_persona", choices=sorted(PERSONAS), metavar="PERSONA",
+                       help="severity lens: " + ", ".join(sorted(PERSONAS)) + " (see --list-personas)")
         s.add_argument("--jobs", type=int, default=4, metavar="N",
                        help="run the four external scanners concurrently (default 4; 1 = sequential)")
         s.add_argument("--no-cache", action="store_true",
@@ -6892,6 +7025,7 @@ def main():
     hd.add_argument("target", help="owner/repo, GitHub URL, or local directory")
     hg = hd.add_mutually_exclusive_group()
     hg.add_argument("--strict", action="store_true"); hg.add_argument("--relaxed", action="store_true")
+    hd.add_argument("--as", dest="as_persona", choices=sorted(PERSONAS), metavar="PERSONA")
     hd.add_argument("--json", metavar="FILE")
     hd.add_argument("--html", metavar="FILE", help="write a self-contained HTML report")
     hd.add_argument("--markdown", action="store_true", help="print a Markdown card (Slack/Discord/PR comment)")
@@ -6967,11 +7101,13 @@ def main():
     ba.add_argument("--min-severity", choices=list(SEV_ORDER), default=None)
     ba.add_argument("--max-seconds", type=float, metavar="SECONDS")
     ba.add_argument("--no-cache", action="store_true")
+    ba.add_argument("--as", dest="as_persona", choices=sorted(PERSONAS), metavar="PERSONA")
     ba.add_argument("--no-color", action="store_true")
     ga = sp.add_parser("gate", help="scan a directory listing (one target per line) and fail only on a new RED")
     ga.add_argument("entries", help="entries file: one owner/repo, git URL or local dir per line (# comments) or JSON")
     gg = ga.add_mutually_exclusive_group()
     gg.add_argument("--strict", action="store_true"); gg.add_argument("--relaxed", action="store_true")
+    ga.add_argument("--as", dest="as_persona", choices=sorted(PERSONAS), metavar="PERSONA")
     ga.add_argument("--baseline", metavar="REPORT", help="previous gate JSON: fail only on entries RED now and not RED then")
     ga.add_argument("--json", metavar="FILE")
     ga.add_argument("--markdown", action="store_true", help="print the per-entry markdown table")
