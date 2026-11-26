@@ -4647,9 +4647,10 @@ on:
 jobs:
   scan:
     permissions:
-      contents: write      # publish the badge branch
-      statuses: write      # set the repobeagle/scan commit status
-      id-token: write      # keyless-sign the report
+      contents: write        # publish the badge branch
+      statuses: write        # set the repobeagle/scan commit status
+      id-token: write        # keyless-sign the report
+      security-events: write # the reusable workflow requests this (upload-sarif) even when unused
     uses: javierbits/repobeagle/.github/workflows/scan.yml@{ref}
     with:
       profile: {profile}

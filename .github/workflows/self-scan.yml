@@ -8,14 +8,15 @@ on:
 jobs:
   scan:
     permissions:
-      contents: write      # publish the badge branch
-      statuses: write      # set the repobeagle/scan commit status
-      id-token: write      # keyless-sign the report
-    uses: javierbits/repobeagle/.github/workflows/scan.yml@v1.170.0
+      contents: write        # publish the badge branch
+      statuses: write        # set the repobeagle/scan commit status
+      id-token: write        # keyless-sign the report
+      security-events: write # the reusable workflow requests this (upload-sarif) even when unused
+    uses: javierbits/repobeagle/.github/workflows/scan.yml@v1.170.1
     with:
       profile: balanced
       fail-on-red: false
       privacy-only: false
       badge-branch: "repobeagle"
       set-status: true
-      tools-ref: v1.170.0
+      tools-ref: v1.170.1

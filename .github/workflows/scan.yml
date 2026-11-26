@@ -9,9 +9,10 @@
 #   jobs:
 #     scan:
 #       permissions:
-#         contents: write   # publishes the badge branch (optional)
-#         statuses: write   # sets the repobeagle/scan commit status (optional)
-#         id-token: write   # required: keyless-signs the report with Sigstore
+#         contents: write        # publishes the badge branch (optional)
+#         statuses: write        # sets the repobeagle/scan commit status (optional)
+#         id-token: write        # required: keyless-signs the report with Sigstore
+#         security-events: write # required: the called workflow requests it (upload-sarif)
 #       uses: javierbits/repobeagle/.github/workflows/scan.yml@main
 #       with:
 #         profile: balanced   # strict | balanced | relaxed

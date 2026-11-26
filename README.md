@@ -327,7 +327,7 @@ repobeagle init --dry-run          # print the workflow, write nothing
 repobeagle init --profile strict --fail-on-red --upload-sarif ...
 ```
 
-`init` templates the reusable workflow from its inputs (`profile`, `fail-on-red`, `privacy-only`, `badge-branch`, `set-status`, `tools-ref`), pins the toolchain to the current release tag (bump it together with the tool), uses the origin remote to print the exact shields.io line for your repository, refuses to overwrite a differing file without `--force`, and is a no-op when the file is already current. The generated workflow is exactly what this repository runs for its own badge (`.github/workflows/self-scan.yml`), which also exercises the signing and `verify` path on every release.
+`init` templates the reusable workflow from its inputs (`profile`, `fail-on-red`, `privacy-only`, `badge-branch`, `set-status`, `tools-ref`) and the caller permissions the reusable workflow requires (`contents`, `statuses`, `id-token`, `security-events` — GitHub validates the intersection at startup), pins the toolchain to the current release tag (bump it together with the tool), uses the origin remote to print the exact shields.io line for your repository, refuses to overwrite a differing file without `--force`, and is a no-op when the file is already current. The generated workflow is exactly what this repository runs for its own badge (`.github/workflows/self-scan.yml`), which also exercises the signing and `verify` path on every release.
 
 ### Verifying a badge (public repos)
 

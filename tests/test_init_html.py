@@ -39,6 +39,11 @@ with tempfile.TemporaryDirectory() as td:
               job["uses"] == f"javierbits/repobeagle/.github/workflows/scan.yml@{rb.RELEASE}"
               and job["with"] == {"profile": "balanced", "fail-on-red": False, "privacy-only": False,
                                   "badge-branch": "repobeagle", "set-status": True, "tools-ref": rb.RELEASE})
+        # GitHub validates the caller/called permission intersection at startup; a missing
+        # security-events: write here makes the generated workflow fail before it starts.
+        check("the caller grants every permission the reusable workflow requests",
+              job["permissions"] == {"contents": "write", "statuses": "write", "id-token": "write",
+                                     "security-events": "write"})
     else:
         print("SKIP workflow YAML parse (pyyaml not installed); text assertions only")
     check("init prints the shield lines", f"raw.githubusercontent.com/o/r/repobeagle/badge.json" in real.stdout
