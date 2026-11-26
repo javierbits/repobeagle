@@ -28,9 +28,11 @@ def _color(verdict):
     return COLORS.get(verdict, FALLBACK[0]), HEXES.get(verdict, FALLBACK[1])
 
 
-def endpoint_json(verdict, label, link, privacy=None, privacy_only=False, scope=None):
+def endpoint_json(verdict, label, link, privacy=None, privacy_only=False, scope=None, partial=False):
     color, _ = _color(verdict)
-    d = {"schemaVersion": 1, "label": label, "message": verdict, "color": color}
+    d = {"schemaVersion": 1, "label": label, "message": f"{verdict} (partial)" if partial else verdict, "color": color}
+    if partial:
+        d["complete"] = False
     if link:
         d["link"] = link
     if privacy_only:
@@ -54,8 +56,10 @@ def privacy_counts(report):
     return out
 
 
-def svg(verdict, label):
+def svg(verdict, label, partial=False):
     """Flat-style two-cell badge (label + verdict), no external deps."""
+    if partial:
+        verdict = f"{verdict} (partial)"
     color_name, hexcolor = _color(verdict)
     lw, vw = _text_w(label), _text_w(verdict)
     total = lw + vw
@@ -99,17 +103,18 @@ def main():
     if verdict not in COLORS:
         print(f"make_badge: unexpected verdict {verdict!r} in {a.report}", file=sys.stderr)
         return 1
+    partial = (report.get("meta") or {}).get("complete") is False
     out = False
     privacy = privacy_counts(report)
     privacy_only = (report.get("meta") or {}).get("privacy_mode") == "only"
     scope = (report.get("meta") or {}).get("scope")
     if a.endpoint:
         with open(a.endpoint, "w", encoding="utf-8") as fh:
-            fh.write(endpoint_json(verdict, a.label, a.link, privacy, privacy_only, scope))
+            fh.write(endpoint_json(verdict, a.label, a.link, privacy, privacy_only, scope, partial))
         out = True
     if a.svg:
         with open(a.svg, "w", encoding="utf-8") as fh:
-            fh.write(svg(verdict, a.label))
+            fh.write(svg(verdict, a.label, partial))
         out = True
     if not out:
         print(verdict)  # no files requested: print the verdict for scripts
