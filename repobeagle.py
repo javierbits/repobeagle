@@ -4,7 +4,7 @@
 NEVER executes repository code. Stdlib only (scanners are external binaries).
   repobeagle scan <repo-url|local-path> [--strict|--balanced|--relaxed] [--keep]
                   [--json out.json] [--no-docker] [--verify-deps] [--no-osv] [--no-trust]
-                  [--html out.html] [--sbom sbom.json]
+                  [--html out.html] [--sbom sbom.json] [--trace]
   repobeagle verify <github-repo> [--branch repobeagle] [--expect-sha SHA]
   repobeagle feedback <report.json> (--false-positive|--miss) [--rule RULE] [--file FILE[:LINE]] [--attach] [--no-open]
   repobeagle gate <entries-file> [--baseline old.json] [--json out.json] [--markdown] [--jobs N] [--report-only]
@@ -4435,6 +4435,95 @@ def run_in_docker(src, out, jobs=1):
     except Exception:
         raise SystemExit("container scan failed: " + (r.stderr or r.stdout)[-600:])
 
+# --- Optional syscall trace (T6): run only the install phase in the hardened container ---------
+TRACE_MAX_COMMANDS = 20
+TRACE_DEFAULT_TIMEOUT = int(os.environ.get("BEAGLE_TRACE_TIMEOUT", "300") or 300)
+
+def detect_install_commands(src):
+    """[(label, shell command)] for install-time code only (npm lifecycle scripts, Python install)."""
+    src = Path(src)
+    commands: list[tuple[str, str]] = []
+    pkg = _json_file(src / "package.json")
+    if isinstance(pkg, dict):
+        scripts = pkg.get("scripts") or {}
+        for name in ("preinstall", "install", "postinstall"):
+            value = scripts.get(name)
+            if isinstance(value, str) and value.strip():
+                commands.append((f"npm {name}", value.strip()))
+    if (src / "pyproject.toml").is_file() or (src / "setup.py").is_file():
+        commands.append(("python install",
+                         "python3 -m pip install --no-cache-dir --no-deps --no-build-isolation --no-index ."))
+    elif (src / "requirements.txt").is_file():
+        commands.append(("pip requirements", "python3 -m pip install --no-cache-dir --no-index -r requirements.txt"))
+    return commands[:TRACE_MAX_COMMANDS]
+
+def parse_strace(text, src):
+    """({section: [values]}, syscall stats) from strace output; hostnames come from execve argv, paths from CAP_FS."""
+    evidence: dict[str, list[str]] = {section: [] for section in ("network", "filesystem", "processes")}
+    stats = {"connect": 0, "execve": 0, "openat": 0}
+    seen: dict[str, set[str]] = {section: set() for section in evidence}
+
+    def add(section, value):
+        value = str(value).strip()
+        if not value or value in seen[section]:
+            return
+        seen[section].add(value)
+        evidence[section].append(value)
+
+    for line in text.splitlines():
+        if "connect(" in line:
+            stats["connect"] += 1
+            m = re.search(r'sin_addr=inet_addr\("([^"]+)"', line) or \
+                re.search(r'inet_pton\(AF_INET6, "([^"]+)"', line)
+            if m and not m.group(1).startswith(("127.", "::1")):
+                add("network", m.group(1))
+        if "execve(" in line:
+            stats["execve"] += 1
+            m = re.search(r'execve\("([^"]+)"', line)
+            if m:
+                add("processes", os.path.basename(m.group(1)))
+            for url in re.findall(r"https?://([A-Za-z0-9._-]+\.[A-Za-z]{2,})", line):
+                add("network", url.lower())
+        elif "openat(" in line:
+            stats["openat"] += 1
+            m = re.search(r'openat\([^,]+, "([^"]+)"', line)
+            if m and CAP_FS.search(m.group(1)):
+                hit = CAP_FS.search(m.group(1))
+                add("filesystem", hit.group(0).lstrip("~/") if hit else m.group(1))
+    return {k: v for k, v in evidence.items() if v}, stats
+
+def run_trace(src, out, timeout=None):
+    """(evidence, info): run the install phase under strace in the hardened image (opt-in; executes repo code)."""
+    out = Path(out)
+    out.mkdir(parents=True, exist_ok=True)
+    os.chmod(out, 0o777)
+    commands = detect_install_commands(src)
+    script = ["cd /src"]
+    for label, command in commands:
+        script += [f"echo ':: {label}'", f"( {command} ) || true"]
+    (out / "run.sh").write_text("\n".join(script) + "\n", encoding="utf-8")
+    os.chmod(out / "run.sh", 0o755)
+    uid = os.getuid() if os.getuid() != 0 else 65534
+    gid = os.getgid() if os.getgid() != 0 else 65534
+    cmd = ["docker", "run", "--rm", "--network", "bridge", "--read-only", "--tmpfs", "/tmp:rw,exec,size=1g",
+           "--user", f"{uid}:{gid}", "--cap-drop", "ALL", "--security-opt", "no-new-privileges",
+           "--pids-limit", "512", "--memory", os.environ.get("BEAGLE_MEMORY", "6g"),
+           "-e", "HOME=/tmp", "-e", "npm_config_update_notifier=false", "-e", "PIP_DISABLE_PIP_VERSION_CHECK=1",
+           "-v", f"{src}:/src:rw", "-v", f"{out}:/out:rw",
+           "--entrypoint", "strace", IMAGE, "-f", "-s", "512",
+           "-e", "trace=connect,execve,openat", "-o", "/out/trace.txt", "sh", "/out/run.sh"]
+    t0 = time.time()
+    r = subprocess.run(cmd, capture_output=True, text=True,
+                       timeout=timeout or TRACE_DEFAULT_TIMEOUT)
+    trace_file = out / "trace.txt"
+    text = trace_file.read_text(errors="replace") if trace_file.is_file() else ""
+    evidence, stats = parse_strace(text, src)
+    info = {"commands": [{"label": label, "command": command} for label, command in commands],
+            "syscalls": stats, "seconds": round(time.time() - t0, 1), "exit": r.returncode,
+            "network": "bridge (install downloads need it; the report says so)",
+            "output_tail": ((r.stderr or "") + (r.stdout or ""))[-300:]}
+    return evidence, info
+
 def verdict_consistent(report):
     """True when stored verdict/counts match the findings under the declared profile."""
     v = report.get("verdict")
@@ -7440,6 +7529,32 @@ def cmd_scan(a):
         caps = res.get("capabilities")
         if caps: meta["capabilities"] = caps
         if res.get("coverage"): meta["coverage"] = res["coverage"]
+        if getattr(a, "trace", False):
+            if a.no_docker or not docker_ok():
+                notes.append("trace: skipped (needs Docker; --trace runs the install phase in the hardened container)")
+            else:
+                try:
+                    evidence, trace_info = run_trace(src, Path(work) / "trace",
+                                                     timeout=getattr(a, "trace_timeout", None) or None)
+                except Exception as ex:
+                    notes.append(f"trace: failed: {type(ex).__name__}: {ex}")
+                else:
+                    meta["trace"] = trace_info
+                    if evidence:
+                        meta["capabilities"] = scan_capabilities(src, trace=evidence)
+                        verified = sum(len(v) for v in evidence.values())
+                        evidence_counts = ", ".join(f"{k} {len(v)}" for k, v in evidence.items())
+                        notes.append(f"trace: {len(trace_info['commands'])} install command(s), "
+                                     f"{verified} evidence value(s) ({evidence_counts}); "
+                                     f"connect/execve/openat {trace_info['syscalls']['connect']}/"
+                                     f"{trace_info['syscalls']['execve']}/{trace_info['syscalls']['openat']}")
+                        findings.append(finding("agent-checks", "info", "(trace)", 0,
+                                                 f"trace-verified: {verified} capability value(s) confirmed",
+                                                 evidence_counts, "The install phase was executed under strace in the "
+                                                                  "hardened container; these capabilities were observed, "
+                                                                  "not inferred."))
+                    else:
+                        notes.append("trace: the commands ran but produced no recognised evidence")
         scope_file = Path(work) / "scope.json"
         if scope_file.exists():
             try:
@@ -7900,6 +8015,10 @@ def main():
         s.add_argument("--json", metavar="FILE")
         s.add_argument("--as", dest="as_persona", choices=sorted(PERSONAS), metavar="PERSONA",
                        help="severity lens: " + ", ".join(sorted(PERSONAS)) + " (see --list-personas)")
+        s.add_argument("--trace", action="store_true",
+                       help="also run the install phase in the hardened container under strace and mark capabilities it "
+                            "confirms (executes repo code; needs Docker and network for downloads)")
+        s.add_argument("--trace-timeout", type=int, metavar="SECONDS", help="timeout for the trace run (default 300)")
         s.add_argument("--release-assets", metavar="OWNER/REPO",
                        help="also download, extract and scan the archive assets of this repo's latest GitHub release")
         s.add_argument("--jobs", type=int, default=4, metavar="N",
