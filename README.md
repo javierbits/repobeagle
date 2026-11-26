@@ -56,6 +56,7 @@ repobeagle privacy <git-url | local-dir> [same scan options]
 repobeagle explain <report.json> [--accept RULE...] [--target green|yellow] [--write [--ignore-file FILE] [--reason TEXT]]
 repobeagle diff <old.json> <new.json> [--min-severity medium] [--json out.json]
 repobeagle fix <local-dir> [--dry-run] [--pins FILE] [--no-network] [--json out.json]
+repobeagle head <owner/repo | github-url | local-dir> [--strict|--relaxed] [--json out.json] [--markdown] [--no-cache]
 repobeagle export <report.json> [--format sarif|markdown|json] [-o out]
 repobeagle map <git-url | local-dir | --report r.json> [--strict|--relaxed] [--network]
 repobeagle web <http(s):// | file://> [--assets N] [--json out.json]
@@ -84,6 +85,14 @@ planner:
 - Review the printed diff before committing. Opening the PR is the workflow/App's job, not automated by `fix` yet.
 
 Acceptance on `tests/fixtures/trap-gha` (copy, pins or network): both workflow files are rewritten, the re-scan loses `gha-unpinned-action`/`gha-write-permissions` and keeps the judgement findings, and `--dry-run` leaves the tree byte-identical (`tests/test_fix.py` asserts all three).
+
+`repobeagle head <owner/repo | github-url | local-dir>` is the fast triage path: it fetches only a fixed metadata list through the GitHub contents API (or reads the same list from a local directory) — root manifests, README/PRIVACY/SECURITY/LICENSE, `SKILL.md`, `mcp.json`, `CODEOWNERS`, the PR template and every `.github/workflows/*.yml` — writes those files into a temporary tree and runs the offline agent checks. No clone, no Docker, no scanners, no repository code executed. The report says exactly what it is: `meta.scope = {scope: "metadata", paths_fetched, paths_available, paths, truncated}` and `meta.mode = "metadata (no clone, no scanners, …)"`.
+
+- Rate limits: unauthenticated GitHub API is 60 requests/hour, so set `GITHUB_TOKEN`/`GH_TOKEN` (5,000/hour) for regular use. A 403 becomes a note and the verdict is computed from what arrived (`truncated: true`); if nothing was fetched the command exits 1 with the reason instead of inventing a verdict.
+- Cache: per-slug responses live under `$XDG_CACHE_HOME/repobeagle/head` with a TTL (`BEAGLE_HEAD_CACHE_TTL`, default 3600 s); `--no-cache` bypasses it, and a cache hit is stated in the notes.
+- `--markdown` prints the compact card for Slack/Discord/PR comments, and `--json` contains the same fields as a scan report, so a chat bot or unfurl service can consume it directly.
+- Limits: metadata only. Source files, secrets, dependency advisories and the language-aware coverage are not fetched — a GREEN `head` is a triage signal, not a full-repo verdict.
+
 `repobeagle export` converts a stored report to SARIF 2.1.0 (GitHub code scanning, Azure DevOps, VS Code), a Markdown table for a PR comment, or normalized JSON. Every finding carries a stable `partialFingerprints` value and, when suppressed, an explicit SARIF suppression, so accepted findings stay visible but dismissed. The scan workflow uploads it when `upload-sarif: true`.
 Exit code: 0 = GREEN, 1 = YELLOW, 2 = RED. Colour turns off when output isn't a terminal or `NO_COLOR` is set.
 
@@ -441,6 +450,7 @@ The rule-pair check is automatic: `tests/test_rule_fixtures.py` parses the `RULE
 | tests/test_osv.py (missing DB note, freshness policy, corrupt zip, verify warning) | pass |
 | tests/test_packaging.py (console script, wheel data files, packaged rules/version fallback, installer OS support) | pass |
 | tests/test_fix.py (dry-run immutability, action pinning, write-all rewrite, idempotence, re-scan improvement) | pass |
+| tests/test_head.py (local triage, mocked contents API, cache/TTL, token, rate-limit notes, markdown card) | pass |
 | tests/fixtures/control-vuln (`flask==2.0.0`), used by the cached offline-OSV CI/nightly scan | vulnerable dependency from the local DB |
 | tests/test_markdown_snapshot.py (PR-comment snapshot, pipe/newline escaping, suppression, truncation) | pass |
 | tests/test_rule_fixtures.py (positive fixture fires every declared rule; control-clean fires none) | pass |

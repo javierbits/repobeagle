@@ -6,7 +6,7 @@ NEVER executes repository code. Stdlib only (scanners are external binaries).
                   [--json out.json] [--no-docker] [--verify-deps] [--no-osv] [--no-trust]
   repobeagle verify <github-repo> [--branch repobeagle] [--expect-sha SHA]
 """
-import argparse, difflib, hashlib, json, os, platform, re, shutil, subprocess, sys, tempfile, time, unicodedata, zipfile
+import argparse, base64, difflib, hashlib, json, os, platform, re, shutil, subprocess, sys, tempfile, time, unicodedata, zipfile
 import urllib.error, urllib.parse, urllib.request
 from fnmatch import fnmatchcase
 from typing import Any
@@ -4021,6 +4021,222 @@ def osv_db_warning(meta):
             return "report used --offline-vulnerabilities but recorded no database"
     return None
 
+# --- repobeagle head: metadata-only triage (GitHub contents API or a local dir) --------
+HEAD_FILES = ("package.json", "package-lock.json", "pnpm-lock.yaml", "yarn.lock", "requirements.txt",
+              "pyproject.toml", "setup.py", "setup.cfg", "Cargo.toml", "go.mod", "Gemfile", "pom.xml",
+              "SKILL.md", "mcp.json", ".mcp.json", "README.md", "PRIVACY.md", "SECURITY.md", "LICENSE",
+              ".repobeagleignore", ".github/CODEOWNERS", ".github/PULL_REQUEST_TEMPLATE.md")
+HEAD_DIRS = (".github/workflows",)
+HEAD_MAX_BYTES = 400_000
+
+def _head_cache_path(slug):
+    base = Path(os.environ.get("XDG_CACHE_HOME") or (Path(os.environ.get("HOME") or "/tmp") / ".cache"))
+    return base / "repobeagle" / "head" / (slug.replace("/", "_") + ".json")
+
+def _gh_contents(slug, path, token=None, timeout=15):
+    """(object, rate-remaining, error) for one GitHub contents API call; 404 means 'absent', not an error."""
+    api = os.environ.get("GITHUB_API_URL") or "https://api.github.com"
+    headers = {"User-Agent": WEB_UA, "Accept": "application/vnd.github+json"}
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    req = urllib.request.Request(f"{api}/repos/{slug}/contents/{path}", headers=headers)
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            return json.loads(resp.read().decode()), resp.headers.get("X-RateLimit-Remaining"), None
+    except urllib.error.HTTPError as ex:
+        remaining = ex.headers.get("X-RateLimit-Remaining") if ex.headers else None
+        return (None, remaining, None) if ex.code == 404 else (None, remaining, f"HTTP {ex.code}")
+    except Exception as ex:
+        return None, None, type(ex).__name__
+
+def head_collect_local(root):
+    """Metadata subset of a local directory: {relpath: text}, scope dict, notes."""
+    root = Path(root)
+    files: dict[str, str] = {}
+    available = 0
+    for rel in HEAD_FILES:
+        p = root / rel
+        if p.is_file():
+            available += 1
+            try:
+                files[rel] = p.read_text(errors="replace")[:HEAD_MAX_BYTES]
+            except OSError:
+                pass
+    for d in HEAD_DIRS:
+        dd = root / d
+        if dd.is_dir():
+            for p in sorted(dd.glob("*.y*ml")):
+                available += 1
+                rel = p.relative_to(root).as_posix()
+                try:
+                    files[rel] = p.read_text(errors="replace")[:HEAD_MAX_BYTES]
+                except OSError:
+                    pass
+    return files, {"scope": "metadata", "paths_fetched": len(files), "paths_available": available,
+                   "paths": sorted(files), "truncated": False}, []
+
+def head_collect_api(slug, token=None, use_cache=True):
+    """Metadata subset via the GitHub contents API: {relpath: text}, scope dict, notes. Rate limits become notes."""
+    notes: list[str] = []
+    cache = _head_cache_path(slug)
+    try:
+        ttl = int(os.environ.get("BEAGLE_HEAD_CACHE_TTL", "3600"))
+    except ValueError:
+        ttl = 3600
+    if use_cache and ttl > 0:
+        try:
+            cached = json.loads(cache.read_text(encoding="utf-8"))
+            age = time.time() - float(cached.get("ts", 0))
+            if age < ttl and isinstance(cached.get("files"), dict):
+                notes.append(f"served from the per-slug cache ({int(age)}s old, TTL {ttl}s; --no-cache to refresh)")
+                return cached["files"], cached.get("scope") or {}, notes
+        except (OSError, ValueError):
+            pass
+    files: dict[str, str] = {}
+    available = truncated = 0
+    def limit_note():
+        return ("GitHub API rate limited (set GITHUB_TOKEN for 5,000 requests/hour; "
+                "unauthenticated is 60/hour)")
+    rate_hit = False
+    def fetch(path):
+        nonlocal available, rate_hit
+        obj, remaining, err = _gh_contents(slug, path, token)
+        if err:
+            if "403" in err or "429" in err:
+                rate_hit = True
+                if not any("rate limited" in n for n in notes):
+                    notes.append(limit_note())
+            else:
+                notes.append(f"GitHub API: {path}: {err}")
+            return None
+        try:
+            if remaining is not None and int(remaining) <= 0 and not token:
+                rate_hit = True
+                if not any("rate limited" in n for n in notes):
+                    notes.append(limit_note())
+        except ValueError:
+            pass
+        return obj
+    for rel in HEAD_FILES:
+        if rate_hit:
+            truncated = 1
+            break
+        obj = fetch(rel)
+        if isinstance(obj, dict) and obj.get("type") == "file" and obj.get("content"):
+            available += 1
+            content = base64.b64decode(obj["content"])
+            files[rel] = content[:HEAD_MAX_BYTES].decode("utf-8", "replace")
+    for d in HEAD_DIRS:
+        if rate_hit:
+            truncated = 1
+            break
+        obj = fetch(d)
+        if not isinstance(obj, list):
+            continue
+        for entry in obj:
+            if rate_hit:
+                truncated = 1
+                break
+            if entry.get("type") != "file" or not str(entry.get("name", "")).endswith((".yml", ".yaml")):
+                continue
+            obj2 = fetch(str(entry.get("path") or ""))
+            if isinstance(obj2, dict) and obj2.get("content"):
+                available += 1
+                content = base64.b64decode(obj2["content"])
+                files[str(entry["path"])] = content[:HEAD_MAX_BYTES].decode("utf-8", "replace")
+    scope = {"scope": "metadata", "paths_fetched": len(files), "paths_available": max(available, len(files)),
+             "paths": sorted(files), "truncated": bool(truncated)}
+    if files and use_cache and ttl > 0:
+        try:
+            cache.parent.mkdir(parents=True, exist_ok=True)
+            cache.write_text(json.dumps({"ts": time.time(), "scope": scope, "files": files}), encoding="utf-8")
+        except OSError:
+            pass
+    return files, scope, notes
+
+def cmd_head(a):
+    """Fast metadata-only triage (GitHub contents API or a local dir): no clone, no scanners, no repo code executed."""
+    target = a.target
+    profile = "strict" if a.strict else "relaxed" if a.relaxed else "balanced"
+    token = os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN") or ""
+    m = GITHUB_REPO_RE.match(target)
+    slug = f"{m.group(1)}/{m.group(2)}" if m else (target if re.fullmatch(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+", target) else None)
+    work = tempfile.mkdtemp(prefix="repobeagle-head-")
+    _WORKDIRS.add(work)
+    try:
+        if os.path.isdir(target):
+            files, scope, notes = head_collect_local(target)
+            source = "local path (metadata subset)"
+        elif slug:
+            files, scope, notes = head_collect_api(slug, token, use_cache=not a.no_cache)
+            source = "GitHub contents API (no clone)"
+        else:
+            print(f"head: cannot parse a github repo out of {target!r} (use owner/repo, a github URL, or a local dir)",
+                  file=sys.stderr)
+            return 1
+        if not files:
+            print("head: no metadata fetched; " + (notes[-1] if notes else "does the repo exist?"), file=sys.stderr)
+            return 1
+        src = Path(work) / "meta"
+        src.mkdir()
+        for rel, text in files.items():
+            relp = Path(rel)
+            if relp.is_absolute() or ".." in relp.parts:
+                continue
+            dest = src / relp
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            dest.write_text(text, encoding="utf-8")
+        t0 = time.time()
+        try:
+            findings, nfiles = run_agent_checks(src)
+        except Exception as ex:
+            print(f"head: checks failed: {type(ex).__name__}: {ex}", file=sys.stderr)
+            return 1
+        caps = scan_capabilities(src)
+        cov = scan_coverage(src)
+        raw_count = len(findings)
+        findings = collapse(dedupe(findings))
+        for f in findings:
+            f["rule"] = f["title"].split(":")[0].split(" (")[0]
+            rem = remediation_for(f)
+            if rem:
+                f["remediation"] = rem
+        ignored = load_suppressions(src)
+        active, suppressed = apply_suppressions(findings, ignored) if ignored else (findings, [])
+        if suppressed:
+            notes.append(f"suppressed {len(suppressed)} finding(s) via {SUPPRESS_FILE}")
+        v, why, counts = verdict(active, profile, None)
+        summary = privacy_summary(active)
+        meta = {"target": target, "ref": None, "commit": None, "fetched_via": source,
+                "mode": "metadata (no clone, no scanners, no repo code executed)", "profile": profile,
+                "files": nfiles, "seconds": round(time.time() - t0, 1),
+                "tools": {"agent-checks": {"findings": len(active), "seconds": round(time.time() - t0, 1),
+                                           "ok": True, "files": nfiles}},
+                "scope": scope, "capabilities": caps, "coverage": cov, "ruleset": RULESET,
+                "privacy_mode": "full", "pii_redacted": True}
+        if summary:
+            meta["privacy_summary"] = summary
+            meta["privacy_profile"] = privacy_profile(summary)
+        d = {"version": VERSION, "verdict": v, "why": why, "counts": counts, "meta": meta,
+             "privacy_summary": summary, "ai_review": None, "findings": active + suppressed,
+             "raw_findings_count": raw_count, "notes": notes, "recommended_actions": ACTIONS[v]}
+        if a.json:
+            Path(a.json).write_text(json.dumps(d, indent=2))
+            print(f"[repobeagle] JSON written to {a.json}", file=sys.stderr)
+        print(f"[repobeagle] head: {scope['paths_fetched']} metadata file(s) from {source}", file=sys.stderr)
+        for n in notes:
+            print(f"[repobeagle] note: {n}", file=sys.stderr)
+        if a.markdown:
+            sys.stdout.write(markdown_report(d))
+        else:
+            report(meta, active + suppressed, v, why, counts, notes, None,
+                   color_enabled() and not a.no_color, 10**6 if a.all else 40, a.min_severity)
+        return {"GREEN": 0, "YELLOW": 1, "RED": 2}[v]
+    finally:
+        if "work" in locals() and work:
+            shutil.rmtree(work, ignore_errors=True)
+            _WORKDIRS.discard(work)
+
 def cmd_db(a):
     """Status or refresh of the local OSV database. Host-side only; the scan itself stays offline."""
     info = osv_db_info()
@@ -4877,6 +5093,16 @@ def main():
                    help="re-scan the report's pinned commit with this install and compare the normalized findings "
                         "(offline stages; exit 3 when they differ)")
     v.add_argument("--no-color", action="store_true")
+    hd = sp.add_parser("head", help="fast metadata-only triage (GitHub contents API or a local dir): no clone, no scanners")
+    hd.add_argument("target", help="owner/repo, GitHub URL, or local directory")
+    hg = hd.add_mutually_exclusive_group()
+    hg.add_argument("--strict", action="store_true"); hg.add_argument("--relaxed", action="store_true")
+    hd.add_argument("--json", metavar="FILE")
+    hd.add_argument("--markdown", action="store_true", help="print a Markdown card (Slack/Discord/PR comment)")
+    hd.add_argument("--no-cache", action="store_true", help="ignore the per-slug response cache")
+    hd.add_argument("--all", action="store_true")
+    hd.add_argument("--min-severity", choices=list(SEV_ORDER), default="info")
+    hd.add_argument("--no-color", action="store_true")
     fx = sp.add_parser("fix", help="rewrite the mechanical findings in a local checkout (unpinned actions, write-all permissions)")
     fx.add_argument("target", help="local directory to edit (fix never clones; a URL is rejected)")
     fx.add_argument("--dry-run", action="store_true", help="print the unified diff and write nothing")
@@ -4940,6 +5166,8 @@ def main():
         return cmd_scan(a)
     if a.cmd == "verify":
         return cmd_verify(a)
+    if a.cmd == "head":
+        return cmd_head(a)
     if a.cmd == "fix":
         return cmd_fix(a)
     if a.cmd == "explain":
