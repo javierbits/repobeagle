@@ -48,6 +48,13 @@ Requirements: `python3 >= 3.10` plus whichever host tools the scan shells out to
 
 macOS: `install.sh` now detects `Darwin` and installs `gitleaks`/`osv-scanner`/`cosign` with Homebrew instead of downloading Linux binaries (it still uses Docker Desktop when available, which runs the same arm64 image). `pipx install .` is the light path on macOS arm64 and needs no container.
 
+## Personas (`--as`)
+`--as consumer|agent-operator|ci|maintainer` applies a **severity lens** over rule ids before the verdict: the persona's table moves matching findings (globs like `gha-*`) up or down the `info→critical` scale, then the profile thresholds decide the verdict. `repobeagle --list-personas` prints each lens, what it cares about and its deltas. It works on `scan`, `head`, `gate` and `batch` (`meta.persona` records it and the human report prints `persona: …`).
+
+The four lenses: **consumer** (running it on my machine: install payloads and secrets up, CI/dev rules down, telemetry up), **agent-operator** (hidden markdown instructions, invisible text, MCP/tool permissions up), **ci** (workflow shell, install hooks, unpinned bases, dependency confusion up) and **maintainer** (telemetry/privacy noise down, structural findings unchanged). Example: `trap-gha` is YELLOW by default and RED with `--as ci`; `trap-skill` is RED for `--as agent-operator`; `trap-telemetry` stays YELLOW under `--as maintainer`.
+
+Persona and profile are deliberately different dimensions — a persona changes rule severities, the profile changes the verdict thresholds; an explicit `.repobeagle.yml` rule override wins over a persona delta (config is applied last), and an unknown persona/rule id is an error. Combining `--as` with a profile is supported and documented; there is no silent "strongest wins".
+
 ## Per-repository policy (`.repobeagle.yml`)
 A repository can declare its policy next to its code. `scan` and the metadata `head` path read `.repobeagle.yml` from the scanned tree, validate it before doing work, and record what was applied in `meta.config`:
 ```yaml
@@ -72,16 +79,16 @@ custom_checks:           # regex checks that emit file:line findings with the co
 ```bash
 repobeagle scan <git-url | local-dir> [--ref <branch|tag|sha>] [--since <rev>] [--strict|--balanced|--relaxed] [--keep] [--json out.json]
                 [--no-docker] [--no-osv] [--offline-vulnerabilities] [--verify-deps] [--all] [--min-severity info|low|medium|high|critical] [--no-color]
-                [--no-cache]
+                [--no-cache] [--as consumer|agent-operator|ci|maintainer]
                 [--baseline old.json [--baseline-min-severity medium]] [--privacy-only | --no-privacy] [--no-redact]
                 [--html out.html] [--sbom sbom.json] [--max-seconds SECONDS] [--jobs N]
 repobeagle privacy <git-url | local-dir> [same scan options]
 repobeagle explain <report.json> [--accept RULE...] [--target green|yellow] [--write [--ignore-file FILE] [--reason TEXT]]
 repobeagle diff <old.json> <new.json> [--min-severity medium] [--json out.json]
 repobeagle fix <local-dir> [--dry-run] [--pins FILE] [--no-network] [--json out.json]
-repobeagle head <owner/repo | github-url | local-dir> [--strict|--relaxed] [--json out.json] [--markdown] [--no-cache]
-repobeagle gate <entries-file> [--baseline old.json] [--json out.json] [--markdown] [--jobs N] [--report-only] [--strict|--relaxed]
-repobeagle batch <targets-file> [--jobs N] [--json DIR] [--strict|--relaxed] [scan offline flags]
+repobeagle head <owner/repo | github-url | local-dir> [--strict|--relaxed] [--json out.json] [--markdown] [--no-cache] [--as PERSONA]
+repobeagle gate <entries-file> [--baseline old.json] [--json out.json] [--markdown] [--jobs N] [--report-only] [--strict|--relaxed] [--as PERSONA]
+repobeagle batch <targets-file> [--jobs N] [--json DIR] [--strict|--relaxed] [--as PERSONA] [scan offline flags]
 repobeagle ignore [RULE [--reason TEXT] [--until YYYY-MM-DD]] [--file FILE] [--list] [--report r.json] [--json out.json]
 repobeagle init [dir] [--profile strict|balanced|relaxed] [--badge-branch BRANCH] [--repo OWNER/NAME] [--tools-ref REF] [--dry-run] [--force]
 repobeagle export <report.json> [--format sarif|markdown|html|json] [-o out]
@@ -91,6 +98,7 @@ repobeagle web <http(s):// | file://> [--assets N] [--json out.json]
 repobeagle mcp
 repobeagle db [--update] [dir]
 repobeagle --version | version
+repobeagle --list-personas
 repobeagle update [--check]
 ```
 `repobeagle explain` takes a report produced by `scan --json` and prints the threshold arithmetic behind its verdict — which profile threshold was met, the margin to the next tier, and the largest rule contributors. It never re-scans and touches no network, so it works on a report someone shared with you.

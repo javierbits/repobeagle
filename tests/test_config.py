@@ -161,6 +161,19 @@ def test_cache_ignores_stale_policy():
     print("PASS changing the policy invalidates the analysis cache")
 
 
+def test_rule_registry_covers_rule_ids():
+    known = rb.known_rule_ids()
+    fired: set[str] = set()
+    for fixture in ("trap-gha", "trap-skill", "trap-markdown", "trap-build", "trap-telemetry",
+                    "trap-supply", "trap-privacy", "config-policy"):
+        doc, _ = scan(ROOT / "tests" / "fixtures" / fixture)
+        assert doc is not None, fixture
+        fired |= {f["rule"] for f in doc["findings"]}
+    missing = sorted(fired - known)
+    assert not missing, f"config validation would reject these real rule ids: {missing}"
+    print(f"PASS rule registry covers all {len(fired)} rule ids fired by the fixtures")
+
+
 def test_head_validates_config():
     with tempfile.TemporaryDirectory() as td:
         Path(td, "package.json").write_text('{"name": "x", "version": "1.0.0"}', encoding="utf-8")
@@ -182,5 +195,6 @@ if __name__ == "__main__":
     test_profile_precedence_and_json_config()
     test_host_allowlist_and_custom_checks()
     test_cache_ignores_stale_policy()
+    test_rule_registry_covers_rule_ids()
     test_head_validates_config()
     print("config tests passed")
