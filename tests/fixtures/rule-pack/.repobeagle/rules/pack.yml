@@ -1,0 +1,20 @@
+version: 1
+rules:
+  - id: no-console-log
+    paths: ["src/**/*.js"]
+    regex: '^\s*console\.log\('
+    severity: low
+    meaning: "console.log left in shipped code"
+    remediation: "use the project logger"
+    fixtures:
+      positive: ["console.log('x')", "  console.log(1)"]
+      negative: ["logger.info('x')", "// console.log('x')"]
+  - id: no-todo-fix
+    paths: ["src/**/*.js", "lib/*.js"]
+    regex: '\bTODO\(fix\)'
+    severity: medium
+    meaning: "TODO(fix) marker left in code"
+    remediation: "resolve or re-file the TODO"
+    fixtures:
+      positive: ["// TODO(fix) handle retries"]
+      negative: ["// TODO: later"]

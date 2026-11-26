@@ -48,6 +48,26 @@ Requirements: `python3 >= 3.10` plus whichever host tools the scan shells out to
 
 macOS: `install.sh` now detects `Darwin` and installs `gitleaks`/`osv-scanner`/`cosign` with Homebrew instead of downloading Linux binaries (it still uses Docker Desktop when available, which runs the same arm64 image). `pipx install .` is the light path on macOS arm64 and needs no container.
 
+## Rule packs (`.repobeagle/rules/*.yml`)
+Teams can ship regex rules without editing the scanner. A pack is a versioned file, loaded automatically from the scanned tree (and fetched on the metadata `head` path), whose rules compile into the same finding shape as the built-in checks:
+```yaml
+version: 1
+rules:
+  - id: no-console-log          # reported as the rule id
+    paths: ["src/**/*.js"]       # globs, relative to the repo root
+    regex: '^\s*console\.log\('  # per-line regex; must be anchored with ^ or \b
+    severity: low
+    meaning: "console.log left in shipped code"
+    remediation: "use the project logger"
+    fixtures:                     # required: at least one of each
+      positive: ["console.log('x')"]
+      negative: ["logger.info('x')"]
+```
+- `repobeagle rules lint <pack-or-dir>` validates schema/version, unique ids, severity, paths, meaning/remediation, regex compilation, **anchoring** (`^`/`\b`: the scanner matches line by line, never a whole-file search) and **catastrophic backtracking** (nested quantifiers like `(a+)+`). Any error exits 1; nothing is skipped silently.
+- `repobeagle rules test <pack-or-dir>` lints first, then places each fixture in a matching path, runs the rule pipeline and requires every positive fixture to fire the exact rule id and every negative not to. CI uses the same command for contributed packs.
+- Scan integration: findings carry `tool: "rules"`, the configured severity/meaning and the `remediation`; matches are capped at 20 per rule with a summary finding; `meta.rule_packs` records the files and rule count. An invalid pack aborts the scan (exit 1) and an explicit `.repobeagle.yml` rule override or persona delta applies to pack ids like any other.
+- Packs are additive and regex-only: they cannot express context-sensitive logic, and an id that collides with a built-in rule simply shares the suppression/override namespace.
+
 ## Personas (`--as`)
 `--as consumer|agent-operator|ci|maintainer` applies a **severity lens** over rule ids before the verdict: the persona's table moves matching findings (globs like `gha-*`) up or down the `info→critical` scale, then the profile thresholds decide the verdict. `repobeagle --list-personas` prints each lens, what it cares about and its deltas. It works on `scan`, `head`, `gate` and `batch` (`meta.persona` records it and the human report prints `persona: …`).
 
@@ -93,6 +113,7 @@ repobeagle ignore [RULE [--reason TEXT] [--until YYYY-MM-DD]] [--file FILE] [--l
 repobeagle init [dir] [--profile strict|balanced|relaxed] [--badge-branch BRANCH] [--repo OWNER/NAME] [--tools-ref REF] [--dry-run] [--force]
 repobeagle export <report.json> [--format sarif|markdown|html|json] [-o out]
 repobeagle feedback <report.json> (--false-positive|--miss) [--rule RULE] [--file FILE[:LINE]] [--attach] [--no-open] [--repo OWNER/NAME]
+repobeagle rules lint|test <pack-file-or-dir>...
 repobeagle map <git-url | local-dir | --report r.json> [--strict|--relaxed] [--network]
 repobeagle web <http(s):// | file://> [--assets N] [--json out.json]
 repobeagle mcp

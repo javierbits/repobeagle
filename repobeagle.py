@@ -1331,6 +1331,210 @@ def print_personas():
     print("\n`--as <persona>` only re-grades findings; the profile still sets the verdict thresholds. "
           "Explicit .repobeagle.yml rule overrides win.")
 
+RULE_PACK_VERSION = 1
+RULE_PACK_MAX_MATCHES = 20
+PACK_UNANCHORED = re.compile(r"^(?:\(\?[a-zA-Z]+\))*")
+PACK_NESTED_QUANT = re.compile(r"\((?:\\\\.|[^()])*?[+*{][^()]*?\)[+*{]")
+
+def parse_rule_pack(path):
+    """(pack, errors) for a `.repobeagle/rules` pack; YAML subset or JSON. Never raises on content errors."""
+    path = Path(path)
+    try:
+        text = path.read_text(encoding="utf-8")
+    except OSError as ex:
+        return None, [f"{path}: cannot read: {ex}"]
+    try:
+        doc = json.loads(text)
+    except ValueError:
+        try:
+            doc = parse_yaml_subset(text)
+        except ValueError as ex:
+            return None, [f"{path}: {ex}"]
+    errors: list[str] = []
+    where = str(path)
+    if not isinstance(doc, dict):
+        return None, [f"{where}: top level must be a mapping with `version` and `rules`"]
+    version = doc.get("version")
+    try:
+        version_num = int(version) if version is not None else None
+    except (TypeError, ValueError):
+        version_num = None
+    if version_num != RULE_PACK_VERSION:
+        errors.append(f"{where}: version must be {RULE_PACK_VERSION} (got {version!r})")
+    rules = doc.get("rules")
+    if not isinstance(rules, list) or not rules:
+        errors.append(f"{where}: `rules` must be a non-empty list")
+        rules = []
+    seen: set[str] = set()
+    compiled_rules = []
+    for idx, rule in enumerate(rules, 1):
+        if not isinstance(rule, dict):
+            errors.append(f"{where}: rules[{idx}] must be a mapping")
+            continue
+        rid = rule.get("id")
+        if not isinstance(rid, str) or not re.fullmatch(r"[a-z][a-z0-9-]{2,}", rid or ""):
+            errors.append(f"{where}: rules[{idx}].id must match [a-z][a-z0-9-]{{2,}}")
+            continue
+        rw = f"{where}: rule {rid!r}"
+        if rid in seen:
+            errors.append(f"{rw}: duplicate id")
+        seen.add(rid)
+        paths = rule.get("paths")
+        if isinstance(paths, str):
+            paths = [paths]
+        if not isinstance(paths, list) or not paths or not all(isinstance(x, str) and x.strip() for x in paths):
+            errors.append(f"{rw}.paths must be a non-empty list of globs")
+            paths = []
+        pattern = rule.get("regex")
+        compiled = None
+        if not isinstance(pattern, str) or not pattern:
+            errors.append(f"{rw}.regex must be a non-empty regex")
+        else:
+            stripped = PACK_UNANCHORED.sub("", pattern)
+            if stripped and not stripped.startswith(("^", "\\b")):
+                errors.append(f"{rw}.regex is unanchored: start it with ^ (per line) or \b")
+            if PACK_NESTED_QUANT.search(pattern):
+                errors.append(f"{rw}.regex has nested quantifiers (catastrophic backtracking risk), e.g. (a+)+")
+            try:
+                compiled = re.compile(pattern)
+            except re.error as ex:
+                errors.append(f"{rw}.regex does not compile: {ex}")
+        severity = rule.get("severity")
+        if severity not in SEV_ORDER:
+            errors.append(f"{rw}.severity must be one of {', '.join(SEV_ORDER)}")
+        meaning = rule.get("meaning")
+        if not isinstance(meaning, str) or not meaning.strip():
+            errors.append(f"{rw}.meaning must be a one-sentence reason")
+        remediation = rule.get("remediation")
+        if not isinstance(remediation, str) or not remediation.strip():
+            errors.append(f"{rw}.remediation must name the fix")
+        fixtures = rule.get("fixtures")
+        if not isinstance(fixtures, dict):
+            errors.append(f"{rw}.fixtures must map `positive` and `negative` to fixture strings")
+            fixtures = {}
+        for kind in ("positive", "negative"):
+            values = fixtures.get(kind)
+            if not isinstance(values, list) or not values or not all(isinstance(v, str) and v for v in values):
+                errors.append(f"{rw}.fixtures.{kind} must be a non-empty list of fixture strings")
+        compiled_rules.append({"id": rid, "paths": paths or [], "pattern": pattern or "", "_compiled": compiled,
+                               "severity": severity, "meaning": (meaning or "").strip() if isinstance(meaning, str) else "",
+                               "remediation": (remediation or "").strip() if isinstance(remediation, str) else "",
+                               "fixtures": {k: fixtures.get(k) or [] for k in ("positive", "negative")}})
+    return {"path": str(path), "version": doc.get("version"), "rules": compiled_rules}, errors
+
+def _pack_fixture_path(glob, index):
+    """A concrete path matching `glob` (used to place synthetic fixtures for `rules test`)."""
+    path = glob.replace("**/", "").replace("**", "")
+    if "*" in path:
+        path = path.replace("*", "fixture", 1)
+    if not Path(path).suffix:
+        path = path.rstrip("/") + f"/fixture{index}.txt"
+    return path.lstrip("/") or f"fixture{index}.txt"
+
+def run_rule_packs(root, packs):
+    """Findings from compiled rule packs: same finding() shape, capped per rule with a summary."""
+    findings: list[dict] = []
+    root = Path(root)
+    for pack in packs:
+        for rule in pack["rules"]:
+            matched = 0
+            for glob in rule["paths"]:
+                for p in sorted(root.glob(glob)):
+                    if not p.is_file():
+                        continue
+                    text = read_text(p)
+                    if not text:
+                        continue
+                    for lineno, line in enumerate(text.splitlines(), 1):
+                        if not rule["_compiled"].search(line):
+                            continue
+                        matched += 1
+                        if matched <= RULE_PACK_MAX_MATCHES:
+                            f = finding("rules", rule["severity"], rel(root, p), lineno,
+                                        f"{rule['id']}: {rule['meaning']}", line.strip()[:200], rule["meaning"])
+                            if rule["remediation"]:
+                                f["remediation"] = rule["remediation"]
+                            findings.append(f)
+            if matched > RULE_PACK_MAX_MATCHES:
+                findings.append(finding("rules", rule["severity"], "(repo)", 0,
+                                         f"{rule['id']}: matched {matched - RULE_PACK_MAX_MATCHES} more line(s)",
+                                         f"{matched} matches total",
+                                         "Only the first matches per rule are shown; narrow the paths or regex."))
+    return findings
+
+def load_rule_packs(root):
+    """Compiled packs from `<root>/.repobeagle/rules/*.yml|*.yaml`; ConfigError on any invalid pack."""
+    base = Path(root) / ".repobeagle" / "rules"
+    if not base.is_dir():
+        return []
+    packs = []
+    for p in sorted(list(base.glob("*.yml")) + list(base.glob("*.yaml"))):
+        pack, errors = parse_rule_pack(p)
+        if errors:
+            raise ConfigError("; ".join(errors))
+        if pack:
+            packs.append(pack)
+    return packs
+
+def rules_lint(paths):
+    """Lint pack files; (files, rules, errors)."""
+    files, rule_count, errors = [], 0, []
+    for raw in paths:
+        base = Path(raw)
+        candidates = sorted(list(base.rglob("*.yml")) + list(base.rglob("*.yaml"))) if base.is_dir() else [base]
+        for p in candidates:
+            files.append(p)
+            pack, errs = parse_rule_pack(p)
+            if errs:
+                errors += errs
+            elif pack:
+                rule_count += len(pack["rules"])
+    return files, rule_count, errors
+
+def cmd_rules(a):
+    """`rules lint|test`: validate rule packs and run their positive/negative fixtures."""
+    files, rule_count, errors = rules_lint(a.path)
+    if not files:
+        print(f"rules {a.rules_cmd}: no pack files found in {', '.join(a.path)}", file=sys.stderr)
+        return 1
+    if errors:
+        for e in errors:
+            print(f"rules lint: {e}", file=sys.stderr)
+        print(f"rules lint: {len(errors)} error(s) in {len(files)} file(s)", file=sys.stderr)
+        return 1
+    print(f"PASS rules lint: {len(files)} pack file(s), {rule_count} rule(s)")
+    if a.rules_cmd == "lint":
+        return 0
+    failures = 0
+    for p in files:
+        pack, _ = parse_rule_pack(p)
+        for rule in (pack or {}).get("rules") or []:
+            for kind in ("positive", "negative"):
+                for i, text in enumerate(rule["fixtures"][kind]):
+                    with tempfile.TemporaryDirectory() as td:
+                        target = Path(td) / _pack_fixture_path(rule["paths"][0], i)
+                        try:
+                            target.parent.mkdir(parents=True, exist_ok=True)
+                            target.write_text(text if text.endswith("\n") else text + "\n", encoding="utf-8")
+                        except OSError as ex:
+                            print(f"FAIL {rule['id']} {kind}[{i}]: cannot write fixture: {ex}", file=sys.stderr)
+                            failures += 1
+                            continue
+                        got = {_explain_rule(f) for f in run_rule_packs(td, [pack])}
+                        fired = rule["id"] in got
+                        ok = fired if kind == "positive" else not fired
+                        if not ok:
+                            failures += 1
+                            why = "did not fire" if kind == "positive" else "fired"
+                            print(f"FAIL {rule['id']} {kind}[{i}]: {why} on {text!r}", file=sys.stderr)
+                        else:
+                            print(f"PASS {rule['id']} {kind}[{i}]")
+    if failures:
+        print(f"rules test: {failures} fixture failure(s)", file=sys.stderr)
+        return 1
+    print("PASS rules test: every positive fixture fired its rule id and no negative did")
+    return 0
+
 CONFIG_FILE = ".repobeagle.yml"
 
 class ConfigError(Exception):
@@ -5190,7 +5394,7 @@ HEAD_FILES = ("package.json", "package-lock.json", "pnpm-lock.yaml", "yarn.lock"
               "pyproject.toml", "setup.py", "setup.cfg", "Cargo.toml", "go.mod", "Gemfile", "pom.xml",
               "SKILL.md", "mcp.json", ".mcp.json", "README.md", "PRIVACY.md", "SECURITY.md", "LICENSE",
               ".repobeagleignore", ".repobeagle.yml", ".github/CODEOWNERS", ".github/PULL_REQUEST_TEMPLATE.md")
-HEAD_DIRS = (".github/workflows",)
+HEAD_DIRS = (".github/workflows", ".repobeagle/rules")
 HEAD_MAX_BYTES = 400_000
 
 def _head_cache_path(slug):
@@ -5372,6 +5576,12 @@ def head_report(target, profile="balanced", token="", use_cache=True, profile_de
             rem = remediation_for(f)
             if rem:
                 f["remediation"] = rem
+        try:
+            packs = load_rule_packs(src)
+        except ConfigError as ex:
+            raise HeadError(str(ex))
+        if packs:
+            findings += run_rule_packs(src, packs)
         if persona:
             moved = apply_persona(findings, persona)
             notes.append(f"persona {persona}: {moved} finding(s) re-graded by rule severities")
@@ -5405,6 +5615,9 @@ def head_report(target, profile="balanced", token="", use_cache=True, profile_de
         if persona:
             meta["persona"] = {"name": persona, "label": PERSONAS[persona]["label"],
                                "deltas": [{"match": pat, "delta": d} for pat, d in PERSONAS[persona]["deltas"]]}
+        if packs:
+            meta["rule_packs"] = {"files": [p["path"] for p in packs],
+                                  "rules": sum(len(p["rules"]) for p in packs)}
         if repo_config:
             meta["config"] = {"path": CONFIG_FILE, "profile": repo_config.get("profile"),
                               "rules": repo_config["rules"], "hosts": repo_config["hosts"],
@@ -6378,6 +6591,16 @@ def cmd_scan(a):
             findings += custom
             notes.append(f"config: {len(repo_config['custom_checks'])} custom check(s) ran, "
                          f"{len(custom)} finding(s)")
+        try:
+            packs = load_rule_packs(src)
+        except ConfigError as ex:
+            print(f"scan: {ex}", file=sys.stderr)
+            return 1
+        if packs:
+            pack_findings = run_rule_packs(src, packs)
+            findings += pack_findings
+            notes.append(f"rules: {sum(len(pack['rules']) for pack in packs)} pack rule(s) from "
+                         f"{len(packs)} file(s) ran, {len(pack_findings)} finding(s)")
         sk = Path(work) / "skipped.json"
         if sk.exists():
             for n in json.loads(sk.read_text()):
@@ -6484,6 +6707,9 @@ def cmd_scan(a):
                 "tools": tools, "suppressed": len(suppressed), "suppressions": suppression_meta(entries),
                 "pii_redacted": not a.no_redact, "privacy_mode": privacy_mode, "ruleset": RULESET,
                 "complete": complete, "cache": cache_state}
+        if packs:
+            meta["rule_packs"] = {"files": [p["path"] for p in packs],
+                                  "rules": sum(len(p["rules"]) for p in packs)}
         if getattr(a, "as_persona", None):
             meta["persona"] = {"name": a.as_persona, "label": PERSONAS[a.as_persona]["label"],
                                "deltas": [{"match": pat, "delta": d} for pat, d in PERSONAS[a.as_persona]["deltas"]]}
@@ -7088,6 +7314,12 @@ def main():
     dbp.add_argument("--update", action="store_true", help="download/refresh the database (needs network)")
     ap.add_argument("-V", "--version", action="store_true", help="print the installed version and image tag")
     sp.add_parser("version")
+    ru = sp.add_parser("rules", help="lint .repobeagle/rules packs and run their positive/negative fixtures")
+    rsub = ru.add_subparsers(dest="rules_cmd", required=True)
+    for cmd_name, hlp in (("lint", "validate the pack schema, regex anchoring and backtracking safety"),
+                          ("test", "run every rule's positive fixtures (must fire) and negative fixtures (must not)")):
+        rcmd = rsub.add_parser(cmd_name, help=hlp)
+        rcmd.add_argument("path", nargs="+", help="pack file(s) or directories to search for *.yml/*.yaml")
     ba = sp.add_parser("batch", help="full-scan every target in a listing, one report each, in parallel")
     ba.add_argument("targets", help="targets file: one git URL, owner/repo or local dir per line (# comments) or JSON")
     ba.add_argument("--jobs", type=int, default=4, metavar="N", help="targets scanned concurrently (default 4)")
@@ -7139,6 +7371,8 @@ def main():
         return cmd_gate(a)
     if a.cmd == "batch":
         return cmd_batch(a)
+    if a.cmd == "rules":
+        return cmd_rules(a)
     if a.cmd == "ignore":
         return cmd_ignore(a)
     if a.cmd == "init":
