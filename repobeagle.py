@@ -2934,6 +2934,203 @@ def inner(src, out, deadline=None):
 # ----------------------------------------------------------------------------
 # Host-side: OSV (needs network) + guarddog verify (needs network)
 # ----------------------------------------------------------------------------
+# --- Dependency attribution: why a vulnerable package is in the tree ----------------
+DEP_GRAPH_MAX_NODES = 20000
+PIP_PIN_RE = re.compile(r"^([A-Za-z0-9][A-Za-z0-9._-]*)(?:\[[^\]]*\])?\s*==\s*([^\s;#]+)")
+
+def _dep_norm(name):
+    return re.sub(r"[-_.]+", "-", name).lower()
+
+def _npm_dep_graph(data):
+    """(nodes, edges, direct) from package-lock.json v2/v3 (`packages`) or v1 (`dependencies` tree)."""
+    nodes: dict[str, str] = {}
+    edges: dict[str, set[str]] = {}
+    direct: set[str] = set()
+
+    def add(name, version):
+        if name and len(nodes) < DEP_GRAPH_MAX_NODES:
+            nodes.setdefault(name, version)
+
+    def edge(parent, child):
+        if parent and child and parent != child:
+            edges.setdefault(parent, set()).add(child)
+
+    pkgs = data.get("packages") or {}
+    if isinstance(pkgs, dict):
+        for key, meta in pkgs.items():
+            if not isinstance(meta, dict):
+                continue
+            name = str(meta.get("name") or str(key).split("node_modules/")[-1])
+            if not key:                                  # the project itself
+                direct |= {str(d) for d in (meta.get("dependencies") or {})}
+                continue
+            add(name, str(meta.get("version") or ""))
+            for dep in (meta.get("dependencies") or {}):
+                edge(name, str(dep))
+            for dep in (meta.get("optionalDependencies") or {}):
+                edge(name, str(dep))
+    deps = data.get("dependencies") or {}
+    if isinstance(deps, dict):
+        direct |= {str(d) for d in deps}
+        stack = list(deps.items())
+        while stack and len(nodes) < DEP_GRAPH_MAX_NODES:
+            parent, meta = stack.pop()
+            if not isinstance(meta, dict):
+                continue
+            add(str(parent), str(meta.get("version") or ""))
+            children = meta.get("requires") or meta.get("dependencies") or {}
+            if isinstance(children, dict):
+                for child in children:
+                    edge(str(parent), str(child))
+                    stack.append((str(child), children[child]))
+    return nodes, edges, direct
+
+def _pip_dep_graph(text):
+    """(nodes, edges, direct) from a pip-compile file (`# via` comments) or plain pinned requirements."""
+    entries: list[dict[str, Any]] = []
+    cur: dict[str, Any] | None = None
+    via_mode = False
+    for line in text.splitlines():
+        m = PIP_PIN_RE.match(line)
+        if m:
+            cur = {"name": m.group(1), "version": m.group(2), "via": []}
+            entries.append(cur)
+            via_mode = False
+            continue
+        stripped = line.strip()
+        if cur is None or not stripped.startswith("#"):
+            via_mode = False
+            continue
+        if "via" not in stripped.lower():
+            if via_mode:
+                token = re.sub(r"\s*\(.*\)$", "", stripped.lstrip("#").strip())
+                if token:
+                    cur["via"].append(token)
+            continue
+        rest = re.split(r"(?i)\bvia\b", stripped, maxsplit=1)[1].strip()
+        if rest:
+            cur["via"].append(rest)
+            via_mode = False
+        else:
+            via_mode = True
+    nodes = {e["name"]: e["version"] for e in entries}
+    edges: dict[str, set[str]] = {}
+    direct: set[str] = set()
+    by_norm = {_dep_norm(n): n for n in nodes}
+    for e in entries:
+        for token in e["via"]:
+            if token.startswith(("-r", "-c")):
+                direct.add(e["name"])
+                continue
+            parent = by_norm.get(_dep_norm(token.split()[0]))
+            if parent:
+                edges.setdefault(parent, set()).add(e["name"])
+    if not any(e["via"] for e in entries):
+        direct = set(nodes)                          # plain requirements: everything is a direct pin
+    return nodes, edges, direct
+
+def _cargo_direct_names(root):
+    try:
+        text = (Path(root) / "Cargo.toml").read_text(errors="replace")
+    except OSError:
+        return set()
+    names: set[str] = set()
+    section = ""
+    for line in text.splitlines():
+        s = line.strip()
+        if s.startswith("[") and s.endswith("]"):
+            section = s.lower()
+            continue
+        if section in ("[dependencies]", "[dev-dependencies]", "[build-dependencies]") and "=" in s:
+            names.add(s.split("=", 1)[0].strip().strip('"'))
+    return {n for n in names if n}
+
+def dependency_graph(src):
+    """Lockfile dependency graph: {edges, nodes, direct, source, note}. Never network; deterministic.
+
+    Edges exist only where a lockfile carries them (npm v2/v3, pip-compile `# via`). Cargo.lock has
+    none, so cargo attribution falls back to the direct names in Cargo.toml and says so for the rest.
+    """
+    root = Path(src)
+    for p in iter_files(root):
+        if p.name == "package-lock.json":
+            try:
+                data = json.loads(read_text(p) or "")
+            except ValueError:
+                continue
+            nodes, edges, direct = _npm_dep_graph(data)
+            if nodes:
+                name = str(data.get("name") or "app")
+                edges.setdefault(name, set()).update(direct)      # project -> its direct dependencies
+                return {"nodes": nodes, "edges": {k: sorted(v) for k, v in edges.items()},
+                        "direct": sorted(direct), "root": name, "source": rel(root, p),
+                        "note": None}
+    for p in iter_files(root):
+        if p.name.startswith("requirements") and p.name.endswith(".txt"):
+            nodes, edges, direct = _pip_dep_graph(read_text(p) or "")
+            if nodes:
+                edges.setdefault("app", set()).update(direct)
+                return {"nodes": nodes, "edges": {k: sorted(v) for k, v in edges.items()},
+                        "direct": sorted(direct), "root": "app", "source": rel(root, p),
+                        "note": None if any(edges) else "no dependency edges in this requirements file"}
+    for p in iter_files(root):
+        if p.name == "Cargo.lock":
+            direct = _cargo_direct_names(root)
+            return {"nodes": {}, "edges": {}, "direct": sorted(direct), "root": "app",
+                    "source": rel(root, p),
+                    "note": "Cargo.lock carries no dependency edges; only Cargo.toml direct dependencies are attributed"}
+    return {"nodes": {}, "edges": {}, "direct": [], "root": "app", "source": None,
+            "note": "no lockfile with dependency edges found"}
+
+def dependency_attribution(graph, name):
+    """(path, note): shortest root->package path through the lockfile edges, or (None, why)."""
+    roots = [graph["root"]] if graph.get("root") else []
+    edges = graph.get("edges") or {}
+    nodes = graph.get("nodes") or {}
+    if name in nodes or name in graph.get("direct", []):
+        target = name
+    else:
+        norm = {_dep_norm(n): n for n in list(nodes) + list(graph.get("direct") or [])}
+        target = norm.get(_dep_norm(name), name)
+    if target in graph.get("direct", []):
+        return [graph.get("root") or "app", target], ""
+    seen = set()
+    queue = [[r, [r]] for r in roots]
+    while queue:
+        node, path = queue.pop(0)
+        if node == target:
+            return path, ""
+        if node in seen:
+            continue
+        seen.add(node)
+        for child in edges.get(node, []):
+            if child not in seen:
+                queue.append([child, path + [child]])
+    if target in nodes and not edges:
+        return None, graph.get("note") or "no dependency edges in the lockfile"
+    if target in nodes:
+        return None, "package is in the lockfile but not reachable from the project's direct dependencies"
+    return None, graph.get("note") or "package not found in the lockfile graph"
+
+def attach_dependency_paths(src, findings):
+    """Add dependency_path/dependency_depth/dependency_source (or a dependency_note) to OSV findings."""
+    graph = dependency_graph(src)
+    for f in findings:
+        if f.get("tool") != "osv-scanner":
+            continue
+        m = re.search(r": (\S+)@([^\s]+)$", str(f.get("title") or ""))
+        if not m:
+            continue
+        path, note = dependency_attribution(graph, m.group(1))
+        if path:
+            f["dependency_path"] = path
+            f["dependency_depth"] = len(path) - 1
+            f["dependency_source"] = graph.get("source")
+        else:
+            f["dependency_depth"] = None
+            f["dependency_note"] = note
+    return graph
+
 def scan_osv(src, offline=False):
     argv = ["osv-scanner", "scan", "source", "-r", "--format", "json"]
     if offline:
@@ -2970,7 +3167,12 @@ def scan_osv(src, offline=False):
             ids = ", ".join(sorted({v["id"] for v in vulns})[:4])
             fs.append(finding("osv-scanner", sev, f, 0, f"{'MALICIOUS package' if mal else 'Vulnerable dependency'}: {p['name']}@{p.get('version')}",
                               ids, f"{len(vulns)} known advisories" + (" incl. OSV malicious-package report" if mal else "") + (f" (max CVSS {maxsev})" if maxsev else "")))
-    return fs, None
+    try:
+        graph = attach_dependency_paths(src, fs)
+        note = graph.get("note") if not any(f.get("dependency_path") for f in fs) else None
+    except Exception as ex:
+        note = f"dependency attribution failed: {type(ex).__name__}: {ex}"
+    return fs, note
 
 def verify_deps(src):
     fs, notes = [], []
@@ -5041,6 +5243,10 @@ def report(meta, findings, v, why, counts, notes, ai, use_color, maxn=40, min_se
         if f["snippet"]: print(f"           > {f['snippet'][:140]}")
         if f["meaning"]: print(f"           {C('2', f['meaning'][:200])}")
         if f.get("remediation"): print(f"           {C('2', 'fix: ' + f['remediation'][:180])}")
+        if f.get("dependency_path"):
+            print(f"           {C('2', 'via: ' + ' → '.join(f['dependency_path']))}")
+        elif f.get("dependency_note"):
+            print(f"           {C('2', 'via: ' + f['dependency_note'])}")
     if len(fs) > maxn: print(f"  ... {len(fs) - maxn} more (use --json or --all)")
     print(C("1", "\nRecommended actions:"))
     for a in ACTIONS[v]: print(f"  - {a}")
