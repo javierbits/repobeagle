@@ -1,0 +1,3 @@
+# Self-test for the reusable gate workflow: everything here must stay non-RED.
+tests/fixtures/control-clean
+tests/fixtures/gate/stub

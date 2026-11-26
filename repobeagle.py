@@ -7,6 +7,7 @@ NEVER executes repository code. Stdlib only (scanners are external binaries).
                   [--html out.html] [--sbom sbom.json]
   repobeagle verify <github-repo> [--branch repobeagle] [--expect-sha SHA]
   repobeagle feedback <report.json> (--false-positive|--miss) [--rule RULE] [--file FILE[:LINE]] [--attach] [--no-open]
+  repobeagle gate <entries-file> [--baseline old.json] [--json out.json] [--markdown] [--jobs N] [--report-only]
 """
 import argparse, base64, difflib, hashlib, json, os, platform, re, shutil, subprocess, sys, tempfile, time, unicodedata, uuid, zipfile
 import urllib.error, urllib.parse, urllib.request
@@ -4340,29 +4341,28 @@ def head_collect_api(slug, token=None, use_cache=True):
             pass
     return files, scope, notes
 
-def cmd_head(a):
-    """Fast metadata-only triage (GitHub contents API or a local dir): no clone, no scanners, no repo code executed."""
-    target = a.target
-    profile = "strict" if a.strict else "relaxed" if a.relaxed else "balanced"
-    token = os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN") or ""
+class HeadError(Exception):
+    """A head/gate target could not produce a report (bad target, no metadata, checks failure)."""
+
+def head_report(target, profile="balanced", token="", use_cache=True):
+    """Metadata-only report for one target (GitHub contents API or a local dir). No clone, no scanners, no repo code."""
     m = GITHUB_REPO_RE.match(target)
     slug = f"{m.group(1)}/{m.group(2)}" if m else (target if re.fullmatch(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+", target) else None)
+    if not os.path.isdir(target) and not slug:
+        raise HeadError(f"cannot parse a github repo out of {target!r} (use owner/repo, a github URL, or a local dir)")
     work = tempfile.mkdtemp(prefix="repobeagle-head-")
     _WORKDIRS.add(work)
     try:
         if os.path.isdir(target):
             files, scope, notes = head_collect_local(target)
             source = "local path (metadata subset)"
-        elif slug:
-            files, scope, notes = head_collect_api(slug, token, use_cache=not a.no_cache)
-            source = "GitHub contents API (no clone)"
         else:
-            print(f"head: cannot parse a github repo out of {target!r} (use owner/repo, a github URL, or a local dir)",
-                  file=sys.stderr)
-            return 1
+            files, scope, notes = head_collect_api(str(slug), token, use_cache=use_cache)
+            source = "GitHub contents API (no clone)"
         if not files:
-            print("head: no metadata fetched; " + (notes[-1] if notes else "does the repo exist?"), file=sys.stderr)
-            return 1
+            if os.path.isdir(target):
+                raise HeadError(f"no metadata files found in {target!r}")
+            raise HeadError("no metadata fetched; " + (notes[-1] if notes else "does the repo exist?"))
         src = Path(work) / "meta"
         src.mkdir()
         for rel, text in files.items():
@@ -4376,8 +4376,7 @@ def cmd_head(a):
         try:
             findings, nfiles = run_agent_checks(src)
         except Exception as ex:
-            print(f"head: checks failed: {type(ex).__name__}: {ex}", file=sys.stderr)
-            return 1
+            raise HeadError(f"checks failed: {type(ex).__name__}: {ex}")
         caps = scan_capabilities(src)
         cov = scan_coverage(src)
         raw_count = len(findings)
@@ -4408,25 +4407,174 @@ def cmd_head(a):
         d = {"version": VERSION, "verdict": v, "why": why, "counts": counts, "meta": meta,
              "privacy_summary": summary, "ai_review": None, "findings": active + suppressed,
              "raw_findings_count": raw_count, "notes": notes, "recommended_actions": ACTIONS[v]}
-        if a.json:
-            Path(a.json).write_text(json.dumps(d, indent=2))
-            print(f"[repobeagle] JSON written to {a.json}", file=sys.stderr)
-        if getattr(a, "html", None):
-            Path(a.html).write_text(html_report(d))
-            print(f"[repobeagle] HTML written to {a.html}", file=sys.stderr)
-        print(f"[repobeagle] head: {scope['paths_fetched']} metadata file(s) from {source}", file=sys.stderr)
-        for n in notes:
-            print(f"[repobeagle] note: {n}", file=sys.stderr)
-        if a.markdown:
-            sys.stdout.write(markdown_report(d))
-        else:
-            report(meta, active + suppressed, v, why, counts, notes, None,
-                   color_enabled() and not a.no_color, 10**6 if a.all else 40, a.min_severity)
-        return {"GREEN": 0, "YELLOW": 1, "RED": 2}[v]
+        return d, notes, source
     finally:
-        if "work" in locals() and work:
-            shutil.rmtree(work, ignore_errors=True)
-            _WORKDIRS.discard(work)
+        shutil.rmtree(work, ignore_errors=True)
+        _WORKDIRS.discard(work)
+
+def cmd_head(a):
+    """Fast metadata-only triage (GitHub contents API or a local dir): no clone, no scanners, no repo code executed."""
+    profile = "strict" if a.strict else "relaxed" if a.relaxed else "balanced"
+    token = os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN") or ""
+    try:
+        d, notes, source = head_report(a.target, profile, token, use_cache=not a.no_cache)
+    except HeadError as ex:
+        print(f"head: {ex}", file=sys.stderr)
+        return 1
+    meta = d["meta"]
+    if a.json:
+        Path(a.json).write_text(json.dumps(d, indent=2))
+        print(f"[repobeagle] JSON written to {a.json}", file=sys.stderr)
+    if getattr(a, "html", None):
+        Path(a.html).write_text(html_report(d))
+        print(f"[repobeagle] HTML written to {a.html}", file=sys.stderr)
+    print(f"[repobeagle] head: {meta['scope']['paths_fetched']} metadata file(s) from {source}", file=sys.stderr)
+    for n in notes:
+        print(f"[repobeagle] note: {n}", file=sys.stderr)
+    if a.markdown:
+        sys.stdout.write(markdown_report(d))
+    else:
+        report(meta, d["findings"], d["verdict"], d["why"], d["counts"], d["notes"], None,
+               color_enabled() and not a.no_color, 10**6 if a.all else 40, a.min_severity)
+    return {"GREEN": 0, "YELLOW": 1, "RED": 2}[d["verdict"]]
+
+# --- Registry/marketplace gate: batch metadata verdicts for a directory listing ------------
+GATE_MAX_ENTRIES = 5000
+
+def load_gate_entries(path):
+    """[target] from a directory listing: one target per line (# comments) or JSON strings/{"target": ...}."""
+    try:
+        text = Path(path).read_text(encoding="utf-8")
+    except OSError as ex:
+        raise ValueError(f"cannot read entries: {ex}")
+    items: list[str] = []
+    if text.lstrip().startswith(("[", "{")):
+        try:
+            doc = json.loads(text)
+        except json.JSONDecodeError as ex:
+            raise ValueError(f"{path} is not valid JSON: {ex}")
+        raw = doc.get("entries") if isinstance(doc, dict) else doc
+        if not isinstance(raw, list):
+            raise ValueError('JSON entries must be a list or {"entries": [...]}')
+        for item in raw:
+            if isinstance(item, str):
+                items.append(item)
+            elif isinstance(item, dict) and item.get("target"):
+                items.append(str(item["target"]))
+            else:
+                raise ValueError(f"JSON entry is neither a string nor {{'target': ...}}: {item!r}")
+    else:
+        for line in text.splitlines():
+            line = line.split("#", 1)[0].strip()
+            if line:
+                items.append(line)
+    seen: set[str] = set()
+    out: list[str] = []
+    for target in items:
+        if target not in seen:
+            seen.add(target)
+            out.append(target)
+    if len(out) > GATE_MAX_ENTRIES:
+        raise ValueError(f"{len(out)} entries; the gate accepts at most {GATE_MAX_ENTRIES}")
+    return out
+
+def gate_entry(target, profile, token, use_cache=True):
+    """One per-entry verdict for the gate: unfetchable entries are `unknown`, never GREEN."""
+    try:
+        d, notes, source = head_report(target, profile, token, use_cache=use_cache)
+    except HeadError as ex:
+        return {"target": target, "verdict": "unknown", "why": str(ex), "counts": {}, "findings": [],
+                "source": "unfetchable", "notes": [str(ex)], "seconds": 0.0}
+    meta = d.get("meta") or {}
+    return {"target": target, "verdict": d.get("verdict"), "why": d.get("why"), "counts": d.get("counts"),
+            "findings": d.get("findings") or [], "source": source, "notes": list(notes),
+            "seconds": meta.get("seconds"), "suppressed": meta.get("suppressed"),
+            "scope": meta.get("scope")}
+
+def _gate_one(entry, profile, token, use_cache):
+    try:
+        return gate_entry(entry, profile, token, use_cache)
+    except Exception as ex:  # a broken scanner must not take the whole directory down
+        return {"target": entry, "verdict": "unknown", "why": f"{type(ex).__name__}: {ex}", "counts": {},
+                "findings": [], "source": "unfetchable", "notes": [str(ex)], "seconds": 0.0}
+
+def gate_report(entries, profile="balanced", token="", baseline=None, jobs=1, use_cache=True):
+    """Batch verdicts for a listing; `new_red` is RED now and not RED in the baseline (all RED without one)."""
+    baseline_verdicts: dict[str, str] = {}
+    if baseline:
+        try:
+            b = json.loads(Path(baseline).read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as ex:
+            raise ValueError(f"cannot read baseline {baseline}: {ex}")
+        raw = b.get("entries") if isinstance(b, dict) else None
+        if not isinstance(raw, list):
+            raise ValueError(f"{baseline}: not a gate report (no 'entries' list)")
+        for e in raw:
+            if isinstance(e, dict) and e.get("target"):
+                baseline_verdicts[str(e["target"])] = str(e.get("verdict") or "unknown")
+    t0 = time.time()
+    if jobs and jobs > 1:
+        from concurrent.futures import ThreadPoolExecutor
+        with ThreadPoolExecutor(max_workers=min(jobs, 16)) as pool:
+            rows = list(pool.map(lambda t: _gate_one(t, profile, token, use_cache), entries))
+    else:
+        rows = [_gate_one(e, profile, token, use_cache) for e in entries]
+    counts = {v: sum(1 for r in rows if r["verdict"] == v) for v in ("GREEN", "YELLOW", "RED", "unknown")}
+    worst = ("RED" if counts["RED"] else "YELLOW" if counts["YELLOW"] else "GREEN" if counts["GREEN"] else "unknown")
+    new_red = [r["target"] for r in rows if r["verdict"] == "RED" and baseline_verdicts.get(r["target"]) != "RED"]
+    return {"version": VERSION, "kind": "gate", "verdict": worst, "counts": counts, "entries": rows,
+            "new_red": new_red, "unknown": [r["target"] for r in rows if r["verdict"] == "unknown"],
+            "meta": {"entries": len(entries), "profile": profile, "ruleset": RULESET,
+                     "seconds": round(time.time() - t0, 1), "jobs": jobs or 1,
+                     "cache": "on" if use_cache else "off", "baseline": baseline}}
+
+def gate_markdown(d):
+    """Markdown table for a directory CI job summary: one row per listing."""
+    lines = ["| Entry | Verdict | Findings | Why |", "|---|---|---|---|"]
+    for r in d["entries"]:
+        rules = ", ".join(sorted({str(f.get("rule")) for f in r.get("findings") or [] if f.get("rule")})[:4]) or "—"
+        why = str(r.get("why") or "").replace("|", "\\|")[:180]
+        lines.append(f"| `{r['target']}` | {r['verdict']} | {rules} | {why} |")
+    return "\n".join(lines) + "\n"
+
+def cmd_gate(a):
+    """Registry/marketplace gate: per-entry verdicts for a directory listing, failing only on a new RED."""
+    profile = "strict" if a.strict else "relaxed" if a.relaxed else "balanced"
+    token = os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN") or ""
+    try:
+        entries = load_gate_entries(a.entries)
+    except ValueError as ex:
+        print(f"gate: {ex}", file=sys.stderr)
+        return 1
+    if not entries:
+        print("gate: no entries in the list (one target per line; # starts a comment; JSON also accepted)", file=sys.stderr)
+        return 1
+    try:
+        d = gate_report(entries, profile, token, baseline=a.baseline, jobs=a.jobs, use_cache=not a.no_cache)
+    except ValueError as ex:
+        print(f"gate: {ex}", file=sys.stderr)
+        return 1
+    if a.json:
+        Path(a.json).write_text(json.dumps(d, indent=2))
+        print(f"[repobeagle] JSON written to {a.json}", file=sys.stderr)
+    if a.markdown:
+        sys.stdout.write(gate_markdown(d))
+    else:
+        C = (lambda code, s: f"\033[{code}m{s}\033[0m") if (color_enabled() and not a.no_color) else (lambda code, s: s)
+        for r in d["entries"]:
+            rules = ", ".join(sorted({str(f.get("rule")) for f in r.get("findings") or [] if f.get("rule")})[:4])
+            why = str(r.get("why") or "")[:120]
+            print(f"  {r['verdict']:<7} {r['target']}" + (f"  [{rules}]" if rules else "") + (f"  {why}" if why and r["verdict"] == "unknown" else ""))
+        print(f"\n{len(entries)} entr{'y' if len(entries) == 1 else 'ies'}: "
+              + ", ".join(f"{n} {v}" for v, n in d["counts"].items() if n)
+              + f" (profile {profile}{', baseline ' + a.baseline if a.baseline else ', no baseline: every RED is new'})")
+        for n in d["unknown"]:
+            print(C("33", f"  unknown: {n} — unfetchable or empty, never treated as GREEN"), file=sys.stderr)
+        for n in d["new_red"]:
+            print(C("1;91", f"  NEW RED: {n}"), file=sys.stderr)
+    if a.report_only:
+        return 0
+    return 1 if d["new_red"] else 0
 
 def cmd_db(a):
     """Status or refresh of the local OSV database. Host-side only; the scan itself stays offline."""
@@ -5723,6 +5871,17 @@ def main():
     dbp.add_argument("--update", action="store_true", help="download/refresh the database (needs network)")
     ap.add_argument("-V", "--version", action="store_true", help="print the installed version and image tag")
     sp.add_parser("version")
+    ga = sp.add_parser("gate", help="scan a directory listing (one target per line) and fail only on a new RED")
+    ga.add_argument("entries", help="entries file: one owner/repo, git URL or local dir per line (# comments) or JSON")
+    gg = ga.add_mutually_exclusive_group()
+    gg.add_argument("--strict", action="store_true"); gg.add_argument("--relaxed", action="store_true")
+    ga.add_argument("--baseline", metavar="REPORT", help="previous gate JSON: fail only on entries RED now and not RED then")
+    ga.add_argument("--json", metavar="FILE")
+    ga.add_argument("--markdown", action="store_true", help="print the per-entry markdown table")
+    ga.add_argument("--jobs", type=int, default=1, help="parallel metadata fetches (default 1; the head cache is shared)")
+    ga.add_argument("--no-cache", action="store_true", help="bypass the GitHub metadata cache")
+    ga.add_argument("--report-only", action="store_true", help="always exit 0 (dashboard mode)")
+    ga.add_argument("--no-color", action="store_true")
     fb = sp.add_parser("feedback", help="open a prefilled, re-redacted GitHub issue for a finding")
     fb.add_argument("report")
     fg = fb.add_mutually_exclusive_group(required=True)
@@ -5743,6 +5902,8 @@ def main():
         return cmd_verify(a)
     if a.cmd == "head":
         return cmd_head(a)
+    if a.cmd == "gate":
+        return cmd_gate(a)
     if a.cmd == "ignore":
         return cmd_ignore(a)
     if a.cmd == "init":

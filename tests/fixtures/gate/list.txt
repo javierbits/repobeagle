@@ -1,0 +1,6 @@
+# Directory listing fixture: mixed verdicts and unfetchable entries.
+tests/fixtures/trap-gha
+tests/fixtures/control-clean
+tests/fixtures/gate/no-metadata
+tests/fixtures/gate/does-not-exist
+tests/fixtures/control-clean   # duplicate entries are collapsed
