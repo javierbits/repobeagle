@@ -48,6 +48,9 @@ Requirements: `python3 >= 3.10` plus whichever host tools the scan shells out to
 
 macOS: `install.sh` now detects `Darwin` and installs `gitleaks`/`osv-scanner`/`cosign` with Homebrew instead of downloading Linux binaries (it still uses Docker Desktop when available, which runs the same arm64 image). `pipx install .` is the light path on macOS arm64 and needs no container.
 
+- The light path is exercised in CI: the `packaging-macos` job runs `pipx install .` on the macOS arm64 runner image (`macos-latest`), then scans `tests/fixtures/trap-npm --no-docker` with the installed console script from outside the checkout. A packaging contract test checks the wheel entry point, the shipped `VERSION`/semgrep rules fallback and the installer's macOS/Homebrew branch.
+- Airgapped hosts: `tools/build_binary.sh` builds a one-file PyInstaller binary (pinned PyInstaller, bundles the module, `VERSION` and the custom semgrep rules) into `dist/repobeagle`; the `binary` workflow publishes linux amd64/arm64 and macOS arm64 artifacts for tags and manual runs. The binary still shells out to the host tools it needs, and the Docker image remains the recommended hardened path.
+
 ## Rule packs (`.repobeagle/rules/*.yml`)
 Teams can ship regex rules without editing the scanner. A pack is a versioned file, loaded automatically from the scanned tree (and fetched on the metadata `head` path), whose rules compile into the same finding shape as the built-in checks:
 ```yaml
