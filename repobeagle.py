@@ -3046,6 +3046,111 @@ def zip_encrypted(p):
         pass
     return False
 
+# --- Workspace / monorepo attribution: package boundaries and per-package first-party inference -----
+MAX_WORKSPACE_PACKAGES = int(os.environ.get("BEAGLE_MAX_PACKAGES", "50") or 50)
+
+def _json_file(path):
+    try:
+        return json.loads(Path(path).read_text(errors="replace"))
+    except (OSError, ValueError):
+        return None
+
+def _package_display_name(directory):
+    """Manifest-derived package name (never executes anything), or the directory name."""
+    pkg = _json_file(directory / "package.json")
+    if isinstance(pkg, dict) and pkg.get("name"):
+        return str(pkg["name"])
+    try:
+        text = (directory / "Cargo.toml").read_text(errors="replace")
+        m = re.search(r'(?ms)^\[package\].*?^\s*name\s*=\s*"([^"]+)"', text)
+        if m:
+            return m.group(1)
+    except OSError:
+        pass
+    try:
+        text = (directory / "pyproject.toml").read_text(errors="replace")
+        m = re.search(r'(?ms)^\[project\].*?^\s*name\s*=\s*"([^"]+)"', text)
+        if m:
+            return m.group(1)
+    except OSError:
+        pass
+    try:
+        text = (directory / "go.mod").read_text(errors="replace")
+        m = re.search(r"(?m)^module\s+(\S+)", text)
+        if m:
+            return m.group(1).rsplit("/", 1)[-1]
+    except OSError:
+        pass
+    return directory.name
+
+def workspace_packages(root):
+    """Detected monorepo packages: [{name, path, kind}] sorted, capped.
+
+    Reads npm/pnpm/yarn workspaces, Cargo workspaces, go.work modules and nested Python projects;
+    never executes anything and never leaves the tree.
+    """
+    root = Path(root)
+    found: dict[str, str] = {}
+
+    def add(rel, kind):
+        if rel in found:
+            return
+        d = root / rel
+        if d.is_dir() and rel != ".":
+            found[str(Path(rel).as_posix())] = kind
+
+    def add_globs(patterns, marker, kind):
+        for pattern in patterns or []:
+            if not isinstance(pattern, str):
+                continue
+            for d in sorted(root.glob(pattern)):
+                if d.is_dir() and (d / marker).is_file():
+                    add(d.relative_to(root).as_posix(), kind)
+
+    pkg = _json_file(root / "package.json")
+    if isinstance(pkg, dict):
+        ws = pkg.get("workspaces")
+        if isinstance(ws, dict):
+            ws = ws.get("packages")
+        if isinstance(ws, list):
+            add_globs(ws, "package.json", "npm")
+    try:
+        pnpm = parse_yaml_subset((root / "pnpm-workspace.yaml").read_text(encoding="utf-8"))
+        if isinstance(pnpm, dict):
+            add_globs(pnpm.get("packages") or [], "package.json", "npm")
+    except (OSError, ValueError):
+        pass
+    try:
+        cargo = (root / "Cargo.toml").read_text(errors="replace")
+        if re.search(r"(?m)^\[workspace\]", cargo):
+            members = re.search(r"(?ms)^\[workspace\].*?^\s*members\s*=\s*\[(.*?)\]", cargo)
+            for member in re.findall(r'"([^"]+)"', members.group(1) if members else ""):
+                if any(ch in member for ch in "*?["):
+                    add_globs([member], "Cargo.toml", "cargo")
+                else:
+                    add(Path(member).as_posix().lstrip("./"), "cargo")
+    except OSError:
+        pass
+    try:
+        gowork = (root / "go.work").read_text(errors="replace")
+        block = re.search(r"(?ms)^use\s*\((.*?)^\)", gowork)
+        if block:
+            uses = [ln.strip().strip('"') for ln in block.group(1).splitlines() if ln.strip()]
+        else:
+            uses = re.findall(r"(?m)^use\s+(\S+)", gowork)
+        for use in uses:
+            add(Path(use).as_posix().lstrip("./"), "go")
+    except OSError:
+        pass
+    for p in iter_files(root):
+        if p.name in ("pyproject.toml", "setup.py"):
+            d = p.parent
+            if d != root and (d / p.name).is_file():
+                add(d.relative_to(root).as_posix(), "python")
+    detected = [{"name": _package_display_name(root / rel), "path": rel, "kind": kind}
+                for rel, kind in sorted(found.items())]
+    return detected[:MAX_WORKSPACE_PACKAGES], detected[MAX_WORKSPACE_PACKAGES:]
+
 def run_agent_checks(root, deadline=None, state=None):
     """Regex/agent checks over the tree. `deadline` (monotonic) bounds the work; `state` records partial results."""
     if state is not None:
@@ -3065,6 +3170,16 @@ def run_agent_checks(root, deadline=None, state=None):
         policy = {}
     for host in policy.get("hosts") or []:
         own.add(host)
+    workspace, dropped = workspace_packages(root)
+    own_by_package = {pkg["path"]: own_domains(root / pkg["path"]) | set(policy.get("hosts") or [])
+                      for pkg in workspace}
+
+    def own_for(relpath):
+        for pkg in workspace:
+            base = pkg["path"]
+            if relpath == base or relpath.startswith(base + "/"):
+                return own_by_package[base]
+        return own
     prose: list[str] = []
     nfiles = 0
     def check_one(p):
@@ -3105,7 +3220,7 @@ def run_agent_checks(root, deadline=None, state=None):
         check_obfuscation_deps(root, p, text, findings)
         if len(text) <= 2_000_000:       # huge/minified files are generated; keep the scan cheap
             check_telemetry(root, p, text, telemetry, optouts, optouts_code)
-            check_privacy(root, p, text, privacy, own)
+            check_privacy(root, p, text, privacy, own_for(r))
             check_privacy_signals(root, p, text, privacy, masks)
     skipped_slow: list[str] = []
     for p in iter_files(root):
@@ -3240,6 +3355,17 @@ def run_agent_checks(root, deadline=None, state=None):
         findings.append(finding("privacy", "low", "(repo)", 0, "privacy-doc: no privacy policy file",
                                  "expected PRIVACY.md or PrivacyInfo.xcprivacy",
                                  "The repo collects/transmits data but ships no privacy policy/manifest file."))
+    if workspace:
+        for f in findings:
+            relf = str(f.get("file") or "")
+            for pkg in workspace:
+                base = pkg["path"]
+                if relf == base or relf.startswith(base + "/"):
+                    f["package"] = pkg["name"]
+                    f["package_path"] = base
+                    break
+        if state is not None:
+            state["workspace"] = {"packages": workspace, "dropped": len(dropped)}
     return findings, nfiles
 
 # ----------------------------------------------------------------------------
@@ -3738,6 +3864,8 @@ def inner(src, out, deadline=None, jobs=None):
     result["findings"] += fs
     result["tools"]["agent-checks"] = {"findings": len(fs), "seconds": round(time.time() - t, 1),
                                        "ok": bool(agent_state.get("complete", True)), "files": n}
+    if agent_state.get("workspace"):
+        result["workspace"] = agent_state["workspace"]
     if not agent_state.get("complete", True):
         incomplete("agent-checks", "stopped at the --max-seconds deadline")
     if agent_state.get("skipped"):
@@ -6411,7 +6539,8 @@ def report(meta, findings, v, why, counts, notes, ai, use_color, maxn=40, min_se
         print(C("1", f"Findings ({len(fs)}, showing {min(len(fs), maxn)}):"))
     for f in fs[:maxn]:
         loc = f"{f['file']}:{f['line']}" if f["line"] else f["file"]
-        print(f"  {C(sc[f['severity']], f['severity'].upper().ljust(8))} [{f['tool']}] {C('1', loc)}")
+        print(f"  {C(sc[f['severity']], f['severity'].upper().ljust(8))} [{f['tool']}] {C('1', loc)}"
+              + (f"  package: {f['package']}" if f.get("package") else ""))
         print(f"           {f['title']}")
         if f["snippet"]: print(f"           > {f['snippet'][:140]}")
         if f["meaning"]: print(f"           {C('2', f['meaning'][:200])}")
@@ -7138,6 +7267,19 @@ def cmd_scan(a):
                     f["severity"] = new_sev
                     graded += 1
             notes.append(f"config: {graded} finding(s) re-graded by {CONFIG_FILE} rule overrides")
+        workspace = (res.get("workspace") or {})
+        workspace_counts: dict[str, dict[str, int]] = {}
+        if workspace.get("packages"):
+            for f in findings:
+                relf = str(f.get("file") or "")
+                for pkg in workspace["packages"]:
+                    base = pkg["path"]
+                    if relf == base or relf.startswith(base + "/"):
+                        f["package"] = pkg["name"]
+                        f["package_path"] = base
+                        break
+            notes.append(f"workspace: {len(workspace['packages'])} package(s) detected"
+                         + (f", {workspace.get('dropped', 0)} beyond BEAGLE_MAX_PACKAGES" if workspace.get("dropped") else ""))
         raw_count = len(findings)
         findings = collapse(dedupe(findings))
         if getattr(a, "privacy_only", False):
@@ -7156,6 +7298,13 @@ def cmd_scan(a):
                 f["remediation"] = rem
         entries = load_suppressions(src)
         active, suppressed, expired = apply_suppressions(findings, entries) if entries else (findings, [], [])
+        if workspace.get("packages"):
+            reported = active + suppressed
+            buckets = ["(root)"] + [pkg["name"] for pkg in workspace["packages"]]
+            workspace_counts = {name: {sev: 0 for sev in SEV_ORDER} for name in buckets}
+            for f in reported:
+                name = f.get("package") or "(root)"
+                workspace_counts.setdefault(name, {sev: 0 for sev in SEV_ORDER})[str(f.get("severity"))] += 1
         if suppressed:
             notes.append(f"suppressed {len(suppressed)} finding(s) via {SUPPRESS_FILE}: " +
                          ", ".join(sorted({f['title'].split(':')[0] for f in suppressed})))
@@ -7179,6 +7328,10 @@ def cmd_scan(a):
                 "tools": tools, "suppressed": len(suppressed), "suppressions": suppression_meta(entries),
                 "pii_redacted": not a.no_redact, "privacy_mode": privacy_mode, "ruleset": RULESET,
                 "complete": complete, "cache": cache_state}
+        if workspace_counts:
+            meta["workspace"] = {"packages": [{"name": p["name"], "path": p["path"], "kind": p["kind"]}
+                                              for p in workspace["packages"]],
+                                  "dropped": workspace.get("dropped", 0), "counts": workspace_counts}
         if archive_summary:
             meta["archive"] = archive_summary
         if release_meta:
