@@ -17,10 +17,11 @@ osv-scanner  host binary (install.sh)     Apache-2.0  https://github.com/google/
 semgrep is installed from PyPI; its corresponding source remains
 obtainable from PyPI, satisfying LGPL-2.1 section 4.
 
-The repository also vendors the official OASIS SARIF 2.1.0 JSON schema
-verbatim at tests/schema/sarif-schema-2.1.0.json so CI can validate the
-exporter offline. It is a specification document, not linked code; the
-source URL and SHA-256 are recorded in tests/schema/README.md.
+The repository also vendors two specification documents so CI can validate
+exporters offline: the official OASIS SARIF 2.1.0 JSON schema
+(tests/schema/sarif-schema-2.1.0.json) and the official CycloneDX 1.6 JSON
+schema (tests/schema/bom-1.6.schema.json, Apache-2.0, OWASP Foundation).
+Neither is linked code; source URLs and SHA-256s are in tests/schema/README.md.
 
 Full license texts follow.
 
