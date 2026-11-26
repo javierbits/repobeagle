@@ -57,6 +57,7 @@ repobeagle explain <report.json> [--accept RULE...] [--target green|yellow] [--w
 repobeagle diff <old.json> <new.json> [--min-severity medium] [--json out.json]
 repobeagle fix <local-dir> [--dry-run] [--pins FILE] [--no-network] [--json out.json]
 repobeagle head <owner/repo | github-url | local-dir> [--strict|--relaxed] [--json out.json] [--markdown] [--no-cache]
+repobeagle ignore [RULE [--reason TEXT] [--until YYYY-MM-DD]] [--file FILE] [--list] [--report r.json] [--json out.json]
 repobeagle export <report.json> [--format sarif|markdown|json] [-o out]
 repobeagle map <git-url | local-dir | --report r.json> [--strict|--relaxed] [--network]
 repobeagle web <http(s):// | file://> [--assets N] [--json out.json]
@@ -257,16 +258,20 @@ Component sources (`.jsx`, `.tsx`, `.vue`, `.svelte`, `.astro`) are scanned like
 
 ### Suppressing reviewed findings
 
-If you reviewed a finding and accept it, add a `.repobeagleignore` at the repo root. One rule id or glob per line; `#` starts a comment:
+If you reviewed a finding and accept it, add a `.repobeagleignore` at the repo root. One entry per line, `rule [# reason] [@YYYY-MM-DD]`; bare rule ids and globs stay valid:
 
 ```
-# accepted: the installer is pinned by tag
-Download-and-execute
-telemetry-devtool
-pii-*
+# comments are ignored
+Download-and-execute  # installer is pinned by tag
+telemetry-devtool  # analytics loads only after consent @2026-12-31
+pii-*  # reviewed by the privacy team, revisit at the next audit
 ```
 
-Matching findings stay in `--json` with `"suppressed": true` and `meta.suppressed` counts them, but they are removed from the verdict and the printed report, and the AI review does not see them. This lets a repo silence known-benign noise without hiding it from anyone reading the JSON. Suppression is opt-in per repo and never changes what is scanned.
+Add or update entries with `repobeagle ignore <rule> --reason "…" --until YYYY-MM-DD [--file FILE]` (an existing entry for the same rule is updated in place, not duplicated); `repobeagle ignore --list` shows each entry with its status, and `--report r.json` refuses a rule that matches no finding so a typo cannot silently suppress nothing.
+
+Matching findings stay in `--json` with `"suppressed": true` plus `"suppression": {rule, reason, until, line, status}`, `meta.suppressed` counts them (kept as a number for compatibility) and `meta.suppressions` lists every parsed entry as `{rule, reason, until, status, line}`. Suppressed findings are removed from the verdict and the printed report, and the AI review does not see them.
+
+Lifecycle: an entry with `@date` stops suppressing after that date. The finding comes back active, the report notes `suppression for <rule> expired on <date>; finding re-activated`, `meta.suppressions[].status` becomes `expired`, and an expired match carries `suppression_expired` on the finding. A malformed date keeps the entry active and is warned about, so a typo never silently unsuppresses. Expiry depends on the clock: `BEAGLE_TODAY=YYYY-MM-DD` pins it (tests, airgapped runs, reproducible reports). Suppression is opt-in per repo and never changes what is scanned.
 
 ## Badge your repo
 
@@ -451,6 +456,7 @@ The rule-pair check is automatic: `tests/test_rule_fixtures.py` parses the `RULE
 | tests/test_packaging.py (console script, wheel data files, packaged rules/version fallback, installer OS support) | pass |
 | tests/test_fix.py (dry-run immutability, action pinning, write-all rewrite, idempotence, re-scan improvement) | pass |
 | tests/test_head.py (local triage, mocked contents API, cache/TTL, token, rate-limit notes, markdown card) | pass |
+| tests/test_suppressions.py (grammar, expiry re-activation and warnings, meta.suppressions, `ignore` add/update/list/validate) | pass |
 | tests/fixtures/control-vuln (`flask==2.0.0`), used by the cached offline-OSV CI/nightly scan | vulnerable dependency from the local DB |
 | tests/test_markdown_snapshot.py (PR-comment snapshot, pipe/newline escaping, suppression, truncation) | pass |
 | tests/test_rule_fixtures.py (positive fixture fires every declared rule; control-clean fires none) | pass |

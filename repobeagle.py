@@ -8,6 +8,7 @@ NEVER executes repository code. Stdlib only (scanners are external binaries).
 """
 import argparse, base64, difflib, hashlib, json, os, platform, re, shutil, subprocess, sys, tempfile, time, unicodedata, zipfile
 import urllib.error, urllib.parse, urllib.request
+from datetime import date
 from fnmatch import fnmatchcase
 from typing import Any
 from pathlib import Path
@@ -4201,10 +4202,11 @@ def cmd_head(a):
             rem = remediation_for(f)
             if rem:
                 f["remediation"] = rem
-        ignored = load_suppressions(src)
-        active, suppressed = apply_suppressions(findings, ignored) if ignored else (findings, [])
+        entries = load_suppressions(src)
+        active, suppressed, expired = apply_suppressions(findings, entries) if entries else (findings, [], [])
         if suppressed:
             notes.append(f"suppressed {len(suppressed)} finding(s) via {SUPPRESS_FILE}")
+        notes.extend(suppression_notes(entries, expired))
         v, why, counts = verdict(active, profile, None)
         summary = privacy_summary(active)
         meta = {"target": target, "ref": None, "commit": None, "fetched_via": source,
@@ -4212,6 +4214,7 @@ def cmd_head(a):
                 "files": nfiles, "seconds": round(time.time() - t0, 1),
                 "tools": {"agent-checks": {"findings": len(active), "seconds": round(time.time() - t0, 1),
                                            "ok": True, "files": nfiles}},
+                "suppressed": len(suppressed), "suppressions": suppression_meta(entries),
                 "scope": scope, "capabilities": caps, "coverage": cov, "ruleset": RULESET,
                 "privacy_mode": "full", "pii_redacted": True}
         if summary:
@@ -4470,32 +4473,165 @@ def redact_pii(s):
     s = REDACT_PHONE_RE.sub(lambda m: m.group(0)[:4] + "****" + m.group(0)[-3:], s)
     return s
 
+SUPPRESS_DATE_RE = re.compile(r"(?:^|\s)@(\d{4}-\d{2}-\d{2})$")
+
+def parse_suppression(line, lineno=0):
+    """Parse `rule [# reason] [@YYYY-MM-DD]`; bare rule ids stay valid. Returns None for blank/comment lines."""
+    body = line.strip()
+    if not body:
+        return None
+    reason = ""
+    if "#" in body:
+        body, reason = (part.strip() for part in body.split("#", 1))
+    until = None
+    for field, value in (("reason", reason), ("rule", body)):
+        m = SUPPRESS_DATE_RE.search(value)
+        if m:
+            until = m.group(1)
+            if field == "reason":
+                reason = value[:m.start()].rstrip()
+            else:
+                body = value[:m.start()].rstrip()
+            break
+    if not body:
+        return None
+    return {"rule": body, "reason": reason, "until": until, "line": lineno}
+
+def _today():
+    """Today's date; BEAGLE_TODAY=YYYY-MM-DD pins it for deterministic tests and airgapped runs."""
+    raw = os.environ.get("BEAGLE_TODAY")
+    if raw:
+        try:
+            return date.fromisoformat(raw)
+        except ValueError:
+            pass
+    return date.today()
+
+def suppression_status(entry, today=None):
+    """'active', 'expired' or 'invalid' (an unparseable @date keeps the suppression active and is warned about)."""
+    until = (entry or {}).get("until")
+    if not until:
+        return "active"
+    try:
+        when = date.fromisoformat(until)
+    except ValueError:
+        return "invalid"
+    return "expired" if when < (today or _today()) else "active"
+
 def load_suppressions(src):
-    """Reads <repo>/.repobeagleignore: one rule id or glob per line ('#' comments). Never executes anything."""
+    """Reads <repo>/.repobeagleignore: one `rule [# reason] [@YYYY-MM-DD]` per line. Never executes anything."""
     try:
         raw = (Path(src) / SUPPRESS_FILE).read_text(errors="replace")
     except OSError:
         return []
     out = []
-    for line in raw.splitlines():
-        line = line.split("#", 1)[0].strip()
-        if line:
-            out.append(line)
+    for n, line in enumerate(raw.splitlines(), 1):
+        entry = parse_suppression(line, n)
+        if entry:
+            out.append(entry)
     return out
 
-def apply_suppressions(findings, patterns):
-    """Marks findings whose rule id (or full title) matches, so they stay in the JSON but not in the verdict."""
-    from fnmatch import fnmatchcase
-    active, suppressed = [], []
-    for f in findings:
+def apply_suppressions(findings, entries):
+    """Marks findings matching an active entry (`suppressed: true` plus the reason/expiry).
+
+    Expired entries re-activate the finding and are returned so the report can warn about them.
+    Returns (active, suppressed, expired_entries_that_matched).
+    """
+    by_status: dict[str, list[dict]] = {"active": [], "expired": [], "invalid": []}
+    for entry in entries:
+        by_status[suppression_status(entry)].append(entry)
+    keep = by_status["active"] + by_status["invalid"]
+    def matches(f, entry):
         rule = f["title"].split(":")[0]
         short = rule.split(" (")[0]           # older titles have no "rule: detail" prefix
-        if any(fnmatchcase(rule, p) or fnmatchcase(short, p) or fnmatchcase(f["title"], p) for p in patterns):
+        return (fnmatchcase(rule, entry["rule"]) or fnmatchcase(short, entry["rule"])
+                or fnmatchcase(f["title"], entry["rule"]))
+    active, suppressed, expired = [], [], []
+    for f in findings:
+        entry = next((e for e in keep if matches(f, e)), None)
+        if entry:
             f["suppressed"] = True
+            f["suppression"] = {"rule": entry["rule"], "reason": entry.get("reason") or "",
+                                 "until": entry.get("until"), "line": entry.get("line"),
+                                 "status": suppression_status(entry)}
             suppressed.append(f)
-        else:
-            active.append(f)
-    return active, suppressed
+            continue
+        stale = next((e for e in by_status["expired"] if matches(f, e)), None)
+        if stale:
+            f["suppression_expired"] = {"rule": stale["rule"], "reason": stale.get("reason") or "",
+                                        "until": stale["until"], "line": stale.get("line")}
+            if stale not in expired:
+                expired.append(stale)
+        active.append(f)
+    return active, suppressed, expired
+
+def suppression_notes(entries, expired):
+    """Warning notes for expired or invalid .repobeagleignore entries (auditability of the lifecycle)."""
+    notes = [f"suppression for {e['rule']} expired on {e['until']}; finding re-activated" for e in expired]
+    for e in entries or []:
+        if suppression_status(e) == "invalid":
+            notes.append(f"suppression for {e['rule']} has an invalid date {e['until']!r}; treated as active")
+    return notes
+
+def suppression_meta(entries, today=None):
+    """meta.suppressions: rule, reason, until and status for every parsed entry (empty when none)."""
+    return [{"rule": e["rule"], "reason": e.get("reason") or "", "until": e.get("until"),
+             "status": suppression_status(e, today), "line": e.get("line")} for e in entries or []]
+
+def cmd_ignore(a):
+    """Adds or updates one `.repobeagleignore` line (`rule [# reason] [@YYYY-MM-DD]`), or lists the file."""
+    path = Path(a.file)
+    try:
+        raw = path.read_text(encoding="utf-8")
+    except OSError:
+        raw = ""
+    entries = [e for e in (parse_suppression(line, n) for n, line in enumerate(raw.splitlines(), 1)) if e]
+    if a.list or not a.rule:
+        rows = suppression_meta(entries)
+        if a.json:
+            Path(a.json).write_text(json.dumps(rows, indent=2))
+            print(f"[repobeagle] ignore JSON written to {a.json}", file=sys.stderr)
+        if not rows:
+            print(f"no suppressions in {a.file}")
+            return 0
+        for r in rows:
+            when = f" until {r['until']}" if r["until"] else ""
+            reason = f"  # {r['reason']}" if r["reason"] else ""
+            print(f"  {r['status']:<7} {r['rule']}{when}{reason}")
+        return 0
+    if a.until:
+        try:
+            date.fromisoformat(a.until)
+        except ValueError:
+            print("ignore: --until must be YYYY-MM-DD", file=sys.stderr)
+            return 1
+    if a.report:
+        try:
+            d = json.loads(Path(a.report).read_text())
+        except (OSError, ValueError) as ex:
+            print(f"ignore: cannot read report {a.report}: {ex}", file=sys.stderr)
+            return 1
+        rules = {str(f.get("rule") or str(f.get("title") or "").split(":")[0]) for f in d.get("findings") or []
+                 if isinstance(f, dict)}
+        if not any(fnmatchcase(rule, a.rule) for rule in rules):
+            print(f"ignore: no finding in {a.report} matches {a.rule!r}", file=sys.stderr)
+            return 1
+    line = a.rule + (f"  # {a.reason}" if a.reason else "") + (f"  @{a.until}" if a.until else "")
+    lines = raw.splitlines()
+    replaced = False
+    for i, existing in enumerate(lines):
+        entry = parse_suppression(existing, i + 1)
+        if entry and entry["rule"] == a.rule:
+            lines[i] = line
+            replaced = True
+            break
+    if not replaced:
+        lines.append(line)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text("\n".join(lines).rstrip() + "\n", encoding="utf-8")
+    print(f"{'updated' if replaced else 'added'} {a.rule!r} in {a.file}"
+          + (f" (until {a.until})" if a.until else ""))
+    return 0
 
 def cmd_scan(a):
     print(banner(color_enabled(sys.stderr) and not a.no_color), file=sys.stderr)   # stderr keeps stdout reports clean
@@ -4590,11 +4726,12 @@ def cmd_scan(a):
             rem = remediation_for(f)
             if rem:
                 f["remediation"] = rem
-        ignored = load_suppressions(src)
-        active, suppressed = apply_suppressions(findings, ignored) if ignored else (findings, [])
+        entries = load_suppressions(src)
+        active, suppressed, expired = apply_suppressions(findings, entries) if entries else (findings, [], [])
         if suppressed:
             notes.append(f"suppressed {len(suppressed)} finding(s) via {SUPPRESS_FILE}: " +
                          ", ".join(sorted({f['title'].split(':')[0] for f in suppressed})))
+        notes.extend(suppression_notes(entries, expired))
         ai, note = ai_review(src, active)
         if note: notes.append(note)
         v, why, counts = verdict(active, profile, ai)
@@ -4603,8 +4740,8 @@ def cmd_scan(a):
         meta = {"target": a.target, "ref": getattr(a, "ref", None), "commit": commit,
                 "fetched_via": how, "mode": "docker (--network none, read-only)" if use_docker else "local (no docker)",
                 "profile": profile, "files": tools.get("agent-checks", {}).get("files"), "seconds": round(time.time() - t0, 1),
-                "tools": tools, "suppressed": len(suppressed), "pii_redacted": not a.no_redact,
-                "privacy_mode": privacy_mode, "ruleset": RULESET}
+                "tools": tools, "suppressed": len(suppressed), "suppressions": suppression_meta(entries),
+                "pii_redacted": not a.no_redact, "privacy_mode": privacy_mode, "ruleset": RULESET}
         meta.update(osv_meta)
         caps = res.get("capabilities")
         if caps: meta["capabilities"] = caps
@@ -5093,6 +5230,15 @@ def main():
                    help="re-scan the report's pinned commit with this install and compare the normalized findings "
                         "(offline stages; exit 3 when they differ)")
     v.add_argument("--no-color", action="store_true")
+    ig = sp.add_parser("ignore", help="add, update or list .repobeagleignore entries (rule [# reason] [@YYYY-MM-DD])")
+    ig.add_argument("rule", nargs="?", help="rule id or glob to suppress; omit with --list")
+    ig.add_argument("--reason", default="", help="why the finding is accepted (stored after #)")
+    ig.add_argument("--until", metavar="YYYY-MM-DD", help="expiry date: the entry stops suppressing after it")
+    ig.add_argument("--file", default=SUPPRESS_FILE, help=f"file to edit (default: {SUPPRESS_FILE})")
+    ig.add_argument("--list", action="store_true", help="show entries and whether they are active or expired")
+    ig.add_argument("--report", metavar="FILE", help="fail when no finding in this report matches the rule")
+    ig.add_argument("--json", metavar="FILE")
+    ig.add_argument("--no-color", action="store_true")
     hd = sp.add_parser("head", help="fast metadata-only triage (GitHub contents API or a local dir): no clone, no scanners")
     hd.add_argument("target", help="owner/repo, GitHub URL, or local directory")
     hg = hd.add_mutually_exclusive_group()
@@ -5168,6 +5314,8 @@ def main():
         return cmd_verify(a)
     if a.cmd == "head":
         return cmd_head(a)
+    if a.cmd == "ignore":
+        return cmd_ignore(a)
     if a.cmd == "fix":
         return cmd_fix(a)
     if a.cmd == "explain":

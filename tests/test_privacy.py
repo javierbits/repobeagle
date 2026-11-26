@@ -62,9 +62,10 @@ with tempfile.TemporaryDirectory() as d:
 
 with tempfile.TemporaryDirectory() as d:
     Path(d, ".repobeagleignore").write_text("# reviewed\ntelemetry-*\n")
-    pats = rb.load_suppressions(d)
-    act, sup = rb.apply_suppressions([dict(findings[1])], pats)
-    check("suppression glob", not act and sup and sup[0].get("suppressed") is True)
+    entries = rb.load_suppressions(d)
+    act, sup, exp = rb.apply_suppressions([dict(findings[1])], entries)
+    check("suppression glob", not act and sup and sup[0].get("suppressed") is True
+          and sup[0]["suppression"]["rule"] == "telemetry-*" and not exp)
 
 only = {"meta": {"privacy_mode": "only"}, "findings": [{"tool": "privacy"}, {"tool": "telemetry"}]}
 mixed = {"meta": {"privacy_mode": "only"}, "findings": [{"tool": "privacy"}, {"tool": "gitleaks"}]}
