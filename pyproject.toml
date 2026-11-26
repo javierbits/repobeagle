@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=77", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "repobeagle"
+dynamic = ["version"]
+description = "Static safety gate for untrusted repositories: never executes repo code"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+keywords = ["security", "static-analysis", "supply-chain", "privacy", "sarif", "mcp"]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Operating System :: POSIX :: Linux",
+  "Operating System :: MacOS",
+  "Environment :: Console",
+]
+[project.urls]
+Homepage = "https://github.com/javierbits/repobeagle"
+Issues = "https://github.com/javierbits/repobeagle/issues"
+
+[project.scripts]
+repobeagle = "repobeagle:main"
+
+[tool.setuptools]
+py-modules = ["repobeagle"]
+
+[tool.setuptools.dynamic]
+# The wheel version is the repo VERSION (without the leading v), so a pip install and
+# the image tag always agree.
+version = {attr = "repobeagle.VERSION"}
+
+[tool.setuptools.data-files]
+# The custom semgrep rules travel with the wheel; the scanner prefers a checkout's rules/
+# and falls back to <prefix>/share/repobeagle/custom.yml. The image is still the hardened
+# distribution; this is the light mode (host tools, no container).
+"share/repobeagle" = ["rules/custom.yml", "VERSION"]
