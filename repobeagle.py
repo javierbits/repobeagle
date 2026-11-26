@@ -9,7 +9,7 @@ NEVER executes repository code. Stdlib only (scanners are external binaries).
   repobeagle feedback <report.json> (--false-positive|--miss) [--rule RULE] [--file FILE[:LINE]] [--attach] [--no-open]
   repobeagle gate <entries-file> [--baseline old.json] [--json out.json] [--markdown] [--jobs N] [--report-only]
 """
-import argparse, base64, difflib, hashlib, json, os, platform, re, shutil, subprocess, sys, tempfile, time, unicodedata, uuid, zipfile
+import argparse, base64, difflib, hashlib, json, os, platform, re, shutil, signal, subprocess, sys, tempfile, threading, time, unicodedata, uuid, zipfile
 import urllib.error, urllib.parse, urllib.request
 from datetime import date
 from fnmatch import fnmatchcase
@@ -2161,7 +2161,11 @@ def zip_encrypted(p):
         pass
     return False
 
-def run_agent_checks(root):
+def run_agent_checks(root, deadline=None, state=None):
+    """Regex/agent checks over the tree. `deadline` (monotonic) bounds the work; `state` records partial results."""
+    if state is not None:
+        state.setdefault("complete", True)
+        state.setdefault("skipped", [])
     findings: list[dict] = []
     telemetry: dict[str, Any] = {}
     optouts: set[str] = set()
@@ -2172,10 +2176,8 @@ def run_agent_checks(root):
     own = own_domains(root)
     prose: list[str] = []
     nfiles = 0
-    for p in iter_files(root):
-        nfiles += 1
-        if nfiles > 50000:
-            break
+    def check_one(p):
+        nonlocal privacy_doc
         r = rel(root, p)
         low = p.name.lower()
         if low in PRIVACY_DOC_NAMES or PRIVACY_DOC_RE.search(r):
@@ -2187,15 +2189,15 @@ def run_agent_checks(root):
                                         "Encrypted archives can't be scanned; this is how malware samples are shipped. Never extract on a real machine."))
             else:
                 findings.append(finding("agent-checks", "medium", r, 0, "Archive in repo (contents not scanned)", low, "Archives are never extracted; review where it came from."))
-            continue
+            return
         if p.suffix.lower() in BINARY_EXT:
             findings.append(finding("agent-checks", "medium", r, 0, "Prebuilt binary/compiled artifact in repo", p.suffix, "Binaries can't be reviewed as source; verify where they came from."))
-            continue
+            return
         if check_magic(root, p, findings):
-            continue
+            return
         text = read_text(p)
         if text is None:
-            continue
+            return
         if p.suffix.lower() in PROSE_EXT or low.startswith(("readme", "privacy", "security", "notice")):
             if sum(len(x) for x in prose) < 800_000:
                 prose.append(text)
@@ -2214,7 +2216,39 @@ def run_agent_checks(root):
             check_telemetry(root, p, text, telemetry, optouts, optouts_code)
             check_privacy(root, p, text, privacy, own)
             check_privacy_signals(root, p, text, privacy, masks)
-    tf = telemetry_findings(telemetry, optouts, optouts_code)
+    skipped_slow: list[str] = []
+    for p in iter_files(root):
+        nfiles += 1
+        if nfiles > 50000:
+            break
+        if deadline is not None and time.monotonic() >= deadline:
+            if state is not None:
+                state["complete"] = False
+            break
+        budget = SCAN_FILE_SECONDS
+        if deadline is not None:
+            budget = max(0.01, min(SCAN_FILE_SECONDS, deadline - time.monotonic()))
+        try:
+            with _scan_alarm(budget):
+                check_one(p)
+        except ScanDeadline:
+            skipped_slow.append(rel(root, p))
+            if deadline is not None and time.monotonic() >= deadline:
+                if state is not None:
+                    state["complete"] = False
+                break
+    if skipped_slow:
+        if state is not None:
+            state["skipped"].extend(skipped_slow)
+            state["complete"] = False
+        for sf in skipped_slow[:5]:
+            findings.append(finding("agent-checks", "info", sf, 0,
+                                     "Slow-file: skipped after the per-file alarm",
+                                     f"{SCAN_FILE_SECONDS:.0f}s budget",
+                                     "The regex checks on this file exceeded the per-file budget; the rest of the scan "
+                                     "continued. Exclude generated files or split the file if findings are expected there."))
+    tf = telemetry_findings(
+        telemetry, optouts, optouts_code)
     tracking_kinds = {"telemetry-analytics", "telemetry-ads", "telemetry-session-replay", "telemetry-crash", "telemetry-apm"}
     tracked = {f["title"].split(":")[0] for f in tf} & tracking_kinds
     pf = privacy_findings(privacy)
@@ -2597,14 +2631,83 @@ def scan_coverage(root):
             "unscanned_extensions": sorted(exts.items(), key=lambda kv: (-kv[1], kv[0]))[:12],
             "languages": {k: dict(sorted(v.items(), key=lambda kv: (-kv[1], kv[0]))[:12]) for k, v in languages.items()}}
 
-def inner(src, out):
-    """Runs offline scanners + agent checks. Used inside the container or locally."""
+# --- Hard deadline: --max-seconds, partial reports, never a truncated GREEN -----------------
+def _file_seconds():
+    try:
+        return max(0.0, float(os.environ.get("BEAGLE_FILE_SECONDS", "10")))
+    except ValueError:
+        return 10.0
+
+SCAN_FILE_SECONDS = _file_seconds()   # per-file alarm around the regex parsers (BEAGLE_FILE_SECONDS)
+
+class ScanDeadline(BaseException):
+    """The --max-seconds budget expired. A BaseException so broad `except Exception` handlers cannot swallow it."""
+
+def _raise_scan_deadline(signum, frame):
+    raise ScanDeadline("deadline reached")
+
+class _scan_alarm:
+    """Arm SIGALRM for `seconds` and raise ScanDeadline on expiry (main thread only; no-op elsewhere)."""
+
+    def __init__(self, seconds):
+        self.seconds = seconds
+        self.armed = False
+        self.old = None
+        self.old_timer = None
+
+    def __enter__(self):
+        if (self.seconds is None or self.seconds <= 0 or not hasattr(signal, "setitimer")
+                or getattr(signal, "SIGALRM", None) is None
+                or threading.current_thread() is not threading.main_thread()):
+            return self
+        self.old = signal.getsignal(signal.SIGALRM)
+        signal.signal(signal.SIGALRM, _raise_scan_deadline)
+        self.old_timer = signal.setitimer(signal.ITIMER_REAL, float(self.seconds))
+        self.armed = True
+        return self
+
+    def __exit__(self, *exc):
+        if self.armed:
+            signal.setitimer(signal.ITIMER_REAL, 0)
+            signal.signal(signal.SIGALRM, self.old if self.old is not None else signal.SIG_DFL)
+            if self.old_timer and self.old_timer[0] > 0:
+                signal.setitimer(signal.ITIMER_REAL, self.old_timer[0], self.old_timer[1])
+        return False
+
+def _deadline_left(deadline):
+    """Seconds until the deadline (negative once passed), or None when there is no deadline."""
+    return None if deadline is None else deadline - time.monotonic()
+
+def inner(src, out, deadline=None):
+    """Runs offline scanners + agent checks. Used inside the container or locally.
+
+    Honors `deadline` (monotonic): unfinished phases are noted, `complete` is False, and a
+    partial inner.json is still written so the host side produces a report instead of a traceback.
+    """
     out = Path(out); out.mkdir(parents=True, exist_ok=True)
     result: dict[str, Any] = {"findings": [], "notes": [], "tools": {}}
+    complete = True
+
+    def expired():
+        return deadline is not None and time.monotonic() >= deadline
+
+    def incomplete(phase, why):
+        nonlocal complete
+        complete = False
+        result["notes"].append(f"{phase}: {why}")
+
     for name, fn in (("gitleaks", scan_gitleaks), ("semgrep", scan_semgrep), ("guarddog", scan_guarddog), ("bandit", scan_bandit)):
+        if expired():
+            result["tools"][name] = {"findings": 0, "seconds": 0.0, "ok": False, "skipped": True}
+            incomplete(name, "skipped: --max-seconds deadline reached")
+            continue
         t = time.time()
         try:
-            fs, note = fn(src, out)
+            with _scan_alarm(_deadline_left(deadline)):
+                fs, note = fn(src, out)
+        except ScanDeadline:
+            fs, note = [], f"{name} cut by --max-seconds"
+            incomplete(name, "cut by --max-seconds; partial output discarded")
         except Exception as ex:
             fs, note = [], f"{name} crashed: {ex}"
         result["findings"] += fs
@@ -2613,24 +2716,58 @@ def inner(src, out):
         if ver: result["tools"][name]["version"] = ver
         if note: result["notes"].append(note)
     t = time.time()
-    fs, n = run_agent_checks(src)
+    agent_state: dict[str, Any] = {"complete": True, "skipped": []}
+    if expired():
+        fs, n = [], 0
+        agent_state["complete"] = False
+        incomplete("agent-checks", "skipped: --max-seconds deadline reached")
+    else:
+        try:
+            with _scan_alarm(_deadline_left(deadline)):
+                fs, n = run_agent_checks(src, deadline, agent_state)
+        except ScanDeadline:
+            fs, n = [], 0
+            agent_state["complete"] = False
+            incomplete("agent-checks", "cut by --max-seconds")
     result["findings"] += fs
-    result["tools"]["agent-checks"] = {"findings": len(fs), "seconds": round(time.time() - t, 1), "ok": True, "files": n}
+    result["tools"]["agent-checks"] = {"findings": len(fs), "seconds": round(time.time() - t, 1),
+                                       "ok": bool(agent_state.get("complete", True)), "files": n}
+    if not agent_state.get("complete", True):
+        incomplete("agent-checks", "stopped at the --max-seconds deadline")
+    if agent_state.get("skipped"):
+        skipped = agent_state["skipped"]
+        incomplete("agent-checks", f"per-file alarm skipped {len(skipped)} slow file(s): "
+                                   + ", ".join(skipped[:5]) + (" …" if len(skipped) > 5 else ""))
     t = time.time()
     try:
-        result["capabilities"] = scan_capabilities(src, trace=result.get("trace"))
+        if expired():
+            incomplete("capability map", "skipped: --max-seconds deadline reached")
+        else:
+            with _scan_alarm(_deadline_left(deadline)):
+                result["capabilities"] = scan_capabilities(src, trace=result.get("trace"))
+    except ScanDeadline:
+        incomplete("capability map", "cut by --max-seconds")
     except Exception as ex:
         result["notes"].append(f"capability map failed: {ex}")
     try:
-        cov = scan_coverage(src)
-        result["coverage"] = cov
-        if cov["files_total"] >= 20 and cov["bytes_scanned_pct"] < 60:
-            result["findings"].append(finding("agent-checks", "low", "(repo)", 0,
-                f"Coverage-low: only {cov['bytes_scanned_pct']}% of source bytes were inspected",
-                f"{cov['files_scanned']}/{cov['files_total']} files",
-                "Large or unsupported files are skipped, so a GREEN verdict over them is not evidence of safety."))
+        if expired():
+            incomplete("coverage accounting", "skipped: --max-seconds deadline reached")
+        else:
+            with _scan_alarm(_deadline_left(deadline)):
+                cov = scan_coverage(src)
+            result["coverage"] = cov
+            if cov["files_total"] >= 20 and cov["bytes_scanned_pct"] < 60:
+                result["findings"].append(finding("agent-checks", "low", "(repo)", 0,
+                    f"Coverage-low: only {cov['bytes_scanned_pct']}% of source bytes were inspected",
+                    f"{cov['files_scanned']}/{cov['files_total']} files",
+                    "Large or unsupported files are skipped, so a GREEN verdict over them is not evidence of safety."))
+    except ScanDeadline:
+        incomplete("coverage accounting", "cut by --max-seconds")
     except Exception as ex:
         result["notes"].append(f"coverage accounting failed: {ex}")
+    result["complete"] = complete
+    if not complete and not any("incomplete" in n for n in result["notes"]):
+        result["notes"].append("scan incomplete: --max-seconds deadline reached; findings cover only the phases that finished")
     (out / "inner.json").write_text(json.dumps(result))
     return result
 
@@ -4373,8 +4510,9 @@ def head_report(target, profile="balanced", token="", use_cache=True):
             dest.parent.mkdir(parents=True, exist_ok=True)
             dest.write_text(text, encoding="utf-8")
         t0 = time.time()
+        agent_state: dict[str, Any] = {"complete": True, "skipped": []}
         try:
-            findings, nfiles = run_agent_checks(src)
+            findings, nfiles = run_agent_checks(src, None, agent_state)
         except Exception as ex:
             raise HeadError(f"checks failed: {type(ex).__name__}: {ex}")
         caps = scan_capabilities(src)
@@ -4392,8 +4530,13 @@ def head_report(target, profile="balanced", token="", use_cache=True):
             notes.append(f"suppressed {len(suppressed)} finding(s) via {SUPPRESS_FILE}")
         notes.extend(suppression_notes(entries, expired))
         v, why, counts = verdict(active, profile, None)
+        complete = bool(agent_state.get("complete", True)) and not agent_state.get("skipped")
+        if not complete and v == "GREEN":
+            v = "YELLOW"
+            why = "Incomplete triage: the per-file alarm skipped a metadata file; GREEN is unproven."
         summary = privacy_summary(active)
         meta = {"target": target, "ref": None, "commit": None, "fetched_via": source,
+                "complete": complete,
                 "mode": "metadata (no clone, no scanners, no repo code executed)", "profile": profile,
                 "files": nfiles, "seconds": round(time.time() - t0, 1),
                 "tools": {"agent-checks": {"findings": len(active), "seconds": round(time.time() - t0, 1),
@@ -4677,7 +4820,8 @@ def report(meta, findings, v, why, counts, notes, ai, use_color, maxn=40, min_se
         print(C("1", f"  scope: changed files only ({scp.get('changed_files')} since {scp.get('since')}); "
                      "pre-existing findings elsewhere are not re-reported"))
     print(f"tools: " + ", ".join(f"{k}({t['findings']}{'' if t['ok'] else ' !'})" for k, t in meta["tools"].items()))
-    print("\n" + C(vc, f"  VERDICT: {v}  ") + "  " + why)
+    partial = " (partial)" if meta.get("complete") is False else ""
+    print("\n" + C(vc, f"  VERDICT: {v}{partial}  ") + "  " + why)
     print(f"  critical {counts['critical']}  high {counts['high']}  medium {counts['medium']}  low {counts['low']}\n")
     if meta.get("suppressed"):
         print(C("2", f"  suppressed {meta['suppressed']} finding(s) via {SUPPRESS_FILE} (kept in --json with suppressed=true)"))
@@ -5022,6 +5166,8 @@ def sbom_report(root, report):
         props.append({"name": f"repobeagle:counts.{sev}", "value": str(n)})
     if unparsed:
         props.append({"name": "repobeagle:unparsed-manifests", "value": ", ".join(sorted(unparsed))})
+    if meta.get("complete") is False:
+        props.append({"name": "repobeagle:complete", "value": "false"})
     vulns: dict[str, dict[str, Any]] = {}
     for f in report.get("findings") or []:
         if not isinstance(f, dict) or f.get("suppressed") or f.get("tool") != "osv-scanner":
@@ -5182,9 +5328,13 @@ def cmd_ignore(a):
 def cmd_scan(a):
     print(banner(color_enabled(sys.stderr) and not a.no_color), file=sys.stderr)   # stderr keeps stdout reports clean
     t0 = time.time()
-    profile = "strict" if a.strict else "relaxed" if a.relaxed else "balanced"
-    skipped = []
+    max_seconds = getattr(a, "max_seconds", None)
+    if max_seconds is not None and max_seconds <= 0:
+        print("scan: --max-seconds must be greater than 0", file=sys.stderr)
+        return 1
     osv_meta: dict[str, Any] = {}
+    skipped = []
+    profile = "strict" if a.strict else "relaxed" if a.relaxed else "balanced"
     baseline = None
     if getattr(a, "baseline", None):
         try:
@@ -5210,12 +5360,33 @@ def cmd_scan(a):
         os.chmod(work, 0o700)
         print(f"[repobeagle] fetching {a.target} ...", file=sys.stderr)
         src, how, commit = fetch(a.target, work, getattr(a, "ref", None), getattr(a, "since", None))
+        analysis_deadline = time.monotonic() + max_seconds if max_seconds else None
+        analysis_complete = True
         out = Path(work) / "out"; out.mkdir()
         use_docker = not a.no_docker and docker_ok()
         if not a.no_docker and not use_docker:
             print(f"[repobeagle] docker image {IMAGE} not available -> local fallback (run ./install.sh, or ./install.sh --build-local)", file=sys.stderr)
         print(f"[repobeagle] scanning ({'docker --network none' if use_docker else 'local'}) ...", file=sys.stderr)
-        res = run_in_docker(src, out) if use_docker else inner(src, out)
+        try:
+            if use_docker:
+                # the container has its own 3600 s timeout; cut it at the deadline (partial report)
+                with _scan_alarm(_deadline_left(analysis_deadline)):
+                    res = run_in_docker(src, out)
+            else:
+                res = inner(src, out, deadline=analysis_deadline)   # phases guard themselves
+        except ScanDeadline:
+            res = {"findings": [], "tools": {},
+                   "notes": ["scan stopped at --max-seconds before the analysis phase wrote results"],
+                   "complete": False}
+        if not res.get("complete", True):
+            analysis_complete = False
+        def budget_exhausted(phase):
+            nonlocal analysis_complete
+            if analysis_deadline is not None and time.monotonic() >= analysis_deadline:
+                analysis_complete = False
+                notes.append(f"{phase} skipped: --max-seconds deadline reached; the report is partial")
+                return True
+            return False
         findings, notes, tools = res["findings"], res["notes"], res["tools"]
         sk = Path(work) / "skipped.json"
         if sk.exists():
@@ -5226,8 +5397,14 @@ def cmd_scan(a):
                     ("Archive (not downloaded; uninspectable, likely encrypted malware sample)" if mal else "Archive in repo (not downloaded/inspected)") if arch
                     else "Prebuilt binary/compiled artifact (not downloaded/inspected)", n,
                     "Archives/binaries are never downloaded or extracted; their contents cannot be vetted."))
-        if not a.no_osv:
-            t = time.time(); fs, note = scan_osv(src, getattr(a, "offline_vulnerabilities", False))
+        if not a.no_osv and not budget_exhausted("OSV scan"):
+            t = time.time()
+            try:
+                with _scan_alarm(_deadline_left(analysis_deadline)):
+                    fs, note = scan_osv(src, getattr(a, "offline_vulnerabilities", False))
+            except ScanDeadline:
+                fs, note = [], "osv-scanner cut by --max-seconds"
+                analysis_complete = False
             findings += fs; tools["osv-scanner"] = {"findings": len(fs), "seconds": round(time.time() - t, 1), "ok": note is None}
             ver = tool_version("osv-scanner")
             if ver: tools["osv-scanner"]["version"] = ver
@@ -5246,13 +5423,19 @@ def cmd_scan(a):
                 if bad:
                     notes.append(f"offline OSV database unreadable for {', '.join(bad)}; "
                                  "re-run 'repobeagle db --update <dir-with-lockfiles>'")
-        if not a.no_trust:
+        if not a.no_trust and not budget_exhausted("trust signals"):
             t = time.time(); fs, note = trust_signals(a.target)
             findings += fs
             if fs or note: tools["trust"] = {"findings": len(fs), "seconds": round(time.time() - t, 1), "ok": note is None}
             if note: notes.append(note)
-        if a.verify_deps:
-            fs, note = verify_deps(src); findings += fs
+        if a.verify_deps and not budget_exhausted("verify-deps"):
+            try:
+                with _scan_alarm(_deadline_left(analysis_deadline)):
+                    fs, note = verify_deps(src)
+            except ScanDeadline:
+                fs, note = [], "verify-deps cut by --max-seconds"
+                analysis_complete = False
+            findings += fs
             if note: notes.append(note)
         if skipped:
             notes.append("privacy-only: skipped non-privacy stages (" + ", ".join(skipped) + ")")
@@ -5281,13 +5464,22 @@ def cmd_scan(a):
         ai, note = ai_review(src, active)
         if note: notes.append(note)
         v, why, counts = verdict(active, profile, ai)
+        complete = analysis_complete and bool(res.get("complete", True))
+        if not complete:
+            if v == "GREEN":
+                v = "YELLOW"
+                why = "Incomplete scan (--max-seconds): no findings so far, but not every phase finished; GREEN is unproven."
+            else:
+                why = f"{why} (scan incomplete: --max-seconds deadline reached)"
+            notes.append("scan incomplete: --max-seconds deadline reached; this verdict cannot be GREEN")
         privacy_mode = "only" if a.privacy_only else "excluded" if a.no_privacy else "full"
         summary = privacy_summary(active)
         meta = {"target": a.target, "ref": getattr(a, "ref", None), "commit": commit,
                 "fetched_via": how, "mode": "docker (--network none, read-only)" if use_docker else "local (no docker)",
                 "profile": profile, "files": tools.get("agent-checks", {}).get("files"), "seconds": round(time.time() - t0, 1),
                 "tools": tools, "suppressed": len(suppressed), "suppressions": suppression_meta(entries),
-                "pii_redacted": not a.no_redact, "privacy_mode": privacy_mode, "ruleset": RULESET}
+                "pii_redacted": not a.no_redact, "privacy_mode": privacy_mode, "ruleset": RULESET,
+                "complete": complete}
         meta.update(osv_meta)
         caps = res.get("capabilities")
         if caps: meta["capabilities"] = caps
@@ -5746,6 +5938,9 @@ def main():
         g.add_argument("--strict", action="store_true"); g.add_argument("--balanced", action="store_true"); g.add_argument("--relaxed", action="store_true")
         s.add_argument("--keep", action="store_true", help="keep the temp clone")
         s.add_argument("--json", metavar="FILE")
+        s.add_argument("--max-seconds", type=float, metavar="SECONDS",
+                       help="analysis budget after the tree is fetched: an unfinished scan is written as a partial report "
+                            "(meta.complete=false, verdict floor YELLOW)")
         s.add_argument("--html", metavar="FILE", help="write a self-contained HTML report")
         s.add_argument("--sbom", metavar="FILE", help="write a CycloneDX 1.6 SBOM from the scanned lockfiles")
         s.add_argument("--no-docker", action="store_true", help="run scanners locally instead of in the container")
