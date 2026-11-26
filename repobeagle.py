@@ -2819,7 +2819,50 @@ def privacy_findings(privacy):
 # ----------------------------------------------------------------------------
 # Repo trust signals (host only, unauthenticated GitHub API; LOW/INFO only)
 # ----------------------------------------------------------------------------
-def trust_findings(requested, repo, owner, contributors, now=None):
+# --- Provenance signals: signatures, association, release immutability, fork drift (LOW/INFO only) ---
+def trust_provenance(slug, repo, get):
+    """Best-effort GitHub API payloads for provenance; never raises, missing data is simply absent."""
+    prov: dict[str, Any] = {}
+    branch = str(repo.get("default_branch") or "")
+    parent = repo.get("parent") or {}
+    if branch:
+        try:
+            c = get(f"repos/{slug}/commits/{urllib.parse.quote(branch, safe='')}")
+            ver = ((c.get("commit") or {}).get("verification") or {})
+            prov["commit"] = {"verified": ver.get("verified"), "reason": ver.get("reason"),
+                              "author": (c.get("author") or {}).get("login")}
+        except Exception:
+            pass
+    try:
+        tags = get(f"repos/{slug}/tags?per_page=1")
+        if tags:
+            tag = tags[0]
+            sha = ((tag.get("commit") or {}).get("sha") or "")
+            if sha:
+                c = get(f"repos/{slug}/commits/{urllib.parse.quote(sha, safe='')}")
+                ver = ((c.get("commit") or {}).get("verification") or {})
+                prov["tag"] = {"name": tag.get("name"), "verified": ver.get("verified"), "reason": ver.get("reason")}
+    except Exception:
+        pass
+    try:
+        rel = get(f"repos/{slug}/releases/latest")
+        if rel and rel.get("immutable") is not None:
+            prov["release"] = {"tag": rel.get("tag_name"), "immutable": rel.get("immutable")}
+    except Exception:
+        pass
+    if repo.get("fork") and parent.get("full_name") and branch:
+        owner = ((repo.get("owner") or {}).get("login") or "")
+        base = str(parent.get("default_branch") or "main")
+        try:
+            cmp = get(f"repos/{parent['full_name']}/compare/{urllib.parse.quote(base, safe='')}"
+                      f"...{owner}:{branch}")
+            prov["fork"] = {"upstream": parent.get("full_name"), "ahead": cmp.get("ahead_by"),
+                             "files": len(cmp.get("files") or [])}
+        except Exception:
+            pass
+    return prov
+
+def trust_findings(requested, repo, owner, contributors, now=None, provenance=None):
     import datetime as D
     now = now or D.datetime.now(D.timezone.utc)
     age = lambda s: (now - D.datetime.fromisoformat(s.replace("Z", "+00:00"))).days
@@ -2834,6 +2877,34 @@ def trust_findings(requested, repo, owner, contributors, now=None):
     if st >= 500 and ra < 60: fs.append(T("low", "star-spike", f"{st} stars in {ra} days"))
     if contributors <= 1 and st >= 200: fs.append(T("low", "single-contributor", f"{st} stars but one contributor"))
     if repo.get("archived"): fs.append(T("info", "archived", "repo is archived"))
+    prov = provenance or {}
+    commit = prov.get("commit") or {}
+    if commit:
+        if commit.get("verified") is False:
+            fs.append(T("info", "commit-unsigned",
+                        f"default-branch commit is not signed (reason: {commit.get('reason') or 'unknown'})"))
+        if not commit.get("author"):
+            fs.append(T("low", "commit-unassociated",
+                        "default-branch commit author email is not linked to a GitHub account"))
+    tag = prov.get("tag") or {}
+    if tag and tag.get("verified") is False:
+        fs.append(T("info", "tag-unsigned",
+                    f"latest tag {tag.get('name') or '?'} points at an unsigned commit "
+                    f"(reason: {tag.get('reason') or 'unknown'})"))
+    release = prov.get("release") or {}
+    if release.get("immutable") is True:
+        fs.append(T("info", "release-immutable", f"latest release {release.get('tag') or '?'} is immutable"))
+    elif release.get("immutable") is False:
+        fs.append(T("low", "release-mutable",
+                    f"latest release {release.get('tag') or '?'} is not immutable: its tag or assets can be replaced"))
+    fork = prov.get("fork") or {}
+    if fork:
+        ahead, files = fork.get("ahead"), fork.get("files")
+        if ahead or files:
+            fs.append(T("low", "fork-drift",
+                        f"{ahead} commit(s) ahead, {files} file(s) changed vs upstream {fork.get('upstream') or '?'}"))
+        else:
+            fs.append(T("info", "fork-synced", "fork has no commits ahead of upstream"))
     return fs
 
 def trust_signals(target):
@@ -2858,7 +2929,8 @@ def trust_signals(target):
             contributors = int(lm.group(1)) if lm else len(data or [])
         except Exception:
             pass
-        return trust_findings(slug, repo, owner, contributors), None
+        provenance = trust_provenance(slug, repo, get)
+        return trust_findings(slug, repo, owner, contributors, provenance=provenance), None
     except Exception as ex:
         return [], f"trust signals skipped (GitHub API unavailable or rate-limited: {str(ex)[:80]})"
 
