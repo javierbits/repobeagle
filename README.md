@@ -160,6 +160,7 @@ repobeagle privacy <git-url | local-dir> [same scan options]
 repobeagle explain <report.json> [--accept RULE...] [--target green|yellow] [--write [--ignore-file FILE] [--reason TEXT]]
 repobeagle diff <old.json> <new.json> [--min-severity medium] [--json out.json]
 repobeagle trend <github-repo | report-dir | report.json...> [--branch BRANCH] [--limit N] [--json out.json]
+repobeagle serve [--host HOST] [--port PORT] [--cache DIR] [--root DIR] [--ip-budget N] [--repo-budget N] [--concurrency N] [--sign [--key FILE]] [scan flags]
 repobeagle fix <local-dir> [--dry-run] [--pins FILE] [--no-network] [--json out.json]
 repobeagle head <owner/repo | github-url | local-dir> [--strict|--relaxed] [--json out.json] [--markdown] [--no-cache] [--as PERSONA]
 repobeagle gate <entries-file> [--baseline old.json] [--json out.json] [--markdown] [--jobs N] [--report-only] [--strict|--relaxed] [--as PERSONA]
@@ -193,6 +194,16 @@ planner:
 
 `repobeagle diff` compares two reports and classifies what the change added or removed, matching on rule id + file so line moves and re-indentation are not counts as changes. It exits 1 when an added finding is at or above `--min-severity` (default `medium`), which is the gate to use in CI: keep yesterday's report, scan the PR, and fail only on *new* findings. Like `explain`, it never re-scans. `scan --baseline old.json --baseline-min-severity high` does the scan and the same gate in one command: it exits 1 only when the scan added a finding at/above the threshold, and the verdict exit code is deliberately not used in that mode. `--baseline-min-severity` is separate from `--min-severity`, which only controls printing.
 `repobeagle trend` reads the per-SHA reports that `scan.yml` already publishes (`report-<sha>.json` on the badge branch) and turns them into a verdict and rule history: ordered verdicts, first RED, per-rule regressions (a rule that appears after a report without it), the current streak, and the reason each malformed or incomparable report was skipped. A local directory of `report-*.json` or explicit report files needs no network; a GitHub slug lists the badge-branch commits (GitHub API, honors `BEAGLE_GITHUB_TOKEN`/`GITHUB_TOKEN`) and fetches the reports those commits name. Reports whose `meta.ruleset` or `version` differs from the newest report are skipped, because their rule ids are not comparable. `--json` emits the same ordered series for charts; no scan is re-run.
+
+`repobeagle serve` exposes the attestation API over HTTP: `GET /v1/scan/<owner>/<repo>[/<ref>]` returns the report for a 7–40 character commit (omitted ref = HEAD), `/v1/scan/<owner>/<repo>/<ref>/bundle` returns the Sigstore bundle, `/o/<owner>/<repo>` renders the self-contained HTML report and `/healthz` is the unauthenticated liveness check. A scan runs once per resolved commit and the bytes are then immutable on disk under `--cache` (a corrupt cache entry is re-scanned, never served). Budgets are sliding windows: `--ip-budget` requests per hour per address and `--repo-budget` scans per hour per repository; over budget the answer is `429` with `Retry-After`, never a wrong verdict. `--sign` signs each report with cosign keyless signing under GitHub OIDC (the `service.yml` identity) or with `--key`; an unsigned report is labeled in `meta.service.signed`, `X-Repobeagle-Signed: false` and `/bundle` answers 404. The service uses the pinned image when Docker is available and scans in-process otherwise (`--no-docker` forces the latter). Budgets and locks are per process, so a restart resets them.
+
+```bash
+docker run --rm -p 8080:8080 -v beagle-cache:/tmp/.cache ghcr.io/javierbits/repobeagle:v1.191.0 \
+  serve --host 0.0.0.0 --port 8080
+curl -s localhost:8080/v1/scan/javierbits/repobeagle | jq .verdict
+```
+
+Local repositories can be served too (`--root DIR` → `/v1/scan/local/<directory>`), which is what the offline tests exercise; GitHub mode resolves HEAD and missing refs with `git ls-remote` and scans the resolved commit. The acceptance workflow `.github/workflows/service.yml` starts the service with keyless signing, fetches a scan and its bundle, verifies them with `repobeagle verify`, repeats the request for byte-identical cached output, and proves the `429` path.
 
 `repobeagle fix <local-dir>` rewrites only the findings whose fix is mechanical: an unpinned `uses:` becomes a resolved 40-character commit SHA, and a top-level `permissions: write-all` becomes `contents: read`. It edits the flagged line in place (no YAML re-serialisation, so comments and layout survive), prints a unified diff, and `--dry-run` writes nothing. It never clones (check out the repo first) and never executes repository code.
 
@@ -472,7 +483,7 @@ The badge is produced by the author's own CI, so on its own it is self-attested.
 
 ```bash
 repobeagle verify javierbits/javierbits.github.io
-#   signature: VALID  policy: official scan.yml (main or v* tag)
+#   signature: VALID  policy: official scan/service workflow (main or v* tag)
 #   report:    YELLOW  0 critical / 6 high / 1 medium / 56 low
 #   scanned:   a7cb435002de at javierbits/javierbits.github.io (image ghcr.io/javierbits/repobeagle:v1.166.0)
 #   snippets:  redacted by scanner
@@ -480,19 +491,19 @@ repobeagle verify javierbits/javierbits.github.io
 #   freshness: UP TO DATE (HEAD a7cb435002de)
 ```
 
-Exit codes: 0 = signature valid and report covers HEAD, 1 = invalid signature or missing report, 2 = valid but stale (report is older than HEAD), 3 = `--rescan` normalized findings differ from the signed report. Local files work too: `repobeagle verify --report report.json --bundle report.sigstore.json`. Add `--rescan` to re-scan the report's pinned commit with your install and compare the normalized core (timings and the host-side OSV/trust stages excluded, see [Determinism](#determinism)). What it runs under the hood:
+Exit codes: 0 = signature valid and report covers HEAD, 1 = invalid signature or missing report, 2 = valid but stale (report is older than HEAD), 3 = `--rescan` normalized findings differ from the signed report. Local files work too: `repobeagle verify --report report.json --bundle report.sigstore.json`. A report signed by `serve --sign --key <private key>` (and not by a GitHub workflow) verifies with `--key cosign.pub`; the tlog check is skipped for key-signed reports because a local key has no public transparency-log identity. Add `--rescan` to re-scan the report's pinned commit with your install and compare the normalized core (timings and the host-side OSV/trust stages excluded, see [Determinism](#determinism)). What it runs under the hood:
 
 ```bash
 cosign verify-blob \
   --bundle report.sigstore.json \
-  --certificate-identity-regexp '^https://github\.com/javierbits/repobeagle/\.github/workflows/scan\.yml@refs/(heads/main|tags/v[0-9]+\.[0-9]+\.[0-9]+)$' \
+  --certificate-identity-regexp '^https://github\.com/javierbits/repobeagle/\.github/workflows/(scan|service)\.yml@refs/(heads/main|tags/v[0-9]+\.[0-9]+\.[0-9]+)$' \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com \
   report.json
 ```
 
 What this does and does not prove:
-- Proven: the official workflow ran and produced exactly this report. The report records `meta.image_digest`, `meta.toolchain_ref`, the run URL, the scanned SHA and the scanned repository; a report produced for any other repository is rejected. The offline scan is deterministic, so anyone can re-run the pinned image on the same commit and diff the findings.
-- Not proven: that the branch tip is still that commit. A repo owner can republish an old, honestly-green report next to new code; always check `meta.scanned_sha` against HEAD. A missing or failing signature means unverified, never verified. Badges also only make sense on public repos: on a private one nobody can see the README or the report. For a fully independent verdict, someone else must run the scan (or a future hosted service).
+- Proven: an official workflow (scan on the badge branch, or `serve` for its own reports) signed exactly this report. The report records `meta.image_digest`, `meta.toolchain_ref`, the run URL, the scanned SHA and the scanned repository; a report produced for any other repository is rejected. The offline scan is deterministic, so anyone can re-run the pinned image on the same commit and diff the findings.
+- Not proven: that the branch tip is still that commit. A repo owner can republish an old, honestly-green report next to new code; always check `meta.scanned_sha` against HEAD. A missing or failing signature means unverified, never verified. Badges also only make sense on public repos: on a private one nobody can see the README or the report. For an independent verdict, run the scan elsewhere yourself: `repobeagle serve` is the same attestation service over HTTP (or use a hosted deployment of it).
 
 ### Gate on new findings instead of the absolute verdict
 

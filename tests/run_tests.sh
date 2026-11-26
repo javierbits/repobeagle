@@ -57,6 +57,7 @@ python3 tests/test_dependency_graph.py || fail=1
 python3 tests/test_batch.py || fail=1
 python3 tests/test_cache.py || fail=1
 python3 tests/test_trend.py || fail=1
+python3 tests/test_serve.py || fail=1
 python3 tests/test_config.py || fail=1
 python3 tests/test_personas.py || fail=1
 python3 tests/test_rule_packs.py || fail=1

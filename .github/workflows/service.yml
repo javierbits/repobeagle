@@ -1,0 +1,105 @@
+# End-to-end acceptance for the hosted attestation service (T1).
+# Starts `repobeagle serve`, fetches a scan + its Sigstore bundle, verifies the bundle
+# with `repobeagle verify`, repeats the request for byte-identical cached output, and
+# proves the per-IP budget answers 429 instead of a wrong verdict.
+name: service
+on:
+  pull_request:
+    paths: ["repobeagle.py", "tests/test_serve.py", ".github/workflows/service.yml", "VERSION"]
+  push:
+    branches: [main]
+    paths: ["repobeagle.py", "tests/test_serve.py", ".github/workflows/service.yml", "VERSION"]
+  workflow_dispatch:
+permissions:
+  contents: read
+  id-token: write     # keyless Sigstore signing via the service workflow identity
+concurrency:
+  group: service-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  acceptance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: sigstore/cosign-installer@v3
+
+      - name: Service API tests (cache, budgets, local-key signing)
+        run: python3 tests/test_serve.py
+
+      - name: Start the service (keyless signing)
+        run: |
+          set -euo pipefail
+          python3 repobeagle.py serve --host 127.0.0.1 --port 0 \
+            --cache "$RUNNER_TEMP/cache" --ip-budget 20 --repo-budget 10 \
+            --sign --no-docker --no-osv --no-trust > "$RUNNER_TEMP/serve.log" 2>&1 &
+          echo $! > "$RUNNER_TEMP/serve.pid"
+          for _ in $(seq 1 100); do grep -q 'http://' "$RUNNER_TEMP/serve.log" && break; sleep 0.2; done
+          cat "$RUNNER_TEMP/serve.log"
+          PORT="$(grep -oE 'http://[^:]+:[0-9]+' "$RUNNER_TEMP/serve.log" | head -1 | grep -oE '[0-9]+$')"
+          test -n "$PORT"
+          echo "PORT=$PORT" >> "$GITHUB_ENV"
+          echo "SCAN_REF=${{ github.event.pull_request.base.sha || github.sha }}" >> "$GITHUB_ENV"
+
+      - name: Fetch a signed report and verify it
+        run: |
+          set -euo pipefail
+          B="http://127.0.0.1:$PORT"
+          URL="$B/v1/scan/$GITHUB_REPOSITORY/$SCAN_REF"
+          curl -fsS -D "$RUNNER_TEMP/headers-1" -o "$RUNNER_TEMP/report.json" "$URL"
+          curl -fsS -o "$RUNNER_TEMP/report.sigstore.json" "$URL/bundle"
+          grep -qi '^x-repobeagle-cache: miss' "$RUNNER_TEMP/headers-1"
+          grep -qi '^x-repobeagle-signed: true' "$RUNNER_TEMP/headers-1"
+          python3 - "$RUNNER_TEMP/report.json" "$SCAN_REF" <<'PY'
+          import json, os, sys
+          d = json.load(open(sys.argv[1], encoding="utf-8"))
+          meta = d.get("meta") or {}
+          assert d.get("verdict") in ("GREEN", "YELLOW", "RED"), d.get("verdict")
+          assert (meta.get("service") or {}).get("signed") is True, meta.get("service")
+          assert meta.get("scanned_repo") == os.environ["GITHUB_REPOSITORY"], meta.get("scanned_repo")
+          assert meta.get("scanned_sha") == sys.argv[2], meta.get("scanned_sha")
+          print("PASS service report", d["verdict"], d.get("counts"))
+          PY
+          python3 repobeagle.py verify \
+            --report "$RUNNER_TEMP/report.json" --bundle "$RUNNER_TEMP/report.sigstore.json" \
+            --identity-regexp "^https://github\.com/javierbits/repobeagle/\.github/workflows/service\.yml@refs/(pull/[0-9]+/merge|heads/main)$"
+
+      - name: Repeat the request (immutable cache, identical bytes)
+        run: |
+          set -euo pipefail
+          B="http://127.0.0.1:$PORT"
+          URL="$B/v1/scan/$GITHUB_REPOSITORY/$SCAN_REF"
+          curl -fsS -D "$RUNNER_TEMP/headers-2" -o "$RUNNER_TEMP/report-2.json" "$URL"
+          grep -qi '^x-repobeagle-cache: hit' "$RUNNER_TEMP/headers-2"
+          cmp "$RUNNER_TEMP/report.json" "$RUNNER_TEMP/report-2.json"
+          echo "PASS same commit served byte-identically from the cache"
+
+      - name: Rate-limited client gets 429, not a wrong verdict
+        run: |
+          set -euo pipefail
+          python3 repobeagle.py serve --host 127.0.0.1 --port 0 \
+            --cache "$RUNNER_TEMP/cache" --ip-budget 1 --repo-budget 10 \
+            --sign --no-docker --no-osv --no-trust > "$RUNNER_TEMP/limited.log" 2>&1 &
+          echo $! > "$RUNNER_TEMP/limited.pid"
+          for _ in $(seq 1 100); do grep -q 'http://' "$RUNNER_TEMP/limited.log" && break; sleep 0.2; done
+          PORT2="$(grep -oE 'http://[^:]+:[0-9]+' "$RUNNER_TEMP/limited.log" | head -1 | grep -oE '[0-9]+$')"
+          test -n "$PORT2"
+          B="http://127.0.0.1:$PORT2/v1/scan/$GITHUB_REPOSITORY/$SCAN_REF"
+          FIRST="$(curl -s -o /dev/null -w '%{http_code}' "$B")"
+          SECOND="$(curl -s -o "$RUNNER_TEMP/limited.json" -w '%{http_code}' -D "$RUNNER_TEMP/limited.headers" "$B")"
+          test "$FIRST" = 200
+          test "$SECOND" = 429
+          test "$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:$PORT2/healthz")" = 200
+          echo "PASS 429 for the rate-limited client"
+
+      - name: Stop the services and show their logs
+        if: always()
+        run: |
+          for f in "$RUNNER_TEMP/serve.pid" "$RUNNER_TEMP/limited.pid"; do
+            [ -f "$f" ] && kill "$(cat "$f")" 2>/dev/null || true
+          done
+          echo '--- serve.log'; tail -20 "$RUNNER_TEMP/serve.log" || true
+          echo '--- limited.log'; tail -20 "$RUNNER_TEMP/limited.log" || true
