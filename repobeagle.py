@@ -6,7 +6,7 @@ NEVER executes repository code. Stdlib only (scanners are external binaries).
                   [--json out.json] [--no-docker] [--verify-deps] [--no-osv] [--no-trust]
   repobeagle verify <github-repo> [--branch repobeagle] [--expect-sha SHA]
 """
-import argparse, hashlib, json, os, platform, re, shutil, subprocess, sys, tempfile, time, unicodedata
+import argparse, hashlib, json, os, platform, re, shutil, subprocess, sys, tempfile, time, unicodedata, zipfile
 import urllib.error, urllib.parse, urllib.request
 from fnmatch import fnmatchcase
 from typing import Any
@@ -3847,19 +3847,47 @@ def osv_db_dir():
     """Where osv-scanner caches its offline vulnerability databases."""
     return Path(os.environ.get("XDG_CACHE_HOME") or (Path(os.environ.get("HOME") or "/tmp") / ".cache")) / "osv-scalibr"
 
+OSV_DB_MAX_AGE_DAYS = int(os.environ.get("BEAGLE_DB_MAX_AGE_DAYS", "30"))
+
 def osv_db_info():
+    """Status of the offline OSV databases, with the freshness policy (BEAGLE_DB_MAX_AGE_DAYS, default 30)."""
     base = osv_db_dir()
-    out: dict[str, Any] = {"path": str(base), "ecosystems": [], "bytes": 0, "updated": None}
+    out: dict[str, Any] = {"path": str(base), "ecosystems": [], "bytes": 0, "updated": None,
+                            "age_days": None, "stale": False, "max_age_days": OSV_DB_MAX_AGE_DAYS}
+    newest = 0.0
     try:
         for p in sorted(base.glob("*/all.zip")):
             st = p.stat()
-            out["ecosystems"].append({"ecosystem": p.parent.name, "bytes": st.st_size})
+            entry = {"ecosystem": p.parent.name, "bytes": st.st_size}
+            try:
+                with zipfile.ZipFile(p) as zf:
+                    zf.infolist()               # directory only; catches a truncated/half-written DB
+                entry["corrupt"] = False
+            except Exception:
+                entry["corrupt"] = True
+            out["ecosystems"].append(entry)
             out["bytes"] += st.st_size
+            newest = max(newest, st.st_mtime)
             stamp = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(st.st_mtime))
             out["updated"] = max(out["updated"] or "", stamp)
     except OSError:
         pass
+    if newest:
+        out["age_days"] = int((time.time() - newest) // 86400)
+        out["stale"] = out["age_days"] > OSV_DB_MAX_AGE_DAYS
     return out
+
+def osv_db_warning(meta):
+    """Warning for a report whose offline OSV database was stale or absent; None when it is fine."""
+    meta = meta if isinstance(meta, dict) else {}
+    dbm = meta.get("osv_db")
+    if isinstance(dbm, dict):
+        if dbm.get("stale"):
+            return (f"report used an offline OSV database {dbm.get('age_days')} day(s) old "
+                    f"(policy {dbm.get('max_age_days')} days); new advisories may be missing")
+        if meta.get("offline_vulnerabilities") and not dbm.get("ecosystems"):
+            return "report used --offline-vulnerabilities but recorded no database"
+    return None
 
 def cmd_db(a):
     """Status or refresh of the local OSV database. Host-side only; the scan itself stays offline."""
@@ -3868,9 +3896,19 @@ def cmd_db(a):
         print(f"OSV offline database: {info['path']}")
         if info["ecosystems"]:
             for e in info["ecosystems"]:
-                print(f"  {e['ecosystem']}: {e['bytes'] // 1024 // 1024} MB")
-            print(f"  updated: {info['updated']}  ({info['bytes'] // 1024 // 1024} MB total)")
+                print(f"  {e['ecosystem']}: {e['bytes'] // 1024 // 1024} MB"
+                      + (" (corrupt)" if e.get("corrupt") else ""))
+            print(f"  updated: {info['updated']}  ({info['bytes'] // 1024 // 1024} MB total, "
+                  f"{info['age_days']} day(s) old)")
             print("  use: repobeagle scan <target> --offline-vulnerabilities")
+            if info["stale"]:
+                print(f"  warning: older than the {info['max_age_days']}-day policy "
+                      f"(BEAGLE_DB_MAX_AGE_DAYS); run: repobeagle db --update <dir-with-lockfiles>",
+                      file=sys.stderr)
+            bad = [e["ecosystem"] for e in info["ecosystems"] if e.get("corrupt")]
+            if bad:
+                print(f"  warning: unreadable database for {', '.join(bad)}; run: repobeagle db --update <dir>",
+                      file=sys.stderr)
         else:
             print("  no databases downloaded; run: repobeagle db --update <dir-with-lockfiles>")
         return 0
@@ -4170,6 +4208,14 @@ def cmd_scan(a):
                 if not osv_meta["osv_db"]["ecosystems"]:
                     notes.append(f"offline OSV database missing at {osv_meta['osv_db']['path']}; "
                                  "run 'repobeagle db --update <dir-with-lockfiles>' for deterministic results")
+                elif osv_meta["osv_db"]["stale"]:
+                    notes.append(f"offline OSV database is {osv_meta['osv_db']['age_days']} day(s) old "
+                                 f"(policy: {osv_meta['osv_db']['max_age_days']} days); "
+                                 "run 'repobeagle db --update <dir-with-lockfiles>' to refresh")
+                bad = [e["ecosystem"] for e in osv_meta["osv_db"]["ecosystems"] if e.get("corrupt")]
+                if bad:
+                    notes.append(f"offline OSV database unreadable for {', '.join(bad)}; "
+                                 "re-run 'repobeagle db --update <dir-with-lockfiles>'")
         if not a.no_trust:
             t = time.time(); fs, note = trust_signals(a.target)
             findings += fs
@@ -4482,6 +4528,11 @@ def cmd_verify(a):
         if drift:
             print(f"  warning:   report toolchain differs from the pinned image ({', '.join(drift)}); "
                   "re-scan with this image to compare verdicts")
+        dbm = (d.get("meta") or {}).get("osv_db")
+        if isinstance(dbm, dict):
+            warning = osv_db_warning(d.get("meta"))
+            if warning:
+                print(f"  warning:   {warning}")
         summary = d.get("privacy_summary") or privacy_summary(d.get("findings") or [])
         if summary:
             parts = []

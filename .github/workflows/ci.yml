@@ -25,7 +25,7 @@ jobs:
       # Syntax-level lint only: the scanner is a single 3.4k-line module and the
       # fixtures intentionally contain odd code, so style rules would be noise.
       - name: Byte-compile the scanner and tools
-        run: python3 -m py_compile repobeagle.py tools/make_badge.py tests/test_banner.py tests/test_trust.py tests/test_privacy.py tests/test_toolchain.py tests/test_explain.py tests/test_rule_fixtures.py tests/test_fuzz.py tests/test_determinism.py tests/test_markdown_snapshot.py tests/test_sarif_schema.py tests/test_mcp_interop.py tests/test_capabilities.py tests/test_coverage.py tests/test_web.py tests/test_refs.py tests/test_scope.py tests/test_remediation.py
+        run: python3 -m py_compile repobeagle.py tools/make_badge.py tests/test_banner.py tests/test_trust.py tests/test_privacy.py tests/test_toolchain.py tests/test_explain.py tests/test_rule_fixtures.py tests/test_fuzz.py tests/test_determinism.py tests/test_markdown_snapshot.py tests/test_sarif_schema.py tests/test_mcp_interop.py tests/test_capabilities.py tests/test_coverage.py tests/test_web.py tests/test_refs.py tests/test_scope.py tests/test_remediation.py tests/test_osv.py
       - name: Lint for syntax errors and undefined names
         run: ruff check --no-cache --select E9,F63,F7,F82 repobeagle.py tools tests/*.py
       - name: Type-check the scanner and tools (mypy.ini)
@@ -34,3 +34,33 @@ jobs:
         run: python3 tests/test_sarif_schema.py
       - name: Offline regression suite (fixtures only; no image, no OSV, no trust API)
         run: tests/run_tests.sh --offline
+      - name: Compute the OSV database cache week
+        id: osvweek
+        run: echo "week=$(date -u +%G-W%V)" >> "$GITHUB_OUTPUT"
+      - name: Restore the cached offline OSV database (populated by the nightly job)
+        id: osvcache
+        uses: actions/cache/restore@v4
+        with:
+          path: .osv-cache/osv-scalibr
+          key: osv-db-${{ steps.osvweek.outputs.week }}
+          restore-keys: osv-db-
+      - name: Deterministic vulnerability scan with the cached offline OSV database
+        if: steps.osvcache.outputs.cache-hit == 'true'
+        env:
+          XDG_CACHE_HOME: ${{ github.workspace }}/.osv-cache
+        run: |
+          python3 repobeagle.py scan tests/fixtures/control-vuln --offline-vulnerabilities --no-trust \
+            --json /tmp/osv.json --no-color || true
+          python3 - <<'PY'
+          import json
+          import sys
+          d = json.load(open("/tmp/osv.json")); m = d.get("meta") or {}; db = m.get("osv_db") or {}
+          ok = (m.get("offline_vulnerabilities") is True and db.get("ecosystems") and db.get("stale") is False)
+          print("PASS offline OSV scan records its database" if ok else f"FAIL offline OSV: {db}")
+          if any("not installed" in n for n in d.get("notes") or []):
+              print("note: osv-scanner is not installed on this runner; the database path/age is still asserted")
+          sys.exit(0 if ok else 1)
+          PY
+      - name: Offline OSV database not cached yet
+        if: steps.osvcache.outputs.cache-hit != 'true'
+        run: echo "no cached OSV database yet (the nightly job populates it); deterministic vulnerability findings skipped"
