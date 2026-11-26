@@ -1,0 +1,6 @@
+{"results": [{"source": {"path": "/fixture"}, "packages": [
+  {"package": {"name": "lodash", "version": "4.17.19", "ecosystem": "npm"},
+   "groups": [{"max_severity": "7.5"}],
+   "vulnerabilities": [{"id": "GHSA-test-0001",
+     "affected": [{"package": {"name": "lodash", "ecosystem": "npm"},
+                   "ranges": [{"type": "SEMVER", "events": [{"introduced": "0"}, {"fixed": "4.17.21"}]}]}]}]}]}]}

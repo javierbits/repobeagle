@@ -4105,6 +4105,71 @@ def attach_dependency_paths(src, findings):
             f["dependency_note"] = note
     return graph
 
+# --- Fixed-version availability for OSV advisories ------------------------------------------
+FIX_LOOKUPS_MAX = int(os.environ.get("BEAGLE_FIX_LOOKUPS", "20") or 20)
+OSV_REGISTRIES = {"npm": "npm", "pypi": "pypi", "pypi.org": "pypi", "crates.io": "crates", "crates": "crates"}
+
+def _version_sort_key(version):
+    parts = re.split(r"(\d+)", str(version))
+    return [(0, int(p)) if p.isdigit() else (1, p) for p in parts if p]
+
+def osv_fixed_versions(vulns, package):
+    """Sorted versions from *explicit* OSV `affected[].ranges[].events[].fixed` for `package` (never guessed)."""
+    found: set[str] = set()
+    for vuln in vulns or []:
+        if not isinstance(vuln, dict):
+            continue
+        for affected in vuln.get("affected") or []:
+            if not isinstance(affected, dict):
+                continue
+            pkg = affected.get("package") or {}
+            if str(pkg.get("name") or "") != package:
+                continue
+            for rng in affected.get("ranges") or []:
+                for event in (rng or {}).get("events") or []:
+                    fixed = (event or {}).get("fixed")
+                    if fixed:
+                        found.add(str(fixed))
+    return sorted(found, key=_version_sort_key)
+
+def package_latest_version(ecosystem, package):
+    """(latest version, fetched): registry JSON lookup with cache; fetched is False on a cache hit."""
+    eco = OSV_REGISTRIES.get(str(ecosystem), str(ecosystem))
+    if eco not in ("npm", "pypi", "crates"):
+        return None, False
+    cache = _registry_cache_path(eco, "latest_" + package)
+    try:
+        ttl = int(os.environ.get("BEAGLE_REGISTRY_TTL", str(REGISTRY_TTL)))
+    except ValueError:
+        ttl = REGISTRY_TTL
+    try:
+        d = json.loads(cache.read_text(encoding="utf-8"))
+        if time.time() - float(d.get("at") or 0) <= ttl:
+            return d.get("version"), False
+    except (OSError, ValueError):
+        pass
+    try:
+        if eco == "npm":
+            data = _registry_fetch("https://registry.npmjs.org/" + urllib.parse.quote(package, safe="@"))
+            version = (data.get("dist-tags") or {}).get("latest")
+        elif eco == "pypi":
+            data = _registry_fetch("https://pypi.org/pypi/" + urllib.parse.quote(package) + "/json")
+            version = (data.get("info") or {}).get("version")
+        else:
+            data = _registry_fetch("https://crates.io/api/v1/crates/" + urllib.parse.quote(package))
+            crate = data.get("crate") or {}
+            version = crate.get("max_stable_version") or crate.get("max_version")
+    except Exception:
+        return None, True
+    version = str(version) if version else None
+    try:
+        cache.parent.mkdir(parents=True, exist_ok=True)
+        cache.write_text(json.dumps({"at": time.time(), "package": package, "ecosystem": eco, "version": version}),
+                         encoding="utf-8")
+    except OSError:
+        pass
+    return version, True
+
 def scan_osv(src, offline=False):
     argv = ["osv-scanner", "scan", "source", "-r", "--format", "json"]
     if offline:
@@ -4124,6 +4189,7 @@ def scan_osv(src, offline=False):
             return [], None
         return [], "osv-scanner: " + (err[-1] if err else "no output")
     fs = []
+    lookups_used = 0
     for r in data.get("results") or []:
         f = os.path.relpath(r["source"]["path"], src)
         for pk in r.get("packages") or []:
@@ -4139,8 +4205,32 @@ def scan_osv(src, offline=False):
             else:
                 sev = "high" if maxsev >= 7 else "medium" if maxsev >= 4 or maxsev == 0 else "low"
             ids = ", ".join(sorted({v["id"] for v in vulns})[:4])
-            fs.append(finding("osv-scanner", sev, f, 0, f"{'MALICIOUS package' if mal else 'Vulnerable dependency'}: {p['name']}@{p.get('version')}",
-                              ids, f"{len(vulns)} known advisories" + (" incl. OSV malicious-package report" if mal else "") + (f" (max CVSS {maxsev})" if maxsev else "")))
+            entry = finding("osv-scanner", sev, f, 0,
+                            f"{'MALICIOUS package' if mal else 'Vulnerable dependency'}: {p['name']}@{p.get('version')}",
+                            ids, f"{len(vulns)} known advisories" + (" incl. OSV malicious-package report" if mal else "")
+                            + (f" (max CVSS {maxsev})" if maxsev else ""))
+            fixed = osv_fixed_versions(vulns, str(p.get("name")))
+            if fixed:
+                entry["fixed_in"] = fixed
+                entry["remediation"] = f"upgrade {p['name']} to {fixed[-1]}"
+                entry["meaning"] += f"; fixed in {', '.join(fixed)}"
+            else:
+                entry["fixed_in"] = []
+                fix_note = "no fixed version listed by OSV"
+                if lookups_used < FIX_LOOKUPS_MAX:
+                    latest, fetched = package_latest_version(str(p.get("ecosystem") or ""), str(p.get("name")))
+                    if fetched:
+                        lookups_used += 1
+                    if latest:
+                        entry["latest_version"] = latest
+                        fix_note += f"; latest published {p['name']} is {latest}"
+                        entry["remediation"] = (f"no fixed version listed by OSV; "
+                                                f"latest published {p['name']} is {latest}")
+                else:
+                    fix_note += "; latest version lookup skipped (BEAGLE_FIX_LOOKUPS)"
+                entry["fixed_note"] = fix_note
+                entry["meaning"] += f"; {fix_note}"
+            fs.append(entry)
     try:
         graph = attach_dependency_paths(src, fs)
         note = graph.get("note") if not any(f.get("dependency_path") for f in fs) else None
