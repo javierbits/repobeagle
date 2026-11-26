@@ -1,0 +1,4 @@
+flask==2.0.0
+    # via -r requirements.in
+werkzeug==2.0.0
+    # via flask
