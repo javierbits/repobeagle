@@ -5,7 +5,7 @@
 # Bump both here and in constraints.txt when you want new scanner rules.
 FROM python:3.12-slim@sha256:191083cdf6c7bda8c76158983163ead5d5cf7b77cf3033e805bb0f5296f51b4b
 ARG GITLEAKS_VERSION=8.30.1
-RUN apt-get update && apt-get install -y --no-install-recommends curl ca-certificates git \
+RUN apt-get update && apt-get install -y --no-install-recommends curl ca-certificates git strace nodejs \
  && rm -rf /var/lib/apt/lists/*
 RUN set -eux; a="$(uname -m)"; case "$a" in aarch64) g=arm64;; x86_64) g=x64;; *) exit 1;; esac; \
     curl -fsSL "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_${g}.tar.gz" \

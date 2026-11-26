@@ -83,6 +83,14 @@ rules:
 - Scan integration: findings carry `tool: "rules"`, the configured severity/meaning and the `remediation`; matches are capped at 20 per rule with a summary finding; `meta.rule_packs` records the files and rule count. An invalid pack aborts the scan (exit 1) and an explicit `.repobeagle.yml` rule override or persona delta applies to pack ids like any other.
 - Packs are additive and regex-only: they cannot express context-sensitive logic, and an id that collides with a built-in rule simply shares the suppression/override namespace.
 
+## Optional syscall trace (`--trace`)
+Everything above is static. `repobeagle scan <target> --trace` additionally **runs only the install phase** inside the same hardened container and verifies capability claims with `strace`:
+- Detected install-time code only: npm `preinstall`/`install`/`postinstall` lifecycle scripts and Python install (`pip install --no-deps --no-build-isolation --no-index`, so no network is needed for the Python path). Tests and builds are never run.
+- The trace container keeps the same isolation (`--read-only`, non-root, `--cap-drop ALL`, pids/memory limits, `HOME=/tmp`) and adds a writable mount of the throwaway tree plus **network** (installs download); `execve`, `connect` and `openat` are recorded. `BEAGLE_TRACE_TIMEOUT`/`--trace-timeout` bounds it (default 300 s).
+- Evidence is folded into the capability map: hosts from the executed command lines, executed programs, and opened secret paths are marked `verified: true, source: trace` (loopback connects are skipped); `meta.trace` records the commands, syscall counts, exit code and network mode, and an `info` finding states how many values were confirmed. Static claims that match the observed values flip; the rest stay `static`.
+- What it proves: what the install scripts actually contacted and executed **inside the container**. Host secrets are structurally unreachable (`HOME=/tmp`, nothing mounted), so it does not verify credential reads against your home directory. The default (no `--trace`) still never executes repository code.
+- The image ships `strace` and `node` for this; a missing Docker image/`--no-docker` turns `--trace` into a note, not a failed scan.
+
 ## Workspaces and monorepos
 A monorepo is scanned as one tree, but findings and first-party inference respect package boundaries:
 - **Detection**: npm/pnpm/yarn `workspaces`, Cargo `[workspace] members`, `go.work` modules and nested Python projects (`pyproject.toml`/`setup.py`); capped by `BEAGLE_MAX_PACKAGES` (default 50, the report says when the cap was hit). Only declared workspace members are considered, never a guessed directory.
@@ -132,7 +140,7 @@ custom_checks:           # regex checks that emit file:line findings with the co
 ```bash
 repobeagle scan <git-url | local-dir> [--ref <branch|tag|sha>] [--since <rev>] [--strict|--balanced|--relaxed] [--keep] [--json out.json]
                 [--no-docker] [--no-osv] [--offline-vulnerabilities] [--verify-deps] [--all] [--min-severity info|low|medium|high|critical] [--no-color]
-                [--no-cache] [--as consumer|agent-operator|ci|maintainer] [--release-assets OWNER/REPO]
+                [--no-cache] [--as consumer|agent-operator|ci|maintainer] [--release-assets OWNER/REPO] [--trace]
                 [--baseline old.json [--baseline-min-severity medium]] [--privacy-only | --no-privacy] [--no-redact]
                 [--html out.html] [--sbom sbom.json] [--max-seconds SECONDS] [--jobs N]
 repobeagle privacy <git-url | local-dir> [same scan options]
