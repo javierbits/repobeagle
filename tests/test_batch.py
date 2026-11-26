@@ -17,7 +17,7 @@ TARGETS = ["tests/fixtures/trap-privacy", "tests/fixtures/trap-gha", "tests/fixt
 
 def strip_seconds(o):
     if isinstance(o, dict):
-        return {k: strip_seconds(v) for k, v in o.items() if k not in ("seconds", "cache")}
+        return {k: strip_seconds(v) for k, v in o.items() if k not in ("seconds", "cache", "scanned_at")}
     if isinstance(o, list):
         return [strip_seconds(x) for x in o]
     return o

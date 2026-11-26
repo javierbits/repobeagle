@@ -1,0 +1,21 @@
+{
+  "version": "1.0.0",
+  "verdict": "YELLOW",
+  "why": "one high finding",
+  "counts": {"critical": 0, "high": 1, "medium": 0, "low": 1, "info": 0},
+  "meta": {
+    "target": "https://github.com/example/trend-fixture",
+    "scanned_sha": "2222222aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "scanned_at": "2026-10-02T00:00:00Z",
+    "ruleset": "abc123abc123",
+    "profile": "balanced"
+  },
+  "findings": [
+    {"tool": "privacy", "severity": "low", "file": "web/index.html", "line": 4,
+     "title": "cookie-flags: cookie set without Secure", "snippet": "Set-Cookie: a=b",
+     "meaning": "The cookie can be sent over plain HTTP."},
+    {"tool": "agent-checks", "severity": "high", "file": ".github/workflows/ci.yml", "line": 9,
+     "title": "gha-unpinned-action: uses: actions/checkout@v4", "snippet": "uses: actions/checkout@v4",
+     "meaning": "A tag can move under an unchanged workflow."}
+  ]
+}
