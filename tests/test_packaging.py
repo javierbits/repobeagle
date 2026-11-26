@@ -55,7 +55,8 @@ check("the airgapped binary script is executable, pinned and bundles version/rul
       and "pyinstaller==" in build_text and "--add-data" in build_text and "VERSION" in build_text)
 binary_workflow = (ROOT / ".github/workflows/binary.yml").read_text(encoding="utf-8")
 check("binary workflow builds linux amd64/arm64 and macOS arm64",
-      all(x in binary_workflow for x in ("ubuntu-latest", "ubuntu-24.04-arm", "macos-14", "tools/build_binary.sh")))
+      all(x in binary_workflow for x in ("ubuntu-latest", "ubuntu-24.04-arm", "macos-latest",
+                                         "tools/build_binary.sh")))
 ci = (ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8")
 check("CI runs the pipx acceptance on a macOS arm64 runner",
       ("macos-latest" in ci or "macos-14" in ci) and "pipx install ." in ci and "--no-docker" in ci
