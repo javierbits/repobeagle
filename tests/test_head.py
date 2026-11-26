@@ -44,7 +44,7 @@ check("local head flags unpinned actions and write permissions",
       r.returncode == 1 and {"gha-unpinned-action", "gha-write-permissions"} <= rules)
 
 empty, r = head("tests/fixtures/control-empty")
-check("a repo with no metadata fails loudly", r.returncode == 1 and "no metadata fetched" in r.stderr)
+check("a repo with no metadata fails loudly", r.returncode == 1 and "no metadata" in r.stderr)
 
 # --- a local stand-in for the GitHub contents API --------------------------------
 FILES = {

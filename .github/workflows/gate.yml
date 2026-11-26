@@ -1,0 +1,94 @@
+# Reusable workflow: registry/marketplace gate.
+# Scans every entry listed by a directory (MCP registry, agent-skill catalog, ...) with the
+# stdlib-only metadata path and emits per-entry verdicts. Directory maintainers opt in with:
+#
+#   name: registry-gate
+#   on:
+#     push:
+#       branches: [main]
+#   jobs:
+#     gate:
+#       permissions:
+#         contents: read
+#       uses: javierbits/repobeagle/.github/workflows/gate.yml@main
+#       with:
+#         entries: entries.txt      # path in THIS repository: one owner/repo per line
+#         baseline: ""              # previous gate.json to fail only on entries RED now and not RED then
+#         profile: balanced         # strict | balanced | relaxed
+#         fail-on-new-red: true     # false = report only (the artifact still carries the verdicts)
+#
+# The entries file is one `owner/repo`, git URL or local path per line (`#` comments), or JSON
+# (`["owner/repo", ...]`). This workflow needs no Docker image, no scanners and no secrets: it
+# runs repobeagle.py from the pinned tools ref. GITHUB_TOKEN is passed for 5,000 API requests/hour;
+# unfetchable entries are `unknown`, never GREEN.
+name: repobeagle-gate
+on:
+  workflow_call:
+    inputs:
+      entries:
+        description: "Path in the caller repository of the entries file (one target per line, # comments)"
+        required: true
+        type: string
+      baseline:
+        description: "Path of a previous gate JSON (artifact) to fail only on a new RED; empty = every RED is new"
+        required: false
+        default: ""
+        type: string
+      profile:
+        description: "Verdict profile: strict, balanced or relaxed"
+        required: false
+        default: "balanced"
+        type: string
+      tools-ref:
+        description: "repobeagle toolchain ref to run (stdlib only; no image pull)"
+        required: false
+        default: "main"
+        type: string
+      fail-on-new-red:
+        description: "Fail the job on an entry that is RED and not RED in the baseline (every RED without one)"
+        required: false
+        default: true
+        type: boolean
+
+permissions:
+  contents: read
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check out the repobeagle toolchain
+        uses: actions/checkout@v4
+        with:
+          repository: javierbits/repobeagle
+          ref: ${{ inputs.tools-ref }}
+          path: .repobeagle-tools
+      - name: Run the registry gate
+        continue-on-error: ${{ !inputs.fail-on-new-red }}
+        run: |
+          set -euo pipefail
+          ARGS=(gate "$ENTRIES" --json gate.json --markdown --no-color)
+          case "$PROFILE" in
+            strict) ARGS+=(--strict) ;;
+            relaxed) ARGS+=(--relaxed) ;;
+            balanced|"") ;;
+            *) echo "unknown profile: $PROFILE (strict|balanced|relaxed)" >&2; exit 2 ;;
+          esac
+          if [ -n "$BASELINE" ]; then ARGS+=(--baseline "$BASELINE"); fi
+          python3 .repobeagle-tools/repobeagle.py "${ARGS[@]}" | tee gate.md
+        env:
+          ENTRIES: ${{ inputs.entries }}
+          BASELINE: ${{ inputs.baseline }}
+          PROFILE: ${{ inputs.profile }}
+      - name: Upload the per-entry verdicts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: repobeagle-gate
+          path: |
+            gate.json
+            gate.md
+          if-no-files-found: ignore
