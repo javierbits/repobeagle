@@ -8,3 +8,6 @@ mcp==2.3.0
 
 # The wheel build backend for the light mode (pipx install .); pinned like the rest.
 build==1.6.1
+
+# YAML validation for the generated workflow (init tests).
+pyyaml==6.0.4

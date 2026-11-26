@@ -1,6 +1,7 @@
 # RepoBeagle
 
 ![RepoBeagle: Don't clone what you haven't sniffed.](assets/banner.png)
+![RepoBeagle](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/javierbits/repobeagle/repobeagle/badge.json) — this repository's own badge, published and signed by the `self-scan` workflow it ships (`.github/workflows/self-scan.yml`, generated with `repobeagle init`).
 
 **Use it as a Grok Bot:** [Get the RepoBeagle bot](https://x.ai/bot/bTuuNK785OULBheQ5rPZ-) and paste any repo link to get a safety verdict.
 
@@ -58,7 +59,8 @@ repobeagle diff <old.json> <new.json> [--min-severity medium] [--json out.json]
 repobeagle fix <local-dir> [--dry-run] [--pins FILE] [--no-network] [--json out.json]
 repobeagle head <owner/repo | github-url | local-dir> [--strict|--relaxed] [--json out.json] [--markdown] [--no-cache]
 repobeagle ignore [RULE [--reason TEXT] [--until YYYY-MM-DD]] [--file FILE] [--list] [--report r.json] [--json out.json]
-repobeagle export <report.json> [--format sarif|markdown|json] [-o out]
+repobeagle init [dir] [--profile strict|balanced|relaxed] [--badge-branch BRANCH] [--repo OWNER/NAME] [--tools-ref REF] [--dry-run] [--force]
+repobeagle export <report.json> [--format sarif|markdown|html|json] [-o out]
 repobeagle map <git-url | local-dir | --report r.json> [--strict|--relaxed] [--network]
 repobeagle web <http(s):// | file://> [--assets N] [--json out.json]
 repobeagle mcp
@@ -94,7 +96,7 @@ Acceptance on `tests/fixtures/trap-gha` (copy, pins or network): both workflow f
 - `--markdown` prints the compact card for Slack/Discord/PR comments, and `--json` contains the same fields as a scan report, so a chat bot or unfurl service can consume it directly.
 - Limits: metadata only. Source files, secrets, dependency advisories and the language-aware coverage are not fetched — a GREEN `head` is a triage signal, not a full-repo verdict.
 
-`repobeagle export` converts a stored report to SARIF 2.1.0 (GitHub code scanning, Azure DevOps, VS Code), a Markdown table for a PR comment, or normalized JSON. Every finding carries a stable `partialFingerprints` value and, when suppressed, an explicit SARIF suppression, so accepted findings stay visible but dismissed. The scan workflow uploads it when `upload-sarif: true`.
+`repobeagle export` converts a stored report to SARIF 2.1.0 (GitHub code scanning, Azure DevOps, VS Code), a Markdown table for a PR comment, a self-contained HTML page (inline CSS, no external assets, markup-escaped; snippets stay redacted), or normalized JSON. The same HTML is available during a scan with `--html out.html` (and on `head`). Every finding carries a stable `partialFingerprints` value and, when suppressed, an explicit SARIF suppression, so accepted findings stay visible but dismissed. The scan workflow uploads it when `upload-sarif: true`.
 Exit code: 0 = GREEN, 1 = YELLOW, 2 = RED. Colour turns off when output isn't a terminal or `NO_COLOR` is set.
 
 `repobeagle map <target>` answers a different question: not "is it safe?" but "what can it touch?". It lists remote hosts, secret paths (`~/.ssh`, `.env`, wallet and cloud credential files), subprocesses, environment variables, client storage, install hooks and permission scopes, each with the first `file:line`. It is computed by the same offline scan (`meta.capabilities` in `--json`), can render an existing report with `--report r.json`, and never executes repository code; `--network` additionally runs OSV and GitHub trust lookups. This is the view to read before running something in your own shell, and the one to diff between two versions — `--ref <rev>` scans a pinned branch/tag/sha for that comparison.
@@ -317,6 +319,16 @@ repobeagle export report.json --format sarif -o repobeagle.sarif
 
 then upload `repobeagle.sarif` with `github/codeql-action/upload-sarif@v3` (GitHub) or any SARIF 2.1.0 consumer (Azure DevOps, VS Code SARIF viewer, GitLab's analyzer upload). The exporter is validated against the vendored official OASIS schema (`tests/schema/sarif-schema-2.1.0.json`) in `ci.yml`, and `.github/workflows/sarif.yml` proves the GitHub path end to end: export a fixture, upload twice, and assert the second upload does not duplicate alerts.
 
+### Set it up with `repobeagle init`
+
+```bash
+repobeagle init                    # writes .github/workflows/repobeagle.yml and prints the shield lines
+repobeagle init --dry-run          # print the workflow, write nothing
+repobeagle init --profile strict --fail-on-red --upload-sarif ...
+```
+
+`init` templates the reusable workflow from its inputs (`profile`, `fail-on-red`, `privacy-only`, `badge-branch`, `set-status`, `tools-ref`), pins the toolchain to the current release tag (bump it together with the tool), uses the origin remote to print the exact shields.io line for your repository, refuses to overwrite a differing file without `--force`, and is a no-op when the file is already current. The generated workflow is exactly what this repository runs for its own badge (`.github/workflows/self-scan.yml`), which also exercises the signing and `verify` path on every release.
+
 ### Verifying a badge (public repos)
 
 The badge is produced by the author's own CI, so on its own it is self-attested. The workflow therefore signs the report with Sigstore keyless signing and publishes the bundle as `report.sigstore.json` next to `report.json` on the badge branch. The signing certificate's identity is this repo's own reusable workflow (`javierbits/repobeagle/.github/workflows/scan.yml`), which callers cannot edit, so a valid signature means the official pipeline scanned that commit and the report was not swapped afterwards. To verify a badge: `verify` installs cosign to `~/.local/bin` on first use if it is missing (`./install.sh` also installs it).
@@ -457,6 +469,7 @@ The rule-pair check is automatic: `tests/test_rule_fixtures.py` parses the `RULE
 | tests/test_fix.py (dry-run immutability, action pinning, write-all rewrite, idempotence, re-scan improvement) | pass |
 | tests/test_head.py (local triage, mocked contents API, cache/TTL, token, rate-limit notes, markdown card) | pass |
 | tests/test_suppressions.py (grammar, expiry re-activation and warnings, meta.suppressions, `ignore` add/update/list/validate) | pass |
+| tests/test_init_html.py (`init` template/shields/idempotence/--force/remote slug, HTML escaping and self-containment) | pass |
 | tests/fixtures/control-vuln (`flask==2.0.0`), used by the cached offline-OSV CI/nightly scan | vulnerable dependency from the local DB |
 | tests/test_markdown_snapshot.py (PR-comment snapshot, pipe/newline escaping, suppression, truncation) | pass |
 | tests/test_rule_fixtures.py (positive fixture fires every declared rule; control-clean fires none) | pass |
