@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "label": "repobeagle",
+  "message": "YELLOW",
+  "color": "yellow",
+  "link": "https://github.com/javierbits/repobeagle/actions/runs/45755362169",
+  "privacy": {
+    "trackers": 34,
+    "pii": 21,
+    "permissions": 23,
+    "storage": 18,
+    "consent": 21,
+    "vendor": 2,
+    "network": 58,
+    "retention": 3,
+    "uploads": 2,
+    "transparency": 3,
+    "masking": 1
+  }
+}

@@ -17,41 +17,41 @@
     "mode": "docker (--network none, read-only)",
     "profile": "balanced",
     "files": 137,
-    "seconds": 20.7,
+    "seconds": 19.9,
     "tools": {
       "gitleaks": {
         "findings": 0,
-        "seconds": 1.2,
+        "seconds": 0.8,
         "ok": true,
         "version": "8.30.1"
       },
       "semgrep": {
         "findings": 0,
-        "seconds": 2.4,
+        "seconds": 1.6,
         "ok": true,
         "version": "1.187.0"
       },
       "guarddog": {
         "findings": 18,
-        "seconds": 0.9,
+        "seconds": 0.5,
         "ok": true,
         "version": "3.2.0"
       },
       "bandit": {
         "findings": 173,
-        "seconds": 1.7,
+        "seconds": 1.0,
         "ok": true,
         "version": "1.9.4"
       },
       "agent-checks": {
         "findings": 317,
-        "seconds": 4.8,
+        "seconds": 2.7,
         "ok": true,
         "files": 137
       },
       "osv-scanner": {
         "findings": 8,
-        "seconds": 6.7,
+        "seconds": 7.4,
         "ok": true,
         "version": "2.7.0"
       }
@@ -1547,7 +1547,7 @@
     "image_ref": "ghcr.io/javierbits/repobeagle:v1.170.1",
     "image_digest": "ghcr.io/javierbits/repobeagle@sha256:cb348a1fe418f376ce193f0ada133aee40a1b9a9b45d217e898ebfeec4f555f2",
     "toolchain_ref": "v1.170.1",
-    "run_url": "https://github.com/javierbits/repobeagle/actions/runs/45755354682",
+    "run_url": "https://github.com/javierbits/repobeagle/actions/runs/45755362169",
     "scanned_repo": "javierbits/repobeagle",
     "scanned_sha": "235541c9bf3f69b21e1dc3150de7746ff5267ee5"
   },
