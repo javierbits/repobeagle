@@ -8,6 +8,7 @@ NEVER executes repository code. Stdlib only (scanners are external binaries).
   repobeagle verify <github-repo> [--branch repobeagle] [--expect-sha SHA]
   repobeagle feedback <report.json> (--false-positive|--miss) [--rule RULE] [--file FILE[:LINE]] [--attach] [--no-open]
   repobeagle gate <entries-file> [--baseline old.json] [--json out.json] [--markdown] [--jobs N] [--report-only]
+  repobeagle batch <targets-file> [--jobs N] [--json DIR] [scan profile/offline flags]
 """
 import argparse, base64, difflib, hashlib, json, os, platform, re, shutil, signal, subprocess, sys, tempfile, threading, time, unicodedata, uuid, zipfile
 import urllib.error, urllib.parse, urllib.request
@@ -2838,15 +2839,23 @@ def _deadline_left(deadline):
     """Seconds until the deadline (negative once passed), or None when there is no deadline."""
     return None if deadline is None else deadline - time.monotonic()
 
-def inner(src, out, deadline=None):
+def inner(src, out, deadline=None, jobs=None):
     """Runs offline scanners + agent checks. Used inside the container or locally.
 
-    Honors `deadline` (monotonic): unfinished phases are noted, `complete` is False, and a
-    partial inner.json is still written so the host side produces a report instead of a traceback.
+    `jobs` runs the four external scanners concurrently (they are independent subprocesses with
+    separate output files); results are assembled in a fixed tool order, so the report does not
+    depend on completion order. Honors `deadline` (monotonic): unfinished phases are noted,
+    `complete` is False, and a partial inner.json is still written.
     """
     out = Path(out); out.mkdir(parents=True, exist_ok=True)
     result: dict[str, Any] = {"findings": [], "notes": [], "tools": {}}
     complete = True
+    if jobs is None:
+        try:
+            jobs = int(os.environ.get("BEAGLE_JOBS", "1") or 1)
+        except ValueError:
+            jobs = 1
+    jobs = max(1, min(int(jobs), 16))
 
     def expired():
         return deadline is not None and time.monotonic() >= deadline
@@ -2856,25 +2865,63 @@ def inner(src, out, deadline=None):
         complete = False
         result["notes"].append(f"{phase}: {why}")
 
-    for name, fn in (("gitleaks", scan_gitleaks), ("semgrep", scan_semgrep), ("guarddog", scan_guarddog), ("bandit", scan_bandit)):
-        if expired():
-            result["tools"][name] = {"findings": 0, "seconds": 0.0, "ok": False, "skipped": True}
-            incomplete(name, "skipped: --max-seconds deadline reached")
-            continue
+    def run_tool(name, fn):
         t = time.time()
         try:
-            with _scan_alarm(_deadline_left(deadline)):
-                fs, note = fn(src, out)
+            fs, note = fn(src, out)
         except ScanDeadline:
             fs, note = [], f"{name} cut by --max-seconds"
-            incomplete(name, "cut by --max-seconds; partial output discarded")
         except Exception as ex:
             fs, note = [], f"{name} crashed: {ex}"
-        result["findings"] += fs
-        result["tools"][name] = {"findings": len(fs), "seconds": round(time.time() - t, 1), "ok": note is None or "skipped" in (note or "")}
+        entry = {"findings": len(fs), "seconds": round(time.time() - t, 1), "ok": note is None or "skipped" in (note or "")}
         ver = tool_version(name)
-        if ver: result["tools"][name]["version"] = ver
-        if note: result["notes"].append(note)
+        if ver:
+            entry["version"] = ver
+        return name, fs, note, entry
+
+    tools = [("gitleaks", scan_gitleaks), ("semgrep", scan_semgrep), ("guarddog", scan_guarddog), ("bandit", scan_bandit)]
+    if jobs > 1 and len(tools) > 1:
+        from concurrent.futures import ThreadPoolExecutor, wait as wait_futures
+        pool = ThreadPoolExecutor(max_workers=min(jobs, len(tools)))
+        futures: dict[int, Any] = {}
+        for idx, (name, fn) in enumerate(tools):
+            if expired():
+                incomplete(name, "skipped: --max-seconds deadline reached")
+                futures[idx] = None
+                continue
+            futures[idx] = pool.submit(run_tool, name, fn)
+        pending = [f for f in futures.values() if f is not None]
+        done, not_done = wait_futures(pending, timeout=_deadline_left(deadline))
+        collected: dict[int, tuple[Any, ...]] = {}
+        for idx, fut in futures.items():
+            if fut is None:
+                collected[idx] = (tools[idx][0], [], None, {"findings": 0, "seconds": 0.0, "ok": False, "skipped": True})
+            elif fut in done:
+                collected[idx] = fut.result()
+        for fut in not_done:
+            fut.cancel()
+            idx = next(i for i, f in futures.items() if f is fut)
+            name = tools[idx][0]
+            collected[idx] = (name, [], f"{name} cut by --max-seconds (still running)",
+                              {"findings": 0, "seconds": 0.0, "ok": False, "skipped": True})
+            incomplete(name, "cut by --max-seconds")
+        pool.shutdown(wait=False)
+        ordered = [collected[i] for i in sorted(collected)]
+    else:
+        ordered = []
+        for name, fn in tools:
+            if expired():
+                incomplete(name, "skipped: --max-seconds deadline reached")
+                ordered.append((name, [], None, {"findings": 0, "seconds": 0.0, "ok": False, "skipped": True}))
+                continue
+            ordered.append(run_tool(name, fn))
+    for name, fs, note, entry in ordered:
+        result["findings"] += fs
+        result["tools"][name] = entry
+        if note:
+            result["notes"].append(note)
+        if entry.get("skipped") and name and not any(name in n for n in result["notes"]):
+            result["notes"].append(f"{name} skipped")
     t = time.time()
     agent_state: dict[str, Any] = {"complete": True, "skipped": []}
     if expired():
@@ -3341,13 +3388,13 @@ def docker_ok():
     except Exception:
         return False
 
-def run_in_docker(src, out):
+def run_in_docker(src, out, jobs=1):
     uid = os.getuid() if os.getuid() != 0 else 65534
     gid = os.getgid() if os.getuid() != 0 else 65534
     os.chmod(out, 0o777)
     cmd = ["docker", "run", "--rm", "--network", "none", "--read-only", "--tmpfs", "/tmp:rw,exec,size=1g",
            "--user", f"{uid}:{gid}", "--cap-drop", "ALL", "--security-opt", "no-new-privileges", "--pids-limit", "512",
-           "--memory", os.environ.get("BEAGLE_MEMORY", "6g"), "-e", "HOME=/tmp",
+           "--memory", os.environ.get("BEAGLE_MEMORY", "6g"), "-e", "HOME=/tmp", "-e", f"BEAGLE_JOBS={jobs}",
            "-v", f"{src}:/src:ro", "-v", f"{out}:/out:rw", IMAGE, "/src", "/out"]
     r = subprocess.run(cmd, capture_output=True, text=True, timeout=3600)
     try:
@@ -4943,6 +4990,79 @@ def cmd_head(a):
                color_enabled() and not a.no_color, 10**6 if a.all else 40, a.min_severity)
     return {"GREEN": 0, "YELLOW": 1, "RED": 2}[d["verdict"]]
 
+# --- Batch full scans: one process per target, bounded concurrency, deterministic reports --------
+def cmd_batch(a):
+    """Full-scan every target in a listing, one report each, in parallel. Same code path as `scan`."""
+    try:
+        targets = load_gate_entries(a.targets)
+    except ValueError as ex:
+        print(f"batch: {ex}", file=sys.stderr)
+        return 1
+    if not targets:
+        print("batch: no targets in the list (one git URL, owner/repo or local dir per line; # comments)",
+              file=sys.stderr)
+        return 1
+    if not (1 <= int(a.jobs) <= 16):
+        print("batch: --jobs must be between 1 and 16", file=sys.stderr)
+        return 1
+    outdir = Path(a.json or "repobeagle-batch")
+    try:
+        outdir.mkdir(parents=True, exist_ok=True)
+    except OSError as ex:
+        print(f"batch: cannot create {outdir}: {ex}", file=sys.stderr)
+        return 1
+    flags: list[str] = ["--jobs", "1"]          # parallelise targets, not scanners inside each target
+    for flag in ("strict", "relaxed", "no_docker", "no_osv", "offline_vulnerabilities", "no_trust",
+                 "no_redact", "privacy_only", "no_privacy"):
+        if getattr(a, flag, False):
+            flags.append("--" + flag.replace("_", "-"))
+    for opt in ("min_severity", "max_seconds"):
+        value = getattr(a, opt, None)
+        if value is not None:
+            flags += ["--" + opt.replace("_", "-"), str(value)]
+    cli = Path(__file__).resolve()
+
+    def run_one(index, target):
+        safe = re.sub(r"[^A-Za-z0-9_.-]+", "_", target).strip("_")[:60] or f"target{index}"
+        out = outdir / f"{index:03d}-{safe}.json"
+        argv = [sys.executable, str(cli), "scan", target, "--json", str(out), "--no-color"] + flags
+        t0 = time.time()
+        try:
+            r = subprocess.run(argv, capture_output=True, text=True, timeout=3600)
+            tail = ((r.stderr or "") + (r.stdout or ""))[-400:]
+        except subprocess.TimeoutExpired:
+            r, tail = None, "scan timed out after 3600 s"
+        entry: dict[str, Any] = {"target": target, "seconds": round(time.time() - t0, 1),
+                                  "json": str(out) if out.exists() else None,
+                                  "exit_code": r.returncode if r else None}
+        try:
+            d = json.loads(out.read_text())
+            entry.update({"verdict": d.get("verdict"), "counts": d.get("counts"),
+                          "complete": (d.get("meta") or {}).get("complete")})
+        except (OSError, ValueError):
+            entry.update({"verdict": "unknown", "counts": {}, "error": tail.strip() or "no report written"})
+        return entry
+
+    t0 = time.time()
+    from concurrent.futures import ThreadPoolExecutor
+    with ThreadPoolExecutor(max_workers=min(int(a.jobs), 16)) as pool:
+        entries = list(pool.map(lambda it: run_one(*it), list(enumerate(targets))))
+    counts = {v: sum(1 for e in entries if e.get("verdict") == v) for v in ("GREEN", "YELLOW", "RED", "unknown")}
+    worst = "RED" if counts["RED"] else "YELLOW" if counts["YELLOW"] else "GREEN" if counts["GREEN"] else "unknown"
+    summary = {"version": VERSION, "kind": "batch", "verdict": worst, "counts": counts,
+               "entries": entries, "meta": {"targets": len(targets), "jobs": int(a.jobs),
+                                            "seconds": round(time.time() - t0, 1), "reports": str(outdir)}}
+    (outdir / "batch.json").write_text(json.dumps(summary, indent=2))
+    C = (lambda code, s: f"\033[{code}m{s}\033[0m") if (color_enabled() and not a.no_color) else (lambda code, s: s)
+    for e in entries:
+        extra = "" if e.get("verdict") != "unknown" else "  " + str(e.get("error", ""))[:120]
+        print(f"  {str(e.get('verdict')):<7} {e['target']}  ({e.get('seconds')}s){extra}")
+    print(f"\n{len(targets)} target(s): " + ", ".join(f"{n} {v}" for v, n in counts.items() if n)
+          + f" (jobs {a.jobs}, reports in {outdir}/, summary {outdir}/batch.json)")
+    if any(e.get("verdict") == "unknown" for e in entries):
+        print(C("33", "  unknown: a target did not produce a report; see batch.json"), file=sys.stderr)
+    return {"GREEN": 0, "YELLOW": 1, "RED": 2}.get(worst, 1)
+
 # --- Registry/marketplace gate: batch metadata verdicts for a directory listing ------------
 GATE_MAX_ENTRIES = 5000
 
@@ -5737,9 +5857,9 @@ def cmd_scan(a):
             if use_docker:
                 # the container has its own 3600 s timeout; cut it at the deadline (partial report)
                 with _scan_alarm(_deadline_left(analysis_deadline)):
-                    res = run_in_docker(src, out)
+                    res = run_in_docker(src, out, jobs=getattr(a, "jobs", 1))
             else:
-                res = inner(src, out, deadline=analysis_deadline)   # phases guard themselves
+                res = inner(src, out, deadline=analysis_deadline, jobs=getattr(a, "jobs", 1))   # phases guard themselves
         except ScanDeadline:
             res = {"findings": [], "tools": {},
                    "notes": ["scan stopped at --max-seconds before the analysis phase wrote results"],
@@ -6304,6 +6424,8 @@ def main():
         g.add_argument("--strict", action="store_true"); g.add_argument("--balanced", action="store_true"); g.add_argument("--relaxed", action="store_true")
         s.add_argument("--keep", action="store_true", help="keep the temp clone")
         s.add_argument("--json", metavar="FILE")
+        s.add_argument("--jobs", type=int, default=4, metavar="N",
+                       help="run the four external scanners concurrently (default 4; 1 = sequential)")
         s.add_argument("--max-seconds", type=float, metavar="SECONDS",
                        help="analysis budget after the tree is fetched: an unfinished scan is written as a partial report "
                             "(meta.complete=false, verdict floor YELLOW)")
@@ -6432,6 +6554,19 @@ def main():
     dbp.add_argument("--update", action="store_true", help="download/refresh the database (needs network)")
     ap.add_argument("-V", "--version", action="store_true", help="print the installed version and image tag")
     sp.add_parser("version")
+    ba = sp.add_parser("batch", help="full-scan every target in a listing, one report each, in parallel")
+    ba.add_argument("targets", help="targets file: one git URL, owner/repo or local dir per line (# comments) or JSON")
+    ba.add_argument("--jobs", type=int, default=4, metavar="N", help="targets scanned concurrently (default 4)")
+    ba.add_argument("--json", metavar="DIR", default="repobeagle-batch", help="directory for the per-target reports and batch.json")
+    bg = ba.add_mutually_exclusive_group()
+    bg.add_argument("--strict", action="store_true"); bg.add_argument("--relaxed", action="store_true")
+    ba.add_argument("--no-docker", action="store_true"); ba.add_argument("--no-osv", action="store_true")
+    ba.add_argument("--offline-vulnerabilities", action="store_true")
+    ba.add_argument("--no-trust", action="store_true"); ba.add_argument("--no-redact", action="store_true")
+    ba.add_argument("--privacy-only", action="store_true"); ba.add_argument("--no-privacy", action="store_true")
+    ba.add_argument("--min-severity", choices=list(SEV_ORDER), default=None)
+    ba.add_argument("--max-seconds", type=float, metavar="SECONDS")
+    ba.add_argument("--no-color", action="store_true")
     ga = sp.add_parser("gate", help="scan a directory listing (one target per line) and fail only on a new RED")
     ga.add_argument("entries", help="entries file: one owner/repo, git URL or local dir per line (# comments) or JSON")
     gg = ga.add_mutually_exclusive_group()
@@ -6465,6 +6600,8 @@ def main():
         return cmd_head(a)
     if a.cmd == "gate":
         return cmd_gate(a)
+    if a.cmd == "batch":
+        return cmd_batch(a)
     if a.cmd == "ignore":
         return cmd_ignore(a)
     if a.cmd == "init":
