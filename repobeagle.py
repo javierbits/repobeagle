@@ -4,9 +4,10 @@
 NEVER executes repository code. Stdlib only (scanners are external binaries).
   repobeagle scan <repo-url|local-path> [--strict|--balanced|--relaxed] [--keep]
                   [--json out.json] [--no-docker] [--verify-deps] [--no-osv] [--no-trust]
+                  [--html out.html] [--sbom sbom.json]
   repobeagle verify <github-repo> [--branch repobeagle] [--expect-sha SHA]
 """
-import argparse, base64, difflib, hashlib, json, os, platform, re, shutil, subprocess, sys, tempfile, time, unicodedata, zipfile
+import argparse, base64, difflib, hashlib, json, os, platform, re, shutil, subprocess, sys, tempfile, time, unicodedata, uuid, zipfile
 import urllib.error, urllib.parse, urllib.request
 from datetime import date
 from fnmatch import fnmatchcase
@@ -4637,6 +4638,142 @@ def suppression_meta(entries, today=None):
     return [{"rule": e["rule"], "reason": e.get("reason") or "", "until": e.get("until"),
              "status": suppression_status(e, today), "line": e.get("line")} for e in entries or []]
 
+# --- CycloneDX SBOM export (lockfiles -> purls; OSV findings -> vulnerabilities) ------
+SBOM_SCHEMA_VERSION = "1.6"
+SBOM_SCHEMA_URL = "http://cyclonedx.org/schema/bom-1.6.schema.json"
+SBOM_MAX_COMPONENTS = 5000
+
+def _sbom_purl(ecosystem, name, version):
+    if ecosystem == "pypi":
+        return f"pkg:pypi/{re.sub(r'[-_.]+', '-', name).lower()}@{version}"
+    if ecosystem == "npm":
+        return f"pkg:npm/{urllib.parse.quote(name, safe='/')}@{version}"
+    return f"pkg:cargo/{name}@{version}"
+
+def _sbom_npm(data):
+    """[(name, version)] from package-lock.json v1 (nested dependencies) or v2/v3 (packages)."""
+    out = []
+    def walk(deps):
+        for name, meta in (deps or {}).items():
+            if not isinstance(meta, dict):
+                continue
+            if meta.get("version"):
+                out.append((str(name), str(meta["version"])))
+            walk(meta.get("dependencies"))
+    for key, meta in (data.get("packages") or {}).items():
+        if not isinstance(meta, dict) or not meta.get("version"):
+            continue
+        if not key:  # v3 lists the project itself under "" (it is metadata.component)
+            continue
+        name = str(meta.get("name") or str(key).split("node_modules/")[-1])
+        out.append((name, str(meta["version"])))
+    walk(data.get("dependencies"))
+    return out
+
+def _sbom_requirements(text):
+    """[(name, version)] for pinned `name==version` lines; unpinned or ranged requirements are skipped."""
+    out = []
+    for line in text.splitlines():
+        line = line.split("#", 1)[0].strip()
+        if not line or line.startswith(("-", "--")):
+            continue
+        m = re.match(r"^([A-Za-z0-9][A-Za-z0-9._-]*)(?:\[[^\]]*\])?\s*==\s*([A-Za-z0-9][^\s;]*)", line)
+        if m:
+            out.append((m.group(1), m.group(2)))
+    return out
+
+def _sbom_cargo(text):
+    """[(name, version)] from the `[[package]]` blocks of a Cargo.lock."""
+    out, cur = [], {}  # type: list[tuple[str, str]], dict[str, str]
+    def flush(block):
+        if block.get("name") and block.get("version"):
+            out.append((block["name"], block["version"]))
+    for line in text.splitlines():
+        line = line.strip()
+        if line == "[[package]]":
+            flush(cur)
+            cur = {}
+            continue
+        m = re.match(r'^(name|version)\s*=\s*"([^"]+)"$', line)
+        if m and m.group(1) not in cur:
+            cur[m.group(1)] = m.group(2)
+    flush(cur)
+    return out
+
+def sbom_components(root):
+    """({purl: component}, [unparsed manifest paths]) from the lockfiles in the scanned tree."""
+    comps: dict[str, dict[str, Any]] = {}
+    unparsed: list[str] = []
+    for p in iter_files(root):
+        if len(comps) >= SBOM_MAX_COMPONENTS:
+            break
+        try:
+            if p.name == "package-lock.json":
+                ecosystem, pairs = "npm", _sbom_npm(json.loads(read_text(p) or ""))
+            elif p.name == "requirements.txt":
+                ecosystem, pairs = "pypi", _sbom_requirements(read_text(p) or "")
+            elif p.name == "Cargo.lock":
+                ecosystem, pairs = "cargo", _sbom_cargo(read_text(p) or "")
+            else:
+                continue
+        except Exception:
+            unparsed.append(rel(root, p))
+            continue
+        for name, version in pairs:
+            purl = _sbom_purl(ecosystem, name, version)
+            comps.setdefault(purl, {"type": "library", "name": name, "version": version, "purl": purl,
+                                     "bom-ref": purl,
+                                     "properties": [{"name": "repobeagle:manifest", "value": rel(root, p)}]})
+    return comps, unparsed
+
+def sbom_report(root, report):
+    """CycloneDX 1.6 document for the scanned tree: purls from lockfiles, OSV findings as vulnerabilities.
+
+    Deterministic: components and vulnerabilities are sorted, the serial number is derived from the
+    target and commit (no random uuid), and no wall-clock timestamp is written.
+    """
+    comps, unparsed = sbom_components(root)
+    meta = report.get("meta") or {}
+    target = str(meta.get("target") or "unknown")
+    commit = str(meta.get("commit") or "")
+    props = [{"name": "repobeagle:verdict", "value": str(report.get("verdict"))},
+             {"name": "repobeagle:profile", "value": str(meta.get("profile"))},
+             {"name": "repobeagle:ruleset", "value": str(meta.get("ruleset"))},
+             {"name": "repobeagle:target", "value": target}]
+    if commit:
+        props.append({"name": "repobeagle:commit", "value": commit})
+    for sev, n in (report.get("counts") or {}).items():
+        props.append({"name": f"repobeagle:counts.{sev}", "value": str(n)})
+    if unparsed:
+        props.append({"name": "repobeagle:unparsed-manifests", "value": ", ".join(sorted(unparsed))})
+    vulns: dict[str, dict[str, Any]] = {}
+    for f in report.get("findings") or []:
+        if not isinstance(f, dict) or f.get("suppressed") or f.get("tool") != "osv-scanner":
+            continue
+        m = re.search(r": (\S+)@([^\s]+)$", str(f.get("title") or ""))
+        if not m:
+            continue
+        ref = next((purl for purl, c in comps.items() if c["name"] == m.group(1) and c["version"] == m.group(2)), None)
+        if not ref:
+            continue
+        ids = [i.strip() for i in str(f.get("snippet") or "").split(",") if i.strip()]
+        for vid in ids or ["unknown"]:
+            entry = vulns.setdefault(vid, {"id": vid, "source": {"name": "OSV"}, "affects": [],
+                                           "ratings": [{"source": {"name": "OSV"}, "severity": str(f.get("severity")),
+                                                        "method": "other"}]})
+            if not any(aff.get("ref") == ref for aff in entry["affects"]):
+                entry["affects"].append({"ref": ref})
+            if f.get("remediation") and "recommendation" not in entry:
+                entry["recommendation"] = str(f["remediation"])
+    return {"$schema": SBOM_SCHEMA_URL, "bomFormat": "CycloneDX", "specVersion": SBOM_SCHEMA_VERSION,
+            "serialNumber": "urn:uuid:" + str(uuid.uuid5(uuid.NAMESPACE_URL, f"{target}@{commit}#{SBOM_SCHEMA_VERSION}")),
+            "version": 1,
+            "metadata": {"tools": {"components": [{"type": "application", "name": "repobeagle", "version": VERSION}]},
+                         "component": {"type": "application", "name": target, "version": commit or "unknown"},
+                         "properties": props},
+            "components": [comps[p] for p in sorted(comps)],
+            "vulnerabilities": sorted(vulns.values(), key=lambda v: (v["id"], v["affects"][0].get("ref", "") if v["affects"] else ""))}
+
 INIT_WORKFLOW = """# Generated by `repobeagle init`. Bump the ref below together with the tool.
 name: repobeagle
 on:
@@ -4901,6 +5038,9 @@ def cmd_scan(a):
         if getattr(a, "html", None):
             Path(a.html).write_text(html_report(report_data))
             print(f"[repobeagle] HTML written to {a.html}", file=sys.stderr)
+        if getattr(a, "sbom", None):
+            Path(a.sbom).write_text(json.dumps(sbom_report(src, report_data), indent=2))
+            print(f"[repobeagle] CycloneDX SBOM written to {a.sbom}", file=sys.stderr)
         if a.keep:
             print(f"[repobeagle] kept clone at {src}", file=sys.stderr)
         if baseline is not None:
@@ -5331,6 +5471,7 @@ def main():
         s.add_argument("--keep", action="store_true", help="keep the temp clone")
         s.add_argument("--json", metavar="FILE")
         s.add_argument("--html", metavar="FILE", help="write a self-contained HTML report")
+        s.add_argument("--sbom", metavar="FILE", help="write a CycloneDX 1.6 SBOM from the scanned lockfiles")
         s.add_argument("--no-docker", action="store_true", help="run scanners locally instead of in the container")
         s.add_argument("--no-osv", action="store_true", help="skip OSV (avoids sending package names to osv.dev)")
         s.add_argument("--offline-vulnerabilities", action="store_true",

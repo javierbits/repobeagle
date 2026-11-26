@@ -78,6 +78,7 @@ python3 tests/test_fuzz.py || fail=1
 python3 tests/test_determinism.py || fail=1
 python3 tests/test_markdown_snapshot.py || fail=1
 python3 tests/test_sarif_schema.py || fail=1
+python3 tests/test_sbom.py || fail=1
 python3 tests/test_mcp_interop.py || fail=1
 python3 tests/test_capabilities.py || fail=1
 python3 tests/test_coverage.py || fail=1

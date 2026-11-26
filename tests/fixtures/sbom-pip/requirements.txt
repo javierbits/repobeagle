@@ -1,0 +1,4 @@
+# pinned dependencies only
+flask==2.0.0
+requests==2.31.0  # HTTP client
+rich>=13.0        # unpinned range: not in the SBOM
