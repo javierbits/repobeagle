@@ -82,3 +82,31 @@ jobs:
     with:
       entries: tests/fixtures/gate/clean-list.txt
       tools-ref: ${{ github.sha }}
+
+  packaging-macos:
+    runs-on: macos-latest        # arm64: the acceptance OS for the light mode
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Packaging contract tests (macOS arm64)
+        run: python3 tests/test_packaging.py
+      - name: Install the light mode with pipx
+        run: |
+          set -euo pipefail
+          python3 -m pip install --user pipx
+          python3 -m pipx install .
+      - name: "Acceptance: the installed CLI scans a fixture with --no-docker"
+        run: |
+          set -euo pipefail
+          export PATH="$HOME/.local/bin:$PATH"
+          repobeagle --version
+          cd /tmp
+          set +e
+          repobeagle scan "$GITHUB_WORKSPACE/tests/fixtures/trap-npm" --no-docker --no-osv --no-trust --no-color --json /tmp/report.json
+          code=$?
+          set -e
+          python3 -c "import json,sys; d=json.load(open('/tmp/report.json')); v=open(sys.argv[1]).read().strip().lstrip('v'); assert sys.argv[2] in ('0','1','2'), sys.argv[2]; assert d['version']==v, (d['version'], v); print('PASS macOS light-mode scan', d['verdict'], d['counts'], 'exit', sys.argv[2])" "$GITHUB_WORKSPACE/VERSION" "$code"
