@@ -49,7 +49,10 @@ rm -f "$j"
 if [[ "$($RG --version)" == *"RepoBeagle $(sed 's/^v//' VERSION)"* ]] && [[ "$($RG version)" == "$(sed 's/^v//' VERSION)" ]]; then
   echo "PASS version flags"; else echo "FAIL version flags"; fail=1; fi
 check tests/fixtures/trap-gha RED $L --strict
-check tests/fixtures/control-clean GREEN $L --strict   # pinned actions, dist bundle, normal README, real deps
+check tests/fixtures/control-clean GREEN $L --strict
+RULES="submodule-unpinned dockerfile-base-unpinned dependency-confusion submodule-uninspected" \
+  check tests/fixtures/trap-supply "YELLOW|RED" $L
+python3 tests/test_supply_chain.py || fail=1   # pinned actions, dist bundle, normal README, real deps
 check tests/fixtures/ignore-suppressed GREEN $L   # .repobeagleignore suppresses the curl|sh finding
 j=$(mktemp); $RG scan tests/fixtures/ignore-suppressed --no-color --json "$j" $L >/dev/null 2>&1
 python3 -c "import json,sys;d=json.load(open('$j'));s=[f for f in d['findings'] if f.get('suppressed')];print('PASS suppressed findings kept in JSON' if s else 'FAIL suppressed findings missing');sys.exit(0 if s else 1)" || fail=1

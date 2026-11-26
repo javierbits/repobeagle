@@ -260,6 +260,11 @@ Severity follows privacy impact, so a default `balanced` scan goes YELLOW when a
 | `permissions-policy` | `Permissions-Policy` header; `low` when camera/microphone/geolocation/screen/clipboard APIs are used without one | info/low |
 | `privacy-doc` | `info` when a privacy policy/manifest exists anywhere in the repo (`PRIVACY.md`, `docs/privacy-policy.md`, `PrivacyInfo.xcprivacy`, …) or the README links an external policy; `low` when data leaves the repo but no policy is shipped or linked | info/low |
 | `undisclosed-vendor` | detected telemetry vendors that are not named in any README/privacy doc, when the repo ships one | info |
+| `submodule-unpinned` | `.gitmodules` entry tracking a branch/tag ref (`branch = …` that is not a 40-character commit SHA): the recorded commit is ignored by `--remote` updates and the content drifts | low |
+| `submodule-host` | `.gitmodules` entry whose host differs from the repository's origin host (read from `.git/config`): the submodule is pulled from another host, a pivot you did not review here | medium |
+| `submodule-uninspected` | one `info` finding listing the `.gitmodules` entries: fetch runs with `--no-recurse-submodules`, so only `.gitmodules` was inspected, not the submodule code | info |
+| `dockerfile-base-unpinned` | `FROM` without a version tag or `@sha256:` digest, or with the floating `latest` tag (`scratch`, `${ARG}` images and multi-stage aliases are skipped): the base image can change under you | low |
+| `dependency-confusion` | `pip --extra-index-url` (requirements files, pip config), plaintext npm registry (`.npmrc registry=http://`) or `http://` dependency tarballs, and yarn `resolutions`/npm `overrides`: a dependency can resolve from a lookalike index or have its version forced | medium/low |
 
 Findings from the `privacy`/`telemetry` checks have their snippets **and titles redacted by default** (emails `s***@domain`, cards `4111 **** **** 1111`, phones `+46 ***** 567` and `(415****132`, SSNs `***-**-6789`) so a published badge report does not republish the PII it found. The report prints a redaction notice when it applies, `verify` prints `snippets: redacted by scanner` (or `raw`), `--no-redact` shows raw values and `meta.pii_redacted` records the mode.
 
@@ -515,7 +520,7 @@ Scope: the guarantee covers the offline scanner stages on one commit and one ima
 **Misses**:
 - Well-obfuscated or novel logic, and payloads fetched at runtime from innocent-looking URLs.
 - Malicious code inside binaries or archives (flagged, not inspected), and anything in git history older than the shallow clone.
-- Submodules, which are not fetched.
+- Submodule *content*, which is not fetched: only `.gitmodules` is inspected (branch refs, host, uninspected count), so their code is not scanned.
 - Clever natural-language injection that avoids the keywords (the optional AI review helps here).
 
 Static analysis can't prove a repo is safe.

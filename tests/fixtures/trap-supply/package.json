@@ -1,0 +1,10 @@
+{
+  "name": "trap-supply",
+  "version": "1.0.0",
+  "dependencies": {
+    "leftpad": "http://registry.example.com/leftpad-1.0.0.tgz"
+  },
+  "resolutions": {
+    "leftpad": "1.0.0"
+  }
+}

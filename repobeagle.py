@@ -467,6 +467,160 @@ def check_workflows(root, p, text, findings):
 MAGIC = [(b"\x7fELF", "ELF executable"), (b"MZ", "Windows PE executable"), (b"\xcf\xfa\xed\xfe", "Mach-O binary"), (b"\xce\xfa\xed\xfe", "Mach-O binary"),
          (b"\xca\xfe\xba\xbe", "Mach-O universal / Java class"), (b"\xfe\xed\xfa\xcf", "Mach-O binary")]
 
+def _url_host(url):
+    """Hostname of a git/http URL, including scp-like `git@host:owner/repo`."""
+    url = (url or "").strip()
+    if not url:
+        return ""
+    if "://" in url:
+        try:
+            return (urllib.parse.urlsplit(url).hostname or "").lower()
+        except ValueError:
+            return ""
+    m = re.match(r"^(?:[^@/]+@)?([^:/]+):", url)
+    return m.group(1).lower() if m else ""
+
+
+def _gitmodules_entries(root):
+    """[{name, path, url, branch, line}] from `.gitmodules`; empty when absent."""
+    p = Path(root) / ".gitmodules"
+    try:
+        text = read_text(p) or ""
+    except OSError:
+        return []
+    mods = []
+    cur = None
+    for i, raw in enumerate(text.splitlines(), 1):
+        line = raw.strip()
+        if not line or line.startswith(("#", ";")):
+            continue
+        if line.startswith("["):
+            name = line.strip("[]").strip()
+            cur = {"name": name.split('"')[1] if '"' in name else name.replace("submodule", "").strip(),
+                   "path": "", "url": "", "branch": "", "line": i}
+            if name.lower().startswith("submodule"):
+                mods.append(cur)
+            else:
+                cur = None
+            continue
+        if cur is not None and "=" in line:
+            k, v = line.split("=", 1)
+            k, v = k.strip().lower(), v.strip()
+            if k in ("path", "url", "branch"):
+                cur[k] = v
+    return mods
+
+
+def _origin_host(root):
+    try:
+        text = (Path(root) / ".git" / "config").read_text(errors="replace")
+    except OSError:
+        return ""
+    section = ""
+    for line in text.splitlines():
+        s = line.strip()
+        if s.startswith("[") and s.endswith("]"):
+            section = s[1:-1].strip().lower()
+            continue
+        if section.startswith('remote "origin"') and s.lower().startswith("url"):
+            return _url_host(s.split("=", 1)[1]) if "=" in s else ""
+    return ""
+
+
+DOCKER_FROM_RE = re.compile(r"^\s*FROM\s+(?:--platform=\S+\s+)?([^\s#]+)(?:\s+AS\s+(\S+))?", re.I)
+PIP_EXTRA_INDEX_RE = re.compile(r"^\s*(?:--)?extra-index-url\s*[=:]?\s*(\S+)", re.M)
+
+
+def check_supply_chain(root, findings):
+    """Submodule and dependency-supply-chain rules: `.gitmodules`, Dockerfiles, pip/npm/yarn config."""
+    root = Path(root)
+    origin = _origin_host(root)
+    mods = _gitmodules_entries(root)
+    for m in mods:
+        ref = m.get("path") or m.get("name") or "(submodule)"
+        branch = m.get("branch") or ""
+        if branch and not re.fullmatch(r"[0-9a-f]{40}", branch):
+            findings.append(finding("agent-checks", "low", ".gitmodules", m.get("line", 1),
+                f"submodule-unpinned: {ref} tracks branch {branch!r}",
+                f"{m.get('url', '')} branch={branch}",
+                "The superproject records a commit, but a branch ref drifts; `--remote` updates follow it. Pin the commit and avoid branch tracking in CI."))
+        host = _url_host(m.get("url", ""))
+        if origin and host and host != origin:
+            findings.append(finding("agent-checks", "medium", ".gitmodules", m.get("line", 1),
+                f"submodule-host: {ref} comes from {host}",
+                m.get("url", ""),
+                f"Submodule content is pulled from {host}, not the repository host {origin}; a pivot you did not review here."))
+    if mods:
+        paths = ", ".join(sorted((m.get("path") or m.get("name") or "?") for m in mods)[:6])
+        findings.append(finding("agent-checks", "info", ".gitmodules", 1,
+            f"submodule-uninspected: {len(mods)} submodule(s) not fetched", paths,
+            "Fetch runs with `--no-recurse-submodules`, so only `.gitmodules` is inspected: this code was not scanned."))
+    for p in sorted(iter_files(root)):
+        name = p.name
+        r = rel(root, p)
+        if name == "Dockerfile" or name.lower().endswith(".dockerfile"):
+            text = read_text(p) or ""
+            stages: set[str] = set()
+            for i, line in enumerate(text.splitlines(), 1):
+                m = DOCKER_FROM_RE.match(line)
+                if not m:
+                    continue
+                image, alias = m.group(1), m.group(2)
+                if alias:
+                    stages.add(alias.lower())
+                if image.lower() in stages or image.lower() == "scratch" or image.startswith("$"):
+                    continue
+                tag = image.rsplit("@", 1)[1] if "@" in image else (image.rsplit(":", 1)[1] if ":" in image.rsplit("/", 1)[-1] else "")
+                if not tag or tag.lower() == "latest":
+                    findings.append(finding("agent-checks", "low", r, i,
+                        f"dockerfile-base-unpinned: FROM {image}", line.strip(),
+                        "No version tag or digest: the base image can change under you. Pin a tag and prefer `@sha256:` for reproducibility."))
+        elif name.startswith("requirements") and name.endswith(".txt"):
+            text = read_text(p) or ""
+            for m in PIP_EXTRA_INDEX_RE.finditer(text):
+                line = text[:m.start()].count("\n") + 1
+                findings.append(finding("agent-checks", "medium", r, line,
+                    "dependency-confusion: pip --extra-index-url", m.group(1),
+                    "An extra index is searched alongside PyPI; an attacker can publish a higher version of a name you already use on it. Pin versions and hashes, or use a single index."))
+        elif name in ("pip.conf", "pip.ini"):
+            text = read_text(p) or ""
+            for m in PIP_EXTRA_INDEX_RE.finditer(text):
+                line = text[:m.start()].count("\n") + 1
+                findings.append(finding("agent-checks", "medium", r, line,
+                    "dependency-confusion: pip --extra-index-url", m.group(1),
+                    "An extra index is searched alongside PyPI; a lookalike index can win the version resolution."))
+        elif name in (".npmrc", ".yarnrc", ".yarnrc.yml"):
+            text = read_text(p) or ""
+            for i, line in enumerate(text.splitlines(), 1):
+                if re.match(r"^\s*registry\s*[=:]\s*http://", line, re.I):
+                    findings.append(finding("agent-checks", "medium", r, i,
+                        "dependency-confusion: npm registry over plaintext", line.strip(),
+                        "The registry is fetched over plaintext HTTP: a network attacker can swap tarballs."))
+        elif name == "package.json":
+            text = read_text(p) or ""
+            try:
+                pkg = json.loads(text)
+            except ValueError:
+                pkg = None
+            if isinstance(pkg, dict):
+                def line_of(needle):
+                    return next((i for i, l in enumerate(text.splitlines(), 1) if needle in l), 1)
+                for section in ("dependencies", "devDependencies", "optionalDependencies"):
+                    deps = pkg.get(section) or {}
+                    if not isinstance(deps, dict):
+                        continue
+                    for dep, spec in deps.items():
+                        if isinstance(spec, str) and spec.startswith("http://"):
+                            findings.append(finding("agent-checks", "medium", r, line_of(f'"{dep}"'),
+                                f"dependency-confusion: npm http tarball {dep}", spec,
+                                "A dependency is fetched over plaintext HTTP from an arbitrary host; pin it to https and a known registry."))
+                for key in ("resolutions", "overrides"):
+                    if isinstance(pkg.get(key), dict) and pkg[key]:
+                        findings.append(finding("agent-checks", "low", r, line_of(f'"{key}"'),
+                            f"dependency-confusion: {key} override present", key,
+                            "Yarn resolutions/overrides replace the registry metadata resolution; review that the forced version is intended."))
+
+
 def check_magic(root, p, findings):
     """Executable content hidden behind a non-binary extension (e.g. an ELF named logo.png). Reads 4 bytes only."""
     try:
@@ -2247,6 +2401,12 @@ def run_agent_checks(root, deadline=None, state=None):
                                      f"{SCAN_FILE_SECONDS:.0f}s budget",
                                      "The regex checks on this file exceeded the per-file budget; the rest of the scan "
                                      "continued. Exclude generated files or split the file if findings are expected there."))
+    try:
+        check_supply_chain(root, findings)
+    except Exception as ex:
+        findings.append(finding("agent-checks", "info", "(repo)", 0,
+                                 "supply-chain checks failed", type(ex).__name__,
+                                 "The submodule/Dockerfile/dependency-index checks could not complete; the rest of the scan continued."))
     tf = telemetry_findings(
         telemetry, optouts, optouts_code)
     tracking_kinds = {"telemetry-analytics", "telemetry-ads", "telemetry-session-replay", "telemetry-crash", "telemetry-apm"}
