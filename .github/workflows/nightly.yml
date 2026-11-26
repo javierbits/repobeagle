@@ -24,6 +24,38 @@ jobs:
         run: ./install.sh
       - name: Install the pinned development tools
         run: python3 -m pip install --quiet -r requirements-dev.txt
+      - name: Compute the OSV database cache week
+        id: osvweek
+        run: echo "week=$(date -u +%G-W%V)" >> "$GITHUB_OUTPUT"
+      - name: Restore the offline OSV database
+        id: osvcache
+        uses: actions/cache@v4
+        with:
+          path: .osv-cache/osv-scalibr
+          key: osv-db-${{ steps.osvweek.outputs.week }}
+          restore-keys: osv-db-
+      - name: Refresh the offline OSV database (PyPI, from the control fixture)
+        if: steps.osvcache.outputs.cache-hit != 'true'
+        env:
+          XDG_CACHE_HOME: ${{ github.workspace }}/.osv-cache
+        run: python3 repobeagle.py db --update tests/fixtures/control-vuln
+      - name: Deterministic vulnerability scan with the offline database
+        env:
+          XDG_CACHE_HOME: ${{ github.workspace }}/.osv-cache
+        run: |
+          python3 repobeagle.py scan tests/fixtures/control-vuln --offline-vulnerabilities --no-trust \
+            --json /tmp/osv.json --no-color || true
+          python3 - <<'PY'
+          import json
+          import sys
+          d = json.load(open("/tmp/osv.json")); m = d.get("meta") or {}; db = m.get("osv_db") or {}
+          rules = {f["title"].split(":")[0] for f in d.get("findings") or []}
+          ok = (m.get("offline_vulnerabilities") is True and db.get("ecosystems")
+                and db.get("stale") is False and "Vulnerable dependency" in rules)
+          print("PASS deterministic OSV scan (flask@2.0.0 from the offline DB)" if ok
+                else f"FAIL deterministic OSV scan: db={db} rules={sorted(rules)}")
+          sys.exit(0 if ok else 1)
+          PY
       - name: Online corpus (psf/requests, tj/commander.js, an MCP-poisoned repo, juice-shop, a malware dataset)
         run: tests/run_tests.sh
       - name: Real-site web regression (one public page, privacy-only)

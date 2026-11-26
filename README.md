@@ -98,7 +98,15 @@ Findings whose fix is mechanical carry a `remediation` field and a `fix:` line i
 
 The policy is explicit and test-enforced: `REMEDIATION` maps rule prefixes to one line of advice, and `NO_REMEDIATION` maps rules where no single action is right to a reason (for example `consent-manager` is a positive signal, `external-endpoint` is inventory). `remediation_audit()` groups every fixture finding under fixed / documented-none / mixed (a rule family with informational and actionable variants such as `privacy-doc: privacy policy present` vs `privacy-doc: no privacy policy file`) and `tests/test_remediation.py` fails on any rule with neither, so adding a rule without deciding its advice fails CI. Wording rule: advice must be concrete, short, and either state an alternative or describe what to read when it could be wrong for a legitimate use — it never claims a defect for an inventory finding. Scanner-native findings are covered by class (`Hardcoded secret` → rotate and ignore the file, `Bandit <code>` → fix the call site, `GuardDog` → review and pin the package, `semgrep` → apply what the rule message describes), while the scanner's own rule documentation stays the authority.
 
-OSV normally queries osv.dev, which makes two scans of the same commit differ by the day. `repobeagle db --update <dir>` downloads the offline vulnerability databases for the ecosystems in that directory (they live in `$XDG_CACHE_HOME/osv-scalibr`), and `scan --offline-vulnerabilities` uses them instead: no network, and `meta.osv_db{path,updated,bytes}` records which database was used. `repobeagle db` alone prints that status without touching the network.
+OSV normally queries osv.dev, which makes two scans of the same commit differ by the day. `repobeagle db --update <dir>` downloads osv-scanner's offline vulnerability databases for the ecosystems detected in that directory (per-ecosystem zips, `$XDG_CACHE_HOME/osv-scalibr/<ecosystem>/all.zip`, tens of MB each), and `scan --offline-vulnerabilities` uses them with no network call. `repobeagle db` alone prints the status without touching the network.
+
+Deterministic vulnerability mode, end to end:
+
+1. `repobeagle db --update <dir>` on a machine with network (explicit, one-off; the CI nightly job does this weekly and caches the result). What it fetches: only the ecosystems osv-scanner finds in that directory (PyPI in `tests/fixtures/control-vuln`, npm/crates/Go/... elsewhere) — not an NVD-wide mirror, and nothing for ecosystems absent from the target.
+2. `repobeagle scan <target> --offline-vulnerabilities` then reads those zips offline. The report records `meta.osv_db{path, updated, age_days, stale, max_age_days, bytes, ecosystems[{ecosystem, bytes, corrupt}]}`; the same database and commit produce the same vulnerability findings, so re-running the pinned image and diffing is meaningful.
+3. `verify` warns when a report used a database older than the policy (default 30 days, `BEAGLE_DB_MAX_AGE_DAYS`) or none at all, and `db`/scan flag a truncating or corrupt zip (a zip-directory probe, not a full read) instead of silently returning no vulnerabilities.
+
+CI uses the same mode: the nightly job refreshes and caches the PyPI database (keyed by ISO week), and the PR `ci` job restores that cache and runs `scan tests/fixtures/control-vuln --offline-vulnerabilities`, asserting the database it used. Limits: a stale database misses new advisories (hence the warning), the download is explicit network, and without a database the scan reports no vulnerability findings and says so in the notes.
 
 ### Use from an AI agent (MCP)
 
@@ -410,6 +418,8 @@ The rule-pair check is automatic: `tests/test_rule_fixtures.py` parses the `RULE
 | tests/test_refs.py (tag/branch/commit refs, unknown ref, ref+since, map --ref, rescan image choice) | pass |
 | tests/test_scope.py (deleted-only diff, renames, context files, empty diff, badge/MCP scope surfacing) | pass |
 | tests/test_remediation.py (rule-id lookup, coverage audit, wording rules, Markdown/SARIF surfacing) | pass |
+| tests/test_osv.py (missing DB note, freshness policy, corrupt zip, verify warning) | pass |
+| tests/fixtures/control-vuln (`flask==2.0.0`), used by the cached offline-OSV CI/nightly scan | vulnerable dependency from the local DB |
 | tests/test_markdown_snapshot.py (PR-comment snapshot, pipe/newline escaping, suppression, truncation) | pass |
 | tests/test_rule_fixtures.py (positive fixture fires every declared rule; control-clean fires none) | pass |
 | tests/test_fuzz.py (bounded Hypothesis targets: `decode_tags`, `redact_pii`, `check_unicode`, `check_markdown_hidden`) | pass |
