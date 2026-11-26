@@ -3648,6 +3648,60 @@ def markdown_report(d):
         out += ["", str(d["why"])]
     return "\n".join(out) + "\n"
 
+def html_report(d):
+    """Self-contained HTML report (inline CSS, no external assets); snippets stay exactly as stored (redacted)."""
+    from html import escape
+    meta = d.get("meta") if isinstance(d.get("meta"), dict) else {}
+    c = d.get("counts") or {}
+    verdict = str(d.get("verdict") or "?")
+    color = {"GREEN": "#1a7f37", "YELLOW": "#9a6700", "RED": "#cf222e"}.get(verdict, "#57606a")
+    fs = [f for f in d.get("findings") or [] if isinstance(f, dict) and f.get("severity") in SEV_ORDER]
+    fs.sort(key=lambda f: (-SEV_ORDER[f["severity"]], f.get("file") or "", f.get("line") or 0))
+    rows = []
+    for f in fs:
+        loc = f"{f.get('file')}:{f.get('line')}" if f.get("line") else str(f.get("file") or "?")
+        extra = ""
+        if f.get("meaning"):
+            extra += f"<div class='meta'>{escape(str(f['meaning']))}</div>"
+        if f.get("snippet"):
+            extra += f"<div class='snippet'>{escape(str(f['snippet'])[:400])}</div>"
+        if f.get("remediation"):
+            extra += f"<div class='fix'>fix: {escape(str(f['remediation']))}</div>"
+        if f.get("suppressed"):
+            why = (f.get("suppression") or {}).get("reason") or "suppressed"
+            extra += f"<div class='meta'>accepted: {escape(str(why))}</div>"
+        rows.append(f"<tr class='sev-{escape(str(f['severity']))}{' suppressed' if f.get('suppressed') else ''}'>"
+                    f"<td>{escape(str(f['severity']))}</td>"
+                    f"<td><code>{escape(_rule_of(f))}</code></td>"
+                    f"<td><code>{escape(loc)}</code></td>"
+                    f"<td>{escape(str(f.get('title') or ''))}{extra}</td></tr>")
+    sc = meta.get("scope") or {}
+    facts = [f"target: {meta.get('target', '?')}", f"mode: {meta.get('mode', '?')}",
+             f"profile: {meta.get('profile', '?')}", f"ruleset: {meta.get('ruleset', '?')}"]
+    if sc:
+        facts.append("scope: " + ", ".join(f"{k} {v}" for k, v in sc.items() if not isinstance(v, list)))
+    notes = "".join(f"<li>{escape(str(n))}</li>" for n in d.get("notes") or [])
+    counts = " · ".join(f"{escape(s)} {c.get(s, 0)}" for s in SEV_ORDER)
+    return ("<!doctype html><html lang='en'><head><meta charset='utf-8'><title>RepoBeagle report</title>"
+            "<style>"
+            "body{font:14px/1.45 system-ui,sans-serif;margin:2rem;color:#1f2328;background:#fff}"
+            "h1{font-size:1.3rem} .verdict{padding:.2rem .6rem;border-radius:6px;background:" + color + ";color:#fff}"
+            "table{border-collapse:collapse;width:100%;margin-top:1rem}"
+            "th,td{border-bottom:1px solid #d0d7de;padding:.35rem .5rem;vertical-align:top;text-align:left}"
+            "tr.sev-critical td:first-child{color:#cf222e;font-weight:600}"
+            "tr.sev-high td:first-child{color:#bc4c00} tr.sev-medium td:first-child{color:#9a6700}"
+            "tr.suppressed{opacity:.65} .meta{color:#57606a;font-size:.92em}"
+            ".snippet,.fix{font-family:ui-monospace,monospace;font-size:.85em;margin-top:.2rem;white-space:pre-wrap}"
+            ".facts{color:#57606a;font-size:.92em}"
+            "</style></head><body>"
+            f"<h1>RepoBeagle: <span class='verdict'>{escape(verdict)}</span></h1>"
+            f"<div class='facts'>{escape(' · '.join(facts))}</div>"
+            f"<div class='facts'>{counts}</div>"
+            + (f"<h2>Notes</h2><ul>{notes}</ul>" if notes else "")
+            + ("<table><thead><tr><th>Severity</th><th>Rule</th><th>Location</th><th>Finding</th></tr></thead><tbody>"
+               + "".join(rows) + "</tbody></table>" if rows else "<p>No findings.</p>")
+            + "</body></html>\n")
+
 def cmd_export(a):
     """Converts a stored report to SARIF, Markdown or normalized JSON. Never scans, never touches the network."""
     try:
@@ -3662,6 +3716,8 @@ def cmd_export(a):
         text = json.dumps(sarif_report(d), indent=2)
     elif a.format == "markdown":
         text = markdown_report(d)
+    elif a.format == "html":
+        text = html_report(d)
     else:
         text = json.dumps(d, indent=2)
     if not text.endswith("\n"):
@@ -4226,6 +4282,9 @@ def cmd_head(a):
         if a.json:
             Path(a.json).write_text(json.dumps(d, indent=2))
             print(f"[repobeagle] JSON written to {a.json}", file=sys.stderr)
+        if getattr(a, "html", None):
+            Path(a.html).write_text(html_report(d))
+            print(f"[repobeagle] HTML written to {a.html}", file=sys.stderr)
         print(f"[repobeagle] head: {scope['paths_fetched']} metadata file(s) from {source}", file=sys.stderr)
         for n in notes:
             print(f"[repobeagle] note: {n}", file=sys.stderr)
@@ -4578,6 +4637,79 @@ def suppression_meta(entries, today=None):
     return [{"rule": e["rule"], "reason": e.get("reason") or "", "until": e.get("until"),
              "status": suppression_status(e, today), "line": e.get("line")} for e in entries or []]
 
+INIT_WORKFLOW = """# Generated by `repobeagle init`. Bump the ref below together with the tool.
+name: repobeagle
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  workflow_dispatch:
+jobs:
+  scan:
+    permissions:
+      contents: write      # publish the badge branch
+      statuses: write      # set the repobeagle/scan commit status
+      id-token: write      # keyless-sign the report
+    uses: javierbits/repobeagle/.github/workflows/scan.yml@{ref}
+    with:
+      profile: {profile}
+      fail-on-red: {fail_on_red}
+      privacy-only: {privacy_only}
+      badge-branch: "{badge_branch}"
+      set-status: {set_status}
+      tools-ref: {ref}
+"""
+
+def _repo_slug(target):
+    """owner/name for the badge URL: --repo, GITHUB_REPOSITORY, or the origin remote; placeholder otherwise."""
+    for value in (os.environ.get("GITHUB_REPOSITORY"),):
+        if value and "/" in value:
+            return value
+    try:
+        r = subprocess.run(["git", "-C", str(target), "config", "--get", "remote.origin.url"],
+                            capture_output=True, text=True, timeout=15)
+    except Exception:
+        r = None
+    url = (r.stdout or "").strip() if r and r.returncode == 0 else ""
+    m = re.search(r"github\.com[:/]([A-Za-z0-9_.-]+)/([A-Za-z0-9_.-]+?)(?:\.git)?$", url)
+    return f"{m.group(1)}/{m.group(2)}" if m else os.environ.get("REPOBEAGLE_REPO", "OWNER/REPO")
+
+def cmd_init(a):
+    """Writes the documented reusable-workflow file and prints the shield lines. Never touches anything else."""
+    target = Path(a.target or ".")
+    out = Path(a.out) if a.out else target / ".github" / "workflows" / "repobeagle.yml"
+    ref = a.tools_ref or RELEASE
+    body = INIT_WORKFLOW.format(ref=ref, profile=a.profile, fail_on_red=str(a.fail_on_red).lower(),
+                                privacy_only=str(a.privacy_only).lower(), badge_branch=a.badge_branch,
+                                set_status=str(a.set_status).lower())
+    if a.dry_run:
+        sys.stdout.write(body)
+        return 0
+    old = ""
+    try:
+        old = out.read_text(encoding="utf-8")
+    except OSError:
+        pass
+    if old == body:
+        print(f"{out} is up to date")
+    elif old and not a.force:
+        print(f"init: {out} exists with different content; re-run with --force to replace it", file=sys.stderr)
+        return 1
+    else:
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(body, encoding="utf-8")
+        print(f"wrote {out}")
+    slug = a.repo or _repo_slug(target)
+    if a.badge_branch:
+        print("\nAdd to your README:")
+        print(f"![RepoBeagle](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/{slug}/{a.badge_branch}/badge.json)")
+        print(f"# full report: https://raw.githubusercontent.com/{slug}/{a.badge_branch}/report.json")
+    else:
+        print("\nPublishing is disabled (badge-branch empty); the workflow still sets the commit status.")
+    print(f"\nCommit {out} and merge it to the default branch; then run the workflow once. "
+          f"The toolchain ref is pinned to {ref}.")
+    return 0
+
 def cmd_ignore(a):
     """Adds or updates one `.repobeagleignore` line (`rule [# reason] [@YYYY-MM-DD]`), or lists the file."""
     path = Path(a.file)
@@ -4759,12 +4891,15 @@ def cmd_scan(a):
             meta["privacy_profile"] = privacy_profile(summary)
         report(meta, active, v, why, counts, notes, ai, color_enabled() and not a.no_color,
                10**6 if a.all else 40, getattr(a, "min_severity", "info"))
+        report_data = {"version": VERSION, "verdict": v, "why": why, "counts": counts, "meta": meta,
+                       "privacy_summary": summary, "ai_review": ai, "findings": active + suppressed,
+                       "raw_findings_count": raw_count, "notes": notes, "recommended_actions": ACTIONS[v]}
         if a.json:
-            Path(a.json).write_text(json.dumps({"version": VERSION, "verdict": v, "why": why, "counts": counts, "meta": meta,
-                                                "privacy_summary": summary,
-                                                "ai_review": ai, "findings": active + suppressed, "raw_findings_count": raw_count, "notes": notes,
-                                                "recommended_actions": ACTIONS[v]}, indent=2))
+            Path(a.json).write_text(json.dumps(report_data, indent=2))
             print(f"[repobeagle] JSON written to {a.json}", file=sys.stderr)
+        if getattr(a, "html", None):
+            Path(a.html).write_text(html_report(report_data))
+            print(f"[repobeagle] HTML written to {a.html}", file=sys.stderr)
         if a.keep:
             print(f"[repobeagle] kept clone at {src}", file=sys.stderr)
         if baseline is not None:
@@ -5194,6 +5329,7 @@ def main():
         g.add_argument("--strict", action="store_true"); g.add_argument("--balanced", action="store_true"); g.add_argument("--relaxed", action="store_true")
         s.add_argument("--keep", action="store_true", help="keep the temp clone")
         s.add_argument("--json", metavar="FILE")
+        s.add_argument("--html", metavar="FILE", help="write a self-contained HTML report")
         s.add_argument("--no-docker", action="store_true", help="run scanners locally instead of in the container")
         s.add_argument("--no-osv", action="store_true", help="skip OSV (avoids sending package names to osv.dev)")
         s.add_argument("--offline-vulnerabilities", action="store_true",
@@ -5230,6 +5366,18 @@ def main():
                    help="re-scan the report's pinned commit with this install and compare the normalized findings "
                         "(offline stages; exit 3 when they differ)")
     v.add_argument("--no-color", action="store_true")
+    ini = sp.add_parser("init", help="write the reusable-workflow file and print the shield lines")
+    ini.add_argument("target", nargs="?", default=".", help="repository directory (default: .)")
+    ini.add_argument("--out", help="workflow path (default: <target>/.github/workflows/repobeagle.yml)")
+    ini.add_argument("--repo", metavar="OWNER/NAME", help="slug for the printed badge URL (default: origin remote)")
+    ini.add_argument("--profile", choices=["strict", "balanced", "relaxed"], default="balanced")
+    ini.add_argument("--fail-on-red", action="store_true", help="fail the job on a RED verdict")
+    ini.add_argument("--privacy-only", action="store_true")
+    ini.add_argument("--badge-branch", default="repobeagle", help="badge branch (empty disables publishing)")
+    ini.add_argument("--set-status", action="store_true", default=True, help="set the repobeagle/scan commit status (default: on)")
+    ini.add_argument("--tools-ref", metavar="REF", help=f"repobeagle toolchain ref to pin (default: {RELEASE})")
+    ini.add_argument("--dry-run", action="store_true", help="print the workflow instead of writing it")
+    ini.add_argument("--force", action="store_true", help="replace an existing workflow with different content")
     ig = sp.add_parser("ignore", help="add, update or list .repobeagleignore entries (rule [# reason] [@YYYY-MM-DD])")
     ig.add_argument("rule", nargs="?", help="rule id or glob to suppress; omit with --list")
     ig.add_argument("--reason", default="", help="why the finding is accepted (stored after #)")
@@ -5244,6 +5392,7 @@ def main():
     hg = hd.add_mutually_exclusive_group()
     hg.add_argument("--strict", action="store_true"); hg.add_argument("--relaxed", action="store_true")
     hd.add_argument("--json", metavar="FILE")
+    hd.add_argument("--html", metavar="FILE", help="write a self-contained HTML report")
     hd.add_argument("--markdown", action="store_true", help="print a Markdown card (Slack/Discord/PR comment)")
     hd.add_argument("--no-cache", action="store_true", help="ignore the per-slug response cache")
     hd.add_argument("--all", action="store_true")
@@ -5277,7 +5426,7 @@ def main():
     df.add_argument("--no-color", action="store_true")
     xp = sp.add_parser("export", help="convert a stored report to SARIF (code scanning), Markdown or JSON")
     xp.add_argument("report", help="report.json produced by 'scan --json'")
-    xp.add_argument("--format", choices=["sarif", "markdown", "json"], default="sarif")
+    xp.add_argument("--format", choices=["sarif", "markdown", "html", "json"], default="sarif")
     xp.add_argument("-o", "--out", metavar="FILE", help="write to FILE instead of stdout")
     sp.add_parser("mcp", help="run an MCP server over stdio: scan_repo, verify_badge, explain_report")
     mp = sp.add_parser("map", help="show what a repo can touch: hosts, secret paths, subprocesses, env vars, storage, hooks")
@@ -5316,6 +5465,8 @@ def main():
         return cmd_head(a)
     if a.cmd == "ignore":
         return cmd_ignore(a)
+    if a.cmd == "init":
+        return cmd_init(a)
     if a.cmd == "fix":
         return cmd_fix(a)
     if a.cmd == "explain":

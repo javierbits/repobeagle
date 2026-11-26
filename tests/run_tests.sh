@@ -90,6 +90,7 @@ python3 tests/test_packaging.py || fail=1
 python3 tests/test_fix.py || fail=1
 python3 tests/test_head.py || fail=1
 python3 tests/test_suppressions.py || fail=1
+python3 tests/test_init_html.py || fail=1
 tests/test_cleanup.sh || fail=1
 # Determinism: the same fixture must produce identical findings (timings excluded).
 d1=$(mktemp); d2=$(mktemp)

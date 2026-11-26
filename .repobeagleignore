@@ -1,0 +1,10 @@
+# The scanner scans its own rule tables, fixtures and documentation examples.
+# Each entry states why the rule only sees data here; the real detections are
+# exercised by tests/fixtures/* and the unit tests.
+MCP tool poisoning*  # MCP tool descriptions and rule messages are prose; the wire contract is tested by test_mcp_interop
+Instructions to read and send secrets/credentials to a URL  # this README is written for agents; the rule sees its own examples
+Code reads secrets/credentials near a network call  # rule-table strings; real coverage is tests/fixtures/trap-npm
+Zero-width characters*  # trap-skill fixture
+Invisible Unicode TAG characters*  # trap-skill fixture
+Asks the agent to act silently*  # trap-skill fixture
+npm lifecycle script*  # trap-npm fixture
