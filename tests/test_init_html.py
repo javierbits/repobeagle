@@ -55,7 +55,7 @@ with tempfile.TemporaryDirectory() as td:
 with tempfile.TemporaryDirectory() as td:
     subprocess.run(["git", "-C", td, "init", "-q", "-b", "main"], check=False)
     subprocess.run(["git", "-C", td, "remote", "add", "origin", "git@github.com:alice/tool.git"], check=False)
-    out = run(["init", td])
+    out = run(["init", td], env={"GITHUB_REPOSITORY": ""})   # CI exports it; here the remote must win
     check("init derives the slug from the origin remote", "raw.githubusercontent.com/alice/tool/repobeagle/badge.json" in out.stdout
           and (Path(td) / ".github" / "workflows" / "repobeagle.yml").is_file())
 
