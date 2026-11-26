@@ -5,3 +5,6 @@ hypothesis==6.170.17
 ruff==0.17.6
 jsonschema==4.26.0
 mcp==2.3.0
+
+# The wheel build backend for the light mode (pipx install .); pinned like the rest.
+build==1.6.1

@@ -12,10 +12,10 @@ You give it a git URL or a local folder and get a **GREEN / YELLOW / RED** verdi
 **RepoBeagle never runs repo code.** It never runs installs or builds, and it never extracts archives.
 
 ## Install (DGX Spark / any Linux, arm64 or x86_64)
-The scanners ship as a prebuilt **public** multi-arch image (no login needed), `ghcr.io/javierbits/repobeagle` (linux/amd64 + linux/arm64). It's built by `.github/workflows/image.yml` on every push to main, on `v*` release tags, weekly, and on manual dispatch. Release tags get `v1.153.0`-style and `stable` tags; main also gets `latest`, `sha-<commit>` and the ISO week (e.g. `2026-W42`). `install.sh` and `repobeagle` default to the image matching the `VERSION` file (currently `v1.153.0`).
+The scanners ship as a prebuilt **public** multi-arch image (no login needed), `ghcr.io/javierbits/repobeagle` (linux/amd64 + linux/arm64). It's built by `.github/workflows/image.yml` on every push to main, on `v*` release tags, weekly, and on manual dispatch. Release tags get `v1.166.0`-style and `stable` tags; main also gets `latest`, `sha-<commit>` and the ISO week (e.g. `2026-W42`). `install.sh` and `repobeagle` default to the image matching the `VERSION` file (currently `v1.166.0`).
 ```bash
 git clone https://github.com/javierbits/repobeagle && cd repobeagle
-./install.sh                   # docker pull ghcr.io/javierbits/repobeagle:v1.153.0 + install the repobeagle wrapper
+./install.sh                   # docker pull ghcr.io/javierbits/repobeagle:v1.166.0 + install the repobeagle wrapper
 ./install.sh --build-local     # fallback: build the same image locally from the Dockerfile
 ./install.sh --local-tools     # also install gitleaks/semgrep/guarddog/bandit on the host for --no-docker
 ```
@@ -34,6 +34,18 @@ How a scan is split up:
 - **OSV (host):** lockfiles only.
 
 Set `BEAGLE_IMAGE` to use a different tag (e.g. `ghcr.io/javierbits/repobeagle:latest` for the newest main build).
+
+### Light mode (pipx / pip, no Docker) — Linux and macOS
+The image stays the recommended, hardened path. For hosts that cannot run Docker (CI runners, macOS laptops, airgapped analysis boxes) the scanner is also a normal Python package (stdlib only):
+
+```bash
+pipx install .                 # or: python3 -m venv .venv && .venv/bin/pip install .
+repobeagle scan tests/fixtures/trap-npm --no-docker
+```
+
+Requirements: `python3 >= 3.10` plus whichever host tools the scan shells out to (`gitleaks`, `semgrep`, `guarddog`, `bandit`, `osv-scanner`); install them with `pipx install semgrep guarddog bandit` and `brew install gitleaks osv-scanner`, or skip `--no-docker` and let the image supply them. A missing tool degrades to a note and is listed in the report; it never widens a verdict silently. The wheel ships the custom semgrep rules and the version under `<prefix>/share/repobeagle/` (the scanner falls back to them when no repository `rules/` directory is next to the module), and the console script is `repobeagle`.
+
+macOS: `install.sh` now detects `Darwin` and installs `gitleaks`/`osv-scanner`/`cosign` with Homebrew instead of downloading Linux binaries (it still uses Docker Desktop when available, which runs the same arm64 image). `pipx install .` is the light path on macOS arm64 and needs no container.
 
 ## Usage
 ```bash
@@ -269,7 +281,7 @@ Then add the badge; after a tag push, a per-tag badge also exists:
 
 ```markdown
 ![RepoBeagle](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/OWNER/REPO/repobeagle/badge.json)
-![RepoBeagle v1.153.0](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/OWNER/REPO/repobeagle/badge-v1.153.0.json)
+![RepoBeagle v1.166.0](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/OWNER/REPO/repobeagle/badge-v1.166.0.json)
 ```
 
 The workflow publishes a `repobeagle` branch containing `badge.json` (shields.io endpoint), a self-hosted `badge.svg` fallback and the full `report.json` (plus `report-<sha>.json` per commit and per-tag copies), so every finding is one click away from the badge. Inputs: `profile`, `fail-on-red`, `baseline` + `baseline-min-severity` (gate on new findings, see below), `privacy-only`, `badge-branch` (empty string disables publishing), `set-status` (default true), `upload-sarif` and `tools-ref` (toolchain ref, default `main`; the `VERSION` file there pins the scanned image). `upload-sarif: true` needs `security-events: write` in the caller job and publishes the findings to GitHub code scanning with stable `partialFingerprints`, so repeat scans dedupe instead of piling up.
@@ -291,7 +303,7 @@ The badge is produced by the author's own CI, so on its own it is self-attested.
 repobeagle verify javierbits/javierbits.github.io
 #   signature: VALID  policy: official scan.yml (main or v* tag)
 #   report:    YELLOW  0 critical / 6 high / 1 medium / 56 low
-#   scanned:   a7cb435002de at javierbits/javierbits.github.io (image ghcr.io/javierbits/repobeagle:v1.153.0)
+#   scanned:   a7cb435002de at javierbits/javierbits.github.io (image ghcr.io/javierbits/repobeagle:v1.166.0)
 #   snippets:  redacted by scanner
 #   scope:     full
 #   freshness: UP TO DATE (HEAD a7cb435002de)
@@ -419,6 +431,7 @@ The rule-pair check is automatic: `tests/test_rule_fixtures.py` parses the `RULE
 | tests/test_scope.py (deleted-only diff, renames, context files, empty diff, badge/MCP scope surfacing) | pass |
 | tests/test_remediation.py (rule-id lookup, coverage audit, wording rules, Markdown/SARIF surfacing) | pass |
 | tests/test_osv.py (missing DB note, freshness policy, corrupt zip, verify warning) | pass |
+| tests/test_packaging.py (console script, wheel data files, packaged rules/version fallback, installer OS support) | pass |
 | tests/fixtures/control-vuln (`flask==2.0.0`), used by the cached offline-OSV CI/nightly scan | vulnerable dependency from the local DB |
 | tests/test_markdown_snapshot.py (PR-comment snapshot, pipe/newline escaping, suppression, truncation) | pass |
 | tests/test_rule_fixtures.py (positive fixture fires every declared rule; control-clean fires none) | pass |

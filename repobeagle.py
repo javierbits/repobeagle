@@ -14,12 +14,20 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 RULES_DIR = HERE / "rules"
-def _read_version():
-    """Single source of truth: the VERSION file (also read by install.sh)."""
-    try:
-        return (HERE / "VERSION").read_text().strip() or "v1.0.0"
-    except OSError:
-        return "v1.0.0"
+def _read_version(here=None):
+    """Single source of truth: the VERSION file (also read by install.sh).
+
+    A wheel install ships it under share/repobeagle; the checkout keeps it next to the module.
+    """
+    here = Path(here) if here else HERE
+    for cand in (here / "VERSION", Path(sys.prefix) / "share" / "repobeagle" / "VERSION"):
+        try:
+            value = cand.read_text().strip()
+        except OSError:
+            continue
+        if value:
+            return value
+    return "v1.0.0"
 RELEASE = _read_version()                 # e.g. v1.0.0 (image tag)
 VERSION = RELEASE.lstrip("v")             # e.g. 1.0.0 (display / JSON)
 IMAGE = os.environ.get("BEAGLE_IMAGE", f"ghcr.io/javierbits/repobeagle:{RELEASE}")
@@ -2358,7 +2366,12 @@ def scan_gitleaks(src, out):
     return fs, None
 
 def semgrep_configs():
-    return [RULES_DIR / "custom.yml"]
+    """The custom semgrep rules: the checkout's rules/ when present, else the wheel's share/repobeagle."""
+    repo = RULES_DIR / "custom.yml"
+    if repo.is_file():
+        return [repo]
+    packaged = Path(sys.prefix) / "share" / "repobeagle" / "custom.yml"
+    return [packaged if packaged.is_file() else repo]
 
 def scan_semgrep(src, out):
     cfgs = semgrep_configs()
