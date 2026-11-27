@@ -3,7 +3,7 @@
   "label": "repobeagle",
   "message": "YELLOW",
   "color": "yellow",
-  "link": "https://github.com/javierbits/repobeagle/actions/runs/45940699726",
+  "link": "https://github.com/javierbits/repobeagle/actions/runs/45943637759",
   "privacy": {
     "trackers": 70,
     "pii": 24,
@@ -11,7 +11,7 @@
     "storage": 19,
     "consent": 21,
     "vendor": 2,
-    "network": 68,
+    "network": 69,
     "retention": 3,
     "uploads": 2,
     "transparency": 2,
