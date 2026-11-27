@@ -11,6 +11,7 @@ from pathlib import Path
 
 from .app import cmd_app
 from .core import ARCHIVE_EXT, CONFIG_FILE, ConfigError, IMAGE, PERSONAS, PROFILES, RELEASE, SEV_ORDER, SUPPRESS_FILE, ScanDeadline, VERSION, _deadline_left, _explain_rule, _rule_of, _scan_alarm, _trend_epoch, apply_persona, apply_suppressions, cmd_rules, entry_command, explain_report, finding, gate_findings, load_repo_config, load_rule_packs, load_suppressions, parse_suppression, print_personas, privacy_mode_consistent, privacy_profile, privacy_summary, privacy_summary_consistent, redact_pii, remediation_for, report_fingerprint, rescan_difference, run_custom_checks, run_rule_packs, suppression_meta, suppression_notes, toolchain_drift, toolchain_pins, verdict, verdict_consistent
+from .evidence import build_ledger
 from .fetch import GITHUB_REPO_RE, VERIFY_IDENTITY, VERIFY_ISSUER, WEB_MAX_BYTES, WEB_UA, _ensure_cosign, _fetch_badge_file, _local_image_digest, _web_get, docker_ok, fetch_repo, rescan_image, run_in_docker
 from .index import cmd_index
 from .release import cmd_release
@@ -1180,6 +1181,7 @@ def head_report(target, profile="balanced", token="", use_cache=True, profile_de
         if summary:
             meta["privacy_summary"] = summary
             meta["privacy_profile"] = privacy_profile(summary)
+        meta["checks"] = build_ledger(active, suppressed, nfiles, complete)
         d = {"version": VERSION, "verdict": v, "why": why, "counts": counts, "meta": meta,
              "privacy_summary": summary, "ai_review": None, "findings": active + suppressed,
              "raw_findings_count": raw_count, "notes": notes, "recommended_actions": ACTIONS[v]}
@@ -2140,6 +2142,8 @@ def cmd_scan(a):
         if summary:
             meta["privacy_summary"] = summary
             meta["privacy_profile"] = privacy_profile(summary)
+        meta["checks"] = build_ledger(active, suppressed,
+                                      (tools.get("agent-checks") or {}).get("files") or 0, complete)
         render_report(meta, active, v, why, counts, notes, ai, color_enabled() and not a.no_color,
                10**6 if a.all else 40, getattr(a, "min_severity", "info"))
         report_data = {"version": VERSION, "verdict": v, "why": why, "counts": counts, "meta": meta,

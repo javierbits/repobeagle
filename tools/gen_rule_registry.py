@@ -36,11 +36,12 @@ def rows():
         cells = [c.strip() for c in line.strip().strip("|").split("|")]
         if len(cells) != 3:
             continue
-        rid = cells[0].strip("`")
+        ids = re.findall(r"`([^`]+)`", cells[0])
         meaning = cells[1]
         severity = cells[2]
-        if re.fullmatch(r"[a-z0-9][a-z0-9-]*", rid):
-            out.append((rid, meaning, severity))
+        for rid in ids:
+            if re.fullmatch(r"[a-z0-9][a-z0-9-]*", rid):
+                out.append((rid, meaning, severity))
     return out
 
 

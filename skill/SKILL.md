@@ -63,7 +63,7 @@ and the `meta` facts you need to judge how much the verdict covers.
 ## Field reference (JSON)
 
 Findings: `tool`, `severity` (`critical|high|medium|low|info`), `rule` (stable id), `file`, `line`, `title`, `snippet` (redacted by default), `meaning`, `remediation`, optional `fixed_in`/`fixed_note` (OSV fix availability), `dependency_path`/`dependency_depth` (why a dependency is in the tree), `package`/`package_path` (monorepo attribution), suppression state.
-Report: `verdict`, `why`, `counts`, `findings`, `notes`, `recommended_actions`, `meta.profile`, `meta.ruleset`, `meta.target`, `meta.commit`, `meta.scanned_at`, `meta.complete`, `meta.cache`, `meta.tools`, `meta.scope`, `meta.suppressed`, `meta.privacy_mode`, `meta.capabilities`, `meta.trace`, `meta.archive`, `meta.release_assets`, `meta.workspace`, `meta.scanned_repo`, `meta.scanned_sha`, `meta.service` (served reports: signed state and mode).
+Report: `verdict`, `why`, `counts`, `findings`, `notes`, `recommended_actions`, `meta.profile`, `meta.ruleset`, `meta.target`, `meta.commit`, `meta.scanned_at`, `meta.complete`, `meta.cache`, `meta.tools`, `meta.scope`, `meta.suppressed`, `meta.privacy_mode`, `meta.capabilities`, `meta.trace`, `meta.archive`, `meta.release_assets`, `meta.workspace`, `meta.scanned_repo`, `meta.scanned_sha`, `meta.service` (served reports: signed state and mode), `meta.checks` (rule-level evidence ledger: evaluated/files/hits/negative assertion for the top rules).
 Use the JSON, not scraped prose, when you need to reason.
 
 ## Presenting it to the user
