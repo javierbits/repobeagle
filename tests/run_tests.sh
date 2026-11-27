@@ -63,6 +63,7 @@ python3 tests/test_index.py || fail=1
 python3 tests/test_snapshots.py || fail=1
 python3 tests/test_registry.py || fail=1
 python3 tests/test_scoreboard.py || fail=1
+python3 tests/test_release.py || fail=1
 python3 tests/test_config.py || fail=1
 python3 tests/test_personas.py || fail=1
 python3 tests/test_rule_packs.py || fail=1

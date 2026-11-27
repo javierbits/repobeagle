@@ -42,6 +42,7 @@ and the `meta` facts you need to judge how much the verdict covers.
 | Is it getting safer or riskier? | `repobeagle trend <owner/repo>` | ordered verdicts, first RED, per-rule regressions and the current streak; never re-scans |
 | Is a popular repo already scanned? | `repobeagle index --out public` | static index with signed reports; refresh by SHA, parallel scans |
 | Every PR should get a verdict automatically | `repobeagle app --port 8080` | one updated comment + check run per commit; no PR code executed |
+| Did the published package come from this repo? | `repobeagle release <owner/repo>` | compares the registry artifact's hooks/deps with the tag; flags `no-provenance` |
 | Serving verdicts to other people/agents | `repobeagle serve --port 8080` | immutable per-commit reports, 429 budgets, optional signing; `--root` serves local dirs |
 | Unpacking an archive/asset | `repobeagle scan bundle.zip` | same verdict rules; `meta.archive` says what was expanded |
 
