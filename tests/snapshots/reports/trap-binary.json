@@ -1,0 +1,132 @@
+{
+  "findings": [
+    {
+      "file": "logo.png",
+      "line": 0,
+      "meaning": "Executables disguised as images/data are a classic dropper trick.",
+      "remediation": "rename the file to its real type, or check it out with the tool that produced it; the extension is lying",
+      "rule": "magic-mismatch",
+      "severity": "high",
+      "snippet": "ELF executable",
+      "title": "magic-mismatch: extension '.png' hides a ELF executable",
+      "tool": "agent-checks"
+    },
+    {
+      "file": "Cargo.toml",
+      "line": 6,
+      "meaning": "Name is one edit away from a popular package: a common way to slip in malware. Check the registry page before installing.",
+      "remediation": "verify the package name against the registry before adding it",
+      "rule": "typosquat-dep",
+      "severity": "high",
+      "snippet": "serdd",
+      "title": "typosquat-dep: crates 'serdd' looks like 'serde'",
+      "tool": "agent-checks"
+    },
+    {
+      "file": "package.json",
+      "line": 1,
+      "meaning": "Name is one edit away from a popular package: a common way to slip in malware. Check the registry page before installing.",
+      "remediation": "verify the package name against the registry before adding it",
+      "rule": "typosquat-dep",
+      "severity": "high",
+      "snippet": "expres",
+      "title": "typosquat-dep: npm 'expres' looks like 'express'",
+      "tool": "agent-checks"
+    },
+    {
+      "file": "package.json",
+      "line": 1,
+      "meaning": "Name is one edit away from a popular package: a common way to slip in malware. Check the registry page before installing.",
+      "remediation": "verify the package name against the registry before adding it",
+      "rule": "typosquat-dep",
+      "severity": "high",
+      "snippet": "lodahs",
+      "title": "typosquat-dep: npm 'lodahs' looks like 'lodash'",
+      "tool": "agent-checks"
+    },
+    {
+      "file": "requirements.txt",
+      "line": 1,
+      "meaning": "Name is one edit away from a popular package: a common way to slip in malware. Check the registry page before installing.",
+      "remediation": "verify the package name against the registry before adding it",
+      "rule": "typosquat-dep",
+      "severity": "high",
+      "snippet": "reqeusts",
+      "title": "typosquat-dep: pypi 'reqeusts' looks like 'requests'",
+      "tool": "agent-checks"
+    },
+    {
+      "file": "src/helper.js",
+      "line": 1,
+      "meaning": "Minified code outside build output can't be reviewed; check it matches its source.",
+      "remediation": "move minified files under dist/build, or keep the readable source next to them",
+      "rule": "minified-outside-dist",
+      "severity": "low",
+      "snippet": "a0=function(b){return(b*0)};a1=function(b){return(b*1)};a2=function(b){return(b*...",
+      "title": "minified-outside-dist: minified code in a source path",
+      "tool": "agent-checks"
+    },
+    {
+      "file": "src/loader.js",
+      "line": 1,
+      "meaning": "Embedded high-entropy payloads are often used to hide malware.",
+      "remediation": "confirm the blob's origin (generated asset, certificate, embedded binary), or move it out of the source tree",
+      "rule": "high-entropy-blob",
+      "severity": "medium",
+      "snippet": "const p=\"PtYgjmUhBel31iEl2hpChYgCfrL1spNxnyVmihA/2O76UMFxFkM/R5Kjp1vRt+1fjORS/6i...",
+      "title": "high-entropy-blob: 800-char encoded blob (entropy 5.94)",
+      "tool": "agent-checks"
+    }
+  ],
+  "meta": {
+    "capabilities": {
+      "environment": [],
+      "files": 7,
+      "filesystem": [],
+      "network": [],
+      "processes": [],
+      "storage": []
+    },
+    "commit": null,
+    "complete": true,
+    "coverage": {
+      "bytes_scanned": 10463,
+      "bytes_scanned_pct": 99.8,
+      "bytes_total": 10479,
+      "files_scanned": 6,
+      "files_total": 7,
+      "languages": {
+        "inspected": {
+          "JavaScript": 2
+        },
+        "no_rules": {}
+      },
+      "skipped": {
+        "archive": 0,
+        "binary": 0,
+        "oversize": 0,
+        "unreadable": 0,
+        "unsupported": 1
+      },
+      "unscanned_extensions": [
+        [
+          ".png",
+          1
+        ]
+      ]
+    },
+    "fetched_via": "local path (copied)",
+    "files": 7,
+    "mode": "local (no docker)",
+    "pii_redacted": true,
+    "privacy_mode": "full",
+    "profile": "balanced",
+    "ref": null,
+    "ruleset": "92559dde022f",
+    "suppressed": 0,
+    "suppressions": [],
+    "target": "tests/fixtures/trap-binary"
+  },
+  "privacy_summary": {},
+  "version": "1.194.0"
+}

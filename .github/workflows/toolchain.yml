@@ -10,6 +10,7 @@ on:
       - constraints.txt
       - requirements.lock
       - repobeagle.py
+      - repobeagle/**
       - install.sh
       - checksums.txt
       - tests/fixtures/trap-npm/**
@@ -20,6 +21,7 @@ on:
       - constraints.txt
       - requirements.lock
       - repobeagle.py
+      - repobeagle/**
       - install.sh
       - checksums.txt
       - tests/fixtures/trap-npm/**

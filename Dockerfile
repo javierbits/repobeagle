@@ -16,6 +16,7 @@ COPY constraints.txt requirements.lock /opt/repobeagle/
 RUN pip install --no-cache-dir --require-hashes -r /opt/repobeagle/requirements.lock
 COPY rules /opt/repobeagle/rules
 COPY repobeagle.py VERSION /opt/repobeagle/
+COPY repobeagle /opt/repobeagle/repobeagle
 COPY THIRD-PARTY-NOTICES /opt/repobeagle/THIRD-PARTY-NOTICES
 ENV HOME=/tmp SEMGREP_ENABLE_VERSION_CHECK=0 SEMGREP_SEND_METRICS=off PYTHONDONTWRITEBYTECODE=1
 RUN useradd -u 10001 -m scanner

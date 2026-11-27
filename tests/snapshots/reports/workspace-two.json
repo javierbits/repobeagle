@@ -1,0 +1,177 @@
+{
+  "findings": [
+    {
+      "file": "packages/a/index.html",
+      "line": 1,
+      "meaning": "Own/related domain a.example.com: first-party traffic, not a third party. Seen 2 times.",
+      "package": "@acme/a",
+      "package_path": "packages/a",
+      "rule": "first-party-endpoint",
+      "severity": "info",
+      "snippet": "<!doctype html><html><head><script src=\"https://a.example.com/lib.js\"></script></head><body>a</body></html>",
+      "title": "first-party-endpoint: a.example.com",
+      "tool": "privacy"
+    },
+    {
+      "file": "packages/a/index.js",
+      "line": 1,
+      "meaning": "Network call at module top level: runs when the module loads (startup page views, update checks).",
+      "package": "@acme/a",
+      "package_path": "packages/a",
+      "remediation": "move the side effect out of module scope or gate it behind a flag",
+      "rule": "import-time-network",
+      "severity": "low",
+      "snippet": "fetch(\"https://a.example.com/api\").then(() => 0);",
+      "title": "import-time-network: javascript module scope",
+      "tool": "privacy"
+    },
+    {
+      "file": "(repo)",
+      "line": 0,
+      "meaning": "The repo collects/transmits data but ships no privacy policy/manifest file.",
+      "remediation": "add a PRIVACY.md/policy (or link one) and state what is collected",
+      "rule": "privacy-doc",
+      "severity": "low",
+      "snippet": "expected PRIVACY.md or PrivacyInfo.xcprivacy",
+      "title": "privacy-doc: no privacy policy file",
+      "tool": "privacy"
+    },
+    {
+      "file": "packages/b/index.html",
+      "line": 1,
+      "meaning": "Loads executable script from a.example.com: it runs with page privileges and can read cookies/DOM and beacon data.",
+      "package": "@acme/b",
+      "package_path": "packages/b",
+      "remediation": "self-host the asset, or document and gate the host behind consent",
+      "rule": "third-party-script",
+      "severity": "low",
+      "snippet": "<!doctype html><html><head><script src=\"https://a.example.com/lib.js\"></script></head><body>b</body></html>",
+      "title": "third-party-script: a.example.com",
+      "tool": "privacy"
+    }
+  ],
+  "meta": {
+    "capabilities": {
+      "environment": [],
+      "files": 7,
+      "filesystem": [],
+      "network": [
+        {
+          "count": 3,
+          "doc": true,
+          "file": "packages/a/index.html",
+          "line": 1,
+          "source": "static",
+          "test": false,
+          "value": "a.example.com",
+          "verified": false
+        }
+      ],
+      "processes": [],
+      "storage": []
+    },
+    "commit": null,
+    "complete": true,
+    "coverage": {
+      "bytes_scanned": 410,
+      "bytes_scanned_pct": 96.7,
+      "bytes_total": 424,
+      "files_scanned": 6,
+      "files_total": 7,
+      "languages": {
+        "inspected": {
+          "JavaScript": 1
+        },
+        "no_rules": {}
+      },
+      "skipped": {
+        "archive": 0,
+        "binary": 0,
+        "oversize": 0,
+        "unreadable": 0,
+        "unsupported": 1
+      },
+      "unscanned_extensions": [
+        [
+          "(none)",
+          1
+        ]
+      ]
+    },
+    "fetched_via": "local path (copied)",
+    "files": 7,
+    "mode": "local (no docker)",
+    "pii_redacted": true,
+    "privacy_mode": "full",
+    "privacy_profile": "Privacy profile: 0 tracker vendor(s), 1 third-party host(s), 0 PII item(s)",
+    "privacy_summary": {
+      "first_party": [
+        "a.example.com"
+      ],
+      "network": [
+        "javascript module scope",
+        "a.example.com"
+      ],
+      "transparency": [
+        "no privacy policy file"
+      ]
+    },
+    "profile": "balanced",
+    "ref": null,
+    "ruleset": "92559dde022f",
+    "suppressed": 0,
+    "suppressions": [],
+    "target": "tests/fixtures/workspace-two",
+    "workspace": {
+      "counts": {
+        "(root)": {
+          "critical": 0,
+          "high": 0,
+          "info": 0,
+          "low": 1,
+          "medium": 0
+        },
+        "@acme/a": {
+          "critical": 0,
+          "high": 0,
+          "info": 1,
+          "low": 1,
+          "medium": 0
+        },
+        "@acme/b": {
+          "critical": 0,
+          "high": 0,
+          "info": 0,
+          "low": 1,
+          "medium": 0
+        }
+      },
+      "dropped": 0,
+      "packages": [
+        {
+          "kind": "npm",
+          "name": "@acme/a",
+          "path": "packages/a"
+        },
+        {
+          "kind": "npm",
+          "name": "@acme/b",
+          "path": "packages/b"
+        }
+      ]
+    }
+  },
+  "privacy_summary": {
+    "first_party": [
+      "a.example.com"
+    ],
+    "network": [
+      "javascript module scope",
+      "a.example.com"
+    ],
+    "transparency": [
+      "no privacy policy file"
+    ]
+  },
+  "version": "1.194.0"
+}

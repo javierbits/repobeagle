@@ -1210,6 +1210,15 @@ clean environment exits 0 with the scanned count.
 
 ## Built since the backlog was written
 
+- **R4 — done.** The scanner is split into `repobeagle/{core,fetch,report,scanners,cli,
+  service,app,index}.py` plus `repobeagle/rules/{agent,privacy,registry}.py`; `repobeagle.py`
+  is a shim. Findings carry their `rule` id (no title surgery; `_rule_of` reads the field),
+  the explicit `Rule(id, severity, meaning, remediation, docs)` registry is generated from
+  the README rule table and checked by `tests/test_registry.py`, and
+  `tests/test_snapshots.py` compares byte-stable normalized reports for ten fixtures. The
+  package split was verified byte-identical against goldens captured from the previous
+  single module, then the additive `rule` field was added to the snapshots.
+
 - **T8 — done.** `repobeagle index` resolves a curated list, skips SHAs that already have
   a signed result, scans with `--jobs` parallel workers in the pinned image, and writes
   `results/<owner>/<repo>@<sha>.json` plus a searchable self-contained `index.html` and

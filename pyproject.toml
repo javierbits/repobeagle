@@ -25,7 +25,7 @@ Issues = "https://github.com/javierbits/repobeagle/issues"
 repobeagle = "repobeagle:main"
 
 [tool.setuptools]
-py-modules = ["repobeagle"]
+packages = ["repobeagle", "repobeagle.rules"]
 
 [tool.setuptools.dynamic]
 # The wheel version is the repo VERSION (without the leading v), so a pip install and

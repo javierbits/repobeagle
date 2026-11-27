@@ -1,0 +1,147 @@
+{
+  "findings": [
+    {
+      "file": ".github/workflows/ci.yml",
+      "line": 14,
+      "meaning": "Runs whatever a remote server returns, with no review.",
+      "remediation": "pin a version and verify a checksum; avoid `curl \u2026 | sh` in install hooks and scripts",
+      "rule": "Download-and-execute",
+      "severity": "high",
+      "snippet": "- run: curl -fsSL https://get.example.invalid/setup.sh | bash",
+      "title": "Download-and-execute (pipe to shell)",
+      "tool": "agent-checks"
+    },
+    {
+      "file": ".github/workflows/ci.yml",
+      "line": 12,
+      "meaning": "pull_request_target/workflow_run runs with secrets + write token; checking out the PR head lets attackers run code with them.",
+      "remediation": "use `pull_request` (read-only token) or stop checking out the PR head in `pull_request_target`",
+      "rule": "gha-pwn-request",
+      "severity": "high",
+      "snippet": "github.event.pull_request.head",
+      "title": "gha-pwn-request: privileged trigger checks out untrusted PR code",
+      "tool": "agent-checks"
+    },
+    {
+      "file": ".github/workflows/ci.yml",
+      "line": 13,
+      "meaning": "Secrets written to logs or files can leak.",
+      "remediation": "stop echoing secrets; rely on masking and scope `env:` to the step that needs it",
+      "rule": "gha-secret-echo",
+      "severity": "high",
+      "snippet": "- run: echo \"token=${{ secrets.NPM_TOKEN }}\" >> debug.txt",
+      "title": "gha-secret-echo: secret printed in a workflow step",
+      "tool": "agent-checks"
+    },
+    {
+      "file": ".github/workflows/after.yml",
+      "line": 10,
+      "meaning": "Tags can be moved to malicious code (e.g. tj-actions/changed-files, 2025).",
+      "remediation": "pin `uses:` to a full 40-character commit SHA",
+      "rule": "gha-unpinned-action",
+      "severity": "low",
+      "snippet": "- uses: actions/github-script@v7",
+      "title": "gha-unpinned-action: 1 action(s) on a tag/branch, not a commit SHA",
+      "tool": "agent-checks"
+    },
+    {
+      "file": ".github/workflows/ci.yml",
+      "line": 10,
+      "meaning": "Tags can be moved to malicious code (e.g. tj-actions/changed-files, 2025).",
+      "remediation": "pin `uses:` to a full 40-character commit SHA",
+      "rule": "gha-unpinned-action",
+      "severity": "low",
+      "snippet": "- uses: actions/checkout@v4",
+      "title": "gha-unpinned-action: 1 action(s) on a tag/branch, not a commit SHA",
+      "tool": "agent-checks"
+    },
+    {
+      "file": ".github/workflows/ci.yml",
+      "line": 5,
+      "meaning": "A compromised step can push code or publish packages.",
+      "remediation": "add a least-privilege `permissions:` block to the workflow",
+      "rule": "gha-write-permissions",
+      "severity": "low",
+      "snippet": "permissions: write-all",
+      "title": "gha-write-permissions: workflow token has write permissions",
+      "tool": "agent-checks"
+    },
+    {
+      "file": ".github/workflows/ci.yml",
+      "line": 14,
+      "meaning": "CI runs whatever the remote server returns, with CI secrets available.",
+      "remediation": "download to a file, verify a checksum, then execute it (avoid `curl \u2026 | sh` in workflows)",
+      "rule": "gha-curl-pipe-shell",
+      "severity": "medium",
+      "snippet": "- run: curl -fsSL https://get.example.invalid/setup.sh | bash",
+      "title": "gha-curl-pipe-shell: workflow pipes a download into a shell",
+      "tool": "agent-checks"
+    },
+    {
+      "file": ".github/workflows/after.yml",
+      "line": 3,
+      "meaning": "Runs with repository secrets on events from forks; review carefully.",
+      "remediation": "prefer `pull_request`, and check who can push to `workflow_run` upstream branches",
+      "rule": "gha-privileged-trigger",
+      "severity": "medium",
+      "snippet": "workflow_run",
+      "title": "gha-privileged-trigger: workflow uses workflow_run",
+      "tool": "agent-checks"
+    }
+  ],
+  "meta": {
+    "capabilities": {
+      "environment": [],
+      "files": 3,
+      "filesystem": [],
+      "network": [
+        {
+          "count": 1,
+          "doc": false,
+          "file": ".github/workflows/ci.yml",
+          "line": 14,
+          "source": "static",
+          "test": false,
+          "value": "get.example.invalid",
+          "verified": false
+        }
+      ],
+      "processes": [],
+      "storage": []
+    },
+    "commit": null,
+    "complete": true,
+    "coverage": {
+      "bytes_scanned": 600,
+      "bytes_scanned_pct": 100.0,
+      "bytes_total": 600,
+      "files_scanned": 3,
+      "files_total": 3,
+      "languages": {
+        "inspected": {},
+        "no_rules": {}
+      },
+      "skipped": {
+        "archive": 0,
+        "binary": 0,
+        "oversize": 0,
+        "unreadable": 0,
+        "unsupported": 0
+      },
+      "unscanned_extensions": []
+    },
+    "fetched_via": "local path (copied)",
+    "files": 3,
+    "mode": "local (no docker)",
+    "pii_redacted": true,
+    "privacy_mode": "full",
+    "profile": "balanced",
+    "ref": null,
+    "ruleset": "92559dde022f",
+    "suppressed": 0,
+    "suppressions": [],
+    "target": "tests/fixtures/trap-gha"
+  },
+  "privacy_summary": {},
+  "version": "1.194.0"
+}

@@ -5,10 +5,10 @@
 name: service
 on:
   pull_request:
-    paths: ["repobeagle.py", "tests/test_serve.py", ".github/workflows/service.yml", "VERSION"]
+    paths: ["repobeagle.py", "repobeagle/**", "tests/test_serve.py", ".github/workflows/service.yml", "VERSION"]
   push:
     branches: [main]
-    paths: ["repobeagle.py", "tests/test_serve.py", ".github/workflows/service.yml", "VERSION"]
+    paths: ["repobeagle.py", "repobeagle/**", "tests/test_serve.py", ".github/workflows/service.yml", "VERSION"]
   workflow_dispatch:
 permissions:
   contents: read

@@ -89,7 +89,7 @@ These are non-negotiable because they *are* the product:
 - **Never execute repository code.** Static analysis only. Fetching, `git`, and the
   scanners run in a read-only non-root container with `--network none`; the only opt-in
   exception is `--trace`, which runs the install phase inside that same container.
-- **The scanner stays stdlib-only.** `repobeagle.py` must run on a bare `python3`. External
+- **The scanner stays stdlib-only.** `repobeagle.py` (the shim) and the `repobeagle/` package must run on a bare `python3`. External
   tools (gitleaks, semgrep, guarddog, bandit, OSV) enter through the image and are invoked
   as subprocesses; a missing tool must degrade to a note, never a traceback.
 - **Every finding is evidence**: a relative `file:line`, a stable `rule` id (the title
@@ -125,8 +125,8 @@ Optional, for the full pipeline:
 ./install.sh --local-tools    # gitleaks/semgrep/guarddog/bandit on the host (--no-docker)
 ```
 
-Python 3.12 is what CI uses. There is no package to install: the scanner is a single
-module, deliberately.
+Python 3.12 is what CI uses. There is no runtime package to install: the scanner is a
+stdlib-only package (`repobeagle/`) with a thin `repobeagle.py` shim, deliberately.
 
 ## Tests and checks
 

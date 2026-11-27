@@ -8,10 +8,10 @@ on:
     - cron: "43 5 * * 1"     # weekly (Mon 05:43 UTC)
   workflow_dispatch:
   pull_request:
-    paths: ["repobeagle.py", "tools/index-repos.txt", ".github/workflows/index.yml", "VERSION"]
+    paths: ["repobeagle.py", "repobeagle/**", "tools/index-repos.txt", ".github/workflows/index.yml", "VERSION"]
   push:
     branches: [main]
-    paths: ["repobeagle.py", "tools/index-repos.txt", ".github/workflows/index.yml", "VERSION"]
+    paths: ["repobeagle.py", "repobeagle/**", "tools/index-repos.txt", ".github/workflows/index.yml", "VERSION"]
 permissions:
   contents: write            # persist results on the index branch
   pages: write               # deploy the static site

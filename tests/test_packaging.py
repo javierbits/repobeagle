@@ -16,7 +16,8 @@ def check(name, ok):
 pyproject = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
 check("console entry point is repobeagle:main",
       pyproject["project"]["scripts"].get("repobeagle") == "repobeagle:main")
-check("the single module is packaged", pyproject["tool"]["setuptools"]["py-modules"] == ["repobeagle"])
+check("the scanner is packaged as a package with its rule modules",
+      pyproject["tool"]["setuptools"]["packages"] == ["repobeagle", "repobeagle.rules"])
 check("the wheel ships the custom semgrep rules and the version",
       pyproject["tool"]["setuptools"]["data-files"]["share/repobeagle"] == ["rules/custom.yml", "VERSION"])
 check("the wheel ships the agent skill",

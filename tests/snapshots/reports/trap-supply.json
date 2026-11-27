@@ -1,0 +1,175 @@
+{
+  "findings": [
+    {
+      "file": ".gitmodules",
+      "line": 1,
+      "meaning": "Fetch runs with `--no-recurse-submodules`, so only `.gitmodules` is inspected: this code was not scanned.",
+      "rule": "submodule-uninspected",
+      "severity": "info",
+      "snippet": "vendor/thing",
+      "title": "submodule-uninspected: 1 submodule(s) not fetched",
+      "tool": "agent-checks"
+    },
+    {
+      "file": "package.json",
+      "line": 7,
+      "meaning": "Yarn resolutions/overrides replace the registry metadata resolution; review that the forced version is intended.",
+      "rule": "dependency-confusion",
+      "severity": "low",
+      "snippet": "resolutions",
+      "title": "dependency-confusion: resolutions override present",
+      "tool": "agent-checks"
+    },
+    {
+      "file": "Dockerfile",
+      "line": 1,
+      "meaning": "No version tag or digest: the base image can change under you. Pin a tag and prefer `@sha256:` for reproducibility.",
+      "rule": "dockerfile-base-unpinned",
+      "severity": "low",
+      "snippet": "FROM ubuntu",
+      "title": "dockerfile-base-unpinned: FROM ubuntu",
+      "tool": "agent-checks"
+    },
+    {
+      "file": ".gitmodules",
+      "line": 1,
+      "meaning": "The superproject records a commit, but a branch ref drifts; `--remote` updates follow it. Pin the commit and avoid branch tracking in CI.",
+      "rule": "submodule-unpinned",
+      "severity": "low",
+      "snippet": "https://github.com/other-owner/thing.git branch=main",
+      "title": "submodule-unpinned: vendor/thing tracks branch 'main'",
+      "tool": "agent-checks"
+    },
+    {
+      "file": "package.json",
+      "line": 5,
+      "meaning": "A dependency is fetched over plaintext HTTP from an arbitrary host; pin it to https and a known registry.",
+      "rule": "dependency-confusion",
+      "severity": "medium",
+      "snippet": "http://registry.example.com/leftpad-1.0.0.tgz",
+      "title": "dependency-confusion: npm http tarball leftpad",
+      "tool": "agent-checks"
+    },
+    {
+      "file": "requirements.txt",
+      "line": 1,
+      "meaning": "An extra index is searched alongside PyPI; an attacker can publish a higher version of a name you already use on it. Pin versions and hashes, or use a single index.",
+      "rule": "dependency-confusion",
+      "severity": "medium",
+      "snippet": "https://pypi.example.com/simple",
+      "title": "dependency-confusion: pip --extra-index-url",
+      "tool": "agent-checks"
+    },
+    {
+      "file": "package.json",
+      "line": 5,
+      "meaning": "Plaintext http:// to registry.example.com: reference URL, not a request in this line.",
+      "remediation": "use https:// / wss://",
+      "rule": "insecure-endpoint",
+      "severity": "low",
+      "snippet": "\"leftpad\": \"http://registry.example.com/leftpad-1.0.0.tgz\"",
+      "title": "insecure-endpoint: registry.example.com",
+      "tool": "privacy"
+    },
+    {
+      "file": "(repo)",
+      "line": 0,
+      "meaning": "The repo collects/transmits data but ships no privacy policy/manifest file.",
+      "remediation": "add a PRIVACY.md/policy (or link one) and state what is collected",
+      "rule": "privacy-doc",
+      "severity": "low",
+      "snippet": "expected PRIVACY.md or PrivacyInfo.xcprivacy",
+      "title": "privacy-doc: no privacy policy file",
+      "tool": "privacy"
+    },
+    {
+      "file": "(repo)",
+      "line": 0,
+      "meaning": "By default the full page URL (including path and query) is sent as Referer to third parties.",
+      "remediation": "send `Referrer-Policy: strict-origin-when-cross-origin` (or `no-referrer`)",
+      "rule": "referrer-policy",
+      "severity": "low",
+      "snippet": "no Referrer-Policy header or <meta name=referrer>",
+      "title": "referrer-policy: third-party requests with no Referrer-Policy",
+      "tool": "privacy"
+    }
+  ],
+  "meta": {
+    "capabilities": {
+      "environment": [],
+      "files": 4,
+      "filesystem": [],
+      "network": [
+        {
+          "count": 1,
+          "doc": false,
+          "file": "package.json",
+          "line": 5,
+          "source": "static",
+          "test": false,
+          "value": "registry.example.com",
+          "verified": false
+        }
+      ],
+      "processes": [],
+      "storage": []
+    },
+    "commit": null,
+    "complete": true,
+    "coverage": {
+      "bytes_scanned": 248,
+      "bytes_scanned_pct": 50.0,
+      "bytes_total": 496,
+      "files_scanned": 2,
+      "files_total": 4,
+      "languages": {
+        "inspected": {},
+        "no_rules": {}
+      },
+      "skipped": {
+        "archive": 0,
+        "binary": 0,
+        "oversize": 0,
+        "unreadable": 0,
+        "unsupported": 2
+      },
+      "unscanned_extensions": [
+        [
+          "(none)",
+          2
+        ]
+      ]
+    },
+    "fetched_via": "local path (copied)",
+    "files": 4,
+    "mode": "local (no docker)",
+    "pii_redacted": true,
+    "privacy_mode": "full",
+    "privacy_profile": "Privacy profile: 0 tracker vendor(s), 1 third-party host(s), 0 PII item(s)",
+    "privacy_summary": {
+      "network": [
+        "registry.example.com",
+        "third-party requests with no Referrer-Policy"
+      ],
+      "transparency": [
+        "no privacy policy file"
+      ]
+    },
+    "profile": "balanced",
+    "ref": null,
+    "ruleset": "92559dde022f",
+    "suppressed": 0,
+    "suppressions": [],
+    "target": "tests/fixtures/trap-supply"
+  },
+  "privacy_summary": {
+    "network": [
+      "registry.example.com",
+      "third-party requests with no Referrer-Policy"
+    ],
+    "transparency": [
+      "no privacy policy file"
+    ]
+  },
+  "version": "1.194.0"
+}
