@@ -1210,6 +1210,11 @@ clean environment exits 0 with the scanned count.
 
 ## Built since the backlog was written
 
+- **U16 — done.** `verify --max-age 30d` exits 2 when the signed report is older than the
+  policy (even with an unchanged HEAD), and a report without `meta.scanned_at` is stale
+  under a policy; the default stays unlimited. `verify` prints the scan age, and the badge
+  endpoint/SVG append it (`YELLOW · 40d`) when the report records one.
+
 - **T12 — done.** Every report carries `meta.checks`, a rule-level evidence ledger for the
   top ten high-signal rules (evaluated/files/hits/suppressed plus the negative assertion a
   zero-hit result proves), printed as `Checks run:`. Counters only, so the JSON growth is
