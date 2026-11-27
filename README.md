@@ -161,6 +161,7 @@ repobeagle explain <report.json> [--accept RULE...] [--target green|yellow] [--w
 repobeagle diff <old.json> <new.json> [--min-severity medium] [--json out.json]
 repobeagle trend <github-repo | report-dir | report.json...> [--branch BRANCH] [--limit N] [--json out.json]
 repobeagle serve [--host HOST] [--port PORT] [--cache DIR] [--root DIR] [--ip-budget N] [--repo-budget N] [--concurrency N] [--sign [--key FILE]] [scan flags]
+repobeagle app [--host HOST] [--port PORT] [--secret TEXT] [--app-id ID] [--private-key FILE] [--token TOKEN] [--api-url URL] [--root DIR] [scan flags]
 repobeagle fix <local-dir> [--dry-run] [--pins FILE] [--no-network] [--json out.json]
 repobeagle head <owner/repo | github-url | local-dir> [--strict|--relaxed] [--json out.json] [--markdown] [--no-cache] [--as PERSONA]
 repobeagle gate <entries-file> [--baseline old.json] [--json out.json] [--markdown] [--jobs N] [--report-only] [--strict|--relaxed] [--as PERSONA]
@@ -204,6 +205,17 @@ curl -s localhost:8080/v1/scan/javierbits/repobeagle | jq .verdict
 ```
 
 Local repositories can be served too (`--root DIR` → `/v1/scan/local/<directory>`), which is what the offline tests exercise; GitHub mode resolves HEAD and missing refs with `git ls-remote` and scans the resolved commit. The acceptance workflow `.github/workflows/service.yml` starts the service with keyless signing, fetches a scan and its bundle, verifies them with `repobeagle verify`, repeats the request for byte-identical cached output, and proves the `429` path.
+
+`repobeagle app` runs the GitHub App webhook server. `pull_request` (`opened`, `synchronize`, `reopened`, `ready_for_review`) and default-branch `push` deliveries are signature-checked (`X-Hub-Signature-256`), queued (GitHub must get its 2xx in seconds) and scanned statically with the same `scan` flags as every other frontend. Pull requests are scanned with `--since <base>` so the comment says `changed files only`; the tree is fetched and never executed. Results are published as exactly one PR comment (edited in place on every push, found by a marker) and one check run per commit (`success`/`neutral`/`failure` for GREEN/YELLOW/RED, updated in place when the same delivery is replayed). A failed scan produces a failing check run and a comment that says so, instead of silence.
+
+App permissions: `contents: read`, `metadata: read`, `pull_requests: write`, `issues: write`, `checks: write`. Configure `BEAGLE_APP_ID` + `BEAGLE_APP_PRIVATE_KEY` (PEM path or inline PEM; RS256 installation token) or a pre-issued `BEAGLE_INSTALLATION_TOKEN`, plus `BEAGLE_APP_WEBHOOK_SECRET`, and point the App's webhook URL at `https://<host>/webhook`. `--token` and `--root` make a single-installation or local test deployment possible without registering an App; the offline tests drive real signed webhook payloads against a stub GitHub API.
+
+```bash
+docker run --rm -p 8080:8080 \
+  -e BEAGLE_APP_ID=123456 -e BEAGLE_APP_PRIVATE_KEY=/keys/app.pem -e BEAGLE_APP_WEBHOOK_SECRET=... \
+  -v "$PWD/app.pem:/keys/app.pem:ro" ghcr.io/javierbits/repobeagle:v1.192.0 \
+  app --host 0.0.0.0 --port 8080
+```
 
 `repobeagle fix <local-dir>` rewrites only the findings whose fix is mechanical: an unpinned `uses:` becomes a resolved 40-character commit SHA, and a top-level `permissions: write-all` becomes `contents: read`. It edits the flagged line in place (no YAML re-serialisation, so comments and layout survive), prints a unified diff, and `--dry-run` writes nothing. It never clones (check out the repo first) and never executes repository code.
 
