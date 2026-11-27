@@ -1210,6 +1210,20 @@ clean environment exits 0 with the scanned count.
 
 ## Built since the backlog was written
 
+- **T1 — done.** `repobeagle serve` hosts the attestation API: `GET
+  /v1/scan/<owner>/<repo>[/<ref>]` scans once per resolved commit (pinned image when
+  Docker is available, in-process otherwise) and serves the immutable bytes from a disk
+  cache, `/bundle` serves the Sigstore bundle, `/o/<owner>/<repo>` renders the HTML
+  report. Per-IP request and per-repo scan budgets answer 429 with `Retry-After`;
+  `--sign` signs keyless under GitHub OIDC (or `--key`), unsigned reports are labeled in
+  `meta.service.signed` and the headers. The report carries the provenance `verify`
+  needs (`meta.scanned_repo`, `meta.scanned_sha`), and `verify`'s default identity now
+  accepts the `service.yml` workflow. Acceptance: `.github/workflows/service.yml` starts
+  the service with id-token, fetches a scan + bundle, verifies them with `repobeagle
+  verify`, repeats the request for byte-identical cache output and proves the 429 path;
+  `tests/test_serve.py` covers cache immutability/corruption, budgets, routes and hostile
+  paths offline.
+
 - **T10 — done.** `repobeagle trend <owner/repo|report-dir|report.json…>` reads the
   `report-<sha>.json` files the scan workflow already publishes and prints the ordered
   verdict series, the first RED, per-rule regressions (first seen after a report without

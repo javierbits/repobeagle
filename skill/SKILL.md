@@ -40,6 +40,7 @@ and the `meta` facts you need to judge how much the verdict covers.
 | Existing report, what if I accept X | `repobeagle explain report.json --accept RULE` | shows the verdict after accepting; `--write` records it with a reason |
 | Dependency change vs yesterday | `repobeagle diff old.json new.json` | fails on added findings; use `scan --baseline old.json` for one step |
 | Is it getting safer or riskier? | `repobeagle trend <owner/repo>` | ordered verdicts, first RED, per-rule regressions and the current streak; never re-scans |
+| Serving verdicts to other people/agents | `repobeagle serve --port 8080` | immutable per-commit reports, 429 budgets, optional signing; `--root` serves local dirs |
 | Unpacking an archive/asset | `repobeagle scan bundle.zip` | same verdict rules; `meta.archive` says what was expanded |
 
 ## Reading a result
@@ -59,7 +60,7 @@ and the `meta` facts you need to judge how much the verdict covers.
 ## Field reference (JSON)
 
 Findings: `tool`, `severity` (`critical|high|medium|low|info`), `rule` (stable id), `file`, `line`, `title`, `snippet` (redacted by default), `meaning`, `remediation`, optional `fixed_in`/`fixed_note` (OSV fix availability), `dependency_path`/`dependency_depth` (why a dependency is in the tree), `package`/`package_path` (monorepo attribution), suppression state.
-Report: `verdict`, `why`, `counts`, `findings`, `notes`, `recommended_actions`, `meta.profile`, `meta.ruleset`, `meta.target`, `meta.commit`, `meta.scanned_at`, `meta.complete`, `meta.cache`, `meta.tools`, `meta.scope`, `meta.suppressed`, `meta.privacy_mode`, `meta.capabilities`, `meta.trace`, `meta.archive`, `meta.release_assets`, `meta.workspace`.
+Report: `verdict`, `why`, `counts`, `findings`, `notes`, `recommended_actions`, `meta.profile`, `meta.ruleset`, `meta.target`, `meta.commit`, `meta.scanned_at`, `meta.complete`, `meta.cache`, `meta.tools`, `meta.scope`, `meta.suppressed`, `meta.privacy_mode`, `meta.capabilities`, `meta.trace`, `meta.archive`, `meta.release_assets`, `meta.workspace`, `meta.scanned_repo`, `meta.scanned_sha`, `meta.service` (served reports: signed state and mode).
 Use the JSON, not scraped prose, when you need to reason.
 
 ## Presenting it to the user
