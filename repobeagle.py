@@ -9081,7 +9081,7 @@ def cmd_verify(a):
         C = (lambda code, s: f"\033[{code}m{s}\033[0m") if use_color else (lambda code, s: s)
         print(f"repobeagle verify: {a.target or '(local files)'} (branch {a.branch})")
         print(f"  signature: {C('1;42;30', 'VALID')}  policy: "
-              + (f"local key ({a.key})" if getattr(a, "key", None) else "official scan/service workflow (main or v* tag)"))
+              + (f"local key ({a.key})" if getattr(a, "key", None) else "official scan/service/index workflow (main or v* tag)"))
         print(f"  report:    {C({'GREEN': '1;42;30', 'YELLOW': '1;43;30', 'RED': '1;41;97'}.get(v, '1'), str(v))}"
               f"  {c.get('critical', 0)} critical / {c.get('high', 0)} high / {c.get('medium', 0)} medium / {c.get('low', 0)} low")
         scanned = str(meta.get("scanned_sha", ""))
