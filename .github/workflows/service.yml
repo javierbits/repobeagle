@@ -30,6 +30,9 @@ jobs:
       - name: Service API tests (cache, budgets, local-key signing)
         run: python3 tests/test_serve.py
 
+      - name: Freshness policy tests (cosign-signed local reports)
+        run: python3 tests/test_freshness.py
+
       - name: Start the service (keyless signing)
         run: |
           set -euo pipefail

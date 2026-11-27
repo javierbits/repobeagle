@@ -10,7 +10,7 @@ because a plain package attribute would not affect the scanner's globals.
 import sys
 import types
 
-from . import core, fetch, report, scanners, service, app, index, release, evidence, cli
+from . import core, fetch, report, scanners, service, app, index, release, evidence, freshness, cli
 from . import rules as rules
 from .rules import agent as rules_agent, privacy as rules_privacy
 from .rules import RULES, Rule
@@ -23,6 +23,7 @@ from .app import *
 from .index import *
 from .release import *
 from .evidence import *
+from .freshness import *
 from .rules.agent import *
 from .rules.privacy import *
 from .cli import *
@@ -252,7 +253,7 @@ from .rules.agent import trust_signals
 from .rules.agent import typosquat_of
 from .rules.agent import workspace_packages
 
-_SUBMODULES = (core, fetch, report, scanners, service, app, index, release, evidence, cli, rules_agent, rules_privacy)
+_SUBMODULES = (core, fetch, report, scanners, service, app, index, release, evidence, freshness, cli, rules_agent, rules_privacy)
 
 class _RepobeagleModule(types.ModuleType):
     def __setattr__(self, name, value):

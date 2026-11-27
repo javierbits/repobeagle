@@ -12,6 +12,11 @@ Stdlib only.
 import argparse
 import json
 import sys
+import time
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from repobeagle.freshness import age_seconds, human_age   # noqa: E402
 
 COLORS = {"GREEN": "brightgreen", "YELLOW": "yellow", "RED": "red"}
 HEXES = {"GREEN": "#4c1", "YELLOW": "#dfb317", "RED": "#cb2431"}
@@ -28,9 +33,15 @@ def _color(verdict):
     return COLORS.get(verdict, FALLBACK[0]), HEXES.get(verdict, FALLBACK[1])
 
 
-def endpoint_json(verdict, label, link, privacy=None, privacy_only=False, scope=None, partial=False):
+def endpoint_json(verdict, label, link, privacy=None, privacy_only=False, scope=None, partial=False,
+                  age=None):
     color, _ = _color(verdict)
-    d = {"schemaVersion": 1, "label": label, "message": f"{verdict} (partial)" if partial else verdict, "color": color}
+    message = f"{verdict} (partial)" if partial else verdict
+    if age:
+        message += f" · {age}"
+    d = {"schemaVersion": 1, "label": label, "message": message, "color": color}
+    if age:
+        d["age"] = age
     if partial:
         d["complete"] = False
     if link:
@@ -56,10 +67,12 @@ def privacy_counts(report):
     return out
 
 
-def svg(verdict, label, partial=False):
+def svg(verdict, label, partial=False, age=None):
     """Flat-style two-cell badge (label + verdict), no external deps."""
     if partial:
         verdict = f"{verdict} (partial)"
+    if age:
+        verdict = f"{verdict} · {age}"
     color_name, hexcolor = _color(verdict)
     lw, vw = _text_w(label), _text_w(verdict)
     total = lw + vw
@@ -92,6 +105,8 @@ def main():
     ap.add_argument("--svg", help="write a self-hosted SVG badge here")
     ap.add_argument("--label", default="repobeagle")
     ap.add_argument("--link", default="", help="URL opened when the badge is clicked")
+    ap.add_argument("--now", metavar="ISO|EPOCH",
+                    help="reference time for the scan age (default: now; use for reproducible badges)")
     a = ap.parse_args()
     try:
         with open(a.report, encoding="utf-8") as fh:
@@ -104,17 +119,33 @@ def main():
         print(f"make_badge: unexpected verdict {verdict!r} in {a.report}", file=sys.stderr)
         return 1
     partial = (report.get("meta") or {}).get("complete") is False
+    meta = report.get("meta") or {}
+    now = time.time()
+    if a.now:
+        try:
+            now = float(a.now)
+        except ValueError:
+            from repobeagle.core import _trend_epoch
+            epoch = _trend_epoch(a.now)
+            if epoch is None:
+                print(f"make_badge: cannot parse --now {a.now!r}", file=sys.stderr)
+                return 1
+            now = epoch
+    age_value = age_seconds(meta, now)
+    # Badges show the age from one hour on: "just now" is noise on a freshly published badge,
+    # while a month-old claim is exactly what a reader must not miss.
+    age = None if age_value is None or age_value < 3600 else human_age(age_value)
     out = False
     privacy = privacy_counts(report)
     privacy_only = (report.get("meta") or {}).get("privacy_mode") == "only"
     scope = (report.get("meta") or {}).get("scope")
     if a.endpoint:
         with open(a.endpoint, "w", encoding="utf-8") as fh:
-            fh.write(endpoint_json(verdict, a.label, a.link, privacy, privacy_only, scope, partial))
+            fh.write(endpoint_json(verdict, a.label, a.link, privacy, privacy_only, scope, partial, age))
         out = True
     if a.svg:
         with open(a.svg, "w", encoding="utf-8") as fh:
-            fh.write(svg(verdict, a.label, partial))
+            fh.write(svg(verdict, a.label, partial, age))
         out = True
     if not out:
         print(verdict)  # no files requested: print the verdict for scripts

@@ -12,6 +12,7 @@ from pathlib import Path
 from .app import cmd_app
 from .core import ARCHIVE_EXT, CONFIG_FILE, ConfigError, IMAGE, PERSONAS, PROFILES, RELEASE, SEV_ORDER, SUPPRESS_FILE, ScanDeadline, VERSION, _deadline_left, _explain_rule, _rule_of, _scan_alarm, _trend_epoch, apply_persona, apply_suppressions, cmd_rules, entry_command, explain_report, finding, gate_findings, load_repo_config, load_rule_packs, load_suppressions, parse_suppression, print_personas, privacy_mode_consistent, privacy_profile, privacy_summary, privacy_summary_consistent, redact_pii, remediation_for, report_fingerprint, rescan_difference, run_custom_checks, run_rule_packs, suppression_meta, suppression_notes, toolchain_drift, toolchain_pins, verdict, verdict_consistent
 from .evidence import build_ledger
+from .freshness import age_seconds, human_age, parse_max_age, stale
 from .fetch import GITHUB_REPO_RE, VERIFY_IDENTITY, VERIFY_ISSUER, WEB_MAX_BYTES, WEB_UA, _ensure_cosign, _fetch_badge_file, _local_image_digest, _web_get, docker_ok, fetch_repo, rescan_image, run_in_docker
 from .index import cmd_index
 from .release import cmd_release
@@ -2257,6 +2258,13 @@ def cmd_verify(a):
     if not ((a.report and a.bundle) or a.target):
         print("verify: give a github repo (slug or URL), or local --report + --bundle files", file=sys.stderr)
         return 1
+    max_age = None
+    if getattr(a, "max_age", None):
+        try:
+            max_age = parse_max_age(a.max_age)
+        except ValueError as ex:
+            print(f"verify: {ex}", file=sys.stderr)
+            return 1
     cosign = _ensure_cosign()
     if not cosign:
         print("verify: could not install cosign; install it manually (https://github.com/sigstore/cosign) or run ./install.sh", file=sys.stderr)
@@ -2315,8 +2323,13 @@ def cmd_verify(a):
         print(f"  report:    {C({'GREEN': '1;42;30', 'YELLOW': '1;43;30', 'RED': '1;41;97'}.get(v, '1'), str(v))}"
               f"  {c.get('critical', 0)} critical / {c.get('high', 0)} high / {c.get('medium', 0)} medium / {c.get('low', 0)} low")
         scanned = str(meta.get("scanned_sha", ""))
+        age = age_seconds(meta)
         if scanned:
-            print(f"  scanned:   {scanned[:12]} at {meta.get('scanned_repo', '?')} (image {meta.get('image_ref', '?')})")
+            age_note = f" · {human_age(age)} old" if age is not None else ""
+            print(f"  scanned:   {scanned[:12]} at {meta.get('scanned_repo', '?')} "
+                  f"(image {meta.get('image_ref', '?')}){age_note}")
+        elif age is not None:
+            print(f"  scanned:   (no meta.scanned_sha) · {human_age(age)} old")
         print(f"  snippets:  {'redacted by scanner' if meta.get('pii_redacted') else 'raw'}")
         mode = meta.get("privacy_mode")
         if mode:
@@ -2350,6 +2363,11 @@ def cmd_verify(a):
                 else:
                     parts.append(f"{group} {len(vals)}")
             print(f"  privacy:   {', '.join(parts)}  (details in report.json)")
+        age_stale, age_now, _ = stale(meta, max_age)
+        if age_stale:
+            why = "report has no meta.scanned_at" if age_now is None else f"report is {human_age(age_now)} old"
+            print(f"  freshness: {C('1;43;30', 'STALE')} ({why}; --max-age {a.max_age})")
+            return 2
         head = a.expect_sha or None
         if head is None and a.target:
             g = subprocess.run(["git", "ls-remote", f"https://github.com/{slug}.git", "HEAD"],
@@ -2579,6 +2597,8 @@ def main():
     v.add_argument("--bundle", help="local report.sigstore.json instead of fetching")
     v.add_argument("--expect-sha", help="commit SHA the report must cover (default: HEAD of the target repo)")
     v.add_argument("--identity-regexp", default=VERIFY_IDENTITY, help="allowed signing workflow identity")
+    v.add_argument("--max-age", metavar="30d",
+                   help="exit 2 when the report's scan timestamp is older than this (e.g. 30d, 12h, 45m); default unlimited")
     v.add_argument("--key", metavar="FILE", help="verify a report signed with a local cosign key instead of a workflow identity")
     v.add_argument("--rescan", action="store_true",
                    help="re-scan the report's pinned commit with this install and compare the normalized findings "
