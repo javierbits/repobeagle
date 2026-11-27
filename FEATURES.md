@@ -1210,6 +1210,12 @@ clean environment exits 0 with the scanned count.
 
 ## Built since the backlog was written
 
+- **T12 — done.** Every report carries `meta.checks`, a rule-level evidence ledger for the
+  top ten high-signal rules (evaluated/files/hits/suppressed plus the negative assertion a
+  zero-hit result proves), printed as `Checks run:`. Counters only, so the JSON growth is
+  bounded (tested with 100k files); incomplete scans mark the assertions unproven. The
+  documented rules link to the R4 registry.
+
 - **T11 — done.** `repobeagle release <owner/repo>` resolves the release tag, loads the
   registry artifact (npm/PyPI/crates, or offline overrides), and compares semantics:
   install hooks, dependency sets/ranges, name/version and a file inventory. `release-drift`

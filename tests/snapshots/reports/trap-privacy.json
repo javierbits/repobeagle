@@ -2280,6 +2280,98 @@
         }
       ]
     },
+    "checks": {
+      "Code reads secrets/credentials near a network call": {
+        "documented": false,
+        "evaluated": true,
+        "family": "agent",
+        "files": 23,
+        "hits": 0,
+        "negative": "no credential file is read next to a network sink",
+        "suppressed": 0
+      },
+      "Download-and-execute": {
+        "documented": false,
+        "evaluated": true,
+        "family": "agent",
+        "files": 23,
+        "hits": 0,
+        "negative": "no installer/script is downloaded and executed",
+        "suppressed": 0
+      },
+      "cookie-flags": {
+        "documented": true,
+        "evaluated": true,
+        "family": "privacy",
+        "files": 23,
+        "hits": 8,
+        "negative": "no cookie is written without Secure/SameSite where it matters",
+        "suppressed": 0
+      },
+      "gha-curl-pipe-shell": {
+        "documented": false,
+        "evaluated": true,
+        "family": "agent",
+        "files": 23,
+        "hits": 0,
+        "negative": "no workflow pipes a downloaded script into a shell",
+        "suppressed": 0
+      },
+      "gha-pwn-request": {
+        "documented": false,
+        "evaluated": true,
+        "family": "agent",
+        "files": 23,
+        "hits": 0,
+        "negative": "no pull_request_target/workflow_run workflow checks out the PR head with secrets",
+        "suppressed": 0
+      },
+      "gha-unpinned-action": {
+        "documented": false,
+        "evaluated": true,
+        "family": "agent",
+        "files": 23,
+        "hits": 0,
+        "negative": "no action is referenced by a moving tag/branch instead of a commit SHA",
+        "suppressed": 0
+      },
+      "import-time-network": {
+        "documented": true,
+        "evaluated": true,
+        "family": "privacy",
+        "files": 23,
+        "hits": 2,
+        "negative": "no network call runs at module scope",
+        "suppressed": 0
+      },
+      "npm lifecycle script 'postinstall' runs automatically on install": {
+        "documented": false,
+        "evaluated": true,
+        "family": "agent",
+        "files": 23,
+        "hits": 0,
+        "negative": "no npm lifecycle hook runs automatically on install",
+        "suppressed": 0
+      },
+      "pii-in-url": {
+        "documented": true,
+        "evaluated": true,
+        "family": "privacy",
+        "files": 23,
+        "hits": 3,
+        "negative": "no PII is placed in URL query parameters",
+        "suppressed": 0
+      },
+      "third-party-script": {
+        "documented": true,
+        "evaluated": true,
+        "family": "privacy",
+        "files": 23,
+        "hits": 10,
+        "negative": "no script is loaded from a third-party host",
+        "suppressed": 0
+      }
+    },
     "commit": null,
     "complete": true,
     "coverage": {

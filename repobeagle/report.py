@@ -322,6 +322,19 @@ def render_report(meta, findings, v, why, counts, notes, ai, use_color, maxn=40,
         elif f.get("dependency_note"):
             print(f"           {C('2', 'via: ' + f['dependency_note'])}")
     if len(fs) > maxn: print(f"  ... {len(fs) - maxn} more (use --json or --all)")
+    checks = meta.get("checks")
+    if isinstance(checks, dict) and checks:
+        zero = [r for r, v in checks.items() if v.get("evaluated") and not v.get("hits")]
+        with_hits = [r for r, v in checks.items() if v.get("evaluated") and v.get("hits")]
+        not_evaluated = [r for r, v in checks.items() if not v.get("evaluated")]
+        parts = [f"{len(checks)} rule(s): {len(with_hits)} with hits, {len(zero)} evaluated with zero hits"]
+        if zero:
+            parts.append("no hits: " + ", ".join(zero[:10]))
+        if with_hits:
+            parts.append("with hits: " + ", ".join(with_hits[:10]))
+        if not_evaluated:
+            parts.append("not evaluated: " + ", ".join(not_evaluated[:10]))
+        print(C("1", "\nChecks run: ") + "; ".join(parts))
     print(C("1", "\nRecommended actions:"))
     for a in ACTIONS[v]: print(f"  - {a}")
     if notes:
