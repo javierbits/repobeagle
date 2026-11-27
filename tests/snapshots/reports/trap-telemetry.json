@@ -1,0 +1,328 @@
+{
+  "findings": [
+    {
+      "file": "(repo)",
+      "line": 0,
+      "meaning": "The repo calls an SDK opt-out switch, but does not read navigator.doNotTrack/Global Privacy Control; browser-level signals may still be ignored.",
+      "remediation": "read `navigator.doNotTrack`/`Sec-GPC` before starting analytics, not only your own opt-out",
+      "rule": "dnt-respect",
+      "severity": "info",
+      "snippet": "opt_out_capturing",
+      "title": "dnt-respect: opt-out handled in code (Do-Not-Track not read)",
+      "tool": "privacy"
+    },
+    {
+      "file": "(repo)",
+      "line": 0,
+      "meaning": "Analytics/ads/session replay are present but no OneTrust/Cookiebot/Osano/\u2026 was detected; verify tracking waits for consent.",
+      "remediation": "load the tracker only after consent, and keep the consent decision server-side where possible",
+      "rule": "consent-gating",
+      "severity": "low",
+      "snippet": "no CMP found",
+      "title": "consent-gating: trackers with no consent manager detected",
+      "tool": "privacy"
+    },
+    {
+      "file": "(repo)",
+      "line": 0,
+      "meaning": "Personal data is collected but nothing says when it is deleted; check the privacy policy.",
+      "remediation": "set an explicit retention period and delete the data when it ends",
+      "rule": "data-retention",
+      "severity": "low",
+      "snippet": "no retention/ttl/expiry/delete_after value in the repo",
+      "title": "data-retention: data collected but no retention/expiry setting found",
+      "tool": "privacy"
+    },
+    {
+      "file": "(repo)",
+      "line": 0,
+      "meaning": "The repo collects/transmits data but ships no privacy policy/manifest file.",
+      "remediation": "add a PRIVACY.md/policy (or link one) and state what is collected",
+      "rule": "privacy-doc",
+      "severity": "low",
+      "snippet": "expected PRIVACY.md or PrivacyInfo.xcprivacy",
+      "title": "privacy-doc: no privacy policy file",
+      "tool": "privacy"
+    },
+    {
+      "file": "(repo)",
+      "line": 0,
+      "meaning": "Session replay vendors record DOM/inputs; without a masking directive the vendor defaults decide what PII is captured. Verify them.",
+      "remediation": "enable input/text masking in the replay SDK, or load it only after consent",
+      "rule": "session-replay-mask",
+      "severity": "low",
+      "snippet": "no maskAllInputs/maskText/data-hj-suppress/\u2026 in the repo",
+      "title": "session-replay-mask: session replay with no masking option found",
+      "tool": "privacy"
+    },
+    {
+      "file": "src/app.js",
+      "line": 12,
+      "meaning": "Call to identify() sends a user identifier/attributes to the analytics or crash SDK; check what the payload includes and whether the user can opt out.",
+      "remediation": "gate the SDK behind consent, or disable it with its documented opt-out",
+      "rule": "telemetry-identify",
+      "severity": "low",
+      "snippet": "posthog.identify(user.id, { email: user.email });",
+      "title": "telemetry-identify: identify",
+      "tool": "privacy"
+    },
+    {
+      "file": "telemetry.py",
+      "line": 8,
+      "meaning": "Call to set_user() sends a user identifier/attributes to the analytics or crash SDK; check what the payload includes and whether the user can opt out.",
+      "remediation": "gate the SDK behind consent, or disable it with its documented opt-out",
+      "rule": "telemetry-identify",
+      "severity": "low",
+      "snippet": "sentry_sdk.set_user({\"id\": current_user.id})",
+      "title": "telemetry-identify: set_user",
+      "tool": "privacy"
+    },
+    {
+      "file": "src/app.js",
+      "line": 15,
+      "meaning": "Advertising/attribution pixel: reports page views and a per-browser/session ID to the vendor. Detected in this file. Opt-out handled in code: opt_out_capturing.",
+      "remediation": "gate the SDK behind consent, or disable it with its documented opt-out",
+      "rule": "telemetry-ads",
+      "severity": "high",
+      "snippet": "const adroll = { adroll_adv_id: \"ABC\" };",
+      "title": "telemetry-ads: AdRoll",
+      "tool": "telemetry"
+    },
+    {
+      "file": "package.json",
+      "line": 7,
+      "meaning": "Session replay: can record clicks, keystrokes, forms and page content, not just counts. Seen 3 times; first at package.json:7. Opt-out handled in code: opt_out_capturing.",
+      "remediation": "load the replay SDK only after consent, and enable input/text masking",
+      "rule": "telemetry-session-replay",
+      "severity": "high",
+      "snippet": "\"fullstory\": \"^1.0.0\",",
+      "title": "telemetry-session-replay: FullStory",
+      "tool": "telemetry"
+    },
+    {
+      "file": "src/app.js",
+      "line": 13,
+      "meaning": "Session replay: can record clicks, keystrokes, forms and page content, not just counts. Detected in this file. Opt-out handled in code: opt_out_capturing.",
+      "remediation": "load the replay SDK only after consent, and enable input/text masking",
+      "rule": "telemetry-session-replay",
+      "severity": "high",
+      "snippet": "posthog.init(\"phc_example\", { disable_session_recording: false });",
+      "title": "telemetry-session-replay: PostHog Replay",
+      "tool": "telemetry"
+    },
+    {
+      "file": "src/app.js",
+      "line": 10,
+      "meaning": "Product/web analytics: page views, events and a persistent identifier leave the device. Detected in this file. Opt-out handled in code: opt_out_capturing.",
+      "remediation": "gate the SDK behind consent, or disable it with its documented opt-out",
+      "rule": "telemetry-analytics",
+      "severity": "medium",
+      "snippet": "script.src = \"https://www.googletagmanager.com/gtag/js?id=G-EXAMPLE1\";",
+      "title": "telemetry-analytics: Google Analytics",
+      "tool": "telemetry"
+    },
+    {
+      "file": "src/app.js",
+      "line": 10,
+      "meaning": "Product/web analytics: page views, events and a persistent identifier leave the device. Detected in this file. Opt-out handled in code: opt_out_capturing.",
+      "remediation": "gate the SDK behind consent, or disable it with its documented opt-out",
+      "rule": "telemetry-analytics",
+      "severity": "medium",
+      "snippet": "script.src = \"https://www.googletagmanager.com/gtag/js?id=G-EXAMPLE1\";",
+      "title": "telemetry-analytics: Google Tag Manager",
+      "tool": "telemetry"
+    },
+    {
+      "file": "telemetry.py",
+      "line": 10,
+      "meaning": "Product/web analytics: page views, events and a persistent identifier leave the device. Seen 6 times; first at telemetry.py:10. Opt-out handled in code: opt_out_capturing.",
+      "remediation": "gate the SDK behind consent, or disable it with its documented opt-out",
+      "rule": "telemetry-analytics",
+      "severity": "medium",
+      "snippet": "posthog.opt_out_capturing()",
+      "title": "telemetry-analytics: PostHog",
+      "tool": "telemetry"
+    },
+    {
+      "file": "telemetry.py",
+      "line": 1,
+      "meaning": "APM/tracing: spans, logs or metrics are exported; OTEL only sends if an exporter endpoint is configured. Seen 4 times; first at telemetry.py:1. Opt-out handled in code: opt_out_capturing.",
+      "remediation": "gate the SDK behind consent, or disable it with its documented opt-out",
+      "rule": "telemetry-apm",
+      "severity": "medium",
+      "snippet": "from opentelemetry import trace",
+      "title": "telemetry-apm: OpenTelemetry (OTEL)",
+      "tool": "telemetry"
+    },
+    {
+      "file": "src/app.js",
+      "line": 14,
+      "meaning": "Crash/error reporting: stack traces and payloads (often file paths, env and request data) are uploaded. Detected in this file. Opt-out handled in code: opt_out_capturing.",
+      "remediation": "gate the SDK behind consent, or disable it with its documented opt-out",
+      "rule": "telemetry-crash",
+      "severity": "medium",
+      "snippet": "import { sdk as Embrace } from \"@embrace-io/web-sdk\";",
+      "title": "telemetry-crash: Embrace",
+      "tool": "telemetry"
+    },
+    {
+      "file": "telemetry.py",
+      "line": 7,
+      "meaning": "Crash/error reporting: stack traces and payloads (often file paths, env and request data) are uploaded. Seen 5 times; first at telemetry.py:7. Opt-out handled in code: opt_out_capturing.",
+      "remediation": "gate the SDK behind consent, or disable it with its documented opt-out",
+      "rule": "telemetry-crash",
+      "severity": "medium",
+      "snippet": "import sentry_sdk",
+      "title": "telemetry-crash: Sentry",
+      "tool": "telemetry"
+    }
+  ],
+  "meta": {
+    "capabilities": {
+      "environment": [],
+      "files": 4,
+      "filesystem": [],
+      "network": [
+        {
+          "count": 1,
+          "doc": false,
+          "file": "src/app.js",
+          "line": 5,
+          "source": "static",
+          "test": false,
+          "value": "eu.i.posthog.com",
+          "verified": false
+        },
+        {
+          "count": 1,
+          "doc": false,
+          "file": "src/app.js",
+          "line": 10,
+          "source": "static",
+          "test": false,
+          "value": "www.googletagmanager.com",
+          "verified": false
+        }
+      ],
+      "processes": [],
+      "storage": []
+    },
+    "commit": null,
+    "complete": true,
+    "coverage": {
+      "bytes_scanned": 1252,
+      "bytes_scanned_pct": 100.0,
+      "bytes_total": 1252,
+      "files_scanned": 4,
+      "files_total": 4,
+      "languages": {
+        "inspected": {
+          "JavaScript": 1,
+          "Python": 1
+        },
+        "no_rules": {}
+      },
+      "skipped": {
+        "archive": 0,
+        "binary": 0,
+        "oversize": 0,
+        "unreadable": 0,
+        "unsupported": 0
+      },
+      "unscanned_extensions": []
+    },
+    "fetched_via": "local path (copied)",
+    "files": 4,
+    "mode": "local (no docker)",
+    "pii_redacted": true,
+    "privacy_mode": "full",
+    "privacy_profile": "Privacy profile: 9 tracker vendor(s), 0 third-party host(s), 0 PII item(s), 2 consent signal(s), 2 identity-sharing call(s)",
+    "privacy_summary": {
+      "consent": [
+        "trackers with no consent manager detected",
+        "opt-out handled in code (Do-Not-Track not read)"
+      ],
+      "identity": [
+        "identify",
+        "set_user"
+      ],
+      "masking": [
+        "session replay with no masking option found"
+      ],
+      "retention": [
+        "data collected but no retention/expiry setting found"
+      ],
+      "trackers": {
+        "ads": [
+          "AdRoll"
+        ],
+        "analytics": [
+          "Google Analytics",
+          "Google Tag Manager",
+          "PostHog"
+        ],
+        "apm": [
+          "OpenTelemetry (OTEL)"
+        ],
+        "crash": [
+          "Embrace",
+          "Sentry"
+        ],
+        "session-replay": [
+          "FullStory",
+          "PostHog Replay"
+        ]
+      },
+      "transparency": [
+        "no privacy policy file"
+      ]
+    },
+    "profile": "balanced",
+    "ref": null,
+    "ruleset": "92559dde022f",
+    "suppressed": 0,
+    "suppressions": [],
+    "target": "tests/fixtures/trap-telemetry"
+  },
+  "privacy_summary": {
+    "consent": [
+      "trackers with no consent manager detected",
+      "opt-out handled in code (Do-Not-Track not read)"
+    ],
+    "identity": [
+      "identify",
+      "set_user"
+    ],
+    "masking": [
+      "session replay with no masking option found"
+    ],
+    "retention": [
+      "data collected but no retention/expiry setting found"
+    ],
+    "trackers": {
+      "ads": [
+        "AdRoll"
+      ],
+      "analytics": [
+        "Google Analytics",
+        "Google Tag Manager",
+        "PostHog"
+      ],
+      "apm": [
+        "OpenTelemetry (OTEL)"
+      ],
+      "crash": [
+        "Embrace",
+        "Sentry"
+      ],
+      "session-replay": [
+        "FullStory",
+        "PostHog Replay"
+      ]
+    },
+    "transparency": [
+      "no privacy policy file"
+    ]
+  },
+  "version": "1.194.0"
+}

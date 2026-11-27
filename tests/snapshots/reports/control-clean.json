@@ -1,0 +1,60 @@
+{
+  "findings": [],
+  "meta": {
+    "capabilities": {
+      "environment": [],
+      "files": 6,
+      "filesystem": [],
+      "network": [
+        {
+          "count": 1,
+          "doc": true,
+          "file": "README.md",
+          "line": 3,
+          "source": "static",
+          "test": false,
+          "value": "img.shields.io",
+          "verified": false
+        }
+      ],
+      "processes": [],
+      "storage": []
+    },
+    "commit": null,
+    "complete": true,
+    "coverage": {
+      "bytes_scanned": 10382,
+      "bytes_scanned_pct": 100.0,
+      "bytes_total": 10382,
+      "files_scanned": 6,
+      "files_total": 6,
+      "languages": {
+        "inspected": {
+          "JavaScript": 2
+        },
+        "no_rules": {}
+      },
+      "skipped": {
+        "archive": 0,
+        "binary": 0,
+        "oversize": 0,
+        "unreadable": 0,
+        "unsupported": 0
+      },
+      "unscanned_extensions": []
+    },
+    "fetched_via": "local path (copied)",
+    "files": 6,
+    "mode": "local (no docker)",
+    "pii_redacted": true,
+    "privacy_mode": "full",
+    "profile": "balanced",
+    "ref": null,
+    "ruleset": "92559dde022f",
+    "suppressed": 0,
+    "suppressions": [],
+    "target": "tests/fixtures/control-clean"
+  },
+  "privacy_summary": {},
+  "version": "1.194.0"
+}

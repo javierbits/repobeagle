@@ -19,7 +19,7 @@ check("tagline present", rb.BANNER_TAG in plain)
 
 # Banner goes to stderr only, so piped stdout reports stay clean. fetch() is stubbed to stop the scan early.
 def stop(*_): raise RuntimeError("stop")
-rb.fetch = stop
+rb.cli.fetch_repo = stop
 out, err = io.StringIO(), io.StringIO()
 a = argparse.Namespace(target="x", strict=False, relaxed=False, keep=False, no_color=False)
 with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err), contextlib.suppress(RuntimeError):

@@ -9,6 +9,7 @@ on:
     branches: [main]
     paths:
       - repobeagle.py
+      - repobeagle/**
       - tests/fixtures/**
       - tests/schema/**
       - tests/test_sarif_schema.py
@@ -17,6 +18,7 @@ on:
   pull_request:
     paths:
       - repobeagle.py
+      - repobeagle/**
       - tests/fixtures/**
       - tests/schema/**
       - tests/test_sarif_schema.py

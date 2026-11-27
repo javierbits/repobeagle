@@ -10,6 +10,7 @@ on:
       - constraints.txt
       - requirements.lock
       - repobeagle.py
+      - repobeagle/**
       - rules/**
       - tests/fixtures/**
       - tests/test_determinism.py
@@ -20,6 +21,7 @@ on:
       - constraints.txt
       - requirements.lock
       - repobeagle.py
+      - repobeagle/**
       - rules/**
       - tests/fixtures/**
       - tests/test_determinism.py

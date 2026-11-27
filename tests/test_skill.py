@@ -95,7 +95,7 @@ def test_documented_fields_are_real():
                  "--no-cache", "--no-color", "--json", str(out)])
         assert out.exists(), r.stderr[-400:]
         report = json.loads(out.read_text(encoding="utf-8"))
-    source = (ROOT / "repobeagle.py").read_text(encoding="utf-8")
+    source = "\n".join(p.read_text(encoding="utf-8") for p in sorted((ROOT / "repobeagle").rglob("*.py")))
 
     def present(path):
         node = report

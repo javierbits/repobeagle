@@ -2,7 +2,7 @@
 # Regression tests. Shallow clone only; nothing is executed or extracted.
 # Usage: tests/run_tests.sh [--offline]   (offline = local fixtures only)
 cd "$(dirname "$0")/.." || exit 1
-RG=./repobeagle; fail=0
+RG='python3 repobeagle.py'; fail=0
 export BEAGLE_NO_UPDATE_CHECK=1   # offline suite: no GitHub release API calls
 check(){ # target expected-verdicts(regex) [extra args]; RULES="a b" = rule names that must appear
   local t=$1 exp=$2; shift 2
@@ -60,6 +60,8 @@ python3 tests/test_trend.py || fail=1
 python3 tests/test_serve.py || fail=1
 python3 tests/test_app.py || fail=1
 python3 tests/test_index.py || fail=1
+python3 tests/test_snapshots.py || fail=1
+python3 tests/test_registry.py || fail=1
 python3 tests/test_config.py || fail=1
 python3 tests/test_personas.py || fail=1
 python3 tests/test_rule_packs.py || fail=1

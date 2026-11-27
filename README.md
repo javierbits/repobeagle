@@ -327,7 +327,25 @@ Per-tool examples (raw calls; a client SDK hides the transport):
 | balanced (default) | any critical | any medium or above |
 | relaxed | any critical | any high |
 
-To change the thresholds, edit `PROFILES` in `repobeagle.py`.
+To change the thresholds, edit `PROFILES` in `repobeagle/core.py`.
+
+## Repository layout
+
+The scanner is a package of cohesive modules: `repobeagle/core.py` (shared helpers, verdicts,
+config, suppression), `repobeagle/rules/agent.py` and `repobeagle/rules/privacy.py`
+(agent-facing and privacy/telemetry detection), `repobeagle/scanners.py` (external scanner
+wrappers, cache, coverage, deadline, OSV), `repobeagle/fetch.py` (git/archives/GitHub/web),
+`repobeagle/report.py` (console/Markdown/HTML/SARIF/SBOM renderers), and
+`repobeagle/{cli,service,app,index}.py` (commands and servers). `repobeagle.py` is a thin
+shim, so `python3 repobeagle.py …` and `import repobeagle` keep working; the wheel exposes
+the package and its console script. In a checkout, use `python3 repobeagle.py …` (the old
+root-level `repobeagle` shell wrapper is gone: the package directory now owns that name).
+
+Rules have explicit metadata: `repobeagle/rules/registry.py` (generated from the rule table
+below by `tools/gen_rule_registry.py`, checked by `tests/test_registry.py`) defines
+`Rule(id, severity, meaning, remediation, docs)`, and every finding carries its `rule` id, so
+consumers no longer split titles. Regenerate the registry after editing the table:
+`python3 tools/gen_rule_registry.py`.
 
 ## Privacy: telemetry and trackers
 
