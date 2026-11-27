@@ -1210,6 +1210,12 @@ clean environment exits 0 with the scanned count.
 
 ## Built since the backlog was written
 
+- **U18 — done.** `repobeagle diff <git-url>@<refA> <git-url>@<refB>` scans both refs and
+  reports only what changed: added/removed/changed findings (matched on rule + path, with
+  renames classified as `moved`), plus capability-map additions/removals (hosts, secret
+  paths, subprocesses, env vars, storage). Exit 1 gates new findings at `--min-severity`;
+  unchanged refs are an empty diff and exit 0.
+
 - **U17 — done.** `repobeagle explain <rule>` resolves every documented rule id from the R4
   registry (severity, meaning, remediation, docs) and prints up to three positive examples
   recorded by the R7 corpus as `repo@sha:file:line` with a GitHub `#L` link; sentence-style

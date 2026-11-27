@@ -39,6 +39,7 @@ and the `meta` facts you need to judge how much the verdict covers.
 | A published badge/report | `repobeagle verify <owner/repo>` | signature invalid or stale: do not trust the colour |
 | What does this rule id mean? | `repobeagle explain <rule>` | severity, meaning, remediation and corpus examples with exact lines |
 | Existing report, what if I accept X | `repobeagle explain report.json --accept RULE` | shows the verdict after accepting; `--write` records it with a reason |
+| A tool updates silently under the same name | `repobeagle diff <url>@v1 <url>@v2` | scans both refs; new hosts/hooks/findings, renames as moves |
 | Dependency change vs yesterday | `repobeagle diff old.json new.json` | fails on added findings; use `scan --baseline old.json` for one step |
 | Is it getting safer or riskier? | `repobeagle trend <owner/repo>` | ordered verdicts, first RED, per-rule regressions and the current streak; never re-scans |
 | Is a popular repo already scanned? | `repobeagle index --out public` | static index with signed reports; refresh by SHA, parallel scans |
