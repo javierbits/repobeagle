@@ -13,11 +13,14 @@ from .app import cmd_app
 from .core import ARCHIVE_EXT, CONFIG_FILE, ConfigError, IMAGE, PERSONAS, PROFILES, RELEASE, SEV_ORDER, SUPPRESS_FILE, ScanDeadline, VERSION, _deadline_left, _explain_rule, _rule_of, _scan_alarm, _trend_epoch, apply_persona, apply_suppressions, cmd_rules, entry_command, explain_report, finding, gate_findings, load_repo_config, load_rule_packs, load_suppressions, parse_suppression, print_personas, privacy_mode_consistent, privacy_profile, privacy_summary, privacy_summary_consistent, redact_pii, remediation_for, report_fingerprint, rescan_difference, run_custom_checks, run_rule_packs, suppression_meta, suppression_notes, toolchain_drift, toolchain_pins, verdict, verdict_consistent
 from .fetch import GITHUB_REPO_RE, VERIFY_IDENTITY, VERIFY_ISSUER, WEB_MAX_BYTES, WEB_UA, _ensure_cosign, _fetch_badge_file, _local_image_digest, _web_get, docker_ok, fetch_repo, rescan_image, run_in_docker
 from .index import cmd_index
+from .release import cmd_release
 from .report import ACTIONS, _WORKDIRS, _install_cleanup, banner, collapse, color_enabled, dedupe, html_report, markdown_report, render_capabilities, render_report, sarif_report, sbom_report
 from .rules.agent import run_agent_checks, trust_signals
 from .rules.privacy import RULESET
 from .scanners import REGISTRY_TTL, _cache_root, _registry_cache_path, _registry_fetch, _run, ai_review, analysis_cache_key, cache_load, cache_store, inner, osv_db_info, osv_db_warning, run_trace, scan_capabilities, scan_coverage, scan_osv, scan_release_assets, tool_version, verify_deps
 from .service import cmd_serve
+
+
 
 
 
@@ -2693,6 +2696,16 @@ def main():
     ix.add_argument("--privacy-only", action="store_true", help="report only privacy/telemetry findings")
     ix.add_argument("--timeout", type=int, default=1800, metavar="SECONDS", help="per-scan timeout")
     ix.add_argument("--json", metavar="FILE", help="write the run summary as JSON")
+    rl = sp.add_parser("release", help="compare a published registry artifact with the repository at its release tag")
+    rl.add_argument("slug", help="owner/repo of the source repository")
+    rl.add_argument("--tag", help="release tag to compare (default: latest GitHub release)")
+    rl.add_argument("--package", metavar="NAME", help="registry package name (default: the repo manifest's name)")
+    rl.add_argument("--ecosystem", choices=["auto", "npm", "pypi", "crates"], default="auto")
+    rl.add_argument("--version", metavar="VERSION", help="registry version (default: latest published)")
+    rl.add_argument("--repo", metavar="DIR", help="local checkout of the tag instead of cloning it")
+    rl.add_argument("--tarball", metavar="FILE", help="local registry artifact instead of downloading it")
+    rl.add_argument("--registry-json", metavar="FILE", help="local registry metadata instead of fetching it")
+    rl.add_argument("--json", metavar="FILE", help="write the comparison as JSON")
     xp = sp.add_parser("export", help="convert a stored report to SARIF (code scanning), Markdown or JSON")
     xp.add_argument("report", help="report.json produced by 'scan --json'")
     xp.add_argument("--format", choices=["sarif", "markdown", "html", "json"], default="sarif")
@@ -2819,6 +2832,8 @@ def main():
         return cmd_app(a)
     if a.cmd == "index":
         return cmd_index(a)
+    if a.cmd == "release":
+        return cmd_release(a)
     if a.cmd == "export":
         return cmd_export(a)
     if a.cmd == "mcp":

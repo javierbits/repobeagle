@@ -10,7 +10,7 @@ because a plain package attribute would not affect the scanner's globals.
 import sys
 import types
 
-from . import core, fetch, report, scanners, service, app, index, cli
+from . import core, fetch, report, scanners, service, app, index, release, cli
 from . import rules as rules
 from .rules import agent as rules_agent, privacy as rules_privacy
 from .rules import RULES, Rule
@@ -21,6 +21,7 @@ from .scanners import *
 from .service import *
 from .app import *
 from .index import *
+from .release import *
 from .rules.agent import *
 from .rules.privacy import *
 from .cli import *
@@ -36,6 +37,7 @@ from .report import _WORKDIRS
 from .app import _app_handler
 from .app import _app_jwt
 from .app import _app_signature_ok
+from .release import _artifact_url
 from .core import _atomic_write
 from .scanners import _cache_root
 from .rules.privacy import _card_number_ok
@@ -62,6 +64,7 @@ from .cli import _finding_rule
 from .cli import _gate_one
 from .cli import _gh_contents
 from .scanners import _github_download
+from .release import _github_headers
 from .core import _gitmodules_entries
 from .cli import _head_cache_path
 from .core import _host_of
@@ -89,6 +92,7 @@ from .rules.privacy import _luhn_ok
 from .cli import _mcp_exec
 from .cli import _mcp_workdir
 from .app import _md
+from .release import _normalize_dep
 from .scanners import _npm_dep_graph
 from .report import _on_signal
 from .core import _origin_host
@@ -102,9 +106,11 @@ from .cli import _print_run_report
 from .core import _priv_add
 from .cli import _pull_image
 from .core import _raise_scan_deadline
+from .release import _read_json
 from .core import _read_version
 from .scanners import _registry_cache_path
 from .scanners import _registry_fetch
+from .release import _release_version
 from .cli import _repo_slug
 from .cli import _repo_url
 from .cli import _retarget_wrapper
@@ -122,6 +128,7 @@ from .service import _service_slug
 from .core import _strip_yaml_comment
 from .rules.privacy import _telem_rx
 from .core import _today
+from .release import _toml
 from .rules.privacy import _tracking_cookie_vendor
 from .cli import _trend_count
 from .cli import _trend_entry
@@ -244,7 +251,7 @@ from .rules.agent import trust_signals
 from .rules.agent import typosquat_of
 from .rules.agent import workspace_packages
 
-_SUBMODULES = (core, fetch, report, scanners, service, app, index, cli, rules_agent, rules_privacy)
+_SUBMODULES = (core, fetch, report, scanners, service, app, index, release, cli, rules_agent, rules_privacy)
 
 class _RepobeagleModule(types.ModuleType):
     def __setattr__(self, name, value):

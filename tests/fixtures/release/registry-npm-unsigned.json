@@ -1,0 +1,15 @@
+{
+  "name": "acme-demo",
+  "dist-tags": {
+    "latest": "1.0.0"
+  },
+  "versions": {
+    "1.0.0": {
+      "name": "acme-demo",
+      "version": "1.0.0",
+      "dist": {
+        "tarball": "https://example.invalid/acme-demo-1.0.0.tgz"
+      }
+    }
+  }
+}

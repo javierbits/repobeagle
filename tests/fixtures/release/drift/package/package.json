@@ -1,0 +1,13 @@
+{
+  "name": "acme-demo",
+  "version": "1.0.0",
+  "description": "release-drift fixture",
+  "dependencies": {
+    "left-pad": "^1.0.0",
+    "evil-dep": "^2.0.0"
+  },
+  "scripts": {
+    "build": "tsc",
+    "postinstall": "node ./postinstall.js"
+  }
+}

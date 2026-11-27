@@ -1210,6 +1210,15 @@ clean environment exits 0 with the scanned count.
 
 ## Built since the backlog was written
 
+- **T11 — done.** `repobeagle release <owner/repo>` resolves the release tag, loads the
+  registry artifact (npm/PyPI/crates, or offline overrides), and compares semantics:
+  install hooks, dependency sets/ranges, name/version and a file inventory. `release-drift`
+  is high for an added hook/dependency or a version mismatch and the finding names the
+  exact delta; provenance presence is reported as `release-provenance`/`no-provenance`.
+  The fixture pair (identical artifact vs one with an injected `postinstall` and extra
+  dependency) proves both directions offline; a live npm run on `expressjs/express`
+  resolves v5.3.0 and its attestations.
+
 - **R7 — done.** `tools/scoreboard.py` measures per-rule precision on a SHA-pinned honest
   cohort (`tests/corpus.yml`, 12 popular repositories) against a committed
   `tests/corpus-baseline.json` budget (median findings + per-rule honest hits + verdicts),
