@@ -13,7 +13,7 @@ NEVER executes repository code. Stdlib only (scanners are external binaries).
   repobeagle run [--dry-run|--yes|--force] [--repo TARGET] [scan flags] -- <npx|pnpm dlx|pipx run|uvx|cargo install ...>
   repobeagle scan <archive.zip|archive.tar.gz>   # extracted under limits, then scanned
 """
-import argparse, base64, difflib, hashlib, hmac, json, os, platform, queue, re, shlex, shutil, signal, subprocess, sys, tempfile, threading, time, unicodedata, uuid, zipfile
+import argparse, base64, concurrent.futures, difflib, hashlib, hmac, json, os, platform, queue, re, shlex, shutil, signal, subprocess, sys, tempfile, threading, time, unicodedata, uuid, zipfile
 import urllib.error, urllib.parse, urllib.request
 from datetime import date, datetime, timezone
 from fnmatch import fnmatchcase
@@ -3226,6 +3226,7 @@ def workspace_packages(root):
     return detected[:MAX_WORKSPACE_PACKAGES], detected[MAX_WORKSPACE_PACKAGES:]
 
 def run_agent_checks(root, deadline=None, state=None):
+    root = Path(root)
     """Regex/agent checks over the tree. `deadline` (monotonic) bounds the work; `state` records partial results."""
     if state is not None:
         state.setdefault("complete", True)
@@ -3846,6 +3847,7 @@ def inner(src, out, deadline=None, jobs=None):
     depend on completion order. Honors `deadline` (monotonic): unfinished phases are noted,
     `complete` is False, and a partial inner.json is still written.
     """
+    src = Path(src)
     out = Path(out); out.mkdir(parents=True, exist_ok=True)
     result: dict[str, Any] = {"findings": [], "notes": [], "tools": {}}
     complete = True
@@ -7965,7 +7967,7 @@ def cmd_scan(a):
 # ----------------------------------------------------------------------------
 # Verify a published badge report: repobeagle verify <github-repo>
 # ----------------------------------------------------------------------------
-VERIFY_IDENTITY = (r"^https://github\.com/javierbits/repobeagle/\.github/workflows/(scan|service)\.yml"
+VERIFY_IDENTITY = (r"^https://github\.com/javierbits/repobeagle/\.github/workflows/(scan|service|index)\.yml"
                    r"@refs/(heads/main|tags/v[0-9]+\.[0-9]+\.[0-9]+)$")
 VERIFY_ISSUER = "https://token.actions.githubusercontent.com"
 GITHUB_REPO_RE = re.compile(r"^(?:https?://|git@|ssh://git@)github\.com[/:]([^/]+)/([^/#?]+?)(?:\.git)?/?$")
@@ -8026,6 +8028,22 @@ def rescan_image(meta):
     if img:
         return img, f"using the report's image {img}"
     return IMAGE, f"the report records no image_ref; using this install's image {IMAGE}, findings may differ"
+
+def cosign_sign_blob(report_path, bundle_path, key=None, timeout=180):
+    """Sign exactly the report file's bytes -> Sigstore bundle. (ok, detail); installs cosign on first use."""
+    cosign = _ensure_cosign()
+    if not cosign:
+        return False, "cosign unavailable (install cosign or run ./install.sh)"
+    cmd = [cosign, "sign-blob", "--yes", "--bundle", str(bundle_path), str(report_path)]
+    if key:
+        cmd.extend(["--key", key])
+    try:
+        r = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
+    except Exception as ex:
+        return False, str(ex)[:160]
+    if r.returncode != 0:
+        return False, (r.stderr or r.stdout).strip()[-300:]
+    return True, ""
 
 def _local_image_digest(image):
     """sha256 digest of an image present locally, or None (never pulls)."""
@@ -8301,26 +8319,13 @@ class ServiceState:
 
     def _sign(self, base, data, slug, sha):
         """Write the report and try to sign those exact bytes. Returns (bytes, bundle_written)."""
-        cosign = _ensure_cosign() if self.sign else None
         report = base / "report.json"
-        if not cosign:
-            if self.sign:
-                print(f"serve: {slug}@{sha[:7]}: cosign unavailable, serving the report unsigned", file=sys.stderr)
-            _atomic_write(report, data)
-            return data, False
         _atomic_write(report, data)
-        cmd = [cosign, "sign-blob", "--yes", "--bundle", str(base / "report.sigstore.json"), str(report)]
-        if self.key:
-            cmd.extend(["--key", self.key])
-        try:
-            r = subprocess.run(cmd, capture_output=True, text=True, timeout=180)
-        except Exception as ex:
-            r = None
-            print(f"serve: {slug}@{sha[:7]}: signing failed: {str(ex)[:140]}", file=sys.stderr)
-        if r is None or r.returncode != 0:
-            if r is not None:
-                print(f"serve: {slug}@{sha[:7]}: signing failed: {(r.stderr or r.stdout).strip()[-300:]}",
-                      file=sys.stderr)
+        if not self.sign:
+            return data, False
+        ok, detail = cosign_sign_blob(report, base / "report.sigstore.json", self.key)
+        if not ok:
+            print(f"serve: {slug}@{sha[:7]}: signing failed: {detail}", file=sys.stderr)
             d = json.loads(data)
             d["meta"]["service"]["signed"] = False
             data = json.dumps(d, indent=2).encode()
@@ -8792,6 +8797,230 @@ def cmd_app(a):
         httpd.server_close()
     return 0
 
+# ---------------------------------------------------------------------------
+# Public precomputed index: curated repositories -> signed results + static pages
+# ---------------------------------------------------------------------------
+INDEX_RESULTS = "results"
+INDEX_PAGES = "repo"
+INDEX_HTML = "index.html"
+INDEX_ENTRY_RE = re.compile(r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$")
+
+def _index_entries(args):
+    lines = list(getattr(args, "entries", []) or [])
+    repos = getattr(args, "repos", None)
+    if repos:
+        try:
+            lines.extend(Path(repos).read_text(encoding="utf-8").splitlines())
+        except OSError as ex:
+            raise SystemExit(f"index: cannot read {repos}: {ex}")
+    clean, seen = [], set()
+    for line in lines:
+        entry = line.split("#", 1)[0].strip()
+        if entry and entry not in seen:
+            seen.add(entry)
+            clean.append(entry)
+    return clean
+
+def _index_resolve(entry):
+    """(slug, scan target, ref, sha, local) or ValueError. Directories are local/<name>."""
+    path = Path(entry)
+    if path.is_dir():
+        name = re.sub(r"[^A-Za-z0-9_.-]+", "-", path.name).strip("-") or "repo"
+        return f"local/{name}", str(path.resolve()), None, tree_digest(path)[:40], True
+    m = GITHUB_REPO_RE.match(entry)
+    slug = f"{m.group(1)}/{m.group(2)}" if m else (entry if INDEX_ENTRY_RE.fullmatch(entry) else None)
+    if not slug:
+        raise ValueError("not an existing directory or owner/repo")
+    url = f"https://github.com/{slug}.git"
+    try:
+        r = subprocess.run(["git", "ls-remote", url, "HEAD"], capture_output=True, text=True, timeout=60)
+    except Exception as ex:
+        raise ValueError(f"cannot resolve HEAD: {str(ex)[:120]}")
+    if r.returncode != 0 or not r.stdout.strip():
+        raise ValueError("cannot resolve HEAD")
+    sha = r.stdout.split()[0].lower()
+    return slug, url, sha, sha, False
+
+def _index_paths(out, slug, sha):
+    owner, name = slug.split("/", 1)
+    results = Path(out) / INDEX_RESULTS / owner
+    pages = Path(out) / INDEX_PAGES / owner
+    return results / f"{name}@{sha}.json", results / f"{name}@{sha}.sigstore.json", pages / f"{name}.html"
+
+def _index_report(raw, slug, sha, local):
+    d = json.loads(raw)
+    meta = d.get("meta") if isinstance(d.get("meta"), dict) else {}
+    meta["scanned_repo"] = slug
+    meta["scanned_sha"] = sha
+    meta["index"] = {"name": "repobeagle", "version": VERSION, "mode": "local" if local else "github"}
+    d["meta"] = meta
+    return d, json.dumps(d, indent=2).encode()
+
+def _index_scan(entry, out, args):
+    """Resolve, scan, sign and cache one entry. Returns a result row; never raises."""
+    try:
+        slug, target, ref, sha, local = _index_resolve(entry)
+    except ValueError as ex:
+        return {"entry": entry, "status": "failed", "reason": str(ex)}
+    report, bundle, _page = _index_paths(out, slug, sha)
+    if report.is_file() and (not getattr(args, "sign", False) or bundle.is_file()):
+        return {"entry": entry, "status": "skipped", "slug": slug, "sha": sha}
+    try:
+        raw = scan_json_report(target, ref,
+                               profile=getattr(args, "profile", "balanced"),
+                               no_docker=getattr(args, "no_docker", False),
+                               no_osv=getattr(args, "no_osv", False),
+                               no_trust=getattr(args, "no_trust", False),
+                               privacy_only=getattr(args, "privacy_only", False),
+                               jobs=1, timeout=getattr(args, "timeout", 1800))
+        d, data = _index_report(raw, slug, sha, local)
+    except ScanFailure as ex:
+        return {"entry": entry, "status": "failed", "reason": str(ex)[:300]}
+    report.parent.mkdir(parents=True, exist_ok=True)
+    _atomic_write(report, data)
+    if getattr(args, "sign", False):
+        ok, detail = cosign_sign_blob(report, bundle, getattr(args, "key", None))
+        if not ok:
+            report.unlink(missing_ok=True)
+            bundle.unlink(missing_ok=True)
+            return {"entry": entry, "status": "failed", "slug": slug, "sha": sha,
+                    "reason": f"signing failed: {detail}"}
+    return {"entry": entry, "status": "scanned", "slug": slug, "sha": sha,
+            "verdict": d.get("verdict"), "counts": d.get("counts")}
+
+def _index_collect(out):
+    """Latest valid report per slug from results/<owner>/<repo>@<sha>.json (all runs accumulate)."""
+    latest: dict[str, dict[str, Any]] = {}
+    for report in sorted((Path(out) / INDEX_RESULTS).glob("*/*@*.json")):
+        if report.name.endswith(".sigstore.json"):
+            continue
+        try:
+            d = json.loads(report.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            continue
+        if not isinstance(d, dict) or d.get("verdict") not in ("GREEN", "YELLOW", "RED"):
+            continue
+        owner = report.parent.name
+        name, _, sha = report.name[:-len(".json")].partition("@")
+        if not name or not sha:
+            continue
+        meta: dict[str, Any] = d["meta"] if isinstance(d.get("meta"), dict) else {}
+        key: tuple[str, str] = (str(meta.get("scanned_at") or ""), sha)
+        slug = f"{owner}/{name}"
+        previous = latest.get(slug)
+        if previous is None or key > previous["key"]:
+            latest[slug] = {"slug": slug, "name": name, "owner": owner, "sha": sha, "key": key,
+                            "report": report, "data": d,
+                            "bundle": report.with_name(report.name[:-len(".json")] + ".sigstore.json")}
+    return latest
+
+def _index_repo_page(out, entry):
+    slug, sha, d = entry["slug"], entry["sha"], entry["data"]
+    page = html_report(d)
+    rel = f"../../{INDEX_RESULTS}/{entry['owner']}/{entry['name']}@{sha}.json"
+    signed = entry["bundle"].is_file()
+    links = f'<p><a href="{rel}">{"signed report.json" if signed else "report.json"}</a>'
+    if signed:
+        links += f' · <a href="{rel.replace(".json", ".sigstore.json")}">Sigstore bundle</a>'
+    if not slug.startswith("local/"):
+        links += f' · <a href="https://github.com/{slug}">repository</a>'
+    links += f' · <a href="../../{INDEX_HTML}">all results</a></p>'
+    return page.replace("</body>", links + "</body>", 1).encode()
+
+def _index_page_entries(entries):
+    signed = any(entry["bundle"].is_file() for entry in entries.values())
+    rows = []
+    for slug in sorted(entries):
+        entry = entries[slug]
+        counts = entry["data"].get("counts") or {}
+        verdict = str(entry["data"].get("verdict"))
+        rows.append(
+            f'<tr><td><a href="{INDEX_PAGES}/{slug}.html">{slug}</a></td>'
+            f'<td class="{verdict}">{verdict}</td>'
+            f'<td>{counts.get("critical", 0)}</td><td>{counts.get("high", 0)}</td>'
+            f'<td>{counts.get("medium", 0)}</td><td>{counts.get("low", 0)}</td>'
+            f'<td><code>{entry["sha"][:12]}</code></td></tr>')
+    return f"""<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RepoBeagle index: popular repository verdicts</title>
+<style>
+:root {{ color-scheme: light dark; font-family: system-ui, sans-serif; }}
+body {{ max-width: 64rem; margin: 2rem auto; padding: 0 1rem; }}
+table {{ border-collapse: collapse; width: 100%; }}
+th, td {{ padding: .35rem .5rem; border-bottom: 1px solid #8884; text-align: left; }}
+td.GREEN {{ color: #1a7f37; font-weight: 600; }}
+td.YELLOW {{ color: #9a6700; font-weight: 600; }}
+td.RED {{ color: #cf222e; font-weight: 600; }}
+input {{ width: 100%; padding: .5rem; margin: 1rem 0; font: inherit; }}
+</style></head><body>
+<h1>RepoBeagle index</h1>
+<p>Static verdicts for a curated set of repositories.
+{"Every linked report is Sigstore-signed by the official RepoBeagle index workflow; verify it with <code>repobeagle verify</code>." if signed else "This index was built without signing (local build)."}</p>
+<label for="q">Filter by repository or verdict</label>
+<input id="q" placeholder="e.g. flask, RED, owner/" autocomplete="off">
+<table><thead><tr><th>repository</th><th>verdict</th><th>critical</th><th>high</th>
+<th>medium</th><th>low</th><th>scanned</th></tr></thead>
+<tbody>
+{chr(10).join(rows)}
+</tbody></table>
+<p><small>Generated by RepoBeagle {VERSION}. Static analysis only; no repository code is executed.</small></p>
+<script>
+document.getElementById('q').addEventListener('input', function () {{
+  const q = this.value.toLowerCase();
+  document.querySelectorAll('tbody tr').forEach(function (tr) {{
+    tr.style.display = tr.textContent.toLowerCase().includes(q) ? '' : 'none';
+  }});
+}});
+</script>
+</body></html>
+"""
+
+def cmd_index(a):
+    """Builds the signed public index from a curated list: never executes repository code."""
+    out = Path(a.out)
+    try:
+        out.mkdir(parents=True, exist_ok=True)
+    except OSError as ex:
+        print(f"index: cannot create {out}: {ex}", file=sys.stderr)
+        return 1
+    entries = _index_entries(a)
+    if not entries:
+        print("index: no entries (give owner/repo, directories, or --repos FILE)", file=sys.stderr)
+        return 1
+    if a.sign and not _ensure_cosign():
+        print("index: --sign needs cosign; install it or run ./install.sh", file=sys.stderr)
+        return 1
+    limit = entries[:int(a.cap)] if int(a.cap) > 0 else entries
+    results = []
+    with concurrent.futures.ThreadPoolExecutor(max_workers=max(1, int(a.jobs))) as pool:
+        futures = {pool.submit(_index_scan, entry, out, a): entry for entry in limit}
+        for future in concurrent.futures.as_completed(futures):
+            try:
+                row = future.result()
+            except Exception as ex:
+                row = {"entry": futures[future], "status": "failed", "reason": f"{type(ex).__name__}: {ex}"}
+            results.append(row)
+            label = row.get("slug") or row["entry"]
+            print(f"index: {row['status']} {label}" + (f" ({row['reason']})" if row.get("reason") else ""),
+                  file=sys.stderr)
+    latest = _index_collect(out)
+    for entry in latest.values():
+        page = Path(out) / INDEX_PAGES / entry["owner"] / f"{entry['name']}.html"
+        page.parent.mkdir(parents=True, exist_ok=True)
+        _atomic_write(page, _index_repo_page(out, entry))
+    _atomic_write(out / INDEX_HTML, _index_page_entries(latest).encode())
+    scanned = sum(1 for r in results if r["status"] == "scanned")
+    skipped = sum(1 for r in results if r["status"] == "skipped")
+    failed = sum(1 for r in results if r["status"] == "failed")
+    print(f"index: {scanned} scanned, {skipped} skipped (unchanged SHA), {failed} failed; "
+          f"{len(latest)} published page(s) in {out}")
+    if a.json:
+        Path(a.json).write_text(json.dumps({"scanned": scanned, "skipped": skipped, "failed": failed,
+                                            "results": sorted(results, key=lambda r: r.get("entry", "")),
+                                            "published": sorted(latest)}, indent=2))
+        print(f"[repobeagle] JSON written to {a.json}", file=sys.stderr)
+    return 0 if latest else 1
+
 def cmd_verify(a):
     """Check that a published badge report is authentic and current. Exits 0/1/2 (3 with --rescan mismatch)."""
     print(banner(color_enabled(sys.stderr) and not a.no_color), file=sys.stderr)   # stderr keeps stdout reports clean
@@ -9216,6 +9445,21 @@ def main():
     ap_.add_argument("--no-trust", action="store_true", help="skip GitHub trust signals")
     ap_.add_argument("--privacy-only", action="store_true", help="report only privacy/telemetry findings")
     ap_.add_argument("--jobs", type=int, default=1, metavar="N", help="scanner concurrency per scan")
+    ix = sp.add_parser("index", help="build the static signed index: curated repositories -> results + searchable Pages site")
+    ix.add_argument("entries", nargs="*", help="owner/repo or existing directory entries")
+    ix.add_argument("--repos", metavar="FILE", help="file with one entry per line ('#' comments)")
+    ix.add_argument("--out", default="public", metavar="DIR", help="output directory for the Pages artifact")
+    ix.add_argument("--jobs", type=int, default=4, metavar="N", help="parallel scans (default: 4)")
+    ix.add_argument("--cap", type=int, default=1000, metavar="N", help="maximum entries per run (0 = no cap)")
+    ix.add_argument("--sign", action="store_true", help="sign every report with Sigstore (keyless under GitHub OIDC, or --key)")
+    ix.add_argument("--key", metavar="FILE", help="cosign private key used by --sign")
+    ix.add_argument("--profile", choices=["strict", "balanced", "relaxed"], default="balanced")
+    ix.add_argument("--no-docker", action="store_true", help="scan locally instead of via the pinned image")
+    ix.add_argument("--no-osv", action="store_true", help="skip OSV vulnerability lookups")
+    ix.add_argument("--no-trust", action="store_true", help="skip GitHub trust signals")
+    ix.add_argument("--privacy-only", action="store_true", help="report only privacy/telemetry findings")
+    ix.add_argument("--timeout", type=int, default=1800, metavar="SECONDS", help="per-scan timeout")
+    ix.add_argument("--json", metavar="FILE", help="write the run summary as JSON")
     xp = sp.add_parser("export", help="convert a stored report to SARIF (code scanning), Markdown or JSON")
     xp.add_argument("report", help="report.json produced by 'scan --json'")
     xp.add_argument("--format", choices=["sarif", "markdown", "html", "json"], default="sarif")
@@ -9340,6 +9584,8 @@ def main():
         return cmd_serve(a)
     if a.cmd == "app":
         return cmd_app(a)
+    if a.cmd == "index":
+        return cmd_index(a)
     if a.cmd == "export":
         return cmd_export(a)
     if a.cmd == "mcp":

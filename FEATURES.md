@@ -1210,6 +1210,14 @@ clean environment exits 0 with the scanned count.
 
 ## Built since the backlog was written
 
+- **T8 — done.** `repobeagle index` resolves a curated list, skips SHAs that already have
+  a signed result, scans with `--jobs` parallel workers in the pinned image, and writes
+  `results/<owner>/<repo>@<sha>.json` plus a searchable self-contained `index.html` and
+  per-repository pages. `index.yml` signs each report keyless (`index.yml` identity added
+  to `verify`'s allowlist), verifies every published report before deploying to GitHub
+  Pages, and persists the result history on the `index` branch. Acceptance: 1000-entry cap
+  and 20 workers fit the 4 h workflow timeout; every page links its signed report.
+
 - **T2 — done.** `repobeagle app` is the GitHub App webhook server: signature-verified
   `pull_request`/default-branch `push` deliveries are queued (GitHub's 10 s timeout) and
   scanned with the ordinary `scan` CLI, PRs with `--since <base>` (changed files only).
