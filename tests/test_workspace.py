@@ -34,6 +34,12 @@ def write(root, files):
         p.write_text(text, encoding="utf-8")
 
 
+def test_string_root_is_accepted():
+    # The container entrypoint passes argv strings; package attribution must not do str/str.
+    findings, n = rb.run_agent_checks(str(FIXTURE))
+    assert isinstance(findings, list) and n > 0, (findings[:2], n)
+
+
 def test_detection_kinds():
     packages, dropped = rb.workspace_packages(FIXTURE)
     assert [(p["path"], p["name"], p["kind"]) for p in packages] == [

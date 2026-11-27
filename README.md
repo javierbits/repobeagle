@@ -162,6 +162,7 @@ repobeagle diff <old.json> <new.json> [--min-severity medium] [--json out.json]
 repobeagle trend <github-repo | report-dir | report.json...> [--branch BRANCH] [--limit N] [--json out.json]
 repobeagle serve [--host HOST] [--port PORT] [--cache DIR] [--root DIR] [--ip-budget N] [--repo-budget N] [--concurrency N] [--sign [--key FILE]] [scan flags]
 repobeagle app [--host HOST] [--port PORT] [--secret TEXT] [--app-id ID] [--private-key FILE] [--token TOKEN] [--api-url URL] [--root DIR] [scan flags]
+repobeagle index [ENTRY...] [--repos FILE] [--out DIR] [--jobs N] [--cap N] [--sign [--key FILE]] [scan flags] [--json out.json]
 repobeagle fix <local-dir> [--dry-run] [--pins FILE] [--no-network] [--json out.json]
 repobeagle head <owner/repo | github-url | local-dir> [--strict|--relaxed] [--json out.json] [--markdown] [--no-cache] [--as PERSONA]
 repobeagle gate <entries-file> [--baseline old.json] [--json out.json] [--markdown] [--jobs N] [--report-only] [--strict|--relaxed] [--as PERSONA]
@@ -216,6 +217,10 @@ docker run --rm -p 8080:8080 \
   -v "$PWD/app.pem:/keys/app.pem:ro" ghcr.io/javierbits/repobeagle:v1.192.0 \
   app --host 0.0.0.0 --port 8080
 ```
+
+`repobeagle index` builds the public precomputed index (published at https://javierbits.com/repobeagle/ by the `index.yml` workflow): it resolves each curated entry's HEAD (`tools/index-repos.txt`), skips a repository whose current SHA already has a signed result, scans in the pinned image with up to `--jobs` parallel workers, and writes `results/<owner>/<repo>@<sha>.json` plus a self-contained searchable `index.html` and one HTML page per repository. The result history accumulates, so a later run only processes changed SHAs; `--cap` bounds a run (the workflow uses 1000, which fits the workflow's 4 h timeout at `--jobs 20`).
+
+`--sign` signs each report with cosign (keyless under GitHub OIDC, or `--key`); a report is only published with its `.sigstore.json` bundle, and the workflow runs `repobeagle verify` on every published report before deploying. `verify`'s default identity accepts the `index.yml` workflow. Local directories are accepted as entries (`local/<dir>`), which is what the offline tests use; `--out public` is the artifact root and is ignored by git.
 
 `repobeagle fix <local-dir>` rewrites only the findings whose fix is mechanical: an unpinned `uses:` becomes a resolved 40-character commit SHA, and a top-level `permissions: write-all` becomes `contents: read`. It edits the flagged line in place (no YAML re-serialisation, so comments and layout survive), prints a unified diff, and `--dry-run` writes nothing. It never clones (check out the repo first) and never executes repository code.
 
@@ -495,7 +500,7 @@ The badge is produced by the author's own CI, so on its own it is self-attested.
 
 ```bash
 repobeagle verify javierbits/javierbits.github.io
-#   signature: VALID  policy: official scan/service workflow (main or v* tag)
+#   signature: VALID  policy: official scan/service/index workflow (main or v* tag)
 #   report:    YELLOW  0 critical / 6 high / 1 medium / 56 low
 #   scanned:   a7cb435002de at javierbits/javierbits.github.io (image ghcr.io/javierbits/repobeagle:v1.166.0)
 #   snippets:  redacted by scanner

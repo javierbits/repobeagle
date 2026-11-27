@@ -1,0 +1,21 @@
+# Curated starting set for the public index (issue #20 / T8).
+# One GitHub repository per line; '#' starts a comment. Directory entries are
+# accepted too (`repobeagle index <dir>`), which is what the offline tests use.
+# The workflow scans at most --cap 1000 entries with --jobs 20 (see index.yml);
+# add more lines to grow the index, and expect roughly the same per-repo cost.
+psf/requests
+pallets/flask
+django/django
+expressjs/express
+axios/axios
+chalk/chalk
+eslint/eslint
+prettier/prettier
+vitejs/vite
+denoland/deno
+rust-lang/cargo
+BurntSushi/ripgrep
+sharkdp/fd
+jqlang/jq
+modelcontextprotocol/servers
+openai/openai-python
