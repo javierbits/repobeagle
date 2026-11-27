@@ -133,24 +133,24 @@
       "tool": "telemetry"
     },
     {
-      "file": "telemetry.py",
-      "line": 10,
-      "meaning": "Product/web analytics: page views, events and a persistent identifier leave the device. Seen 6 times; first at telemetry.py:10. Opt-out handled in code: opt_out_capturing.",
+      "file": "package.json",
+      "line": 8,
+      "meaning": "Product/web analytics: page views, events and a persistent identifier leave the device. Seen 6 times; first at package.json:8. Opt-out handled in code: opt_out_capturing.",
       "remediation": "gate the SDK behind consent, or disable it with its documented opt-out",
       "rule": "telemetry-analytics",
       "severity": "medium",
-      "snippet": "posthog.opt_out_capturing()",
+      "snippet": "\"posthog-js\": \"^1.100.0\",",
       "title": "telemetry-analytics: PostHog",
       "tool": "telemetry"
     },
     {
-      "file": "telemetry.py",
-      "line": 1,
-      "meaning": "APM/tracing: spans, logs or metrics are exported; OTEL only sends if an exporter endpoint is configured. Seen 4 times; first at telemetry.py:1. Opt-out handled in code: opt_out_capturing.",
+      "file": "package.json",
+      "line": 5,
+      "meaning": "APM/tracing: spans, logs or metrics are exported; OTEL only sends if an exporter endpoint is configured. Seen 4 times; first at package.json:5. Opt-out handled in code: opt_out_capturing.",
       "remediation": "gate the SDK behind consent, or disable it with its documented opt-out",
       "rule": "telemetry-apm",
       "severity": "medium",
-      "snippet": "from opentelemetry import trace",
+      "snippet": "\"@opentelemetry/sdk-node\": \"^0.50.0\",",
       "title": "telemetry-apm: OpenTelemetry (OTEL)",
       "tool": "telemetry"
     },
@@ -166,13 +166,13 @@
       "tool": "telemetry"
     },
     {
-      "file": "telemetry.py",
-      "line": 7,
-      "meaning": "Crash/error reporting: stack traces and payloads (often file paths, env and request data) are uploaded. Seen 5 times; first at telemetry.py:7. Opt-out handled in code: opt_out_capturing.",
+      "file": "package.json",
+      "line": 6,
+      "meaning": "Crash/error reporting: stack traces and payloads (often file paths, env and request data) are uploaded. Seen 5 times; first at package.json:6. Opt-out handled in code: opt_out_capturing.",
       "remediation": "gate the SDK behind consent, or disable it with its documented opt-out",
       "rule": "telemetry-crash",
       "severity": "medium",
-      "snippet": "import sentry_sdk",
+      "snippet": "\"@sentry/browser\": \"^8.0.0\",",
       "title": "telemetry-crash: Sentry",
       "tool": "telemetry"
     }

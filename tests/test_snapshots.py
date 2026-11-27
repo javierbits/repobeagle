@@ -85,8 +85,15 @@ def main():
             print(f"wrote {gold.relative_to(ROOT)}")
             continue
         expected = gold.read_text(encoding="utf-8") if gold.is_file() else None
+        detail = ""
+        if expected is not None and expected != text:
+            import difflib
+            diff = [ln for ln in difflib.unified_diff(expected.splitlines(), text.splitlines(),
+                                                      "golden", "current", lineterm="", n=1)
+                    if ln.startswith(("+", "-")) and not ln.startswith(("+++", "---"))]
+            detail = " | ".join(diff[:6])[:600] or "whitespace/trailing newline differs"
         check(f"report snapshot: {fixture}", expected == text,
-              "run tests/test_snapshots.py --update and review" if expected is not None else "missing golden")
+              detail or ("missing golden: run tests/test_snapshots.py --update" if expected is None else ""))
     return fail
 
 

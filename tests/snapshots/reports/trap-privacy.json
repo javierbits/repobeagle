@@ -111,8 +111,8 @@
       "tool": "privacy"
     },
     {
-      "file": "web/index.html",
-      "line": 7,
+      "file": "web/consent.html",
+      "line": 5,
       "meaning": "A consent manager (CMP) is present, so tracking should be gated on consent; verify it covers every vendor found. Seen 2 times.",
       "rule": "consent-manager",
       "severity": "info",
@@ -279,12 +279,12 @@
       "tool": "privacy"
     },
     {
-      "file": "web/style.css",
-      "line": 3,
+      "file": "web/analytics.js",
+      "line": 5,
       "meaning": "Own/related domain widget.dev: first-party traffic, not a third party. Seen 6 times.",
       "rule": "first-party-endpoint",
       "severity": "info",
-      "snippet": ".own-bg { background: url('https://widget.dev/assets/bg.png'); }",
+      "snippet": "fetch(\"https://widget.dev/?utm_source=docs&utm_medium=readme\");",
       "title": "first-party-endpoint: widget.dev",
       "tool": "privacy"
     },
@@ -1012,13 +1012,13 @@
       "tool": "privacy"
     },
     {
-      "file": "web/index.html",
-      "line": 20,
+      "file": "web/analytics.js",
+      "line": 3,
       "meaning": "Hardcoded phone number in source/config (personal data); check it is intentional. Seen 3 times.",
       "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it",
       "rule": "pii-phone",
       "severity": "low",
-      "snippet": "<a href=\"tel:+467****567\">call us</a>",
+      "snippet": "console.log(\"visit\", user.email, \"+467****567\");",
       "title": "pii-phone: +467****567",
       "tool": "privacy"
     },
@@ -1298,8 +1298,8 @@
       "tool": "privacy"
     },
     {
-      "file": "web/index.html",
-      "line": 7,
+      "file": "web/consent.html",
+      "line": 5,
       "meaning": "Loads executable script from cdn.cookiebot.com: it runs with page privileges and can read cookies/DOM and beacon data. Seen 2 times.",
       "remediation": "self-host the asset, or document and gate the host behind consent",
       "rule": "third-party-script",
@@ -1342,13 +1342,13 @@
       "tool": "privacy"
     },
     {
-      "file": "web/widget.tsx",
-      "line": 1,
+      "file": "web/app.js",
+      "line": 8,
       "meaning": "Module import from cdn.unknown-cdn.dev: code fetched and executed from a third-party server. Seen 2 times.",
       "remediation": "self-host the asset, or document and gate the host behind consent",
       "rule": "third-party-script",
       "severity": "low",
-      "snippet": "import { Chart } from \"https://cdn.unknown-cdn.dev/chart.js\";",
+      "snippet": "import { chart } from 'https://cdn.unknown-cdn.dev/chart.js';",
       "title": "third-party-script: cdn.unknown-cdn.dev",
       "tool": "privacy"
     },
@@ -1408,13 +1408,13 @@
       "tool": "privacy"
     },
     {
-      "file": "web/style.css",
-      "line": 1,
-      "meaning": "CSS @import from css.unknown-cdn.dev: sees your IP/referrer and can chain further requests. Seen 2 times.",
+      "file": "web/index.html",
+      "line": 6,
+      "meaning": "Stylesheet loaded from css.unknown-cdn.dev: it sees your IP/referrer and can pull fonts/images from its own servers. Seen 2 times.",
       "remediation": "self-host the asset, or document and gate the host behind consent",
       "rule": "third-party-stylesheet",
       "severity": "low",
-      "snippet": "@import url(\"https://css.unknown-cdn.dev/base.css\");",
+      "snippet": "<link rel=\"stylesheet\" href=\"https://css.unknown-cdn.dev/app.css\">",
       "title": "third-party-stylesheet: css.unknown-cdn.dev",
       "tool": "privacy"
     },
@@ -1898,8 +1898,8 @@
         {
           "count": 2,
           "doc": true,
-          "file": "web/index.html",
-          "line": 7,
+          "file": "web/consent.html",
+          "line": 5,
           "source": "static",
           "test": false,
           "value": "cdn.cookiebot.com",
@@ -1918,8 +1918,8 @@
         {
           "count": 2,
           "doc": false,
-          "file": "web/widget.tsx",
-          "line": 1,
+          "file": "web/app.js",
+          "line": 8,
           "source": "static",
           "test": false,
           "value": "cdn.unknown-cdn.dev",
