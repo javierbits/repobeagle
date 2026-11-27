@@ -1,0 +1,149 @@
+# Precision/detection corpus (R7). Pinned by SHA: a corpus change is a reviewed decision.
+# Honest cohort: popular real repositories; their per-rule finding counts and the median
+# finding count are the precision budget a rule change must not exceed (see
+# tests/corpus-baseline.json). Detection cohort: the labeled trap fixtures, which must
+# keep firing every expected rule.
+honest:
+  - slug: psf/requests
+    sha: 3c7baaa05ab4aa49cc819ce3a819d260de19c157
+  - slug: pallets/flask
+    sha: 49943b5a94413a530761350f04e896f76e8d620e
+  - slug: axios/axios
+    sha: 71c87d506567e2fe37ba9f6fae6a4fc9411583d0
+  - slug: expressjs/express
+    sha: 43fca52d28a422c8be48fd489cbd4f2d6152bab6
+  - slug: chalk/chalk
+    sha: 72110019e147683f60e13fa0ff5c14a0c27cd9fe
+  - slug: jqlang/jq
+    sha: 5c001b18d7237cce1fdba63608732163f978dd23
+  - slug: sharkdp/fd
+    sha: 2e8648f10fe55af6258ab90ab889eb8b96033379
+  - slug: BurntSushi/ripgrep
+    sha: 3e85c6c148fdce38a99ceeb9d2780dc7b03b4a4f
+  - slug: moment/moment
+    sha: c2a703a4d84aa57ee2722ff8fb4a8016279fb3c4
+  - slug: lodash/lodash
+    sha: 2b5e6f7399a7b48005140b5d5c6bc6c0e62919a8
+  - slug: sharkdp/bat
+    sha: 72505e4555dc355ac02924eb5ae73d602680cd7c
+  - slug: junegunn/fzf
+    sha: ed173e71e44b2a5fa6264ecf232a153dee6994d0
+malicious:
+  - path: tests/fixtures/trap-gha
+    expect:
+      - gha-pwn-request
+      - gha-secret-echo
+      - gha-curl-pipe-shell
+      - gha-privileged-trigger
+      - gha-write-permissions
+      - gha-unpinned-action
+    verdict: YELLOW|RED
+  - path: tests/fixtures/trap-markdown
+    expect:
+      - md-comment-instruction
+      - md-details-instruction
+      - md-alt-title-instruction
+      - md-css-hidden
+      - md-padded-line
+    verdict: YELLOW|RED
+  - path: tests/fixtures/trap-build
+    expect:
+      - go-generate-fetch
+      - rust-build-rs
+      - node-gyp-action
+      - pip-build-hook
+      - install-time-fetch
+      - make-just-hooks
+    verdict: YELLOW|RED
+  - path: tests/fixtures/trap-binary
+    expect:
+      - magic-mismatch
+      - typosquat-dep
+      - high-entropy-blob
+      - minified-outside-dist
+    verdict: YELLOW|RED
+  - path: tests/fixtures/trap-telemetry
+    expect:
+      - telemetry-session-replay
+      - telemetry-analytics
+      - telemetry-crash
+      - telemetry-apm
+      - telemetry-identify
+      - session-replay-mask
+    verdict: YELLOW|RED
+  - path: tests/fixtures/trap-privacy
+    expect:
+      - third-party-cdn
+      - insecure-endpoint
+      - cookie-write
+      - browser-storage
+      - consent-manager
+      - android-permission
+      - extension-permission
+      - cookie-flags
+      - fingerprint
+      - pii-log
+      - pii-email
+      - pii-phone
+      - pii-address
+      - pii-postcode
+      - import-time-network
+      - import-time-storage
+      - ip-logging
+      - android-feature
+      - tracking-params
+      - pii-in-url
+      - privacy-doc
+      - browser-capability
+      - macos-entitlement
+      - client-id
+      - ios-tracking
+      - ios-tracking-domain
+      - ios-api-category
+      - ios-data-type
+      - dnt-respect
+      - consent-order
+      - data-retention
+      - upload-surface
+      - upload-limit
+      - store-disclosure
+      - referrer-policy
+      - permissions-policy
+      - session-replay-mask
+      - android-cleartext
+      - android-queries
+      - form-method
+      - ios-cleartext
+      - ios-tracking-declaration
+      - tracking-cookie
+      - pii-ssn
+      - pii-card
+      - ios-purpose-string
+      - consent-mode
+      - consent-state
+      - vendor-pii
+      - extension-connectable
+      - first-party-endpoint
+      - third-party-embed
+      - third-party-form
+      - third-party-script
+      - third-party-preconnect
+      - third-party-preload
+      - third-party-stylesheet
+      - third-party-media
+      - cookie-lifetime
+      - iframe-allow
+      - extension-resource
+      - undisclosed-vendor
+      - telemetry-crash
+      - telemetry-analytics
+      - telemetry-session-replay
+      - telemetry-ads
+    verdict: YELLOW|RED
+  - path: tests/fixtures/trap-supply
+    expect:
+      - submodule-unpinned
+      - dockerfile-base-unpinned
+      - dependency-confusion
+      - submodule-uninspected
+    verdict: YELLOW|RED

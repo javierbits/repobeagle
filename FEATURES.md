@@ -1210,6 +1210,14 @@ clean environment exits 0 with the scanned count.
 
 ## Built since the backlog was written
 
+- **R7 — done.** `tools/scoreboard.py` measures per-rule precision on a SHA-pinned honest
+  cohort (`tests/corpus.yml`, 12 popular repositories) against a committed
+  `tests/corpus-baseline.json` budget (median findings + per-rule honest hits + verdicts),
+  and detection on the labeled trap-fixture cohort (every expected rule/verdict). The
+  nightly `corpus.yml` publishes the scoreboard as a job summary/artifact and fails on
+  regression; OSV/trust are disabled so runs are comparable. Offline tests cover the gate
+  and both detection failure modes.
+
 - **R4 — done.** The scanner is split into `repobeagle/{core,fetch,report,scanners,cli,
   service,app,index}.py` plus `repobeagle/rules/{agent,privacy,registry}.py`; `repobeagle.py`
   is a shim. Findings carry their `rule` id (no title surgery; `_rule_of` reads the field),

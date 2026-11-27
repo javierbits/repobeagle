@@ -152,6 +152,5 @@
     "suppressions": [],
     "target": "tests/fixtures/trap-markdown"
   },
-  "privacy_summary": {},
-  "version": "1.194.0"
+  "privacy_summary": {}
 }

@@ -1,0 +1,48 @@
+# Precision corpus (R7): nightly scoreboard over an honest cohort pinned by SHA and the
+# labeled trap-fixture detection cohort. Fails when a rule adds honest-cohort hits, a
+# verdict worsens, the honest median finding count rises, or an expected detection is lost.
+# Network is needed to clone the cohort; this is intentionally not a PR check.
+name: corpus
+on:
+  schedule:
+    - cron: "23 4 * * *"     # nightly
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: corpus
+  cancel-in-progress: true
+jobs:
+  scoreboard:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Build the pinned scanner image
+        run: docker build -t repobeagle:corpus .
+
+      - name: Scoreboard against the committed baseline
+        env:
+          BEAGLE_IMAGE: repobeagle:corpus
+          BEAGLE_MEMORY: 3g
+        run: |
+          set +e
+          python3 tools/scoreboard.py --corpus tests/corpus.yml \
+            --baseline tests/corpus-baseline.json --jobs 4 \
+            --out scoreboard.md --json scoreboard.json
+          rc=$?
+          { echo '## RepoBeagle corpus scoreboard'; cat scoreboard.md; } >> "$GITHUB_STEP_SUMMARY"
+          exit $rc
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: corpus-scoreboard
+          path: |
+            scoreboard.md
+            scoreboard.json
+          if-no-files-found: ignore
