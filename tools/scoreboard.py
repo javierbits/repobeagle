@@ -94,6 +94,21 @@ def measure(report):
     }
 
 
+def examples_from(report, repo, sha, limit=3):
+    """Up to `limit` positive example locations per rule, for `repobeagle explain <rule>`."""
+    out: dict[str, list[dict[str, object]]] = {}
+    for finding in report.get("findings") or []:
+        if not isinstance(finding, dict) or finding.get("suppressed"):
+            continue
+        rule = rb._rule_of(finding)
+        entry = {"repo": repo, "sha": sha, "file": str(finding.get("file") or ""),
+                 "line": int(finding.get("line") or 0)}
+        bucket = out.setdefault(rule, [])
+        if entry["file"] and entry not in bucket and len(bucket) < limit:
+            bucket.append(entry)
+    return out
+
+
 def scan_honest(args, entry):
     slug = str(entry.get("slug") or "")
     if slug:
@@ -106,6 +121,7 @@ def scan_honest(args, entry):
         key = "local/" + Path(target).name
     report = scan_target(args, target, ref)
     metric = measure(report)
+    metric["examples"] = examples_from(report, key, str(entry.get("sha") or "worktree"))
     if metric["error"]:
         return key, {**metric, "sha": str(entry.get("sha") or ""), "error": metric["error"]}
     if slug and metric["sha"] and metric["sha"] != str(entry["sha"]):
@@ -119,6 +135,7 @@ def scan_malicious(args, entry):
         return {"path": entry["path"], "error": report["error"], "fired": [], "missing": entry["expect"]}
     fired = sorted({rb._rule_of(f) for f in report.get("findings") or []
                     if isinstance(f, dict) and not f.get("suppressed")})
+    examples = examples_from(report, "fixture:" + str(entry["path"]), "worktree")
     verdict = str(report.get("verdict") or "?")
     missing = [rule for rule in entry["expect"] if rule not in fired]
     try:
@@ -126,7 +143,7 @@ def scan_malicious(args, entry):
     except re.error:
         verdict_ok = False
     return {"path": entry["path"], "verdict": verdict, "fired": fired, "missing": missing,
-            "verdict_ok": verdict_ok, "expected": entry["expect"]}
+            "verdict_ok": verdict_ok, "expected": entry["expect"], "examples": examples}
 
 
 def collect(args):
@@ -153,6 +170,13 @@ def collect(args):
 
 def summarize(honest, detection):
     counts = [m["findings"] for m in honest.values() if not m.get("error")]
+    examples: dict[str, list[dict[str, object]]] = {}
+    for metric in list(honest.values()) + list(detection):
+        for rule, items in (metric.get("examples") or {}).items():
+            bucket = examples.setdefault(rule, [])
+            for item in items:
+                if item not in bucket and len(bucket) < 3:
+                    bucket.append(item)
     baseline_rules: dict[str, int] = {}
     for metric in honest.values():
         for rule, hits in (metric.get("rules") or {}).items():
@@ -165,6 +189,7 @@ def summarize(honest, detection):
         "cohorts": {"honest": len(honest), "detection": len(detection)},
         "median_findings": statistics.median(counts) if counts else 0,
         "totals_by_rule": dict(sorted(baseline_rules.items())),
+        "examples": dict(sorted(examples.items())),
         "honest": dict(sorted(honest.items())),
         "detection": detection,
     }

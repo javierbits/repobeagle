@@ -1210,6 +1210,12 @@ clean environment exits 0 with the scanned count.
 
 ## Built since the backlog was written
 
+- **U17 — done.** `repobeagle explain <rule>` resolves every documented rule id from the R4
+  registry (severity, meaning, remediation, docs) and prints up to three positive examples
+  recorded by the R7 corpus as `repo@sha:file:line` with a GitHub `#L` link; sentence-style
+  known ids resolve without a documented severity, unknown ids exit 2 with suggestions.
+  Report mode is unchanged.
+
 - **U16 — done.** `verify --max-age 30d` exits 2 when the signed report is older than the
   policy (even with an unchanged HEAD), and a report without `meta.scanned_at` is stale
   under a policy; the default stays unlimited. `verify` prints the scan age, and the badge

@@ -157,7 +157,7 @@ repobeagle scan <git-url | local-dir> [--ref <branch|tag|sha>] [--since <rev>] [
                 [--baseline old.json [--baseline-min-severity medium]] [--privacy-only | --no-privacy] [--no-redact]
                 [--html out.html] [--sbom sbom.json] [--max-seconds SECONDS] [--jobs N]
 repobeagle privacy <git-url | local-dir> [same scan options]
-repobeagle explain <report.json> [--accept RULE...] [--target green|yellow] [--write [--ignore-file FILE] [--reason TEXT]]
+repobeagle explain <report.json | RULE> [--accept RULE...] [--target green|yellow] [--write [--ignore-file FILE] [--reason TEXT]]
 repobeagle diff <old.json> <new.json> [--min-severity medium] [--json out.json]
 repobeagle trend <github-repo | report-dir | report.json...> [--branch BRANCH] [--limit N] [--json out.json]
 repobeagle serve [--host HOST] [--port PORT] [--cache DIR] [--root DIR] [--ip-budget N] [--repo-budget N] [--concurrency N] [--sign [--key FILE]] [scan flags]
@@ -194,6 +194,8 @@ planner:
   after the plan: YELLOW  (remaining findings: critical 0, high 2, medium 4)
   target yellow: reached
 ```
+
+`repobeagle explain <rule>` teaches a rule id: severity range, meaning, the mechanical remediation when one exists, and up to three positive examples recorded by the R7 corpus as `repo@sha:file:line` with a GitHub link pinned to that line (`#L<line>`). Every documented rule id resolves from the R4 registry (sentence-style checks resolve too, without a documented severity); an unknown id exits 2 with close matches. Examples come from `tests/corpus-baseline.json`, so no scan or network is needed. `explain <report.json>` keeps its report mode.
 
 `repobeagle diff` compares two reports and classifies what the change added or removed, matching on rule id + file so line moves and re-indentation are not counts as changes. It exits 1 when an added finding is at or above `--min-severity` (default `medium`), which is the gate to use in CI: keep yesterday's report, scan the PR, and fail only on *new* findings. Like `explain`, it never re-scans. `scan --baseline old.json --baseline-min-severity high` does the scan and the same gate in one command: it exits 1 only when the scan added a finding at/above the threshold, and the verdict exit code is deliberately not used in that mode. `--baseline-min-severity` is separate from `--min-severity`, which only controls printing.
 `repobeagle trend` reads the per-SHA reports that `scan.yml` already publishes (`report-<sha>.json` on the badge branch) and turns them into a verdict and rule history: ordered verdicts, first RED, per-rule regressions (a rule that appears after a report without it), the current streak, and the reason each malformed or incomparable report was skipped. A local directory of `report-*.json` or explicit report files needs no network; a GitHub slug lists the badge-branch commits (GitHub API, honors `BEAGLE_GITHUB_TOKEN`/`GITHUB_TOKEN`) and fetches the reports those commits name. Reports whose `meta.ruleset` or `version` differs from the newest report are skipped, because their rule ids are not comparable. `--json` emits the same ordered series for charts; no scan is re-run.

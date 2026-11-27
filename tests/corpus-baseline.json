@@ -1,8 +1,8 @@
 {
   "tool": "repobeagle-scoreboard",
-  "tool_version": "1.195.0",
+  "tool_version": "1.198.0",
   "ruleset": "92559dde022f",
-  "generated_at": "2026-11-27T04:24:00Z",
+  "generated_at": "2026-11-27T06:16:01Z",
   "cohorts": {
     "honest": 12,
     "detection": 7
@@ -85,6 +85,2018 @@
     "upload-limit": 11,
     "upload-surface": 11
   },
+  "examples": {
+    "Archive in repo": [
+      {
+        "repo": "BurntSushi/ripgrep",
+        "sha": "3e85c6c148fdce38a99ceeb9d2780dc7b03b4a4f",
+        "file": "tests/data/sherlock.bz2",
+        "line": 0
+      },
+      {
+        "repo": "BurntSushi/ripgrep",
+        "sha": "3e85c6c148fdce38a99ceeb9d2780dc7b03b4a4f",
+        "file": "tests/data/sherlock.gz",
+        "line": 0
+      },
+      {
+        "repo": "BurntSushi/ripgrep",
+        "sha": "3e85c6c148fdce38a99ceeb9d2780dc7b03b4a4f",
+        "file": "tests/data/sherlock.xz",
+        "line": 0
+      }
+    ],
+    "Bandit B101": [
+      {
+        "repo": "pallets/flask",
+        "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+        "file": "examples/javascript/tests/test_js_example.py",
+        "line": 16
+      },
+      {
+        "repo": "pallets/flask",
+        "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+        "file": "examples/javascript/tests/test_js_example.py",
+        "line": 27
+      },
+      {
+        "repo": "pallets/flask",
+        "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+        "file": "examples/tutorial/tests/test_auth.py",
+        "line": 10
+      }
+    ],
+    "Bandit B102": [
+      {
+        "repo": "pallets/flask",
+        "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+        "file": "src/flask/config.py",
+        "line": 209
+      }
+    ],
+    "Bandit B105": [
+      {
+        "repo": "pallets/flask",
+        "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+        "file": "examples/tutorial/tests/test_auth.py",
+        "line": 13
+      },
+      {
+        "repo": "pallets/flask",
+        "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+        "file": "src/flask/app.py",
+        "line": 209
+      },
+      {
+        "repo": "pallets/flask",
+        "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+        "file": "src/flask/app.py",
+        "line": 210
+      }
+    ],
+    "Bandit B106": [
+      {
+        "repo": "pallets/flask",
+        "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+        "file": "examples/tutorial/flaskr/__init__.py",
+        "line": 11
+      },
+      {
+        "repo": "pallets/flask",
+        "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+        "file": "tests/conftest.py",
+        "line": 32
+      },
+      {
+        "repo": "pallets/flask",
+        "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+        "file": "tests/test_config.py",
+        "line": 120
+      }
+    ],
+    "Bandit B107": [
+      {
+        "repo": "pallets/flask",
+        "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+        "file": "examples/tutorial/tests/conftest.py",
+        "line": 51
+      }
+    ],
+    "Bandit B110": [
+      {
+        "repo": "pallets/flask",
+        "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+        "file": "src/flask/config.py",
+        "line": 163
+      },
+      {
+        "repo": "pallets/flask",
+        "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+        "file": "tests/test_appctx.py",
+        "line": 66
+      },
+      {
+        "repo": "pallets/flask",
+        "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+        "file": "tests/test_appctx.py",
+        "line": 85
+      }
+    ],
+    "Bandit B113": [
+      {
+        "repo": "psf/requests",
+        "sha": "3c7baaa05ab4aa49cc819ce3a819d260de19c157",
+        "file": "tests/test_lowlevel.py",
+        "line": 32
+      },
+      {
+        "repo": "psf/requests",
+        "sha": "3c7baaa05ab4aa49cc819ce3a819d260de19c157",
+        "file": "tests/test_lowlevel.py",
+        "line": 59
+      },
+      {
+        "repo": "psf/requests",
+        "sha": "3c7baaa05ab4aa49cc819ce3a819d260de19c157",
+        "file": "tests/test_lowlevel.py",
+        "line": 73
+      }
+    ],
+    "Bandit B201": [
+      {
+        "repo": "pallets/flask",
+        "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+        "file": "tests/test_basic.py",
+        "line": 1902
+      },
+      {
+        "repo": "pallets/flask",
+        "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+        "file": "tests/test_templating.py",
+        "line": 484
+      }
+    ],
+    "Bandit B301": [
+      {
+        "repo": "psf/requests",
+        "sha": "3c7baaa05ab4aa49cc819ce3a819d260de19c157",
+        "file": "tests/test_requests.py",
+        "line": 1550
+      },
+      {
+        "repo": "psf/requests",
+        "sha": "3c7baaa05ab4aa49cc819ce3a819d260de19c157",
+        "file": "tests/test_requests.py",
+        "line": 1554
+      },
+      {
+        "repo": "psf/requests",
+        "sha": "3c7baaa05ab4aa49cc819ce3a819d260de19c157",
+        "file": "tests/test_requests.py",
+        "line": 1562
+      }
+    ],
+    "Bandit B306": [
+      {
+        "repo": "sharkdp/bat",
+        "sha": "72505e4555dc355ac02924eb5ae73d602680cd7c",
+        "file": "tests/benchmarks/highlighting-speed-src/numpy_test_multiarray.py",
+        "line": 4647
+      }
+    ],
+    "Bandit B307": [
+      {
+        "repo": "pallets/flask",
+        "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+        "file": "src/flask/cli.py",
+        "line": 1022
+      },
+      {
+        "repo": "sharkdp/bat",
+        "sha": "72505e4555dc355ac02924eb5ae73d602680cd7c",
+        "file": "tests/benchmarks/highlighting-speed-src/numpy_test_multiarray.py",
+        "line": 1315
+      },
+      {
+        "repo": "sharkdp/bat",
+        "sha": "72505e4555dc355ac02924eb5ae73d602680cd7c",
+        "file": "tests/benchmarks/highlighting-speed-src/numpy_test_multiarray.py",
+        "line": 3424
+      }
+    ],
+    "Bandit B310": [
+      {
+        "repo": "fixture:tests/fixtures/trap-build",
+        "sha": "worktree",
+        "file": "hatch_build.py",
+        "line": 2
+      }
+    ],
+    "Bandit B324": [
+      {
+        "repo": "pallets/flask",
+        "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+        "file": "src/flask/sessions.py",
+        "line": 281
+      }
+    ],
+    "Bandit B403": [
+      {
+        "repo": "psf/requests",
+        "sha": "3c7baaa05ab4aa49cc819ce3a819d260de19c157",
+        "file": "tests/test_requests.py",
+        "line": 8
+      },
+      {
+        "repo": "sharkdp/bat",
+        "sha": "72505e4555dc355ac02924eb5ae73d602680cd7c",
+        "file": "tests/benchmarks/highlighting-speed-src/numpy_test_multiarray.py",
+        "line": 151
+      }
+    ],
+    "Bandit B404": [
+      {
+        "repo": "sharkdp/bat",
+        "sha": "72505e4555dc355ac02924eb5ae73d602680cd7c",
+        "file": "tests/scripts/find-slow-to-highlight-files.py",
+        "line": 18
+      },
+      {
+        "repo": "sharkdp/bat",
+        "sha": "72505e4555dc355ac02924eb5ae73d602680cd7c",
+        "file": "tests/snapshots/generate_snapshots.py",
+        "line": 4
+      },
+      {
+        "repo": "sharkdp/bat",
+        "sha": "72505e4555dc355ac02924eb5ae73d602680cd7c",
+        "file": "tests/syntax-tests/create_highlighted_versions.py",
+        "line": 3
+      }
+    ],
+    "Bandit B603": [
+      {
+        "repo": "sharkdp/bat",
+        "sha": "72505e4555dc355ac02924eb5ae73d602680cd7c",
+        "file": "tests/scripts/find-slow-to-highlight-files.py",
+        "line": 35
+      },
+      {
+        "repo": "sharkdp/bat",
+        "sha": "72505e4555dc355ac02924eb5ae73d602680cd7c",
+        "file": "tests/scripts/find-slow-to-highlight-files.py",
+        "line": 54
+      },
+      {
+        "repo": "sharkdp/bat",
+        "sha": "72505e4555dc355ac02924eb5ae73d602680cd7c",
+        "file": "tests/scripts/find-slow-to-highlight-files.py",
+        "line": 62
+      }
+    ],
+    "Bandit B607": [
+      {
+        "repo": "sharkdp/bat",
+        "sha": "72505e4555dc355ac02924eb5ae73d602680cd7c",
+        "file": "tests/scripts/find-slow-to-highlight-files.py",
+        "line": 35
+      },
+      {
+        "repo": "sharkdp/bat",
+        "sha": "72505e4555dc355ac02924eb5ae73d602680cd7c",
+        "file": "tests/scripts/find-slow-to-highlight-files.py",
+        "line": 54
+      },
+      {
+        "repo": "sharkdp/bat",
+        "sha": "72505e4555dc355ac02924eb5ae73d602680cd7c",
+        "file": "tests/scripts/find-slow-to-highlight-files.py",
+        "line": 62
+      }
+    ],
+    "Bandit B704": [
+      {
+        "repo": "pallets/flask",
+        "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+        "file": "src/flask/json/tag.py",
+        "line": 188
+      },
+      {
+        "repo": "pallets/flask",
+        "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+        "file": "tests/test_templating.py",
+        "line": 77
+      },
+      {
+        "repo": "pallets/flask",
+        "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+        "file": "tests/test_templating.py",
+        "line": 97
+      }
+    ],
+    "Code reads .env": [
+      {
+        "repo": "sharkdp/bat",
+        "sha": "72505e4555dc355ac02924eb5ae73d602680cd7c",
+        "file": "tests/integration_tests.rs",
+        "line": 4766
+      },
+      {
+        "repo": "sharkdp/bat",
+        "sha": "72505e4555dc355ac02924eb5ae73d602680cd7c",
+        "file": "tests/integration_tests.rs",
+        "line": 4767
+      },
+      {
+        "repo": "sharkdp/bat",
+        "sha": "72505e4555dc355ac02924eb5ae73d602680cd7c",
+        "file": "tests/integration_tests.rs",
+        "line": 4775
+      }
+    ],
+    "Code reads sensitive credential files": [
+      {
+        "repo": "psf/requests",
+        "sha": "3c7baaa05ab4aa49cc819ce3a819d260de19c157",
+        "file": "tests/test_utils.py",
+        "line": 158
+      },
+      {
+        "repo": "psf/requests",
+        "sha": "3c7baaa05ab4aa49cc819ce3a819d260de19c157",
+        "file": "tests/test_utils.py",
+        "line": 166
+      },
+      {
+        "repo": "psf/requests",
+        "sha": "3c7baaa05ab4aa49cc819ce3a819d260de19c157",
+        "file": "tests/test_utils.py",
+        "line": 175
+      }
+    ],
+    "Coverage-low": [
+      {
+        "repo": "psf/requests",
+        "sha": "3c7baaa05ab4aa49cc819ce3a819d260de19c157",
+        "file": "(repo)",
+        "line": 0
+      },
+      {
+        "repo": "chalk/chalk",
+        "sha": "72110019e147683f60e13fa0ff5c14a0c27cd9fe",
+        "file": "(repo)",
+        "line": 0
+      },
+      {
+        "repo": "jqlang/jq",
+        "sha": "5c001b18d7237cce1fdba63608732163f978dd23",
+        "file": "(repo)",
+        "line": 0
+      }
+    ],
+    "Dev container auto-runs 'onCreateCommand'": [
+      {
+        "repo": "pallets/flask",
+        "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+        "file": ".devcontainer/devcontainer.json",
+        "line": 16
+      }
+    ],
+    "Dev container auto-runs 'postCreateCommand'": [
+      {
+        "repo": "axios/axios",
+        "sha": "71c87d506567e2fe37ba9f6fae6a4fc9411583d0",
+        "file": ".devcontainer/devcontainer.json",
+        "line": 7
+      }
+    ],
+    "Download-and-execute": [
+      {
+        "repo": "fixture:tests/fixtures/trap-build",
+        "sha": "worktree",
+        "file": "binding.gyp",
+        "line": 1
+      },
+      {
+        "repo": "fixture:tests/fixtures/trap-build",
+        "sha": "worktree",
+        "file": "build.rs",
+        "line": 2
+      },
+      {
+        "repo": "fixture:tests/fixtures/trap-build",
+        "sha": "worktree",
+        "file": "cmd/gen.go",
+        "line": 3
+      }
+    ],
+    "Git hook configuration": [
+      {
+        "repo": "pallets/flask",
+        "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+        "file": ".pre-commit-config.yaml",
+        "line": 1
+      },
+      {
+        "repo": "psf/requests",
+        "sha": "3c7baaa05ab4aa49cc819ce3a819d260de19c157",
+        "file": ".pre-commit-config.yaml",
+        "line": 1
+      },
+      {
+        "repo": "axios/axios",
+        "sha": "71c87d506567e2fe37ba9f6fae6a4fc9411583d0",
+        "file": ".husky/commit-msg",
+        "line": 1
+      }
+    ],
+    "GuardDog npm package": [
+      {
+        "repo": "expressjs/express",
+        "sha": "43fca52d28a422c8be48fd489cbd4f2d6152bab6",
+        "file": "examples/markdown/index.js",
+        "line": 18
+      },
+      {
+        "repo": "expressjs/express",
+        "sha": "43fca52d28a422c8be48fd489cbd4f2d6152bab6",
+        "file": "examples/view-constructor/github-view.js",
+        "line": 45
+      },
+      {
+        "repo": "expressjs/express",
+        "sha": "43fca52d28a422c8be48fd489cbd4f2d6152bab6",
+        "file": "lib/application.js",
+        "line": 135
+      }
+    ],
+    "GuardDog pypi package": [
+      {
+        "repo": "pallets/flask",
+        "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+        "file": "src/flask/cli.py",
+        "line": 735
+      },
+      {
+        "repo": "pallets/flask",
+        "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+        "file": "src/flask/cli.py",
+        "line": 748
+      },
+      {
+        "repo": "pallets/flask",
+        "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+        "file": "examples/tutorial/tests/conftest.py",
+        "line": 32
+      }
+    ],
+    "Hardcoded secret": [
+      {
+        "repo": "pallets/flask",
+        "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+        "file": "docs/tutorial/deploy.rst",
+        "line": 73
+      },
+      {
+        "repo": "pallets/flask",
+        "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+        "file": "docs/config.rst",
+        "line": 41
+      },
+      {
+        "repo": "pallets/flask",
+        "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+        "file": "docs/config.rst",
+        "line": 513
+      }
+    ],
+    "Hidden HTML comment addressed to an AI agent": [
+      {
+        "repo": "sharkdp/bat",
+        "sha": "72505e4555dc355ac02924eb5ae73d602680cd7c",
+        "file": "README.md",
+        "line": 245
+      }
+    ],
+    "Instructions to read and send secrets/credentials to a URL": [
+      {
+        "repo": "psf/requests",
+        "sha": "3c7baaa05ab4aa49cc819ce3a819d260de19c157",
+        "file": "docs/user/quickstart.rst",
+        "line": 459
+      },
+      {
+        "repo": "axios/axios",
+        "sha": "71c87d506567e2fe37ba9f6fae6a4fc9411583d0",
+        "file": "THREATMODEL.md",
+        "line": 294
+      },
+      {
+        "repo": "axios/axios",
+        "sha": "71c87d506567e2fe37ba9f6fae6a4fc9411583d0",
+        "file": "THREATMODEL.md",
+        "line": 337
+      }
+    ],
+    "Large base64-like blob in source": [
+      {
+        "repo": "junegunn/fzf",
+        "sha": "ed173e71e44b2a5fa6264ecf232a153dee6994d0",
+        "file": "src/actiontype_string.go",
+        "line": 195
+      },
+      {
+        "repo": "junegunn/fzf",
+        "sha": "ed173e71e44b2a5fa6264ecf232a153dee6994d0",
+        "file": "src/tui/eventtype_string.go",
+        "line": 170
+      }
+    ],
+    "Prebuilt binary/compiled artifact": [
+      {
+        "repo": "sharkdp/bat",
+        "sha": "72505e4555dc355ac02924eb5ae73d602680cd7c",
+        "file": "assets/acknowledgements.bin",
+        "line": 0
+      },
+      {
+        "repo": "sharkdp/bat",
+        "sha": "72505e4555dc355ac02924eb5ae73d602680cd7c",
+        "file": "assets/syntaxes.bin",
+        "line": 0
+      },
+      {
+        "repo": "sharkdp/bat",
+        "sha": "72505e4555dc355ac02924eb5ae73d602680cd7c",
+        "file": "assets/themes.bin",
+        "line": 0
+      }
+    ],
+    "Zero-width characters": [
+      {
+        "repo": "moment/moment",
+        "sha": "c2a703a4d84aa57ee2722ff8fb4a8016279fb3c4",
+        "file": "locale/ku.js",
+        "line": 57
+      },
+      {
+        "repo": "moment/moment",
+        "sha": "c2a703a4d84aa57ee2722ff8fb4a8016279fb3c4",
+        "file": "min/locales.js",
+        "line": 7263
+      },
+      {
+        "repo": "moment/moment",
+        "sha": "c2a703a4d84aa57ee2722ff8fb4a8016279fb3c4",
+        "file": "min/moment-with-locales.js",
+        "line": 13170
+      }
+    ],
+    "android-cleartext": [
+      {
+        "repo": "fixture:tests/fixtures/trap-privacy",
+        "sha": "worktree",
+        "file": "network_security_config.xml",
+        "line": 3
+      },
+      {
+        "repo": "fixture:tests/fixtures/trap-privacy",
+        "sha": "worktree",
+        "file": "AndroidManifest.xml",
+        "line": 10
+      }
+    ],
+    "android-feature": [
+      {
+        "repo": "fixture:tests/fixtures/trap-privacy",
+        "sha": "worktree",
+        "file": "AndroidManifest.xml",
+        "line": 6
+      }
+    ],
+    "android-permission": [
+      {
+        "repo": "fixture:tests/fixtures/trap-privacy",
+        "sha": "worktree",
+        "file": "AndroidManifest.xml",
+        "line": 3
+      },
+      {
+        "repo": "fixture:tests/fixtures/trap-privacy",
+        "sha": "worktree",
+        "file": "AndroidManifest.xml",
+        "line": 4
+      },
+      {
+        "repo": "fixture:tests/fixtures/trap-privacy",
+        "sha": "worktree",
+        "file": "AndroidManifest.xml",
+        "line": 8
+      }
+    ],
+    "android-queries": [
+      {
+        "repo": "fixture:tests/fixtures/trap-privacy",
+        "sha": "worktree",
+        "file": "AndroidManifest.xml",
+        "line": 14
+      },
+      {
+        "repo": "fixture:tests/fixtures/trap-privacy",
+        "sha": "worktree",
+        "file": "AndroidManifest.xml",
+        "line": 12
+      }
+    ],
+    "browser-capability": [
+      {
+        "repo": "lodash/lodash",
+        "sha": "2b5e6f7399a7b48005140b5d5c6bc6c0e62919a8",
+        "file": "vendor/backbone/backbone.js",
+        "line": 1693
+      },
+      {
+        "repo": "fixture:tests/fixtures/trap-privacy",
+        "sha": "worktree",
+        "file": "web/analytics.js",
+        "line": 6
+      },
+      {
+        "repo": "fixture:tests/fixtures/trap-privacy",
+        "sha": "worktree",
+        "file": "web/analytics.js",
+        "line": 7
+      }
+    ],
+    "browser-storage": [
+      {
+        "repo": "axios/axios",
+        "sha": "71c87d506567e2fe37ba9f6fae6a4fc9411583d0",
+        "file": "examples/postMultipartFormData/index.html",
+        "line": 457
+      },
+      {
+        "repo": "lodash/lodash",
+        "sha": "2b5e6f7399a7b48005140b5d5c6bc6c0e62919a8",
+        "file": "vendor/firebug-lite/src/firebug-lite-debug.js",
+        "line": 10935
+      },
+      {
+        "repo": "fixture:tests/fixtures/trap-privacy",
+        "sha": "worktree",
+        "file": "web/analytics.js",
+        "line": 8
+      }
+    ],
+    "c-unbounded-string-copy": [
+      {
+        "repo": "jqlang/jq",
+        "sha": "5c001b18d7237cce1fdba63608732163f978dd23",
+        "file": "src/compile.c",
+        "line": 378
+      },
+      {
+        "repo": "jqlang/jq",
+        "sha": "5c001b18d7237cce1fdba63608732163f978dd23",
+        "file": "src/compile.c",
+        "line": 379
+      },
+      {
+        "repo": "jqlang/jq",
+        "sha": "5c001b18d7237cce1fdba63608732163f978dd23",
+        "file": "src/compile.c",
+        "line": 387
+      }
+    ],
+    "client-id": [
+      {
+        "repo": "fixture:tests/fixtures/trap-privacy",
+        "sha": "worktree",
+        "file": "web/analytics.js",
+        "line": 8
+      }
+    ],
+    "consent-gating": [
+      {
+        "repo": "fixture:tests/fixtures/trap-telemetry",
+        "sha": "worktree",
+        "file": "(repo)",
+        "line": 0
+      }
+    ],
+    "consent-manager": [
+      {
+        "repo": "fixture:tests/fixtures/trap-privacy",
+        "sha": "worktree",
+        "file": "web/consent.html",
+        "line": 5
+      },
+      {
+        "repo": "fixture:tests/fixtures/trap-privacy",
+        "sha": "worktree",
+        "file": "web/index.html",
+        "line": 30
+      },
+      {
+        "repo": "fixture:tests/fixtures/trap-privacy",
+        "sha": "worktree",
+        "file": "web/analytics.js",
+        "line": 20
+      }
+    ],
+    "consent-mode": [
+      {
+        "repo": "fixture:tests/fixtures/trap-privacy",
+        "sha": "worktree",
+        "file": "web/analytics.js",
+        "line": 19
+      }
+    ],
+    "consent-order": [
+      {
+        "repo": "fixture:tests/fixtures/trap-privacy",
+        "sha": "worktree",
+        "file": "web/analytics.js",
+        "line": 4
+      },
+      {
+        "repo": "fixture:tests/fixtures/trap-privacy",
+        "sha": "worktree",
+        "file": "web/analytics.js",
+        "line": 19
+      }
+    ],
+    "consent-state": [
+      {
+        "repo": "fixture:tests/fixtures/trap-privacy",
+        "sha": "worktree",
+        "file": "web/analytics.js",
+        "line": 20
+      },
+      {
+        "repo": "fixture:tests/fixtures/trap-privacy",
+        "sha": "worktree",
+        "file": "web/app.js",
+        "line": 18
+      }
+    ],
+    "cookie-flags": [
+      {
+        "repo": "expressjs/express",
+        "sha": "43fca52d28a422c8be48fd489cbd4f2d6152bab6",
+        "file": "lib/response.js",
+        "line": 778
+      },
+      {
+        "repo": "expressjs/express",
+        "sha": "43fca52d28a422c8be48fd489cbd4f2d6152bab6",
+        "file": "lib/response.js",
+        "line": 626
+      },
+      {
+        "repo": "expressjs/express",
+        "sha": "43fca52d28a422c8be48fd489cbd4f2d6152bab6",
+        "file": "examples/cookies/index.js",
+        "line": 43
+      }
+    ],
+    "cookie-lifetime": [
+      {
+        "repo": "expressjs/express",
+        "sha": "43fca52d28a422c8be48fd489cbd4f2d6152bab6",
+        "file": "test/res.cookie.js",
+        "line": 111
+      },
+      {
+        "repo": "expressjs/express",
+        "sha": "43fca52d28a422c8be48fd489cbd4f2d6152bab6",
+        "file": "test/res.clearCookie.js",
+        "line": 17
+      },
+      {
+        "repo": "expressjs/express",
+        "sha": "43fca52d28a422c8be48fd489cbd4f2d6152bab6",
+        "file": "examples/cookies/index.js",
+        "line": 43
+      }
+    ],
+    "cookie-write": [
+      {
+        "repo": "axios/axios",
+        "sha": "71c87d506567e2fe37ba9f6fae6a4fc9411583d0",
+        "file": "lib/helpers/cookies.js",
+        "line": 36
+      },
+      {
+        "repo": "lodash/lodash",
+        "sha": "2b5e6f7399a7b48005140b5d5c6bc6c0e62919a8",
+        "file": "vendor/firebug-lite/src/firebug-lite-debug.js",
+        "line": 5997
+      },
+      {
+        "repo": "fixture:tests/fixtures/trap-privacy",
+        "sha": "worktree",
+        "file": "web/analytics.js",
+        "line": 4
+      }
+    ],
+    "data-retention": [
+      {
+        "repo": "expressjs/express",
+        "sha": "43fca52d28a422c8be48fd489cbd4f2d6152bab6",
+        "file": ".github/workflows/ci.yml",
+        "line": 87
+      },
+      {
+        "repo": "pallets/flask",
+        "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+        "file": "(repo)",
+        "line": 0
+      },
+      {
+        "repo": "psf/requests",
+        "sha": "3c7baaa05ab4aa49cc819ce3a819d260de19c157",
+        "file": ".github/workflows/publish.yml",
+        "line": 50
+      }
+    ],
+    "dependency-confusion": [
+      {
+        "repo": "axios/axios",
+        "sha": "71c87d506567e2fe37ba9f6fae6a4fc9411583d0",
+        "file": "docs/package.json",
+        "line": 27
+      },
+      {
+        "repo": "fixture:tests/fixtures/trap-supply",
+        "sha": "worktree",
+        "file": "package.json",
+        "line": 5
+      },
+      {
+        "repo": "fixture:tests/fixtures/trap-supply",
+        "sha": "worktree",
+        "file": "requirements.txt",
+        "line": 1
+      }
+    ],
+    "dnt-respect": [
+      {
+        "repo": "axios/axios",
+        "sha": "71c87d506567e2fe37ba9f6fae6a4fc9411583d0",
+        "file": "(repo)",
+        "line": 0
+      },
+      {
+        "repo": "fixture:tests/fixtures/trap-privacy",
+        "sha": "worktree",
+        "file": "(repo)",
+        "line": 0
+      },
+      {
+        "repo": "fixture:tests/fixtures/trap-telemetry",
+        "sha": "worktree",
+        "file": "(repo)",
+        "line": 0
+      }
+    ],
+    "dockerfile-base-unpinned": [
+      {
+        "repo": "fixture:tests/fixtures/trap-supply",
+        "sha": "worktree",
+        "file": "Dockerfile",
+        "line": 1
+      }
+    ],
+    "extension-connectable": [
+      {
+        "repo": "fixture:tests/fixtures/trap-privacy",
+        "sha": "worktree",
+        "file": "extension/manifest.json",
+        "line": 42
+      }
+    ],
+    "extension-permission": [
+      {
+        "repo": "fixture:tests/fixtures/trap-privacy",
+        "sha": "worktree",
+        "file": "extension/manifest.json",
+        "line": 10
+      },
+      {
+        "repo": "fixture:tests/fixtures/trap-privacy",
+        "sha": "worktree",
+        "file": "extension/manifest.json",
+        "line": 5
+      },
+      {
+        "repo": "fixture:tests/fixtures/trap-privacy",
+        "sha": "worktree",
+        "file": "extension/manifest.json",
+        "line": 6
+      }
+    ],
+    "extension-resource": [
+      {
+        "repo": "fixture:tests/fixtures/trap-privacy",
+        "sha": "worktree",
+        "file": "extension/manifest.json",
+        "line": 31
+      }
+    ],
+    "external-endpoint": [
+      {
+        "repo": "expressjs/express",
+        "sha": "43fca52d28a422c8be48fd489cbd4f2d6152bab6",
+        "file": "package.json",
+        "line": 20
+      },
+      {
+        "repo": "expressjs/express",
+        "sha": "43fca52d28a422c8be48fd489cbd4f2d6152bab6",
+        "file": "examples/web-service/index.js",
+        "line": 54
+      },
+      {
+        "repo": "expressjs/express",
+        "sha": "43fca52d28a422c8be48fd489cbd4f2d6152bab6",
+        "file": "test/res.location.js",
+        "line": 40
+      }
+    ],
+    "fingerprint": [
+      {
+        "repo": "axios/axios",
+        "sha": "71c87d506567e2fe37ba9f6fae6a4fc9411583d0",
+        "file": "examples/abort-controller/index.html",
+        "line": 131
+      },
+      {
+        "repo": "chalk/chalk",
+        "sha": "72110019e147683f60e13fa0ff5c14a0c27cd9fe",
+        "file": "source/vendor/supports-color/browser.js",
+        "line": 6
+      },
+      {
+        "repo": "lodash/lodash",
+        "sha": "2b5e6f7399a7b48005140b5d5c6bc6c0e62919a8",
+        "file": "vendor/firebug-lite/src/firebug-lite-debug.js",
+        "line": 7457
+      }
+    ],
+    "first-party-endpoint": [
+      {
+        "repo": "expressjs/express",
+        "sha": "43fca52d28a422c8be48fd489cbd4f2d6152bab6",
+        "file": "package.json",
+        "line": 17
+      },
+      {
+        "repo": "axios/axios",
+        "sha": "71c87d506567e2fe37ba9f6fae6a4fc9411583d0",
+        "file": "gulpfile.js",
+        "line": 19
+      },
+      {
+        "repo": "axios/axios",
+        "sha": "71c87d506567e2fe37ba9f6fae6a4fc9411583d0",
+        "file": "package.json",
+        "line": 101
+      }
+    ],
+    "form-method": [
+      {
+        "repo": "fixture:tests/fixtures/trap-privacy",
+        "sha": "worktree",
+        "file": "web/index.html",
+        "line": 56
+      }
+    ],
+    "gha-curl-pipe-shell": [
+      {
+        "repo": "fixture:tests/fixtures/trap-gha",
+        "sha": "worktree",
+        "file": ".github/workflows/ci.yml",
+        "line": 14
+      }
+    ],
+    "gha-privileged-trigger": [
+      {
+        "repo": "junegunn/fzf",
+        "sha": "ed173e71e44b2a5fa6264ecf232a153dee6994d0",
+        "file": ".github/workflows/labeler.yml",
+        "line": 4
+      },
+      {
+        "repo": "fixture:tests/fixtures/trap-gha",
+        "sha": "worktree",
+        "file": ".github/workflows/after.yml",
+        "line": 3
+      }
+    ],
+    "gha-pwn-request": [
+      {
+        "repo": "fixture:tests/fixtures/trap-gha",
+        "sha": "worktree",
+        "file": ".github/workflows/ci.yml",
+        "line": 12
+      }
+    ],
+    "gha-secret-echo": [
+      {
+        "repo": "fixture:tests/fixtures/trap-gha",
+        "sha": "worktree",
+        "file": ".github/workflows/ci.yml",
+        "line": 13
+      }
+    ],
+    "gha-unpinned-action": [
+      {
+        "repo": "chalk/chalk",
+        "sha": "72110019e147683f60e13fa0ff5c14a0c27cd9fe",
+        "file": ".github/workflows/main.yml",
+        "line": 16
+      },
+      {
+        "repo": "sharkdp/fd",
+        "sha": "2e8648f10fe55af6258ab90ab889eb8b96033379",
+        "file": ".github/workflows/CICD.yml",
+        "line": 24
+      },
+      {
+        "repo": "jqlang/jq",
+        "sha": "5c001b18d7237cce1fdba63608732163f978dd23",
+        "file": ".github/workflows/bsd.yml",
+        "line": 17
+      }
+    ],
+    "gha-write-permissions": [
+      {
+        "repo": "expressjs/express",
+        "sha": "43fca52d28a422c8be48fd489cbd4f2d6152bab6",
+        "file": ".github/workflows/npm-publish.yml",
+        "line": 21
+      },
+      {
+        "repo": "expressjs/express",
+        "sha": "43fca52d28a422c8be48fd489cbd4f2d6152bab6",
+        "file": ".github/workflows/scorecard.yml",
+        "line": 28
+      },
+      {
+        "repo": "pallets/flask",
+        "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+        "file": ".github/workflows/lock.yaml",
+        "line": 19
+      }
+    ],
+    "go-generate-fetch": [
+      {
+        "repo": "fixture:tests/fixtures/trap-build",
+        "sha": "worktree",
+        "file": "cmd/gen.go",
+        "line": 3
+      }
+    ],
+    "high-entropy-blob": [
+      {
+        "repo": "fixture:tests/fixtures/trap-binary",
+        "sha": "worktree",
+        "file": "src/loader.js",
+        "line": 1
+      }
+    ],
+    "iframe-allow": [
+      {
+        "repo": "fixture:tests/fixtures/trap-privacy",
+        "sha": "worktree",
+        "file": "web/index.html",
+        "line": 61
+      },
+      {
+        "repo": "fixture:tests/fixtures/trap-privacy",
+        "sha": "worktree",
+        "file": "web/index.html",
+        "line": 41
+      },
+      {
+        "repo": "fixture:tests/fixtures/trap-privacy",
+        "sha": "worktree",
+        "file": "web/index.html",
+        "line": 18
+      }
+    ],
+    "import-time-network": [
+      {
+        "repo": "axios/axios",
+        "sha": "71c87d506567e2fe37ba9f6fae6a4fc9411583d0",
+        "file": "rollup.config.js",
+        "line": 16
+      },
+      {
+        "repo": "fixture:tests/fixtures/trap-build",
+        "sha": "worktree",
+        "file": "hatch_build.py",
+        "line": 2
+      },
+      {
+        "repo": "fixture:tests/fixtures/trap-privacy",
+        "sha": "worktree",
+        "file": "server.py",
+        "line": 3
+      }
+    ],
+    "import-time-storage": [
+      {
+        "repo": "fixture:tests/fixtures/trap-privacy",
+        "sha": "worktree",
+        "file": "web/analytics.js",
+        "line": 4
+      }
+    ],
+    "insecure-endpoint": [
+      {
+        "repo": "expressjs/express",
+        "sha": "43fca52d28a422c8be48fd489cbd4f2d6152bab6",
+        "file": "test/res.links.js",
+        "line": 13
+      },
+      {
+        "repo": "expressjs/express",
+        "sha": "43fca52d28a422c8be48fd489cbd4f2d6152bab6",
+        "file": "test/req.get.js",
+        "line": 32
+      },
+      {
+        "repo": "expressjs/express",
+        "sha": "43fca52d28a422c8be48fd489cbd4f2d6152bab6",
+        "file": "test/res.location.js",
+        "line": 14
+      }
+    ],
+    "install-time-fetch": [
+      {
+        "repo": "fixture:tests/fixtures/trap-build",
+        "sha": "worktree",
+        "file": "hatch_build.py",
+        "line": 1
+      },
+      {
+        "repo": "fixture:tests/fixtures/trap-build",
+        "sha": "worktree",
+        "file": "hatch_build.py",
+        "line": 2
+      },
+      {
+        "repo": "fixture:tests/fixtures/trap-build",
+        "sha": "worktree",
+        "file": "setup.cfg",
+        "line": 3
+      }
+    ],
+    "ios-api-category": [
+      {
+        "repo": "fixture:tests/fixtures/trap-privacy",
+        "sha": "worktree",
+        "file": "ios/PrivacyInfo.xcprivacy",
+        "line": 8
+      }
+    ],
+    "ios-cleartext": [
+      {
+        "repo": "fixture:tests/fixtures/trap-privacy",
+        "sha": "worktree",
+        "file": "ios/Info.plist",
+        "line": 10
+      }
+    ],
+    "ios-data-type": [
+      {
+        "repo": "fixture:tests/fixtures/trap-privacy",
+        "sha": "worktree",
+        "file": "ios/PrivacyInfo.xcprivacy",
+        "line": 1
+      }
+    ],
+    "ios-purpose-string": [
+      {
+        "repo": "fixture:tests/fixtures/trap-privacy",
+        "sha": "worktree",
+        "file": "ios/Info.plist",
+        "line": 4
+      },
+      {
+        "repo": "fixture:tests/fixtures/trap-privacy",
+        "sha": "worktree",
+        "file": "ios/Info.plist",
+        "line": 6
+      }
+    ],
+    "ios-tracking": [
+      {
+        "repo": "fixture:tests/fixtures/trap-privacy",
+        "sha": "worktree",
+        "file": "ios/PrivacyInfo.xcprivacy",
+        "line": 4
+      }
+    ],
+    "ios-tracking-declaration": [
+      {
+        "repo": "fixture:tests/fixtures/trap-privacy",
+        "sha": "worktree",
+        "file": "(repo)",
+        "line": 0
+      }
+    ],
+    "ios-tracking-domain": [
+      {
+        "repo": "fixture:tests/fixtures/trap-privacy",
+        "sha": "worktree",
+        "file": "ios/PrivacyInfo.xcprivacy",
+        "line": 14
+      }
+    ],
+    "ip-logging": [
+      {
+        "repo": "sharkdp/bat",
+        "sha": "72505e4555dc355ac02924eb5ae73d602680cd7c",
+        "file": "assets/syntaxes/02_Extra/Apache.sublime-syntax",
+        "line": 202
+      },
+      {
+        "repo": "fixture:tests/fixtures/trap-privacy",
+        "sha": "worktree",
+        "file": "server.py",
+        "line": 6
+      }
+    ],
+    "macos-entitlement": [
+      {
+        "repo": "fixture:tests/fixtures/trap-privacy",
+        "sha": "worktree",
+        "file": "mac/MiaWidget.entitlements",
+        "line": 5
+      },
+      {
+        "repo": "fixture:tests/fixtures/trap-privacy",
+        "sha": "worktree",
+        "file": "mac/MiaWidget.entitlements",
+        "line": 4
+      }
+    ],
+    "magic-mismatch": [
+      {
+        "repo": "fixture:tests/fixtures/trap-binary",
+        "sha": "worktree",
+        "file": "logo.png",
+        "line": 0
+      }
+    ],
+    "make-just-hooks": [
+      {
+        "repo": "fixture:tests/fixtures/trap-build",
+        "sha": "worktree",
+        "file": "Makefile",
+        "line": 2
+      }
+    ],
+    "md-alt-title-instruction": [
+      {
+        "repo": "axios/axios",
+        "sha": "71c87d506567e2fe37ba9f6fae6a4fc9411583d0",
+        "file": "README.md",
+        "line": 380
+      },
+      {
+        "repo": "fixture:tests/fixtures/trap-markdown",
+        "sha": "worktree",
+        "file": "docs/guide.md",
+        "line": 12
+      }
+    ],
+    "md-comment-instruction": [
+      {
+        "repo": "axios/axios",
+        "sha": "71c87d506567e2fe37ba9f6fae6a4fc9411583d0",
+        "file": ".github/ISSUE_TEMPLATE.md",
+        "line": 12
+      },
+      {
+        "repo": "axios/axios",
+        "sha": "71c87d506567e2fe37ba9f6fae6a4fc9411583d0",
+        "file": ".github/ISSUE_TEMPLATE.md",
+        "line": 34
+      },
+      {
+        "repo": "axios/axios",
+        "sha": "71c87d506567e2fe37ba9f6fae6a4fc9411583d0",
+        "file": ".github/PULL_REQUEST_TEMPLATE.md",
+        "line": 1
+      }
+    ],
+    "md-css-hidden": [
+      {
+        "repo": "fixture:tests/fixtures/trap-markdown",
+        "sha": "worktree",
+        "file": "docs/guide.md",
+        "line": 14
+      }
+    ],
+    "md-details-instruction": [
+      {
+        "repo": "fixture:tests/fixtures/trap-markdown",
+        "sha": "worktree",
+        "file": "docs/guide.md",
+        "line": 7
+      }
+    ],
+    "md-padded-line": [
+      {
+        "repo": "axios/axios",
+        "sha": "71c87d506567e2fe37ba9f6fae6a4fc9411583d0",
+        "file": "README.md",
+        "line": 1488
+      },
+      {
+        "repo": "axios/axios",
+        "sha": "71c87d506567e2fe37ba9f6fae6a4fc9411583d0",
+        "file": "THREATMODEL.md",
+        "line": 89
+      },
+      {
+        "repo": "axios/axios",
+        "sha": "71c87d506567e2fe37ba9f6fae6a4fc9411583d0",
+        "file": "docs/es/pages/advanced/error-handling.md",
+        "line": 5
+      }
+    ],
+    "minified-outside-dist": [
+      {
+        "repo": "fixture:tests/fixtures/trap-binary",
+        "sha": "worktree",
+        "file": "src/helper.js",
+        "line": 1
+      }
+    ],
+    "node-gyp-action": [
+      {
+        "repo": "fixture:tests/fixtures/trap-build",
+        "sha": "worktree",
+        "file": "binding.gyp",
+        "line": 1
+      }
+    ],
+    "npm lifecycle script 'postinstall' runs automatically on install": [
+      {
+        "repo": "axios/axios",
+        "sha": "71c87d506567e2fe37ba9f6fae6a4fc9411583d0",
+        "file": "docs/package.json",
+        "line": 15
+      }
+    ],
+    "npm lifecycle script 'prepare' runs automatically on install": [
+      {
+        "repo": "axios/axios",
+        "sha": "71c87d506567e2fe37ba9f6fae6a4fc9411583d0",
+        "file": "package.json",
+        "line": 139
+      }
+    ],
+    "permissions-policy": [
+      {
+        "repo": "fixture:tests/fixtures/trap-privacy",
+        "sha": "worktree",
+        "file": "(repo)",
+        "line": 0
+      }
+    ],
+    "pii-address": [
+      {
+        "repo": "sharkdp/bat",
+        "sha": "72505e4555dc355ac02924eb5ae73d602680cd7c",
+        "file": "assets/syntaxes/02_Extra/syntax_test_tsv.tsv",
+        "line": 14
+      },
+      {
+        "repo": "sharkdp/bat",
+        "sha": "72505e4555dc355ac02924eb5ae73d602680cd7c",
+        "file": "tests/syntax-tests/highlighted/Swift/test.swift",
+        "line": 1
+      },
+      {
+        "repo": "sharkdp/bat",
+        "sha": "72505e4555dc355ac02924eb5ae73d602680cd7c",
+        "file": "tests/syntax-tests/highlighted/YAML/example.yaml",
+        "line": 1
+      }
+    ],
+    "pii-card": [
+      {
+        "repo": "fixture:tests/fixtures/trap-privacy",
+        "sha": "worktree",
+        "file": "web/analytics.js",
+        "line": 12
+      }
+    ],
+    "pii-email": [
+      {
+        "repo": "expressjs/express",
+        "sha": "43fca52d28a422c8be48fd489cbd4f2d6152bab6",
+        "file": "examples/ejs/index.js",
+        "line": 42
+      },
+      {
+        "repo": "expressjs/express",
+        "sha": "43fca52d28a422c8be48fd489cbd4f2d6152bab6",
+        "file": "examples/ejs/index.js",
+        "line": 41
+      },
+      {
+        "repo": "expressjs/express",
+        "sha": "43fca52d28a422c8be48fd489cbd4f2d6152bab6",
+        "file": "examples/ejs/index.js",
+        "line": 40
+      }
+    ],
+    "pii-in-url": [
+      {
+        "repo": "expressjs/express",
+        "sha": "43fca52d28a422c8be48fd489cbd4f2d6152bab6",
+        "file": "test/app.request.js",
+        "line": 21
+      },
+      {
+        "repo": "pallets/flask",
+        "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+        "file": "tests/test_helpers.py",
+        "line": 239
+      },
+      {
+        "repo": "pallets/flask",
+        "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+        "file": "docs/quickstart.rst",
+        "line": 150
+      }
+    ],
+    "pii-log": [
+      {
+        "repo": "expressjs/express",
+        "sha": "43fca52d28a422c8be48fd489cbd4f2d6152bab6",
+        "file": "examples/vhost/index.js",
+        "line": 38
+      },
+      {
+        "repo": "axios/axios",
+        "sha": "71c87d506567e2fe37ba9f6fae6a4fc9411583d0",
+        "file": "sandbox/server.js",
+        "line": 127
+      },
+      {
+        "repo": "axios/axios",
+        "sha": "71c87d506567e2fe37ba9f6fae6a4fc9411583d0",
+        "file": "sandbox/server.js",
+        "line": 81
+      }
+    ],
+    "pii-phone": [
+      {
+        "repo": "axios/axios",
+        "sha": "71c87d506567e2fe37ba9f6fae6a4fc9411583d0",
+        "file": "tests/unit/parseProtocol.test.js",
+        "line": 12
+      },
+      {
+        "repo": "sharkdp/fd",
+        "sha": "2e8648f10fe55af6258ab90ab889eb8b96033379",
+        "file": "src/filter/size.rs",
+        "line": 224
+      },
+      {
+        "repo": "jqlang/jq",
+        "sha": "5c001b18d7237cce1fdba63608732163f978dd23",
+        "file": "docs/content/manual/dev/manual.yml",
+        "line": 2265
+      }
+    ],
+    "pii-postcode": [
+      {
+        "repo": "fixture:tests/fixtures/trap-privacy",
+        "sha": "worktree",
+        "file": "support.js",
+        "line": 5
+      }
+    ],
+    "pii-ssn": [
+      {
+        "repo": "fixture:tests/fixtures/trap-privacy",
+        "sha": "worktree",
+        "file": "web/analytics.js",
+        "line": 13
+      }
+    ],
+    "pip-build-hook": [
+      {
+        "repo": "fixture:tests/fixtures/trap-build",
+        "sha": "worktree",
+        "file": "pyproject.toml",
+        "line": 3
+      }
+    ],
+    "privacy-doc": [
+      {
+        "repo": "expressjs/express",
+        "sha": "43fca52d28a422c8be48fd489cbd4f2d6152bab6",
+        "file": "(repo)",
+        "line": 0
+      },
+      {
+        "repo": "pallets/flask",
+        "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+        "file": "(repo)",
+        "line": 0
+      },
+      {
+        "repo": "psf/requests",
+        "sha": "3c7baaa05ab4aa49cc819ce3a819d260de19c157",
+        "file": "(repo)",
+        "line": 0
+      }
+    ],
+    "referrer-policy": [
+      {
+        "repo": "expressjs/express",
+        "sha": "43fca52d28a422c8be48fd489cbd4f2d6152bab6",
+        "file": "(repo)",
+        "line": 0
+      },
+      {
+        "repo": "pallets/flask",
+        "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+        "file": "(repo)",
+        "line": 0
+      },
+      {
+        "repo": "psf/requests",
+        "sha": "3c7baaa05ab4aa49cc819ce3a819d260de19c157",
+        "file": "(repo)",
+        "line": 0
+      }
+    ],
+    "rust-build-rs": [
+      {
+        "repo": "BurntSushi/ripgrep",
+        "sha": "3e85c6c148fdce38a99ceeb9d2780dc7b03b4a4f",
+        "file": "build.rs",
+        "line": 37
+      },
+      {
+        "repo": "fixture:tests/fixtures/trap-build",
+        "sha": "worktree",
+        "file": "build.rs",
+        "line": 2
+      }
+    ],
+    "session-replay-mask": [
+      {
+        "repo": "fixture:tests/fixtures/trap-privacy",
+        "sha": "worktree",
+        "file": "(repo)",
+        "line": 0
+      },
+      {
+        "repo": "fixture:tests/fixtures/trap-telemetry",
+        "sha": "worktree",
+        "file": "(repo)",
+        "line": 0
+      }
+    ],
+    "store-disclosure": [
+      {
+        "repo": "fixture:tests/fixtures/trap-privacy",
+        "sha": "worktree",
+        "file": "extension/manifest.json",
+        "line": 24
+      }
+    ],
+    "submodule-uninspected": [
+      {
+        "repo": "jqlang/jq",
+        "sha": "5c001b18d7237cce1fdba63608732163f978dd23",
+        "file": ".gitmodules",
+        "line": 1
+      },
+      {
+        "repo": "sharkdp/bat",
+        "sha": "72505e4555dc355ac02924eb5ae73d602680cd7c",
+        "file": ".gitmodules",
+        "line": 1
+      },
+      {
+        "repo": "fixture:tests/fixtures/trap-supply",
+        "sha": "worktree",
+        "file": ".gitmodules",
+        "line": 1
+      }
+    ],
+    "submodule-unpinned": [
+      {
+        "repo": "sharkdp/bat",
+        "sha": "72505e4555dc355ac02924eb5ae73d602680cd7c",
+        "file": ".gitmodules",
+        "line": 91
+      },
+      {
+        "repo": "sharkdp/bat",
+        "sha": "72505e4555dc355ac02924eb5ae73d602680cd7c",
+        "file": ".gitmodules",
+        "line": 131
+      },
+      {
+        "repo": "sharkdp/bat",
+        "sha": "72505e4555dc355ac02924eb5ae73d602680cd7c",
+        "file": ".gitmodules",
+        "line": 144
+      }
+    ],
+    "telemetry-ads": [
+      {
+        "repo": "fixture:tests/fixtures/trap-privacy",
+        "sha": "worktree",
+        "file": "web/app.js",
+        "line": 7
+      },
+      {
+        "repo": "fixture:tests/fixtures/trap-privacy",
+        "sha": "worktree",
+        "file": "web/analytics.js",
+        "line": 25
+      },
+      {
+        "repo": "fixture:tests/fixtures/trap-privacy",
+        "sha": "worktree",
+        "file": "web/analytics.js",
+        "line": 26
+      }
+    ],
+    "telemetry-analytics": [
+      {
+        "repo": "fixture:tests/fixtures/trap-privacy",
+        "sha": "worktree",
+        "file": "web/app.js",
+        "line": 6
+      },
+      {
+        "repo": "fixture:tests/fixtures/trap-privacy",
+        "sha": "worktree",
+        "file": "web/analytics.js",
+        "line": 19
+      },
+      {
+        "repo": "fixture:tests/fixtures/trap-privacy",
+        "sha": "worktree",
+        "file": "web/index.html",
+        "line": 17
+      }
+    ],
+    "telemetry-apm": [
+      {
+        "repo": "fixture:tests/fixtures/trap-privacy",
+        "sha": "worktree",
+        "file": "web/app.js",
+        "line": 21
+      },
+      {
+        "repo": "fixture:tests/fixtures/trap-privacy",
+        "sha": "worktree",
+        "file": "go.sum",
+        "line": 1
+      },
+      {
+        "repo": "fixture:tests/fixtures/trap-telemetry",
+        "sha": "worktree",
+        "file": "package.json",
+        "line": 5
+      }
+    ],
+    "telemetry-crash": [
+      {
+        "repo": "axios/axios",
+        "sha": "71c87d506567e2fe37ba9f6fae6a4fc9411583d0",
+        "file": "docs/data/sponsors.json",
+        "line": 163
+      },
+      {
+        "repo": "fixture:tests/fixtures/trap-privacy",
+        "sha": "worktree",
+        "file": "Cargo.toml",
+        "line": 5
+      },
+      {
+        "repo": "fixture:tests/fixtures/trap-telemetry",
+        "sha": "worktree",
+        "file": "src/app.js",
+        "line": 14
+      }
+    ],
+    "telemetry-identify": [
+      {
+        "repo": "fixture:tests/fixtures/trap-privacy",
+        "sha": "worktree",
+        "file": "web/app.js",
+        "line": 11
+      },
+      {
+        "repo": "fixture:tests/fixtures/trap-telemetry",
+        "sha": "worktree",
+        "file": "src/app.js",
+        "line": 12
+      },
+      {
+        "repo": "fixture:tests/fixtures/trap-telemetry",
+        "sha": "worktree",
+        "file": "telemetry.py",
+        "line": 8
+      }
+    ],
+    "telemetry-session-replay": [
+      {
+        "repo": "fixture:tests/fixtures/trap-privacy",
+        "sha": "worktree",
+        "file": "web/app.js",
+        "line": 20
+      },
+      {
+        "repo": "fixture:tests/fixtures/trap-privacy",
+        "sha": "worktree",
+        "file": "package-lock.json",
+        "line": 6
+      },
+      {
+        "repo": "fixture:tests/fixtures/trap-telemetry",
+        "sha": "worktree",
+        "file": "package.json",
+        "line": 7
+      }
+    ],
+    "third-party-cdn": [
+      {
+        "repo": "pallets/flask",
+        "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+        "file": "examples/javascript/js_example/templates/jquery.html",
+        "line": 10
+      },
+      {
+        "repo": "pallets/flask",
+        "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+        "file": "examples/javascript/js_example/templates/base.html",
+        "line": 3
+      },
+      {
+        "repo": "axios/axios",
+        "sha": "71c87d506567e2fe37ba9f6fae6a4fc9411583d0",
+        "file": "examples/postMultipartFormData/index.html",
+        "line": 441
+      }
+    ],
+    "third-party-embed": [
+      {
+        "repo": "fixture:tests/fixtures/trap-privacy",
+        "sha": "worktree",
+        "file": "web/index.html",
+        "line": 61
+      },
+      {
+        "repo": "fixture:tests/fixtures/trap-privacy",
+        "sha": "worktree",
+        "file": "web/index.html",
+        "line": 44
+      },
+      {
+        "repo": "fixture:tests/fixtures/trap-privacy",
+        "sha": "worktree",
+        "file": "web/index.html",
+        "line": 41
+      }
+    ],
+    "third-party-form": [
+      {
+        "repo": "fixture:tests/fixtures/trap-privacy",
+        "sha": "worktree",
+        "file": "web/index.html",
+        "line": 23
+      },
+      {
+        "repo": "fixture:tests/fixtures/trap-privacy",
+        "sha": "worktree",
+        "file": "web/index.html",
+        "line": 50
+      }
+    ],
+    "third-party-media": [
+      {
+        "repo": "axios/axios",
+        "sha": "71c87d506567e2fe37ba9f6fae6a4fc9411583d0",
+        "file": "examples/get/index.html",
+        "line": 20
+      },
+      {
+        "repo": "axios/axios",
+        "sha": "71c87d506567e2fe37ba9f6fae6a4fc9411583d0",
+        "file": "examples/get/index.html",
+        "line": 24
+      },
+      {
+        "repo": "fixture:tests/fixtures/trap-privacy",
+        "sha": "worktree",
+        "file": "web/index.html",
+        "line": 11
+      }
+    ],
+    "third-party-preconnect": [
+      {
+        "repo": "fixture:tests/fixtures/trap-privacy",
+        "sha": "worktree",
+        "file": "web/index.html",
+        "line": 4
+      }
+    ],
+    "third-party-preload": [
+      {
+        "repo": "fixture:tests/fixtures/trap-privacy",
+        "sha": "worktree",
+        "file": "web/index.html",
+        "line": 5
+      },
+      {
+        "repo": "fixture:tests/fixtures/trap-privacy",
+        "sha": "worktree",
+        "file": "web/index.html",
+        "line": 55
+      }
+    ],
+    "third-party-script": [
+      {
+        "repo": "pallets/flask",
+        "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+        "file": "examples/javascript/js_example/templates/jquery.html",
+        "line": 10
+      },
+      {
+        "repo": "axios/axios",
+        "sha": "71c87d506567e2fe37ba9f6fae6a4fc9411583d0",
+        "file": "examples/postMultipartFormData/index.html",
+        "line": 441
+      },
+      {
+        "repo": "axios/axios",
+        "sha": "71c87d506567e2fe37ba9f6fae6a4fc9411583d0",
+        "file": "examples/amd/index.html",
+        "line": 22
+      }
+    ],
+    "third-party-stylesheet": [
+      {
+        "repo": "pallets/flask",
+        "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+        "file": "examples/javascript/js_example/templates/base.html",
+        "line": 3
+      },
+      {
+        "repo": "axios/axios",
+        "sha": "71c87d506567e2fe37ba9f6fae6a4fc9411583d0",
+        "file": "examples/abort-controller/index.html",
+        "line": 6
+      },
+      {
+        "repo": "axios/axios",
+        "sha": "71c87d506567e2fe37ba9f6fae6a4fc9411583d0",
+        "file": "sandbox/client.html",
+        "line": 7
+      }
+    ],
+    "tracking-cookie": [
+      {
+        "repo": "sharkdp/bat",
+        "sha": "72505e4555dc355ac02924eb5ae73d602680cd7c",
+        "file": "assets/manual/bat.1.in",
+        "line": 62
+      },
+      {
+        "repo": "fixture:tests/fixtures/trap-privacy",
+        "sha": "worktree",
+        "file": "web/analytics.js",
+        "line": 16
+      },
+      {
+        "repo": "fixture:tests/fixtures/trap-privacy",
+        "sha": "worktree",
+        "file": "web/analytics.js",
+        "line": 11
+      }
+    ],
+    "tracking-params": [
+      {
+        "repo": "axios/axios",
+        "sha": "71c87d506567e2fe37ba9f6fae6a4fc9411583d0",
+        "file": "README.md",
+        "line": 2
+      },
+      {
+        "repo": "junegunn/fzf",
+        "sha": "ed173e71e44b2a5fa6264ecf232a153dee6994d0",
+        "file": "README.md",
+        "line": 15
+      },
+      {
+        "repo": "fixture:tests/fixtures/trap-privacy",
+        "sha": "worktree",
+        "file": "README.md",
+        "line": 3
+      }
+    ],
+    "typosquat-dep": [
+      {
+        "repo": "pallets/flask",
+        "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+        "file": "examples/tutorial/pyproject.toml",
+        "line": 2
+      },
+      {
+        "repo": "moment/moment",
+        "sha": "c2a703a4d84aa57ee2722ff8fb4a8016279fb3c4",
+        "file": "package.json",
+        "line": 63
+      },
+      {
+        "repo": "moment/moment",
+        "sha": "c2a703a4d84aa57ee2722ff8fb4a8016279fb3c4",
+        "file": "package.json",
+        "line": 64
+      }
+    ],
+    "undisclosed-vendor": [
+      {
+        "repo": "fixture:tests/fixtures/trap-privacy",
+        "sha": "worktree",
+        "file": "(repo)",
+        "line": 0
+      }
+    ],
+    "upload-limit": [
+      {
+        "repo": "expressjs/express",
+        "sha": "43fca52d28a422c8be48fd489cbd4f2d6152bab6",
+        "file": ".github/dependabot.yml",
+        "line": 18
+      },
+      {
+        "repo": "pallets/flask",
+        "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+        "file": "src/flask/app.py",
+        "line": 224
+      },
+      {
+        "repo": "psf/requests",
+        "sha": "3c7baaa05ab4aa49cc819ce3a819d260de19c157",
+        "file": "src/requests/models.py",
+        "line": 103
+      }
+    ],
+    "upload-surface": [
+      {
+        "repo": "expressjs/express",
+        "sha": "43fca52d28a422c8be48fd489cbd4f2d6152bab6",
+        "file": ".github/workflows/ci.yml",
+        "line": 82
+      },
+      {
+        "repo": "pallets/flask",
+        "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+        "file": ".github/workflows/publish.yaml",
+        "line": 13
+      },
+      {
+        "repo": "psf/requests",
+        "sha": "3c7baaa05ab4aa49cc819ce3a819d260de19c157",
+        "file": ".github/workflows/publish.yml",
+        "line": 22
+      }
+    ],
+    "vendor-pii": [
+      {
+        "repo": "fixture:tests/fixtures/trap-privacy",
+        "sha": "worktree",
+        "file": "web/app.js",
+        "line": 4
+      },
+      {
+        "repo": "fixture:tests/fixtures/trap-privacy",
+        "sha": "worktree",
+        "file": "web/app.js",
+        "line": 5
+      }
+    ]
+  },
   "honest": {
     "BurntSushi/ripgrep": {
       "verdict": "YELLOW",
@@ -113,7 +2125,187 @@
         "first-party-endpoint": 3
       },
       "sha": "3e85c6c148fdce38a99ceeb9d2780dc7b03b4a4f",
-      "error": null
+      "error": null,
+      "examples": {
+        "rust-build-rs": [
+          {
+            "repo": "BurntSushi/ripgrep",
+            "sha": "3e85c6c148fdce38a99ceeb9d2780dc7b03b4a4f",
+            "file": "build.rs",
+            "line": 37
+          }
+        ],
+        "Archive in repo": [
+          {
+            "repo": "BurntSushi/ripgrep",
+            "sha": "3e85c6c148fdce38a99ceeb9d2780dc7b03b4a4f",
+            "file": "tests/data/sherlock.bz2",
+            "line": 0
+          },
+          {
+            "repo": "BurntSushi/ripgrep",
+            "sha": "3e85c6c148fdce38a99ceeb9d2780dc7b03b4a4f",
+            "file": "tests/data/sherlock.gz",
+            "line": 0
+          },
+          {
+            "repo": "BurntSushi/ripgrep",
+            "sha": "3e85c6c148fdce38a99ceeb9d2780dc7b03b4a4f",
+            "file": "tests/data/sherlock.xz",
+            "line": 0
+          }
+        ],
+        "gha-write-permissions": [
+          {
+            "repo": "BurntSushi/ripgrep",
+            "sha": "3e85c6c148fdce38a99ceeb9d2780dc7b03b4a4f",
+            "file": ".github/workflows/ci.yml",
+            "line": 10
+          },
+          {
+            "repo": "BurntSushi/ripgrep",
+            "sha": "3e85c6c148fdce38a99ceeb9d2780dc7b03b4a4f",
+            "file": ".github/workflows/publish.yml",
+            "line": 9
+          },
+          {
+            "repo": "BurntSushi/ripgrep",
+            "sha": "3e85c6c148fdce38a99ceeb9d2780dc7b03b4a4f",
+            "file": ".github/workflows/release.yml",
+            "line": 17
+          }
+        ],
+        "gha-unpinned-action": [
+          {
+            "repo": "BurntSushi/ripgrep",
+            "sha": "3e85c6c148fdce38a99ceeb9d2780dc7b03b4a4f",
+            "file": ".github/workflows/ci.yml",
+            "line": 120
+          },
+          {
+            "repo": "BurntSushi/ripgrep",
+            "sha": "3e85c6c148fdce38a99ceeb9d2780dc7b03b4a4f",
+            "file": ".github/workflows/publish.yml",
+            "line": 11
+          },
+          {
+            "repo": "BurntSushi/ripgrep",
+            "sha": "3e85c6c148fdce38a99ceeb9d2780dc7b03b4a4f",
+            "file": ".github/workflows/release.yml",
+            "line": 29
+          }
+        ],
+        "pii-email": [
+          {
+            "repo": "BurntSushi/ripgrep",
+            "sha": "3e85c6c148fdce38a99ceeb9d2780dc7b03b4a4f",
+            "file": "crates/core/flags/doc/template.rg.1",
+            "line": 438
+          },
+          {
+            "repo": "BurntSushi/ripgrep",
+            "sha": "3e85c6c148fdce38a99ceeb9d2780dc7b03b4a4f",
+            "file": "Cargo.toml",
+            "line": 4
+          }
+        ],
+        "external-endpoint": [
+          {
+            "repo": "BurntSushi/ripgrep",
+            "sha": "3e85c6c148fdce38a99ceeb9d2780dc7b03b4a4f",
+            "file": "pkg/windows/Manifest.xml",
+            "line": 4
+          },
+          {
+            "repo": "BurntSushi/ripgrep",
+            "sha": "3e85c6c148fdce38a99ceeb9d2780dc7b03b4a4f",
+            "file": "crates/printer/src/lib.rs",
+            "line": 15
+          },
+          {
+            "repo": "BurntSushi/ripgrep",
+            "sha": "3e85c6c148fdce38a99ceeb9d2780dc7b03b4a4f",
+            "file": "crates/pcre2/src/lib.rs",
+            "line": 3
+          }
+        ],
+        "data-retention": [
+          {
+            "repo": "BurntSushi/ripgrep",
+            "sha": "3e85c6c148fdce38a99ceeb9d2780dc7b03b4a4f",
+            "file": "(repo)",
+            "line": 0
+          }
+        ],
+        "referrer-policy": [
+          {
+            "repo": "BurntSushi/ripgrep",
+            "sha": "3e85c6c148fdce38a99ceeb9d2780dc7b03b4a4f",
+            "file": "(repo)",
+            "line": 0
+          }
+        ],
+        "privacy-doc": [
+          {
+            "repo": "BurntSushi/ripgrep",
+            "sha": "3e85c6c148fdce38a99ceeb9d2780dc7b03b4a4f",
+            "file": "(repo)",
+            "line": 0
+          }
+        ],
+        "pii-in-url": [
+          {
+            "repo": "BurntSushi/ripgrep",
+            "sha": "3e85c6c148fdce38a99ceeb9d2780dc7b03b4a4f",
+            "file": "CHANGELOG.md",
+            "line": 500
+          }
+        ],
+        "upload-surface": [
+          {
+            "repo": "BurntSushi/ripgrep",
+            "sha": "3e85c6c148fdce38a99ceeb9d2780dc7b03b4a4f",
+            "file": ".github/workflows/release.yml",
+            "line": 297
+          }
+        ],
+        "upload-limit": [
+          {
+            "repo": "BurntSushi/ripgrep",
+            "sha": "3e85c6c148fdce38a99ceeb9d2780dc7b03b4a4f",
+            "file": "crates/cli/src/hostname.rs",
+            "line": 41
+          }
+        ],
+        "insecure-endpoint": [
+          {
+            "repo": "BurntSushi/ripgrep",
+            "sha": "3e85c6c148fdce38a99ceeb9d2780dc7b03b4a4f",
+            "file": "pkg/windows/Manifest.xml",
+            "line": 18
+          }
+        ],
+        "first-party-endpoint": [
+          {
+            "repo": "BurntSushi/ripgrep",
+            "sha": "3e85c6c148fdce38a99ceeb9d2780dc7b03b4a4f",
+            "file": "crates/cli/Cargo.toml",
+            "line": 8
+          },
+          {
+            "repo": "BurntSushi/ripgrep",
+            "sha": "3e85c6c148fdce38a99ceeb9d2780dc7b03b4a4f",
+            "file": ".github/ISSUE_TEMPLATE/bug_report.yml",
+            "line": 81
+          },
+          {
+            "repo": "BurntSushi/ripgrep",
+            "sha": "3e85c6c148fdce38a99ceeb9d2780dc7b03b4a4f",
+            "file": "Cargo.toml",
+            "line": 10
+          }
+        ]
+      }
     },
     "axios/axios": {
       "verdict": "YELLOW",
@@ -165,7 +2357,467 @@
         "referrer-policy": 1
       },
       "sha": "71c87d506567e2fe37ba9f6fae6a4fc9411583d0",
-      "error": null
+      "error": null,
+      "examples": {
+        "GuardDog npm package": [
+          {
+            "repo": "axios/axios",
+            "sha": "71c87d506567e2fe37ba9f6fae6a4fc9411583d0",
+            "file": "tests/unit/regression.test.js",
+            "line": 124
+          },
+          {
+            "repo": "axios/axios",
+            "sha": "71c87d506567e2fe37ba9f6fae6a4fc9411583d0",
+            "file": "tests/unit/helpers/shouldBypassProxy.test.js",
+            "line": 33
+          },
+          {
+            "repo": "axios/axios",
+            "sha": "71c87d506567e2fe37ba9f6fae6a4fc9411583d0",
+            "file": "tests/unit/helpers/shouldBypassProxy.test.js",
+            "line": 34
+          }
+        ],
+        "npm lifecycle script 'postinstall' runs automatically on install": [
+          {
+            "repo": "axios/axios",
+            "sha": "71c87d506567e2fe37ba9f6fae6a4fc9411583d0",
+            "file": "docs/package.json",
+            "line": 15
+          }
+        ],
+        "Hardcoded secret": [
+          {
+            "repo": "axios/axios",
+            "sha": "71c87d506567e2fe37ba9f6fae6a4fc9411583d0",
+            "file": "tests/unit/adapters/key.pem",
+            "line": 1
+          }
+        ],
+        "md-alt-title-instruction": [
+          {
+            "repo": "axios/axios",
+            "sha": "71c87d506567e2fe37ba9f6fae6a4fc9411583d0",
+            "file": "README.md",
+            "line": 380
+          }
+        ],
+        "md-padded-line": [
+          {
+            "repo": "axios/axios",
+            "sha": "71c87d506567e2fe37ba9f6fae6a4fc9411583d0",
+            "file": "README.md",
+            "line": 1488
+          },
+          {
+            "repo": "axios/axios",
+            "sha": "71c87d506567e2fe37ba9f6fae6a4fc9411583d0",
+            "file": "THREATMODEL.md",
+            "line": 89
+          },
+          {
+            "repo": "axios/axios",
+            "sha": "71c87d506567e2fe37ba9f6fae6a4fc9411583d0",
+            "file": "docs/es/pages/advanced/error-handling.md",
+            "line": 5
+          }
+        ],
+        "Instructions to read and send secrets/credentials to a URL": [
+          {
+            "repo": "axios/axios",
+            "sha": "71c87d506567e2fe37ba9f6fae6a4fc9411583d0",
+            "file": "THREATMODEL.md",
+            "line": 294
+          },
+          {
+            "repo": "axios/axios",
+            "sha": "71c87d506567e2fe37ba9f6fae6a4fc9411583d0",
+            "file": "THREATMODEL.md",
+            "line": 337
+          },
+          {
+            "repo": "axios/axios",
+            "sha": "71c87d506567e2fe37ba9f6fae6a4fc9411583d0",
+            "file": "THREATMODEL.md",
+            "line": 340
+          }
+        ],
+        "Dev container auto-runs 'postCreateCommand'": [
+          {
+            "repo": "axios/axios",
+            "sha": "71c87d506567e2fe37ba9f6fae6a4fc9411583d0",
+            "file": ".devcontainer/devcontainer.json",
+            "line": 7
+          }
+        ],
+        "telemetry-crash": [
+          {
+            "repo": "axios/axios",
+            "sha": "71c87d506567e2fe37ba9f6fae6a4fc9411583d0",
+            "file": "docs/data/sponsors.json",
+            "line": 163
+          }
+        ],
+        "insecure-endpoint": [
+          {
+            "repo": "axios/axios",
+            "sha": "71c87d506567e2fe37ba9f6fae6a4fc9411583d0",
+            "file": "docs/data/sponsors.json",
+            "line": 1883
+          },
+          {
+            "repo": "axios/axios",
+            "sha": "71c87d506567e2fe37ba9f6fae6a4fc9411583d0",
+            "file": "tests/unit/helpers/shouldBypassProxy.test.js",
+            "line": 533
+          },
+          {
+            "repo": "axios/axios",
+            "sha": "71c87d506567e2fe37ba9f6fae6a4fc9411583d0",
+            "file": "tests/unit/helpers/shouldBypassProxy.test.js",
+            "line": 444
+          }
+        ],
+        "npm lifecycle script 'prepare' runs automatically on install": [
+          {
+            "repo": "axios/axios",
+            "sha": "71c87d506567e2fe37ba9f6fae6a4fc9411583d0",
+            "file": "package.json",
+            "line": 139
+          }
+        ],
+        "gha-write-permissions": [
+          {
+            "repo": "axios/axios",
+            "sha": "71c87d506567e2fe37ba9f6fae6a4fc9411583d0",
+            "file": ".github/workflows/moderator.yml",
+            "line": 16
+          },
+          {
+            "repo": "axios/axios",
+            "sha": "71c87d506567e2fe37ba9f6fae6a4fc9411583d0",
+            "file": ".github/workflows/publish.yml",
+            "line": 10
+          },
+          {
+            "repo": "axios/axios",
+            "sha": "71c87d506567e2fe37ba9f6fae6a4fc9411583d0",
+            "file": ".github/workflows/release-branch.yml",
+            "line": 294
+          }
+        ],
+        "Git hook configuration": [
+          {
+            "repo": "axios/axios",
+            "sha": "71c87d506567e2fe37ba9f6fae6a4fc9411583d0",
+            "file": ".husky/commit-msg",
+            "line": 1
+          }
+        ],
+        "dependency-confusion": [
+          {
+            "repo": "axios/axios",
+            "sha": "71c87d506567e2fe37ba9f6fae6a4fc9411583d0",
+            "file": "docs/package.json",
+            "line": 27
+          }
+        ],
+        "fingerprint": [
+          {
+            "repo": "axios/axios",
+            "sha": "71c87d506567e2fe37ba9f6fae6a4fc9411583d0",
+            "file": "examples/abort-controller/index.html",
+            "line": 131
+          }
+        ],
+        "import-time-network": [
+          {
+            "repo": "axios/axios",
+            "sha": "71c87d506567e2fe37ba9f6fae6a4fc9411583d0",
+            "file": "rollup.config.js",
+            "line": 16
+          }
+        ],
+        "pii-log": [
+          {
+            "repo": "axios/axios",
+            "sha": "71c87d506567e2fe37ba9f6fae6a4fc9411583d0",
+            "file": "sandbox/server.js",
+            "line": 127
+          },
+          {
+            "repo": "axios/axios",
+            "sha": "71c87d506567e2fe37ba9f6fae6a4fc9411583d0",
+            "file": "sandbox/server.js",
+            "line": 81
+          }
+        ],
+        "pii-email": [
+          {
+            "repo": "axios/axios",
+            "sha": "71c87d506567e2fe37ba9f6fae6a4fc9411583d0",
+            "file": ".github/workflows/lockfile-lint.yml",
+            "line": 42
+          },
+          {
+            "repo": "axios/axios",
+            "sha": "71c87d506567e2fe37ba9f6fae6a4fc9411583d0",
+            "file": "CODE_OF_CONDUCT.md",
+            "line": 1
+          },
+          {
+            "repo": "axios/axios",
+            "sha": "71c87d506567e2fe37ba9f6fae6a4fc9411583d0",
+            "file": "docs/es/pages/advanced/response-schema.md",
+            "line": 1
+          }
+        ],
+        "external-endpoint": [
+          {
+            "repo": "axios/axios",
+            "sha": "71c87d506567e2fe37ba9f6fae6a4fc9411583d0",
+            "file": "examples/postMultipartFormData/index.html",
+            "line": 502
+          },
+          {
+            "repo": "axios/axios",
+            "sha": "71c87d506567e2fe37ba9f6fae6a4fc9411583d0",
+            "file": "docs/data/sponsors.json",
+            "line": 2286
+          },
+          {
+            "repo": "axios/axios",
+            "sha": "71c87d506567e2fe37ba9f6fae6a4fc9411583d0",
+            "file": "docs/data/sponsors.json",
+            "line": 4238
+          }
+        ],
+        "third-party-cdn": [
+          {
+            "repo": "axios/axios",
+            "sha": "71c87d506567e2fe37ba9f6fae6a4fc9411583d0",
+            "file": "examples/postMultipartFormData/index.html",
+            "line": 441
+          },
+          {
+            "repo": "axios/axios",
+            "sha": "71c87d506567e2fe37ba9f6fae6a4fc9411583d0",
+            "file": "examples/amd/index.html",
+            "line": 22
+          }
+        ],
+        "third-party-stylesheet": [
+          {
+            "repo": "axios/axios",
+            "sha": "71c87d506567e2fe37ba9f6fae6a4fc9411583d0",
+            "file": "examples/abort-controller/index.html",
+            "line": 6
+          },
+          {
+            "repo": "axios/axios",
+            "sha": "71c87d506567e2fe37ba9f6fae6a4fc9411583d0",
+            "file": "sandbox/client.html",
+            "line": 7
+          },
+          {
+            "repo": "axios/axios",
+            "sha": "71c87d506567e2fe37ba9f6fae6a4fc9411583d0",
+            "file": "examples/postMultipartFormData/index.html",
+            "line": 7
+          }
+        ],
+        "cookie-flags": [
+          {
+            "repo": "axios/axios",
+            "sha": "71c87d506567e2fe37ba9f6fae6a4fc9411583d0",
+            "file": "index.d.cts",
+            "line": 371
+          },
+          {
+            "repo": "axios/axios",
+            "sha": "71c87d506567e2fe37ba9f6fae6a4fc9411583d0",
+            "file": "lib/helpers/cookies.js",
+            "line": 36
+          }
+        ],
+        "cookie-write": [
+          {
+            "repo": "axios/axios",
+            "sha": "71c87d506567e2fe37ba9f6fae6a4fc9411583d0",
+            "file": "lib/helpers/cookies.js",
+            "line": 36
+          }
+        ],
+        "dnt-respect": [
+          {
+            "repo": "axios/axios",
+            "sha": "71c87d506567e2fe37ba9f6fae6a4fc9411583d0",
+            "file": "(repo)",
+            "line": 0
+          }
+        ],
+        "privacy-doc": [
+          {
+            "repo": "axios/axios",
+            "sha": "71c87d506567e2fe37ba9f6fae6a4fc9411583d0",
+            "file": "(repo)",
+            "line": 0
+          }
+        ],
+        "md-comment-instruction": [
+          {
+            "repo": "axios/axios",
+            "sha": "71c87d506567e2fe37ba9f6fae6a4fc9411583d0",
+            "file": ".github/ISSUE_TEMPLATE.md",
+            "line": 12
+          },
+          {
+            "repo": "axios/axios",
+            "sha": "71c87d506567e2fe37ba9f6fae6a4fc9411583d0",
+            "file": ".github/ISSUE_TEMPLATE.md",
+            "line": 34
+          },
+          {
+            "repo": "axios/axios",
+            "sha": "71c87d506567e2fe37ba9f6fae6a4fc9411583d0",
+            "file": ".github/PULL_REQUEST_TEMPLATE.md",
+            "line": 1
+          }
+        ],
+        "pii-phone": [
+          {
+            "repo": "axios/axios",
+            "sha": "71c87d506567e2fe37ba9f6fae6a4fc9411583d0",
+            "file": "tests/unit/parseProtocol.test.js",
+            "line": 12
+          }
+        ],
+        "pii-in-url": [
+          {
+            "repo": "axios/axios",
+            "sha": "71c87d506567e2fe37ba9f6fae6a4fc9411583d0",
+            "file": "tests/browser/instance.browser.test.js",
+            "line": 228
+          },
+          {
+            "repo": "axios/axios",
+            "sha": "71c87d506567e2fe37ba9f6fae6a4fc9411583d0",
+            "file": "docs/es/pages/advanced/promises.md",
+            "line": 88
+          }
+        ],
+        "tracking-params": [
+          {
+            "repo": "axios/axios",
+            "sha": "71c87d506567e2fe37ba9f6fae6a4fc9411583d0",
+            "file": "README.md",
+            "line": 2
+          }
+        ],
+        "data-retention": [
+          {
+            "repo": "axios/axios",
+            "sha": "71c87d506567e2fe37ba9f6fae6a4fc9411583d0",
+            "file": ".github/workflows/release-branch.yml",
+            "line": 63
+          }
+        ],
+        "upload-surface": [
+          {
+            "repo": "axios/axios",
+            "sha": "71c87d506567e2fe37ba9f6fae6a4fc9411583d0",
+            "file": "index.d.ts",
+            "line": 124
+          }
+        ],
+        "upload-limit": [
+          {
+            "repo": "axios/axios",
+            "sha": "71c87d506567e2fe37ba9f6fae6a4fc9411583d0",
+            "file": "index.d.ts",
+            "line": 366
+          }
+        ],
+        "first-party-endpoint": [
+          {
+            "repo": "axios/axios",
+            "sha": "71c87d506567e2fe37ba9f6fae6a4fc9411583d0",
+            "file": "gulpfile.js",
+            "line": 19
+          },
+          {
+            "repo": "axios/axios",
+            "sha": "71c87d506567e2fe37ba9f6fae6a4fc9411583d0",
+            "file": "package.json",
+            "line": 101
+          },
+          {
+            "repo": "axios/axios",
+            "sha": "71c87d506567e2fe37ba9f6fae6a4fc9411583d0",
+            "file": "gulpfile.js",
+            "line": 49
+          }
+        ],
+        "third-party-script": [
+          {
+            "repo": "axios/axios",
+            "sha": "71c87d506567e2fe37ba9f6fae6a4fc9411583d0",
+            "file": "examples/postMultipartFormData/index.html",
+            "line": 441
+          },
+          {
+            "repo": "axios/axios",
+            "sha": "71c87d506567e2fe37ba9f6fae6a4fc9411583d0",
+            "file": "examples/amd/index.html",
+            "line": 22
+          }
+        ],
+        "third-party-media": [
+          {
+            "repo": "axios/axios",
+            "sha": "71c87d506567e2fe37ba9f6fae6a4fc9411583d0",
+            "file": "examples/get/index.html",
+            "line": 20
+          },
+          {
+            "repo": "axios/axios",
+            "sha": "71c87d506567e2fe37ba9f6fae6a4fc9411583d0",
+            "file": "examples/get/index.html",
+            "line": 24
+          }
+        ],
+        "cookie-lifetime": [
+          {
+            "repo": "axios/axios",
+            "sha": "71c87d506567e2fe37ba9f6fae6a4fc9411583d0",
+            "file": "tests/browser/baseURLResolution.browser.test.js",
+            "line": 28
+          },
+          {
+            "repo": "axios/axios",
+            "sha": "71c87d506567e2fe37ba9f6fae6a4fc9411583d0",
+            "file": "index.d.cts",
+            "line": 371
+          }
+        ],
+        "browser-storage": [
+          {
+            "repo": "axios/axios",
+            "sha": "71c87d506567e2fe37ba9f6fae6a4fc9411583d0",
+            "file": "examples/postMultipartFormData/index.html",
+            "line": 457
+          }
+        ],
+        "referrer-policy": [
+          {
+            "repo": "axios/axios",
+            "sha": "71c87d506567e2fe37ba9f6fae6a4fc9411583d0",
+            "file": "docs/.vitepress/theme/LogoCard.vue",
+            "line": 81
+          }
+        ]
+      }
     },
     "chalk/chalk": {
       "verdict": "GREEN",
@@ -189,7 +2841,99 @@
         "pii-email": 2
       },
       "sha": "72110019e147683f60e13fa0ff5c14a0c27cd9fe",
-      "error": null
+      "error": null,
+      "examples": {
+        "GuardDog npm package": [
+          {
+            "repo": "chalk/chalk",
+            "sha": "72110019e147683f60e13fa0ff5c14a0c27cd9fe",
+            "file": "source/vendor/ansi-styles/index.js",
+            "line": 174
+          }
+        ],
+        "gha-unpinned-action": [
+          {
+            "repo": "chalk/chalk",
+            "sha": "72110019e147683f60e13fa0ff5c14a0c27cd9fe",
+            "file": ".github/workflows/main.yml",
+            "line": 16
+          }
+        ],
+        "fingerprint": [
+          {
+            "repo": "chalk/chalk",
+            "sha": "72110019e147683f60e13fa0ff5c14a0c27cd9fe",
+            "file": "source/vendor/supports-color/browser.js",
+            "line": 6
+          }
+        ],
+        "external-endpoint": [
+          {
+            "repo": "chalk/chalk",
+            "sha": "72110019e147683f60e13fa0ff5c14a0c27cd9fe",
+            "file": "source/index.d.ts",
+            "line": 81
+          },
+          {
+            "repo": "chalk/chalk",
+            "sha": "72110019e147683f60e13fa0ff5c14a0c27cd9fe",
+            "file": ".github/funding.yml",
+            "line": 4
+          },
+          {
+            "repo": "chalk/chalk",
+            "sha": "72110019e147683f60e13fa0ff5c14a0c27cd9fe",
+            "file": "package.json",
+            "line": 7
+          }
+        ],
+        "data-retention": [
+          {
+            "repo": "chalk/chalk",
+            "sha": "72110019e147683f60e13fa0ff5c14a0c27cd9fe",
+            "file": "(repo)",
+            "line": 0
+          }
+        ],
+        "referrer-policy": [
+          {
+            "repo": "chalk/chalk",
+            "sha": "72110019e147683f60e13fa0ff5c14a0c27cd9fe",
+            "file": "(repo)",
+            "line": 0
+          }
+        ],
+        "privacy-doc": [
+          {
+            "repo": "chalk/chalk",
+            "sha": "72110019e147683f60e13fa0ff5c14a0c27cd9fe",
+            "file": "(repo)",
+            "line": 0
+          }
+        ],
+        "Coverage-low": [
+          {
+            "repo": "chalk/chalk",
+            "sha": "72110019e147683f60e13fa0ff5c14a0c27cd9fe",
+            "file": "(repo)",
+            "line": 0
+          }
+        ],
+        "pii-email": [
+          {
+            "repo": "chalk/chalk",
+            "sha": "72110019e147683f60e13fa0ff5c14a0c27cd9fe",
+            "file": "code-of-conduct.md",
+            "line": 1
+          },
+          {
+            "repo": "chalk/chalk",
+            "sha": "72110019e147683f60e13fa0ff5c14a0c27cd9fe",
+            "file": "license",
+            "line": 1
+          }
+        ]
+      }
     },
     "expressjs/express": {
       "verdict": "GREEN",
@@ -219,7 +2963,207 @@
         "cookie-lifetime": 3
       },
       "sha": "43fca52d28a422c8be48fd489cbd4f2d6152bab6",
-      "error": null
+      "error": null,
+      "examples": {
+        "GuardDog npm package": [
+          {
+            "repo": "expressjs/express",
+            "sha": "43fca52d28a422c8be48fd489cbd4f2d6152bab6",
+            "file": "examples/markdown/index.js",
+            "line": 18
+          },
+          {
+            "repo": "expressjs/express",
+            "sha": "43fca52d28a422c8be48fd489cbd4f2d6152bab6",
+            "file": "examples/view-constructor/github-view.js",
+            "line": 45
+          },
+          {
+            "repo": "expressjs/express",
+            "sha": "43fca52d28a422c8be48fd489cbd4f2d6152bab6",
+            "file": "lib/application.js",
+            "line": 135
+          }
+        ],
+        "gha-write-permissions": [
+          {
+            "repo": "expressjs/express",
+            "sha": "43fca52d28a422c8be48fd489cbd4f2d6152bab6",
+            "file": ".github/workflows/npm-publish.yml",
+            "line": 21
+          },
+          {
+            "repo": "expressjs/express",
+            "sha": "43fca52d28a422c8be48fd489cbd4f2d6152bab6",
+            "file": ".github/workflows/scorecard.yml",
+            "line": 28
+          }
+        ],
+        "pii-log": [
+          {
+            "repo": "expressjs/express",
+            "sha": "43fca52d28a422c8be48fd489cbd4f2d6152bab6",
+            "file": "examples/vhost/index.js",
+            "line": 38
+          }
+        ],
+        "pii-email": [
+          {
+            "repo": "expressjs/express",
+            "sha": "43fca52d28a422c8be48fd489cbd4f2d6152bab6",
+            "file": "examples/ejs/index.js",
+            "line": 42
+          },
+          {
+            "repo": "expressjs/express",
+            "sha": "43fca52d28a422c8be48fd489cbd4f2d6152bab6",
+            "file": "examples/ejs/index.js",
+            "line": 41
+          },
+          {
+            "repo": "expressjs/express",
+            "sha": "43fca52d28a422c8be48fd489cbd4f2d6152bab6",
+            "file": "examples/ejs/index.js",
+            "line": 40
+          }
+        ],
+        "external-endpoint": [
+          {
+            "repo": "expressjs/express",
+            "sha": "43fca52d28a422c8be48fd489cbd4f2d6152bab6",
+            "file": "package.json",
+            "line": 20
+          },
+          {
+            "repo": "expressjs/express",
+            "sha": "43fca52d28a422c8be48fd489cbd4f2d6152bab6",
+            "file": "examples/web-service/index.js",
+            "line": 54
+          },
+          {
+            "repo": "expressjs/express",
+            "sha": "43fca52d28a422c8be48fd489cbd4f2d6152bab6",
+            "file": "test/res.location.js",
+            "line": 40
+          }
+        ],
+        "cookie-flags": [
+          {
+            "repo": "expressjs/express",
+            "sha": "43fca52d28a422c8be48fd489cbd4f2d6152bab6",
+            "file": "lib/response.js",
+            "line": 778
+          },
+          {
+            "repo": "expressjs/express",
+            "sha": "43fca52d28a422c8be48fd489cbd4f2d6152bab6",
+            "file": "lib/response.js",
+            "line": 626
+          },
+          {
+            "repo": "expressjs/express",
+            "sha": "43fca52d28a422c8be48fd489cbd4f2d6152bab6",
+            "file": "examples/cookies/index.js",
+            "line": 43
+          }
+        ],
+        "referrer-policy": [
+          {
+            "repo": "expressjs/express",
+            "sha": "43fca52d28a422c8be48fd489cbd4f2d6152bab6",
+            "file": "(repo)",
+            "line": 0
+          }
+        ],
+        "privacy-doc": [
+          {
+            "repo": "expressjs/express",
+            "sha": "43fca52d28a422c8be48fd489cbd4f2d6152bab6",
+            "file": "(repo)",
+            "line": 0
+          }
+        ],
+        "pii-in-url": [
+          {
+            "repo": "expressjs/express",
+            "sha": "43fca52d28a422c8be48fd489cbd4f2d6152bab6",
+            "file": "test/app.request.js",
+            "line": 21
+          }
+        ],
+        "data-retention": [
+          {
+            "repo": "expressjs/express",
+            "sha": "43fca52d28a422c8be48fd489cbd4f2d6152bab6",
+            "file": ".github/workflows/ci.yml",
+            "line": 87
+          }
+        ],
+        "upload-surface": [
+          {
+            "repo": "expressjs/express",
+            "sha": "43fca52d28a422c8be48fd489cbd4f2d6152bab6",
+            "file": ".github/workflows/ci.yml",
+            "line": 82
+          }
+        ],
+        "upload-limit": [
+          {
+            "repo": "expressjs/express",
+            "sha": "43fca52d28a422c8be48fd489cbd4f2d6152bab6",
+            "file": ".github/dependabot.yml",
+            "line": 18
+          }
+        ],
+        "insecure-endpoint": [
+          {
+            "repo": "expressjs/express",
+            "sha": "43fca52d28a422c8be48fd489cbd4f2d6152bab6",
+            "file": "test/res.links.js",
+            "line": 13
+          },
+          {
+            "repo": "expressjs/express",
+            "sha": "43fca52d28a422c8be48fd489cbd4f2d6152bab6",
+            "file": "test/req.get.js",
+            "line": 32
+          },
+          {
+            "repo": "expressjs/express",
+            "sha": "43fca52d28a422c8be48fd489cbd4f2d6152bab6",
+            "file": "test/res.location.js",
+            "line": 14
+          }
+        ],
+        "first-party-endpoint": [
+          {
+            "repo": "expressjs/express",
+            "sha": "43fca52d28a422c8be48fd489cbd4f2d6152bab6",
+            "file": "package.json",
+            "line": 17
+          }
+        ],
+        "cookie-lifetime": [
+          {
+            "repo": "expressjs/express",
+            "sha": "43fca52d28a422c8be48fd489cbd4f2d6152bab6",
+            "file": "test/res.cookie.js",
+            "line": 111
+          },
+          {
+            "repo": "expressjs/express",
+            "sha": "43fca52d28a422c8be48fd489cbd4f2d6152bab6",
+            "file": "test/res.clearCookie.js",
+            "line": 17
+          },
+          {
+            "repo": "expressjs/express",
+            "sha": "43fca52d28a422c8be48fd489cbd4f2d6152bab6",
+            "file": "examples/cookies/index.js",
+            "line": 43
+          }
+        ]
+      }
     },
     "jqlang/jq": {
       "verdict": "YELLOW",
@@ -249,7 +3193,213 @@
         "external-endpoint": 17
       },
       "sha": "5c001b18d7237cce1fdba63608732163f978dd23",
-      "error": null
+      "error": null,
+      "examples": {
+        "c-unbounded-string-copy": [
+          {
+            "repo": "jqlang/jq",
+            "sha": "5c001b18d7237cce1fdba63608732163f978dd23",
+            "file": "src/compile.c",
+            "line": 378
+          },
+          {
+            "repo": "jqlang/jq",
+            "sha": "5c001b18d7237cce1fdba63608732163f978dd23",
+            "file": "src/compile.c",
+            "line": 379
+          },
+          {
+            "repo": "jqlang/jq",
+            "sha": "5c001b18d7237cce1fdba63608732163f978dd23",
+            "file": "src/compile.c",
+            "line": 387
+          }
+        ],
+        "Bandit B704": [
+          {
+            "repo": "jqlang/jq",
+            "sha": "5c001b18d7237cce1fdba63608732163f978dd23",
+            "file": "docs/build_website.py",
+            "line": 36
+          },
+          {
+            "repo": "jqlang/jq",
+            "sha": "5c001b18d7237cce1fdba63608732163f978dd23",
+            "file": "docs/build_website.py",
+            "line": 38
+          }
+        ],
+        "gha-unpinned-action": [
+          {
+            "repo": "jqlang/jq",
+            "sha": "5c001b18d7237cce1fdba63608732163f978dd23",
+            "file": ".github/workflows/bsd.yml",
+            "line": 17
+          },
+          {
+            "repo": "jqlang/jq",
+            "sha": "5c001b18d7237cce1fdba63608732163f978dd23",
+            "file": ".github/workflows/ci.yml",
+            "line": 81
+          },
+          {
+            "repo": "jqlang/jq",
+            "sha": "5c001b18d7237cce1fdba63608732163f978dd23",
+            "file": ".github/workflows/decnum.yml",
+            "line": 13
+          }
+        ],
+        "gha-write-permissions": [
+          {
+            "repo": "jqlang/jq",
+            "sha": "5c001b18d7237cce1fdba63608732163f978dd23",
+            "file": ".github/workflows/ci.yml",
+            "line": 302
+          },
+          {
+            "repo": "jqlang/jq",
+            "sha": "5c001b18d7237cce1fdba63608732163f978dd23",
+            "file": ".github/workflows/ci.yml",
+            "line": 306
+          },
+          {
+            "repo": "jqlang/jq",
+            "sha": "5c001b18d7237cce1fdba63608732163f978dd23",
+            "file": ".github/workflows/ci.yml",
+            "line": 377
+          }
+        ],
+        "pii-log": [
+          {
+            "repo": "jqlang/jq",
+            "sha": "5c001b18d7237cce1fdba63608732163f978dd23",
+            "file": "docs/templates/default.html.j2",
+            "line": 20
+          }
+        ],
+        "pii-email": [
+          {
+            "repo": "jqlang/jq",
+            "sha": "5c001b18d7237cce1fdba63608732163f978dd23",
+            "file": "ChangeLog",
+            "line": 837
+          },
+          {
+            "repo": "jqlang/jq",
+            "sha": "5c001b18d7237cce1fdba63608732163f978dd23",
+            "file": "ChangeLog",
+            "line": 1149
+          },
+          {
+            "repo": "jqlang/jq",
+            "sha": "5c001b18d7237cce1fdba63608732163f978dd23",
+            "file": "ChangeLog",
+            "line": 135
+          }
+        ],
+        "pii-phone": [
+          {
+            "repo": "jqlang/jq",
+            "sha": "5c001b18d7237cce1fdba63608732163f978dd23",
+            "file": "docs/content/manual/dev/manual.yml",
+            "line": 2265
+          },
+          {
+            "repo": "jqlang/jq",
+            "sha": "5c001b18d7237cce1fdba63608732163f978dd23",
+            "file": "vendor/decNumber/decNumber.c",
+            "line": 3745
+          },
+          {
+            "repo": "jqlang/jq",
+            "sha": "5c001b18d7237cce1fdba63608732163f978dd23",
+            "file": "tests/jq.test",
+            "line": 2046
+          }
+        ],
+        "upload-limit": [
+          {
+            "repo": "jqlang/jq",
+            "sha": "5c001b18d7237cce1fdba63608732163f978dd23",
+            "file": "(repo)",
+            "line": 0
+          }
+        ],
+        "referrer-policy": [
+          {
+            "repo": "jqlang/jq",
+            "sha": "5c001b18d7237cce1fdba63608732163f978dd23",
+            "file": "(repo)",
+            "line": 0
+          }
+        ],
+        "privacy-doc": [
+          {
+            "repo": "jqlang/jq",
+            "sha": "5c001b18d7237cce1fdba63608732163f978dd23",
+            "file": "(repo)",
+            "line": 0
+          }
+        ],
+        "Coverage-low": [
+          {
+            "repo": "jqlang/jq",
+            "sha": "5c001b18d7237cce1fdba63608732163f978dd23",
+            "file": "(repo)",
+            "line": 0
+          }
+        ],
+        "submodule-uninspected": [
+          {
+            "repo": "jqlang/jq",
+            "sha": "5c001b18d7237cce1fdba63608732163f978dd23",
+            "file": ".gitmodules",
+            "line": 1
+          }
+        ],
+        "data-retention": [
+          {
+            "repo": "jqlang/jq",
+            "sha": "5c001b18d7237cce1fdba63608732163f978dd23",
+            "file": "KEYS",
+            "line": 5
+          },
+          {
+            "repo": "jqlang/jq",
+            "sha": "5c001b18d7237cce1fdba63608732163f978dd23",
+            "file": ".github/workflows/bsd.yml",
+            "line": 43
+          }
+        ],
+        "upload-surface": [
+          {
+            "repo": "jqlang/jq",
+            "sha": "5c001b18d7237cce1fdba63608732163f978dd23",
+            "file": ".github/workflows/bsd.yml",
+            "line": 38
+          }
+        ],
+        "external-endpoint": [
+          {
+            "repo": "jqlang/jq",
+            "sha": "5c001b18d7237cce1fdba63608732163f978dd23",
+            "file": "docs/content/tutorial/default.yml",
+            "line": 41
+          },
+          {
+            "repo": "jqlang/jq",
+            "sha": "5c001b18d7237cce1fdba63608732163f978dd23",
+            "file": "docs/content/download/default.yml",
+            "line": 330
+          },
+          {
+            "repo": "jqlang/jq",
+            "sha": "5c001b18d7237cce1fdba63608732163f978dd23",
+            "file": "docs/content/download/default.yml",
+            "line": 328
+          }
+        ]
+      }
     },
     "junegunn/fzf": {
       "verdict": "YELLOW",
@@ -277,7 +3427,167 @@
         "upload-limit": 1
       },
       "sha": "ed173e71e44b2a5fa6264ecf232a153dee6994d0",
-      "error": null
+      "error": null,
+      "examples": {
+        "Code reads sensitive credential files": [
+          {
+            "repo": "junegunn/fzf",
+            "sha": "ed173e71e44b2a5fa6264ecf232a153dee6994d0",
+            "file": "shell/completion.bash",
+            "line": 559
+          },
+          {
+            "repo": "junegunn/fzf",
+            "sha": "ed173e71e44b2a5fa6264ecf232a153dee6994d0",
+            "file": "shell/completion.bash",
+            "line": 569
+          },
+          {
+            "repo": "junegunn/fzf",
+            "sha": "ed173e71e44b2a5fa6264ecf232a153dee6994d0",
+            "file": "shell/completion.zsh",
+            "line": 290
+          }
+        ],
+        "gha-privileged-trigger": [
+          {
+            "repo": "junegunn/fzf",
+            "sha": "ed173e71e44b2a5fa6264ecf232a153dee6994d0",
+            "file": ".github/workflows/labeler.yml",
+            "line": 4
+          }
+        ],
+        "Large base64-like blob in source": [
+          {
+            "repo": "junegunn/fzf",
+            "sha": "ed173e71e44b2a5fa6264ecf232a153dee6994d0",
+            "file": "src/actiontype_string.go",
+            "line": 195
+          },
+          {
+            "repo": "junegunn/fzf",
+            "sha": "ed173e71e44b2a5fa6264ecf232a153dee6994d0",
+            "file": "src/tui/eventtype_string.go",
+            "line": 170
+          }
+        ],
+        "gha-unpinned-action": [
+          {
+            "repo": "junegunn/fzf",
+            "sha": "ed173e71e44b2a5fa6264ecf232a153dee6994d0",
+            "file": ".github/workflows/codeql-analysis.yml",
+            "line": 30
+          },
+          {
+            "repo": "junegunn/fzf",
+            "sha": "ed173e71e44b2a5fa6264ecf232a153dee6994d0",
+            "file": ".github/workflows/depsreview.yaml",
+            "line": 12
+          },
+          {
+            "repo": "junegunn/fzf",
+            "sha": "ed173e71e44b2a5fa6264ecf232a153dee6994d0",
+            "file": ".github/workflows/linux.yml",
+            "line": 21
+          }
+        ],
+        "gha-write-permissions": [
+          {
+            "repo": "junegunn/fzf",
+            "sha": "ed173e71e44b2a5fa6264ecf232a153dee6994d0",
+            "file": ".github/workflows/labeler.yml",
+            "line": 9
+          },
+          {
+            "repo": "junegunn/fzf",
+            "sha": "ed173e71e44b2a5fa6264ecf232a153dee6994d0",
+            "file": ".github/workflows/release.yml",
+            "line": 15
+          }
+        ],
+        "pii-email": [
+          {
+            "repo": "junegunn/fzf",
+            "sha": "ed173e71e44b2a5fa6264ecf232a153dee6994d0",
+            "file": "man/man1/fzf.1",
+            "line": 2433
+          },
+          {
+            "repo": "junegunn/fzf",
+            "sha": "ed173e71e44b2a5fa6264ecf232a153dee6994d0",
+            "file": ".goreleaser.yml",
+            "line": 104
+          }
+        ],
+        "external-endpoint": [
+          {
+            "repo": "junegunn/fzf",
+            "sha": "ed173e71e44b2a5fa6264ecf232a153dee6994d0",
+            "file": "Dockerfile",
+            "line": 8
+          },
+          {
+            "repo": "junegunn/fzf",
+            "sha": "ed173e71e44b2a5fa6264ecf232a153dee6994d0",
+            "file": "src/terminal_test.go",
+            "line": 418
+          },
+          {
+            "repo": "junegunn/fzf",
+            "sha": "ed173e71e44b2a5fa6264ecf232a153dee6994d0",
+            "file": ".goreleaser.yml",
+            "line": 103
+          }
+        ],
+        "data-retention": [
+          {
+            "repo": "junegunn/fzf",
+            "sha": "ed173e71e44b2a5fa6264ecf232a153dee6994d0",
+            "file": "(repo)",
+            "line": 0
+          }
+        ],
+        "referrer-policy": [
+          {
+            "repo": "junegunn/fzf",
+            "sha": "ed173e71e44b2a5fa6264ecf232a153dee6994d0",
+            "file": "(repo)",
+            "line": 0
+          }
+        ],
+        "privacy-doc": [
+          {
+            "repo": "junegunn/fzf",
+            "sha": "ed173e71e44b2a5fa6264ecf232a153dee6994d0",
+            "file": "(repo)",
+            "line": 0
+          }
+        ],
+        "tracking-params": [
+          {
+            "repo": "junegunn/fzf",
+            "sha": "ed173e71e44b2a5fa6264ecf232a153dee6994d0",
+            "file": "README.md",
+            "line": 15
+          }
+        ],
+        "upload-surface": [
+          {
+            "repo": "junegunn/fzf",
+            "sha": "ed173e71e44b2a5fa6264ecf232a153dee6994d0",
+            "file": ".github/workflows/release.yml",
+            "line": 81
+          }
+        ],
+        "upload-limit": [
+          {
+            "repo": "junegunn/fzf",
+            "sha": "ed173e71e44b2a5fa6264ecf232a153dee6994d0",
+            "file": "src/server.go",
+            "line": 37
+          }
+        ]
+      }
     },
     "lodash/lodash": {
       "verdict": "YELLOW",
@@ -308,7 +3618,191 @@
         "browser-storage": 1
       },
       "sha": "2b5e6f7399a7b48005140b5d5c6bc6c0e62919a8",
-      "error": null
+      "error": null,
+      "examples": {
+        "GuardDog npm package": [
+          {
+            "repo": "lodash/lodash",
+            "sha": "2b5e6f7399a7b48005140b5d5c6bc6c0e62919a8",
+            "file": "firebug-lite-debug.js",
+            "line": 22880
+          },
+          {
+            "repo": "lodash/lodash",
+            "sha": "2b5e6f7399a7b48005140b5d5c6bc6c0e62919a8",
+            "file": "firebug-lite-debug.js",
+            "line": 489
+          },
+          {
+            "repo": "lodash/lodash",
+            "sha": "2b5e6f7399a7b48005140b5d5c6bc6c0e62919a8",
+            "file": "vendor/backbone/test/router.js",
+            "line": 1052
+          }
+        ],
+        "fingerprint": [
+          {
+            "repo": "lodash/lodash",
+            "sha": "2b5e6f7399a7b48005140b5d5c6bc6c0e62919a8",
+            "file": "vendor/firebug-lite/src/firebug-lite-debug.js",
+            "line": 7457
+          },
+          {
+            "repo": "lodash/lodash",
+            "sha": "2b5e6f7399a7b48005140b5d5c6bc6c0e62919a8",
+            "file": "vendor/firebug-lite/src/firebug-lite-debug.js",
+            "line": 9563
+          },
+          {
+            "repo": "lodash/lodash",
+            "sha": "2b5e6f7399a7b48005140b5d5c6bc6c0e62919a8",
+            "file": "vendor/firebug-lite/src/firebug-lite-debug.js",
+            "line": 30950
+          }
+        ],
+        "gha-write-permissions": [
+          {
+            "repo": "lodash/lodash",
+            "sha": "2b5e6f7399a7b48005140b5d5c6bc6c0e62919a8",
+            "file": ".github/workflows/scorecards.yml",
+            "line": 24
+          }
+        ],
+        "pii-email": [
+          {
+            "repo": "lodash/lodash",
+            "sha": "2b5e6f7399a7b48005140b5d5c6bc6c0e62919a8",
+            "file": ".github/workflows/ci-node.yml",
+            "line": 53
+          },
+          {
+            "repo": "lodash/lodash",
+            "sha": "2b5e6f7399a7b48005140b5d5c6bc6c0e62919a8",
+            "file": "SECURITY.md",
+            "line": 1
+          }
+        ],
+        "browser-capability": [
+          {
+            "repo": "lodash/lodash",
+            "sha": "2b5e6f7399a7b48005140b5d5c6bc6c0e62919a8",
+            "file": "vendor/backbone/backbone.js",
+            "line": 1693
+          }
+        ],
+        "insecure-endpoint": [
+          {
+            "repo": "lodash/lodash",
+            "sha": "2b5e6f7399a7b48005140b5d5c6bc6c0e62919a8",
+            "file": "vendor/firebug-lite/src/firebug-lite-debug.js",
+            "line": 9952
+          },
+          {
+            "repo": "lodash/lodash",
+            "sha": "2b5e6f7399a7b48005140b5d5c6bc6c0e62919a8",
+            "file": "vendor/firebug-lite/src/firebug-lite-debug.js",
+            "line": 17179
+          },
+          {
+            "repo": "lodash/lodash",
+            "sha": "2b5e6f7399a7b48005140b5d5c6bc6c0e62919a8",
+            "file": "vendor/firebug-lite/src/firebug-lite-debug.js",
+            "line": 33
+          }
+        ],
+        "external-endpoint": [
+          {
+            "repo": "lodash/lodash",
+            "sha": "2b5e6f7399a7b48005140b5d5c6bc6c0e62919a8",
+            "file": "vendor/firebug-lite/src/firebug-lite-debug.js",
+            "line": 17148
+          },
+          {
+            "repo": "lodash/lodash",
+            "sha": "2b5e6f7399a7b48005140b5d5c6bc6c0e62919a8",
+            "file": "renovate.json",
+            "line": 2
+          },
+          {
+            "repo": "lodash/lodash",
+            "sha": "2b5e6f7399a7b48005140b5d5c6bc6c0e62919a8",
+            "file": "lib/main/build-doc.js",
+            "line": 20
+          }
+        ],
+        "cookie-flags": [
+          {
+            "repo": "lodash/lodash",
+            "sha": "2b5e6f7399a7b48005140b5d5c6bc6c0e62919a8",
+            "file": "vendor/firebug-lite/src/firebug-lite-debug.js",
+            "line": 5997
+          }
+        ],
+        "cookie-write": [
+          {
+            "repo": "lodash/lodash",
+            "sha": "2b5e6f7399a7b48005140b5d5c6bc6c0e62919a8",
+            "file": "vendor/firebug-lite/src/firebug-lite-debug.js",
+            "line": 5997
+          }
+        ],
+        "referrer-policy": [
+          {
+            "repo": "lodash/lodash",
+            "sha": "2b5e6f7399a7b48005140b5d5c6bc6c0e62919a8",
+            "file": "(repo)",
+            "line": 0
+          }
+        ],
+        "privacy-doc": [
+          {
+            "repo": "lodash/lodash",
+            "sha": "2b5e6f7399a7b48005140b5d5c6bc6c0e62919a8",
+            "file": "(repo)",
+            "line": 0
+          }
+        ],
+        "data-retention": [
+          {
+            "repo": "lodash/lodash",
+            "sha": "2b5e6f7399a7b48005140b5d5c6bc6c0e62919a8",
+            "file": ".github/workflows/scorecards.yml",
+            "line": 52
+          }
+        ],
+        "upload-surface": [
+          {
+            "repo": "lodash/lodash",
+            "sha": "2b5e6f7399a7b48005140b5d5c6bc6c0e62919a8",
+            "file": ".github/workflows/scorecards.yml",
+            "line": 47
+          }
+        ],
+        "upload-limit": [
+          {
+            "repo": "lodash/lodash",
+            "sha": "2b5e6f7399a7b48005140b5d5c6bc6c0e62919a8",
+            "file": "lodash.js",
+            "line": 14697
+          }
+        ],
+        "cookie-lifetime": [
+          {
+            "repo": "lodash/lodash",
+            "sha": "2b5e6f7399a7b48005140b5d5c6bc6c0e62919a8",
+            "file": "vendor/firebug-lite/src/firebug-lite-debug.js",
+            "line": 5997
+          }
+        ],
+        "browser-storage": [
+          {
+            "repo": "lodash/lodash",
+            "sha": "2b5e6f7399a7b48005140b5d5c6bc6c0e62919a8",
+            "file": "vendor/firebug-lite/src/firebug-lite-debug.js",
+            "line": 10935
+          }
+        ]
+      }
     },
     "moment/moment": {
       "verdict": "YELLOW",
@@ -340,7 +3834,253 @@
         "privacy-doc": 1
       },
       "sha": "c2a703a4d84aa57ee2722ff8fb4a8016279fb3c4",
-      "error": null
+      "error": null,
+      "examples": {
+        "GuardDog npm package": [
+          {
+            "repo": "moment/moment",
+            "sha": "c2a703a4d84aa57ee2722ff8fb4a8016279fb3c4",
+            "file": "src/test/moment/locale_load_sanity.js",
+            "line": 12
+          },
+          {
+            "repo": "moment/moment",
+            "sha": "c2a703a4d84aa57ee2722ff8fb4a8016279fb3c4",
+            "file": "min/moment-with-locales.min.js",
+            "line": 18
+          },
+          {
+            "repo": "moment/moment",
+            "sha": "c2a703a4d84aa57ee2722ff8fb4a8016279fb3c4",
+            "file": "dist/locale/el.js",
+            "line": 101
+          }
+        ],
+        "typosquat-dep": [
+          {
+            "repo": "moment/moment",
+            "sha": "c2a703a4d84aa57ee2722ff8fb4a8016279fb3c4",
+            "file": "package.json",
+            "line": 63
+          },
+          {
+            "repo": "moment/moment",
+            "sha": "c2a703a4d84aa57ee2722ff8fb4a8016279fb3c4",
+            "file": "package.json",
+            "line": 64
+          },
+          {
+            "repo": "moment/moment",
+            "sha": "c2a703a4d84aa57ee2722ff8fb4a8016279fb3c4",
+            "file": "package.json",
+            "line": 65
+          }
+        ],
+        "Zero-width characters": [
+          {
+            "repo": "moment/moment",
+            "sha": "c2a703a4d84aa57ee2722ff8fb4a8016279fb3c4",
+            "file": "locale/ku.js",
+            "line": 57
+          },
+          {
+            "repo": "moment/moment",
+            "sha": "c2a703a4d84aa57ee2722ff8fb4a8016279fb3c4",
+            "file": "min/locales.js",
+            "line": 7263
+          },
+          {
+            "repo": "moment/moment",
+            "sha": "c2a703a4d84aa57ee2722ff8fb4a8016279fb3c4",
+            "file": "min/moment-with-locales.js",
+            "line": 13170
+          }
+        ],
+        "Git hook configuration": [
+          {
+            "repo": "moment/moment",
+            "sha": "c2a703a4d84aa57ee2722ff8fb4a8016279fb3c4",
+            "file": ".githooks/post-checkout",
+            "line": 1
+          },
+          {
+            "repo": "moment/moment",
+            "sha": "c2a703a4d84aa57ee2722ff8fb4a8016279fb3c4",
+            "file": ".githooks/pre-commit",
+            "line": 1
+          }
+        ],
+        "gha-unpinned-action": [
+          {
+            "repo": "moment/moment",
+            "sha": "c2a703a4d84aa57ee2722ff8fb4a8016279fb3c4",
+            "file": ".github/workflows/ci.yml",
+            "line": 23
+          },
+          {
+            "repo": "moment/moment",
+            "sha": "c2a703a4d84aa57ee2722ff8fb4a8016279fb3c4",
+            "file": ".github/workflows/coverage.yml",
+            "line": 16
+          },
+          {
+            "repo": "moment/moment",
+            "sha": "c2a703a4d84aa57ee2722ff8fb4a8016279fb3c4",
+            "file": ".github/workflows/release.yml",
+            "line": 27
+          }
+        ],
+        "gha-write-permissions": [
+          {
+            "repo": "moment/moment",
+            "sha": "c2a703a4d84aa57ee2722ff8fb4a8016279fb3c4",
+            "file": ".github/workflows/release.yml",
+            "line": 9
+          },
+          {
+            "repo": "moment/moment",
+            "sha": "c2a703a4d84aa57ee2722ff8fb4a8016279fb3c4",
+            "file": ".github/workflows/release.yml",
+            "line": 23
+          },
+          {
+            "repo": "moment/moment",
+            "sha": "c2a703a4d84aa57ee2722ff8fb4a8016279fb3c4",
+            "file": ".github/workflows/release.yml",
+            "line": 24
+          }
+        ],
+        "pii-log": [
+          {
+            "repo": "moment/moment",
+            "sha": "c2a703a4d84aa57ee2722ff8fb4a8016279fb3c4",
+            "file": "scripts/qunit-reporter.js",
+            "line": 7
+          },
+          {
+            "repo": "moment/moment",
+            "sha": "c2a703a4d84aa57ee2722ff8fb4a8016279fb3c4",
+            "file": "scripts/locales.js",
+            "line": 135
+          }
+        ],
+        "pii-email": [
+          {
+            "repo": "moment/moment",
+            "sha": "c2a703a4d84aa57ee2722ff8fb4a8016279fb3c4",
+            "file": "meteor/package.js",
+            "line": 15
+          },
+          {
+            "repo": "moment/moment",
+            "sha": "c2a703a4d84aa57ee2722ff8fb4a8016279fb3c4",
+            "file": "CONTRIBUTING.md",
+            "line": 1
+          },
+          {
+            "repo": "moment/moment",
+            "sha": "c2a703a4d84aa57ee2722ff8fb4a8016279fb3c4",
+            "file": "SECURITY.md",
+            "line": 1
+          }
+        ],
+        "pii-phone": [
+          {
+            "repo": "moment/moment",
+            "sha": "c2a703a4d84aa57ee2722ff8fb4a8016279fb3c4",
+            "file": "moment.js",
+            "line": 589
+          },
+          {
+            "repo": "moment/moment",
+            "sha": "c2a703a4d84aa57ee2722ff8fb4a8016279fb3c4",
+            "file": "src/test/locale/en.js",
+            "line": 138
+          },
+          {
+            "repo": "moment/moment",
+            "sha": "c2a703a4d84aa57ee2722ff8fb4a8016279fb3c4",
+            "file": "src/test/locale/en.js",
+            "line": 133
+          }
+        ],
+        "insecure-endpoint": [
+          {
+            "repo": "moment/moment",
+            "sha": "c2a703a4d84aa57ee2722ff8fb4a8016279fb3c4",
+            "file": "moment.js",
+            "line": 2347
+          }
+        ],
+        "external-endpoint": [
+          {
+            "repo": "moment/moment",
+            "sha": "c2a703a4d84aa57ee2722ff8fb4a8016279fb3c4",
+            "file": ".github/ISSUE_TEMPLATE/config.yml",
+            "line": 7
+          },
+          {
+            "repo": "moment/moment",
+            "sha": "c2a703a4d84aa57ee2722ff8fb4a8016279fb3c4",
+            "file": ".github/workflows/release.yml",
+            "line": 103
+          }
+        ],
+        "referrer-policy": [
+          {
+            "repo": "moment/moment",
+            "sha": "c2a703a4d84aa57ee2722ff8fb4a8016279fb3c4",
+            "file": "(repo)",
+            "line": 0
+          }
+        ],
+        "data-retention": [
+          {
+            "repo": "moment/moment",
+            "sha": "c2a703a4d84aa57ee2722ff8fb4a8016279fb3c4",
+            "file": ".github/workflows/runtime-compatibility.yml",
+            "line": 32
+          }
+        ],
+        "upload-surface": [
+          {
+            "repo": "moment/moment",
+            "sha": "c2a703a4d84aa57ee2722ff8fb4a8016279fb3c4",
+            "file": ".github/workflows/release.yml",
+            "line": 92
+          }
+        ],
+        "upload-limit": [
+          {
+            "repo": "moment/moment",
+            "sha": "c2a703a4d84aa57ee2722ff8fb4a8016279fb3c4",
+            "file": "moment.d.ts",
+            "line": 766
+          }
+        ],
+        "first-party-endpoint": [
+          {
+            "repo": "moment/moment",
+            "sha": "c2a703a4d84aa57ee2722ff8fb4a8016279fb3c4",
+            "file": "composer.json",
+            "line": 15
+          },
+          {
+            "repo": "moment/moment",
+            "sha": "c2a703a4d84aa57ee2722ff8fb4a8016279fb3c4",
+            "file": "package.json",
+            "line": 5
+          }
+        ],
+        "privacy-doc": [
+          {
+            "repo": "moment/moment",
+            "sha": "c2a703a4d84aa57ee2722ff8fb4a8016279fb3c4",
+            "file": "(repo)",
+            "line": 0
+          }
+        ]
+      }
     },
     "pallets/flask": {
       "verdict": "YELLOW",
@@ -385,7 +4125,411 @@
         "cookie-lifetime": 1
       },
       "sha": "49943b5a94413a530761350f04e896f76e8d620e",
-      "error": null
+      "error": null,
+      "examples": {
+        "GuardDog pypi package": [
+          {
+            "repo": "pallets/flask",
+            "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+            "file": "src/flask/cli.py",
+            "line": 735
+          },
+          {
+            "repo": "pallets/flask",
+            "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+            "file": "src/flask/cli.py",
+            "line": 748
+          },
+          {
+            "repo": "pallets/flask",
+            "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+            "file": "examples/tutorial/tests/conftest.py",
+            "line": 32
+          }
+        ],
+        "Bandit B324": [
+          {
+            "repo": "pallets/flask",
+            "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+            "file": "src/flask/sessions.py",
+            "line": 281
+          }
+        ],
+        "typosquat-dep": [
+          {
+            "repo": "pallets/flask",
+            "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+            "file": "examples/tutorial/pyproject.toml",
+            "line": 2
+          }
+        ],
+        "Hardcoded secret": [
+          {
+            "repo": "pallets/flask",
+            "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+            "file": "docs/tutorial/deploy.rst",
+            "line": 73
+          },
+          {
+            "repo": "pallets/flask",
+            "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+            "file": "docs/config.rst",
+            "line": 41
+          },
+          {
+            "repo": "pallets/flask",
+            "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+            "file": "docs/config.rst",
+            "line": 513
+          }
+        ],
+        "Bandit B307": [
+          {
+            "repo": "pallets/flask",
+            "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+            "file": "src/flask/cli.py",
+            "line": 1022
+          }
+        ],
+        "Bandit B102": [
+          {
+            "repo": "pallets/flask",
+            "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+            "file": "src/flask/config.py",
+            "line": 209
+          }
+        ],
+        "Bandit B704": [
+          {
+            "repo": "pallets/flask",
+            "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+            "file": "src/flask/json/tag.py",
+            "line": 188
+          },
+          {
+            "repo": "pallets/flask",
+            "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+            "file": "tests/test_templating.py",
+            "line": 77
+          },
+          {
+            "repo": "pallets/flask",
+            "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+            "file": "tests/test_templating.py",
+            "line": 97
+          }
+        ],
+        "Bandit B201": [
+          {
+            "repo": "pallets/flask",
+            "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+            "file": "tests/test_basic.py",
+            "line": 1902
+          },
+          {
+            "repo": "pallets/flask",
+            "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+            "file": "tests/test_templating.py",
+            "line": 484
+          }
+        ],
+        "Dev container auto-runs 'onCreateCommand'": [
+          {
+            "repo": "pallets/flask",
+            "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+            "file": ".devcontainer/devcontainer.json",
+            "line": 16
+          }
+        ],
+        "Bandit B101": [
+          {
+            "repo": "pallets/flask",
+            "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+            "file": "examples/javascript/tests/test_js_example.py",
+            "line": 16
+          },
+          {
+            "repo": "pallets/flask",
+            "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+            "file": "examples/javascript/tests/test_js_example.py",
+            "line": 27
+          },
+          {
+            "repo": "pallets/flask",
+            "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+            "file": "examples/tutorial/tests/test_auth.py",
+            "line": 10
+          }
+        ],
+        "Bandit B106": [
+          {
+            "repo": "pallets/flask",
+            "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+            "file": "examples/tutorial/flaskr/__init__.py",
+            "line": 11
+          },
+          {
+            "repo": "pallets/flask",
+            "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+            "file": "tests/conftest.py",
+            "line": 32
+          },
+          {
+            "repo": "pallets/flask",
+            "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+            "file": "tests/test_config.py",
+            "line": 120
+          }
+        ],
+        "Bandit B107": [
+          {
+            "repo": "pallets/flask",
+            "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+            "file": "examples/tutorial/tests/conftest.py",
+            "line": 51
+          }
+        ],
+        "Bandit B105": [
+          {
+            "repo": "pallets/flask",
+            "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+            "file": "examples/tutorial/tests/test_auth.py",
+            "line": 13
+          },
+          {
+            "repo": "pallets/flask",
+            "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+            "file": "src/flask/app.py",
+            "line": 209
+          },
+          {
+            "repo": "pallets/flask",
+            "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+            "file": "src/flask/app.py",
+            "line": 210
+          }
+        ],
+        "Bandit B110": [
+          {
+            "repo": "pallets/flask",
+            "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+            "file": "src/flask/config.py",
+            "line": 163
+          },
+          {
+            "repo": "pallets/flask",
+            "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+            "file": "tests/test_appctx.py",
+            "line": 66
+          },
+          {
+            "repo": "pallets/flask",
+            "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+            "file": "tests/test_appctx.py",
+            "line": 85
+          }
+        ],
+        "Git hook configuration": [
+          {
+            "repo": "pallets/flask",
+            "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+            "file": ".pre-commit-config.yaml",
+            "line": 1
+          }
+        ],
+        "gha-write-permissions": [
+          {
+            "repo": "pallets/flask",
+            "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+            "file": ".github/workflows/lock.yaml",
+            "line": 19
+          },
+          {
+            "repo": "pallets/flask",
+            "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+            "file": ".github/workflows/publish.yaml",
+            "line": 37
+          },
+          {
+            "repo": "pallets/flask",
+            "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+            "file": ".github/workflows/publish.yaml",
+            "line": 54
+          }
+        ],
+        "insecure-endpoint": [
+          {
+            "repo": "pallets/flask",
+            "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+            "file": "src/flask/config.py",
+            "line": 331
+          },
+          {
+            "repo": "pallets/flask",
+            "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+            "file": "tests/test_testing.py",
+            "line": 259
+          },
+          {
+            "repo": "pallets/flask",
+            "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+            "file": "tests/test_reqctx.py",
+            "line": 82
+          }
+        ],
+        "external-endpoint": [
+          {
+            "repo": "pallets/flask",
+            "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+            "file": "examples/javascript/js_example/templates/fetch.html",
+            "line": 4
+          },
+          {
+            "repo": "pallets/flask",
+            "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+            "file": "pyproject.toml",
+            "line": 76
+          },
+          {
+            "repo": "pallets/flask",
+            "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+            "file": "examples/javascript/js_example/templates/jquery.html",
+            "line": 4
+          }
+        ],
+        "third-party-cdn": [
+          {
+            "repo": "pallets/flask",
+            "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+            "file": "examples/javascript/js_example/templates/jquery.html",
+            "line": 10
+          },
+          {
+            "repo": "pallets/flask",
+            "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+            "file": "examples/javascript/js_example/templates/base.html",
+            "line": 3
+          }
+        ],
+        "cookie-flags": [
+          {
+            "repo": "pallets/flask",
+            "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+            "file": "src/flask/testing.py",
+            "line": 182
+          },
+          {
+            "repo": "pallets/flask",
+            "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+            "file": "src/flask/sessions.py",
+            "line": 216
+          },
+          {
+            "repo": "pallets/flask",
+            "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+            "file": "tests/test_basic.py",
+            "line": 1947
+          }
+        ],
+        "data-retention": [
+          {
+            "repo": "pallets/flask",
+            "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+            "file": "(repo)",
+            "line": 0
+          }
+        ],
+        "referrer-policy": [
+          {
+            "repo": "pallets/flask",
+            "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+            "file": "(repo)",
+            "line": 0
+          }
+        ],
+        "privacy-doc": [
+          {
+            "repo": "pallets/flask",
+            "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+            "file": "(repo)",
+            "line": 0
+          }
+        ],
+        "pii-email": [
+          {
+            "repo": "pallets/flask",
+            "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+            "file": "pyproject.toml",
+            "line": 8
+          },
+          {
+            "repo": "pallets/flask",
+            "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+            "file": "docs/logging.rst",
+            "line": 1
+          }
+        ],
+        "pii-in-url": [
+          {
+            "repo": "pallets/flask",
+            "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+            "file": "tests/test_helpers.py",
+            "line": 239
+          },
+          {
+            "repo": "pallets/flask",
+            "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+            "file": "docs/quickstart.rst",
+            "line": 150
+          },
+          {
+            "repo": "pallets/flask",
+            "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+            "file": "docs/errorhandling.rst",
+            "line": 494
+          }
+        ],
+        "upload-surface": [
+          {
+            "repo": "pallets/flask",
+            "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+            "file": ".github/workflows/publish.yaml",
+            "line": 13
+          }
+        ],
+        "upload-limit": [
+          {
+            "repo": "pallets/flask",
+            "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+            "file": "src/flask/app.py",
+            "line": 224
+          }
+        ],
+        "third-party-script": [
+          {
+            "repo": "pallets/flask",
+            "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+            "file": "examples/javascript/js_example/templates/jquery.html",
+            "line": 10
+          }
+        ],
+        "third-party-stylesheet": [
+          {
+            "repo": "pallets/flask",
+            "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+            "file": "examples/javascript/js_example/templates/base.html",
+            "line": 3
+          }
+        ],
+        "cookie-lifetime": [
+          {
+            "repo": "pallets/flask",
+            "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+            "file": "src/flask/sessions.py",
+            "line": 374
+          }
+        ]
+      }
     },
     "psf/requests": {
       "verdict": "YELLOW",
@@ -422,7 +4566,317 @@
         "cookie-lifetime": 2
       },
       "sha": "3c7baaa05ab4aa49cc819ce3a819d260de19c157",
-      "error": null
+      "error": null,
+      "examples": {
+        "GuardDog pypi package": [
+          {
+            "repo": "psf/requests",
+            "sha": "3c7baaa05ab4aa49cc819ce3a819d260de19c157",
+            "file": "tests/test_requests.py",
+            "line": 1913
+          },
+          {
+            "repo": "psf/requests",
+            "sha": "3c7baaa05ab4aa49cc819ce3a819d260de19c157",
+            "file": "src/requests/utils.py",
+            "line": 337
+          },
+          {
+            "repo": "psf/requests",
+            "sha": "3c7baaa05ab4aa49cc819ce3a819d260de19c157",
+            "file": "src/requests/models.py",
+            "line": 239
+          }
+        ],
+        "Hardcoded secret": [
+          {
+            "repo": "psf/requests",
+            "sha": "3c7baaa05ab4aa49cc819ce3a819d260de19c157",
+            "file": "tests/certs/expired/ca/ca-private.key",
+            "line": 1
+          },
+          {
+            "repo": "psf/requests",
+            "sha": "3c7baaa05ab4aa49cc819ce3a819d260de19c157",
+            "file": "tests/certs/expired/server/server.key",
+            "line": 1
+          },
+          {
+            "repo": "psf/requests",
+            "sha": "3c7baaa05ab4aa49cc819ce3a819d260de19c157",
+            "file": "tests/certs/mtls/client/client.key",
+            "line": 1
+          }
+        ],
+        "Bandit B113": [
+          {
+            "repo": "psf/requests",
+            "sha": "3c7baaa05ab4aa49cc819ce3a819d260de19c157",
+            "file": "tests/test_lowlevel.py",
+            "line": 32
+          },
+          {
+            "repo": "psf/requests",
+            "sha": "3c7baaa05ab4aa49cc819ce3a819d260de19c157",
+            "file": "tests/test_lowlevel.py",
+            "line": 59
+          },
+          {
+            "repo": "psf/requests",
+            "sha": "3c7baaa05ab4aa49cc819ce3a819d260de19c157",
+            "file": "tests/test_lowlevel.py",
+            "line": 73
+          }
+        ],
+        "Bandit B301": [
+          {
+            "repo": "psf/requests",
+            "sha": "3c7baaa05ab4aa49cc819ce3a819d260de19c157",
+            "file": "tests/test_requests.py",
+            "line": 1550
+          },
+          {
+            "repo": "psf/requests",
+            "sha": "3c7baaa05ab4aa49cc819ce3a819d260de19c157",
+            "file": "tests/test_requests.py",
+            "line": 1554
+          },
+          {
+            "repo": "psf/requests",
+            "sha": "3c7baaa05ab4aa49cc819ce3a819d260de19c157",
+            "file": "tests/test_requests.py",
+            "line": 1562
+          }
+        ],
+        "Instructions to read and send secrets/credentials to a URL": [
+          {
+            "repo": "psf/requests",
+            "sha": "3c7baaa05ab4aa49cc819ce3a819d260de19c157",
+            "file": "docs/user/quickstart.rst",
+            "line": 459
+          }
+        ],
+        "Code reads sensitive credential files": [
+          {
+            "repo": "psf/requests",
+            "sha": "3c7baaa05ab4aa49cc819ce3a819d260de19c157",
+            "file": "tests/test_utils.py",
+            "line": 158
+          },
+          {
+            "repo": "psf/requests",
+            "sha": "3c7baaa05ab4aa49cc819ce3a819d260de19c157",
+            "file": "tests/test_utils.py",
+            "line": 166
+          },
+          {
+            "repo": "psf/requests",
+            "sha": "3c7baaa05ab4aa49cc819ce3a819d260de19c157",
+            "file": "tests/test_utils.py",
+            "line": 175
+          }
+        ],
+        "Bandit B101": [
+          {
+            "repo": "psf/requests",
+            "sha": "3c7baaa05ab4aa49cc819ce3a819d260de19c157",
+            "file": "src/requests/__init__.py",
+            "line": 66
+          },
+          {
+            "repo": "psf/requests",
+            "sha": "3c7baaa05ab4aa49cc819ce3a819d260de19c157",
+            "file": "src/requests/__init__.py",
+            "line": 76
+          },
+          {
+            "repo": "psf/requests",
+            "sha": "3c7baaa05ab4aa49cc819ce3a819d260de19c157",
+            "file": "src/requests/__init__.py",
+            "line": 78
+          }
+        ],
+        "Bandit B403": [
+          {
+            "repo": "psf/requests",
+            "sha": "3c7baaa05ab4aa49cc819ce3a819d260de19c157",
+            "file": "tests/test_requests.py",
+            "line": 8
+          }
+        ],
+        "Bandit B105": [
+          {
+            "repo": "psf/requests",
+            "sha": "3c7baaa05ab4aa49cc819ce3a819d260de19c157",
+            "file": "tests/test_utils.py",
+            "line": 443
+          }
+        ],
+        "Git hook configuration": [
+          {
+            "repo": "psf/requests",
+            "sha": "3c7baaa05ab4aa49cc819ce3a819d260de19c157",
+            "file": ".pre-commit-config.yaml",
+            "line": 1
+          }
+        ],
+        "gha-write-permissions": [
+          {
+            "repo": "psf/requests",
+            "sha": "3c7baaa05ab4aa49cc819ce3a819d260de19c157",
+            "file": ".github/workflows/lock-issues.yml",
+            "line": 9
+          },
+          {
+            "repo": "psf/requests",
+            "sha": "3c7baaa05ab4aa49cc819ce3a819d260de19c157",
+            "file": ".github/workflows/publish.yml",
+            "line": 57
+          },
+          {
+            "repo": "psf/requests",
+            "sha": "3c7baaa05ab4aa49cc819ce3a819d260de19c157",
+            "file": ".github/workflows/publish.yml",
+            "line": 79
+          }
+        ],
+        "external-endpoint": [
+          {
+            "repo": "psf/requests",
+            "sha": "3c7baaa05ab4aa49cc819ce3a819d260de19c157",
+            "file": "src/requests/__init__.py",
+            "line": 23
+          },
+          {
+            "repo": "psf/requests",
+            "sha": "3c7baaa05ab4aa49cc819ce3a819d260de19c157",
+            "file": "pyproject.toml",
+            "line": 50
+          },
+          {
+            "repo": "psf/requests",
+            "sha": "3c7baaa05ab4aa49cc819ce3a819d260de19c157",
+            "file": ".github/workflows/publish.yml",
+            "line": 94
+          }
+        ],
+        "cookie-flags": [
+          {
+            "repo": "psf/requests",
+            "sha": "3c7baaa05ab4aa49cc819ce3a819d260de19c157",
+            "file": "src/requests/cookies.py",
+            "line": 247
+          },
+          {
+            "repo": "psf/requests",
+            "sha": "3c7baaa05ab4aa49cc819ce3a819d260de19c157",
+            "file": "tests/test_requests.py",
+            "line": 402
+          }
+        ],
+        "referrer-policy": [
+          {
+            "repo": "psf/requests",
+            "sha": "3c7baaa05ab4aa49cc819ce3a819d260de19c157",
+            "file": "(repo)",
+            "line": 0
+          }
+        ],
+        "privacy-doc": [
+          {
+            "repo": "psf/requests",
+            "sha": "3c7baaa05ab4aa49cc819ce3a819d260de19c157",
+            "file": "(repo)",
+            "line": 0
+          }
+        ],
+        "Coverage-low": [
+          {
+            "repo": "psf/requests",
+            "sha": "3c7baaa05ab4aa49cc819ce3a819d260de19c157",
+            "file": "(repo)",
+            "line": 0
+          }
+        ],
+        "pii-email": [
+          {
+            "repo": "psf/requests",
+            "sha": "3c7baaa05ab4aa49cc819ce3a819d260de19c157",
+            "file": ".github/SECURITY.md",
+            "line": 1
+          },
+          {
+            "repo": "psf/requests",
+            "sha": "3c7baaa05ab4aa49cc819ce3a819d260de19c157",
+            "file": "tests/test_lowlevel.py",
+            "line": 1
+          },
+          {
+            "repo": "psf/requests",
+            "sha": "3c7baaa05ab4aa49cc819ce3a819d260de19c157",
+            "file": "docs/user/advanced.rst",
+            "line": 1
+          }
+        ],
+        "data-retention": [
+          {
+            "repo": "psf/requests",
+            "sha": "3c7baaa05ab4aa49cc819ce3a819d260de19c157",
+            "file": ".github/workflows/publish.yml",
+            "line": 50
+          }
+        ],
+        "upload-surface": [
+          {
+            "repo": "psf/requests",
+            "sha": "3c7baaa05ab4aa49cc819ce3a819d260de19c157",
+            "file": ".github/workflows/publish.yml",
+            "line": 22
+          }
+        ],
+        "upload-limit": [
+          {
+            "repo": "psf/requests",
+            "sha": "3c7baaa05ab4aa49cc819ce3a819d260de19c157",
+            "file": "src/requests/models.py",
+            "line": 103
+          }
+        ],
+        "insecure-endpoint": [
+          {
+            "repo": "psf/requests",
+            "sha": "3c7baaa05ab4aa49cc819ce3a819d260de19c157",
+            "file": "tests/test_requests.py",
+            "line": 1943
+          },
+          {
+            "repo": "psf/requests",
+            "sha": "3c7baaa05ab4aa49cc819ce3a819d260de19c157",
+            "file": "tests/test_utils.py",
+            "line": 851
+          },
+          {
+            "repo": "psf/requests",
+            "sha": "3c7baaa05ab4aa49cc819ce3a819d260de19c157",
+            "file": "tests/test_utils.py",
+            "line": 469
+          }
+        ],
+        "cookie-lifetime": [
+          {
+            "repo": "psf/requests",
+            "sha": "3c7baaa05ab4aa49cc819ce3a819d260de19c157",
+            "file": "tests/test_requests.py",
+            "line": 402
+          },
+          {
+            "repo": "psf/requests",
+            "sha": "3c7baaa05ab4aa49cc819ce3a819d260de19c157",
+            "file": "src/requests/cookies.py",
+            "line": 247
+          }
+        ]
+      }
     },
     "sharkdp/bat": {
       "verdict": "YELLOW",
@@ -466,7 +4920,397 @@
         "referrer-policy": 1
       },
       "sha": "72505e4555dc355ac02924eb5ae73d602680cd7c",
-      "error": null
+      "error": null,
+      "examples": {
+        "Hidden HTML comment addressed to an AI agent": [
+          {
+            "repo": "sharkdp/bat",
+            "sha": "72505e4555dc355ac02924eb5ae73d602680cd7c",
+            "file": "README.md",
+            "line": 245
+          }
+        ],
+        "typosquat-dep": [
+          {
+            "repo": "sharkdp/bat",
+            "sha": "72505e4555dc355ac02924eb5ae73d602680cd7c",
+            "file": "tests/syntax-tests/source/Requirements.txt/requirements.txt",
+            "line": 24
+          }
+        ],
+        "Bandit B307": [
+          {
+            "repo": "sharkdp/bat",
+            "sha": "72505e4555dc355ac02924eb5ae73d602680cd7c",
+            "file": "tests/benchmarks/highlighting-speed-src/numpy_test_multiarray.py",
+            "line": 1315
+          },
+          {
+            "repo": "sharkdp/bat",
+            "sha": "72505e4555dc355ac02924eb5ae73d602680cd7c",
+            "file": "tests/benchmarks/highlighting-speed-src/numpy_test_multiarray.py",
+            "line": 3424
+          }
+        ],
+        "Bandit B306": [
+          {
+            "repo": "sharkdp/bat",
+            "sha": "72505e4555dc355ac02924eb5ae73d602680cd7c",
+            "file": "tests/benchmarks/highlighting-speed-src/numpy_test_multiarray.py",
+            "line": 4647
+          }
+        ],
+        "Code reads .env": [
+          {
+            "repo": "sharkdp/bat",
+            "sha": "72505e4555dc355ac02924eb5ae73d602680cd7c",
+            "file": "tests/integration_tests.rs",
+            "line": 4766
+          },
+          {
+            "repo": "sharkdp/bat",
+            "sha": "72505e4555dc355ac02924eb5ae73d602680cd7c",
+            "file": "tests/integration_tests.rs",
+            "line": 4767
+          },
+          {
+            "repo": "sharkdp/bat",
+            "sha": "72505e4555dc355ac02924eb5ae73d602680cd7c",
+            "file": "tests/integration_tests.rs",
+            "line": 4775
+          }
+        ],
+        "Prebuilt binary/compiled artifact": [
+          {
+            "repo": "sharkdp/bat",
+            "sha": "72505e4555dc355ac02924eb5ae73d602680cd7c",
+            "file": "assets/acknowledgements.bin",
+            "line": 0
+          },
+          {
+            "repo": "sharkdp/bat",
+            "sha": "72505e4555dc355ac02924eb5ae73d602680cd7c",
+            "file": "assets/syntaxes.bin",
+            "line": 0
+          },
+          {
+            "repo": "sharkdp/bat",
+            "sha": "72505e4555dc355ac02924eb5ae73d602680cd7c",
+            "file": "assets/themes.bin",
+            "line": 0
+          }
+        ],
+        "Bandit B403": [
+          {
+            "repo": "sharkdp/bat",
+            "sha": "72505e4555dc355ac02924eb5ae73d602680cd7c",
+            "file": "tests/benchmarks/highlighting-speed-src/numpy_test_multiarray.py",
+            "line": 151
+          }
+        ],
+        "Bandit B101": [
+          {
+            "repo": "sharkdp/bat",
+            "sha": "72505e4555dc355ac02924eb5ae73d602680cd7c",
+            "file": "tests/benchmarks/highlighting-speed-src/numpy_test_multiarray.py",
+            "line": 168
+          },
+          {
+            "repo": "sharkdp/bat",
+            "sha": "72505e4555dc355ac02924eb5ae73d602680cd7c",
+            "file": "tests/benchmarks/highlighting-speed-src/numpy_test_multiarray.py",
+            "line": 169
+          },
+          {
+            "repo": "sharkdp/bat",
+            "sha": "72505e4555dc355ac02924eb5ae73d602680cd7c",
+            "file": "tests/benchmarks/highlighting-speed-src/numpy_test_multiarray.py",
+            "line": 174
+          }
+        ],
+        "Bandit B404": [
+          {
+            "repo": "sharkdp/bat",
+            "sha": "72505e4555dc355ac02924eb5ae73d602680cd7c",
+            "file": "tests/scripts/find-slow-to-highlight-files.py",
+            "line": 18
+          },
+          {
+            "repo": "sharkdp/bat",
+            "sha": "72505e4555dc355ac02924eb5ae73d602680cd7c",
+            "file": "tests/snapshots/generate_snapshots.py",
+            "line": 4
+          },
+          {
+            "repo": "sharkdp/bat",
+            "sha": "72505e4555dc355ac02924eb5ae73d602680cd7c",
+            "file": "tests/syntax-tests/create_highlighted_versions.py",
+            "line": 3
+          }
+        ],
+        "Bandit B607": [
+          {
+            "repo": "sharkdp/bat",
+            "sha": "72505e4555dc355ac02924eb5ae73d602680cd7c",
+            "file": "tests/scripts/find-slow-to-highlight-files.py",
+            "line": 35
+          },
+          {
+            "repo": "sharkdp/bat",
+            "sha": "72505e4555dc355ac02924eb5ae73d602680cd7c",
+            "file": "tests/scripts/find-slow-to-highlight-files.py",
+            "line": 54
+          },
+          {
+            "repo": "sharkdp/bat",
+            "sha": "72505e4555dc355ac02924eb5ae73d602680cd7c",
+            "file": "tests/scripts/find-slow-to-highlight-files.py",
+            "line": 62
+          }
+        ],
+        "Bandit B603": [
+          {
+            "repo": "sharkdp/bat",
+            "sha": "72505e4555dc355ac02924eb5ae73d602680cd7c",
+            "file": "tests/scripts/find-slow-to-highlight-files.py",
+            "line": 35
+          },
+          {
+            "repo": "sharkdp/bat",
+            "sha": "72505e4555dc355ac02924eb5ae73d602680cd7c",
+            "file": "tests/scripts/find-slow-to-highlight-files.py",
+            "line": 54
+          },
+          {
+            "repo": "sharkdp/bat",
+            "sha": "72505e4555dc355ac02924eb5ae73d602680cd7c",
+            "file": "tests/scripts/find-slow-to-highlight-files.py",
+            "line": 62
+          }
+        ],
+        "gha-unpinned-action": [
+          {
+            "repo": "sharkdp/bat",
+            "sha": "72505e4555dc355ac02924eb5ae73d602680cd7c",
+            "file": ".github/workflows/CICD.yml",
+            "line": 38
+          },
+          {
+            "repo": "sharkdp/bat",
+            "sha": "72505e4555dc355ac02924eb5ae73d602680cd7c",
+            "file": ".github/workflows/require-changelog-for-PRs.yml",
+            "line": 16
+          }
+        ],
+        "submodule-unpinned": [
+          {
+            "repo": "sharkdp/bat",
+            "sha": "72505e4555dc355ac02924eb5ae73d602680cd7c",
+            "file": ".gitmodules",
+            "line": 91
+          },
+          {
+            "repo": "sharkdp/bat",
+            "sha": "72505e4555dc355ac02924eb5ae73d602680cd7c",
+            "file": ".gitmodules",
+            "line": 131
+          },
+          {
+            "repo": "sharkdp/bat",
+            "sha": "72505e4555dc355ac02924eb5ae73d602680cd7c",
+            "file": ".gitmodules",
+            "line": 144
+          }
+        ],
+        "ip-logging": [
+          {
+            "repo": "sharkdp/bat",
+            "sha": "72505e4555dc355ac02924eb5ae73d602680cd7c",
+            "file": "assets/syntaxes/02_Extra/Apache.sublime-syntax",
+            "line": 202
+          }
+        ],
+        "pii-email": [
+          {
+            "repo": "sharkdp/bat",
+            "sha": "72505e4555dc355ac02924eb5ae73d602680cd7c",
+            "file": "src/diff.rs",
+            "line": 129
+          },
+          {
+            "repo": "sharkdp/bat",
+            "sha": "72505e4555dc355ac02924eb5ae73d602680cd7c",
+            "file": "tests/examples/git/.config/git/config",
+            "line": 1
+          },
+          {
+            "repo": "sharkdp/bat",
+            "sha": "72505e4555dc355ac02924eb5ae73d602680cd7c",
+            "file": "tests/examples/git/.gitconfig",
+            "line": 1
+          }
+        ],
+        "pii-address": [
+          {
+            "repo": "sharkdp/bat",
+            "sha": "72505e4555dc355ac02924eb5ae73d602680cd7c",
+            "file": "assets/syntaxes/02_Extra/syntax_test_tsv.tsv",
+            "line": 14
+          },
+          {
+            "repo": "sharkdp/bat",
+            "sha": "72505e4555dc355ac02924eb5ae73d602680cd7c",
+            "file": "tests/syntax-tests/highlighted/Swift/test.swift",
+            "line": 1
+          },
+          {
+            "repo": "sharkdp/bat",
+            "sha": "72505e4555dc355ac02924eb5ae73d602680cd7c",
+            "file": "tests/syntax-tests/highlighted/YAML/example.yaml",
+            "line": 1
+          }
+        ],
+        "tracking-cookie": [
+          {
+            "repo": "sharkdp/bat",
+            "sha": "72505e4555dc355ac02924eb5ae73d602680cd7c",
+            "file": "assets/manual/bat.1.in",
+            "line": 62
+          }
+        ],
+        "insecure-endpoint": [
+          {
+            "repo": "sharkdp/bat",
+            "sha": "72505e4555dc355ac02924eb5ae73d602680cd7c",
+            "file": "src/assets/build_assets/acknowledgements.rs",
+            "line": 96
+          },
+          {
+            "repo": "sharkdp/bat",
+            "sha": "72505e4555dc355ac02924eb5ae73d602680cd7c",
+            "file": ".github/workflows/CICD.yml",
+            "line": 366
+          },
+          {
+            "repo": "sharkdp/bat",
+            "sha": "72505e4555dc355ac02924eb5ae73d602680cd7c",
+            "file": "src/less.rs",
+            "line": 48
+          }
+        ],
+        "external-endpoint": [
+          {
+            "repo": "sharkdp/bat",
+            "sha": "72505e4555dc355ac02924eb5ae73d602680cd7c",
+            "file": "src/less.rs",
+            "line": 87
+          },
+          {
+            "repo": "sharkdp/bat",
+            "sha": "72505e4555dc355ac02924eb5ae73d602680cd7c",
+            "file": "tests/benchmarks/run-benchmarks.sh",
+            "line": 15
+          },
+          {
+            "repo": "sharkdp/bat",
+            "sha": "72505e4555dc355ac02924eb5ae73d602680cd7c",
+            "file": "tests/syntax-tests/source/Svelte/App.svelte",
+            "line": 15
+          }
+        ],
+        "data-retention": [
+          {
+            "repo": "sharkdp/bat",
+            "sha": "72505e4555dc355ac02924eb5ae73d602680cd7c",
+            "file": "(repo)",
+            "line": 0
+          }
+        ],
+        "privacy-doc": [
+          {
+            "repo": "sharkdp/bat",
+            "sha": "72505e4555dc355ac02924eb5ae73d602680cd7c",
+            "file": "(repo)",
+            "line": 0
+          }
+        ],
+        "Coverage-low": [
+          {
+            "repo": "sharkdp/bat",
+            "sha": "72505e4555dc355ac02924eb5ae73d602680cd7c",
+            "file": "(repo)",
+            "line": 0
+          }
+        ],
+        "submodule-uninspected": [
+          {
+            "repo": "sharkdp/bat",
+            "sha": "72505e4555dc355ac02924eb5ae73d602680cd7c",
+            "file": ".gitmodules",
+            "line": 1
+          }
+        ],
+        "pii-in-url": [
+          {
+            "repo": "sharkdp/bat",
+            "sha": "72505e4555dc355ac02924eb5ae73d602680cd7c",
+            "file": "tests/benchmarks/highlighting-speed-src/grep-output-ansi-sequences.txt",
+            "line": 84
+          },
+          {
+            "repo": "sharkdp/bat",
+            "sha": "72505e4555dc355ac02924eb5ae73d602680cd7c",
+            "file": "README.md",
+            "line": 292
+          }
+        ],
+        "upload-surface": [
+          {
+            "repo": "sharkdp/bat",
+            "sha": "72505e4555dc355ac02924eb5ae73d602680cd7c",
+            "file": ".github/workflows/CICD.yml",
+            "line": 428
+          }
+        ],
+        "upload-limit": [
+          {
+            "repo": "sharkdp/bat",
+            "sha": "72505e4555dc355ac02924eb5ae73d602680cd7c",
+            "file": "src/input.rs",
+            "line": 12
+          }
+        ],
+        "first-party-endpoint": [
+          {
+            "repo": "sharkdp/bat",
+            "sha": "72505e4555dc355ac02924eb5ae73d602680cd7c",
+            "file": ".github/workflows/require-changelog-for-PRs.yml",
+            "line": 23
+          },
+          {
+            "repo": "sharkdp/bat",
+            "sha": "72505e4555dc355ac02924eb5ae73d602680cd7c",
+            "file": "Cargo.toml",
+            "line": 5
+          }
+        ],
+        "third-party-stylesheet": [
+          {
+            "repo": "sharkdp/bat",
+            "sha": "72505e4555dc355ac02924eb5ae73d602680cd7c",
+            "file": "tests/syntax-tests/source/Less/example.less",
+            "line": 2
+          }
+        ],
+        "referrer-policy": [
+          {
+            "repo": "sharkdp/bat",
+            "sha": "72505e4555dc355ac02924eb5ae73d602680cd7c",
+            "file": "tests/syntax-tests/highlighted/http-request-response/example.http",
+            "line": 32
+          }
+        ]
+      }
     },
     "sharkdp/fd": {
       "verdict": "GREEN",
@@ -493,7 +5337,117 @@
         "first-party-endpoint": 2
       },
       "sha": "2e8648f10fe55af6258ab90ab889eb8b96033379",
-      "error": null
+      "error": null,
+      "examples": {
+        "gha-write-permissions": [
+          {
+            "repo": "sharkdp/fd",
+            "sha": "2e8648f10fe55af6258ab90ab889eb8b96033379",
+            "file": ".github/workflows/CICD.yml",
+            "line": 91
+          },
+          {
+            "repo": "sharkdp/fd",
+            "sha": "2e8648f10fe55af6258ab90ab889eb8b96033379",
+            "file": ".github/workflows/CICD.yml",
+            "line": 92
+          }
+        ],
+        "gha-unpinned-action": [
+          {
+            "repo": "sharkdp/fd",
+            "sha": "2e8648f10fe55af6258ab90ab889eb8b96033379",
+            "file": ".github/workflows/CICD.yml",
+            "line": 24
+          }
+        ],
+        "pii-phone": [
+          {
+            "repo": "sharkdp/fd",
+            "sha": "2e8648f10fe55af6258ab90ab889eb8b96033379",
+            "file": "src/filter/size.rs",
+            "line": 224
+          }
+        ],
+        "insecure-endpoint": [
+          {
+            "repo": "sharkdp/fd",
+            "sha": "2e8648f10fe55af6258ab90ab889eb8b96033379",
+            "file": "scripts/create-deb.sh",
+            "line": 68
+          }
+        ],
+        "data-retention": [
+          {
+            "repo": "sharkdp/fd",
+            "sha": "2e8648f10fe55af6258ab90ab889eb8b96033379",
+            "file": "(repo)",
+            "line": 0
+          }
+        ],
+        "referrer-policy": [
+          {
+            "repo": "sharkdp/fd",
+            "sha": "2e8648f10fe55af6258ab90ab889eb8b96033379",
+            "file": "(repo)",
+            "line": 0
+          }
+        ],
+        "privacy-doc": [
+          {
+            "repo": "sharkdp/fd",
+            "sha": "2e8648f10fe55af6258ab90ab889eb8b96033379",
+            "file": "(repo)",
+            "line": 0
+          }
+        ],
+        "pii-email": [
+          {
+            "repo": "sharkdp/fd",
+            "sha": "2e8648f10fe55af6258ab90ab889eb8b96033379",
+            "file": "Cargo.toml",
+            "line": 2
+          }
+        ],
+        "pii-in-url": [
+          {
+            "repo": "sharkdp/fd",
+            "sha": "2e8648f10fe55af6258ab90ab889eb8b96033379",
+            "file": "README.md",
+            "line": 603
+          }
+        ],
+        "upload-surface": [
+          {
+            "repo": "sharkdp/fd",
+            "sha": "2e8648f10fe55af6258ab90ab889eb8b96033379",
+            "file": ".github/workflows/CICD.yml",
+            "line": 247
+          }
+        ],
+        "upload-limit": [
+          {
+            "repo": "sharkdp/fd",
+            "sha": "2e8648f10fe55af6258ab90ab889eb8b96033379",
+            "file": "src/cli.rs",
+            "line": 819
+          }
+        ],
+        "first-party-endpoint": [
+          {
+            "repo": "sharkdp/fd",
+            "sha": "2e8648f10fe55af6258ab90ab889eb8b96033379",
+            "file": "Cargo.toml",
+            "line": 7
+          },
+          {
+            "repo": "sharkdp/fd",
+            "sha": "2e8648f10fe55af6258ab90ab889eb8b96033379",
+            "file": "Cargo.toml",
+            "line": 6
+          }
+        ]
+      }
     }
   },
   "detection": [
@@ -513,7 +5467,53 @@
         "typosquat-dep",
         "high-entropy-blob",
         "minified-outside-dist"
-      ]
+      ],
+      "examples": {
+        "typosquat-dep": [
+          {
+            "repo": "fixture:tests/fixtures/trap-binary",
+            "sha": "worktree",
+            "file": "Cargo.toml",
+            "line": 6
+          },
+          {
+            "repo": "fixture:tests/fixtures/trap-binary",
+            "sha": "worktree",
+            "file": "package.json",
+            "line": 1
+          },
+          {
+            "repo": "fixture:tests/fixtures/trap-binary",
+            "sha": "worktree",
+            "file": "requirements.txt",
+            "line": 1
+          }
+        ],
+        "magic-mismatch": [
+          {
+            "repo": "fixture:tests/fixtures/trap-binary",
+            "sha": "worktree",
+            "file": "logo.png",
+            "line": 0
+          }
+        ],
+        "high-entropy-blob": [
+          {
+            "repo": "fixture:tests/fixtures/trap-binary",
+            "sha": "worktree",
+            "file": "src/loader.js",
+            "line": 1
+          }
+        ],
+        "minified-outside-dist": [
+          {
+            "repo": "fixture:tests/fixtures/trap-binary",
+            "sha": "worktree",
+            "file": "src/helper.js",
+            "line": 1
+          }
+        ]
+      }
     },
     {
       "path": "tests/fixtures/trap-build",
@@ -540,7 +5540,127 @@
         "pip-build-hook",
         "install-time-fetch",
         "make-just-hooks"
-      ]
+      ],
+      "examples": {
+        "Download-and-execute": [
+          {
+            "repo": "fixture:tests/fixtures/trap-build",
+            "sha": "worktree",
+            "file": "binding.gyp",
+            "line": 1
+          },
+          {
+            "repo": "fixture:tests/fixtures/trap-build",
+            "sha": "worktree",
+            "file": "build.rs",
+            "line": 2
+          },
+          {
+            "repo": "fixture:tests/fixtures/trap-build",
+            "sha": "worktree",
+            "file": "cmd/gen.go",
+            "line": 3
+          }
+        ],
+        "install-time-fetch": [
+          {
+            "repo": "fixture:tests/fixtures/trap-build",
+            "sha": "worktree",
+            "file": "hatch_build.py",
+            "line": 1
+          },
+          {
+            "repo": "fixture:tests/fixtures/trap-build",
+            "sha": "worktree",
+            "file": "hatch_build.py",
+            "line": 2
+          },
+          {
+            "repo": "fixture:tests/fixtures/trap-build",
+            "sha": "worktree",
+            "file": "setup.cfg",
+            "line": 3
+          }
+        ],
+        "go-generate-fetch": [
+          {
+            "repo": "fixture:tests/fixtures/trap-build",
+            "sha": "worktree",
+            "file": "cmd/gen.go",
+            "line": 3
+          }
+        ],
+        "Bandit B310": [
+          {
+            "repo": "fixture:tests/fixtures/trap-build",
+            "sha": "worktree",
+            "file": "hatch_build.py",
+            "line": 2
+          }
+        ],
+        "node-gyp-action": [
+          {
+            "repo": "fixture:tests/fixtures/trap-build",
+            "sha": "worktree",
+            "file": "binding.gyp",
+            "line": 1
+          }
+        ],
+        "rust-build-rs": [
+          {
+            "repo": "fixture:tests/fixtures/trap-build",
+            "sha": "worktree",
+            "file": "build.rs",
+            "line": 2
+          }
+        ],
+        "pip-build-hook": [
+          {
+            "repo": "fixture:tests/fixtures/trap-build",
+            "sha": "worktree",
+            "file": "pyproject.toml",
+            "line": 3
+          }
+        ],
+        "import-time-network": [
+          {
+            "repo": "fixture:tests/fixtures/trap-build",
+            "sha": "worktree",
+            "file": "hatch_build.py",
+            "line": 2
+          }
+        ],
+        "GuardDog pypi package": [
+          {
+            "repo": "fixture:tests/fixtures/trap-build",
+            "sha": "worktree",
+            "file": "hatch_build.py",
+            "line": 2
+          },
+          {
+            "repo": "fixture:tests/fixtures/trap-build",
+            "sha": "worktree",
+            "file": "build.rs",
+            "line": 2
+          }
+        ],
+        "make-just-hooks": [
+          {
+            "repo": "fixture:tests/fixtures/trap-build",
+            "sha": "worktree",
+            "file": "Makefile",
+            "line": 2
+          }
+        ],
+        "privacy-doc": [
+          {
+            "repo": "fixture:tests/fixtures/trap-build",
+            "sha": "worktree",
+            "file": "(repo)",
+            "line": 0
+          }
+        ]
+      }
     },
     {
       "path": "tests/fixtures/trap-gha",
@@ -563,7 +5683,71 @@
         "gha-privileged-trigger",
         "gha-write-permissions",
         "gha-unpinned-action"
-      ]
+      ],
+      "examples": {
+        "Download-and-execute": [
+          {
+            "repo": "fixture:tests/fixtures/trap-gha",
+            "sha": "worktree",
+            "file": ".github/workflows/ci.yml",
+            "line": 14
+          }
+        ],
+        "gha-pwn-request": [
+          {
+            "repo": "fixture:tests/fixtures/trap-gha",
+            "sha": "worktree",
+            "file": ".github/workflows/ci.yml",
+            "line": 12
+          }
+        ],
+        "gha-secret-echo": [
+          {
+            "repo": "fixture:tests/fixtures/trap-gha",
+            "sha": "worktree",
+            "file": ".github/workflows/ci.yml",
+            "line": 13
+          }
+        ],
+        "gha-privileged-trigger": [
+          {
+            "repo": "fixture:tests/fixtures/trap-gha",
+            "sha": "worktree",
+            "file": ".github/workflows/after.yml",
+            "line": 3
+          }
+        ],
+        "gha-curl-pipe-shell": [
+          {
+            "repo": "fixture:tests/fixtures/trap-gha",
+            "sha": "worktree",
+            "file": ".github/workflows/ci.yml",
+            "line": 14
+          }
+        ],
+        "gha-unpinned-action": [
+          {
+            "repo": "fixture:tests/fixtures/trap-gha",
+            "sha": "worktree",
+            "file": ".github/workflows/after.yml",
+            "line": 10
+          },
+          {
+            "repo": "fixture:tests/fixtures/trap-gha",
+            "sha": "worktree",
+            "file": ".github/workflows/ci.yml",
+            "line": 10
+          }
+        ],
+        "gha-write-permissions": [
+          {
+            "repo": "fixture:tests/fixtures/trap-gha",
+            "sha": "worktree",
+            "file": ".github/workflows/ci.yml",
+            "line": 5
+          }
+        ]
+      }
     },
     {
       "path": "tests/fixtures/trap-markdown",
@@ -585,7 +5769,65 @@
         "md-alt-title-instruction",
         "md-css-hidden",
         "md-padded-line"
-      ]
+      ],
+      "examples": {
+        "Instructions to read and send secrets/credentials to a URL": [
+          {
+            "repo": "fixture:tests/fixtures/trap-markdown",
+            "sha": "worktree",
+            "file": "docs/guide.md",
+            "line": 9
+          }
+        ],
+        "md-comment-instruction": [
+          {
+            "repo": "fixture:tests/fixtures/trap-markdown",
+            "sha": "worktree",
+            "file": "docs/guide.md",
+            "line": 5
+          }
+        ],
+        "md-details-instruction": [
+          {
+            "repo": "fixture:tests/fixtures/trap-markdown",
+            "sha": "worktree",
+            "file": "docs/guide.md",
+            "line": 7
+          }
+        ],
+        "md-alt-title-instruction": [
+          {
+            "repo": "fixture:tests/fixtures/trap-markdown",
+            "sha": "worktree",
+            "file": "docs/guide.md",
+            "line": 12
+          }
+        ],
+        "md-css-hidden": [
+          {
+            "repo": "fixture:tests/fixtures/trap-markdown",
+            "sha": "worktree",
+            "file": "docs/guide.md",
+            "line": 14
+          }
+        ],
+        "md-padded-line": [
+          {
+            "repo": "fixture:tests/fixtures/trap-markdown",
+            "sha": "worktree",
+            "file": "docs/guide.md",
+            "line": 16
+          }
+        ],
+        "Download-and-execute": [
+          {
+            "repo": "fixture:tests/fixtures/trap-markdown",
+            "sha": "worktree",
+            "file": "docs/guide.md",
+            "line": 14
+          }
+        ]
+      }
     },
     {
       "path": "tests/fixtures/trap-privacy",
@@ -731,7 +5973,917 @@
         "telemetry-analytics",
         "telemetry-session-replay",
         "telemetry-ads"
-      ]
+      ],
+      "examples": {
+        "telemetry-ads": [
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "web/app.js",
+            "line": 7
+          },
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "web/analytics.js",
+            "line": 25
+          },
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "web/analytics.js",
+            "line": 26
+          }
+        ],
+        "telemetry-session-replay": [
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "web/app.js",
+            "line": 20
+          },
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "package-lock.json",
+            "line": 6
+          }
+        ],
+        "macos-entitlement": [
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "mac/MiaWidget.entitlements",
+            "line": 5
+          },
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "mac/MiaWidget.entitlements",
+            "line": 4
+          }
+        ],
+        "extension-permission": [
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "extension/manifest.json",
+            "line": 10
+          },
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "extension/manifest.json",
+            "line": 5
+          },
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "extension/manifest.json",
+            "line": 6
+          }
+        ],
+        "android-permission": [
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "AndroidManifest.xml",
+            "line": 3
+          },
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "AndroidManifest.xml",
+            "line": 4
+          },
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "AndroidManifest.xml",
+            "line": 8
+          }
+        ],
+        "Bandit B113": [
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "server.py",
+            "line": 3
+          }
+        ],
+        "telemetry-analytics": [
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "web/app.js",
+            "line": 6
+          },
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "web/analytics.js",
+            "line": 19
+          },
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "web/index.html",
+            "line": 17
+          }
+        ],
+        "telemetry-crash": [
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "Cargo.toml",
+            "line": 5
+          }
+        ],
+        "telemetry-apm": [
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "web/app.js",
+            "line": 21
+          },
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "go.sum",
+            "line": 1
+          }
+        ],
+        "fingerprint": [
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "web/analytics.js",
+            "line": 2
+          },
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "web/app.js",
+            "line": 12
+          },
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "web/app.js",
+            "line": 13
+          }
+        ],
+        "import-time-network": [
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "server.py",
+            "line": 3
+          },
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "web/analytics.js",
+            "line": 5
+          }
+        ],
+        "browser-capability": [
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "web/analytics.js",
+            "line": 6
+          },
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "web/analytics.js",
+            "line": 7
+          },
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "web/app.js",
+            "line": 26
+          }
+        ],
+        "insecure-endpoint": [
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "web/index.html",
+            "line": 13
+          },
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "web/app.js",
+            "line": 15
+          }
+        ],
+        "iframe-allow": [
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "web/index.html",
+            "line": 61
+          },
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "web/index.html",
+            "line": 41
+          },
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "web/index.html",
+            "line": 18
+          }
+        ],
+        "android-cleartext": [
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "network_security_config.xml",
+            "line": 3
+          },
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "AndroidManifest.xml",
+            "line": 10
+          }
+        ],
+        "ios-cleartext": [
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "ios/Info.plist",
+            "line": 10
+          }
+        ],
+        "import-time-storage": [
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "web/analytics.js",
+            "line": 4
+          }
+        ],
+        "ip-logging": [
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "server.py",
+            "line": 6
+          }
+        ],
+        "pii-log": [
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "server.py",
+            "line": 6
+          },
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "server.py",
+            "line": 21
+          }
+        ],
+        "pii-phone": [
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "web/app.js",
+            "line": 30
+          },
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "web/analytics.js",
+            "line": 3
+          },
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "web/app.js",
+            "line": 35
+          }
+        ],
+        "pii-address": [
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "support.js",
+            "line": 2
+          },
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "support.js",
+            "line": 3
+          },
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "support.js",
+            "line": 4
+          }
+        ],
+        "pii-ssn": [
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "web/analytics.js",
+            "line": 13
+          }
+        ],
+        "pii-card": [
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "web/analytics.js",
+            "line": 12
+          }
+        ],
+        "pii-postcode": [
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "support.js",
+            "line": 5
+          }
+        ],
+        "pii-in-url": [
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "web/analytics.js",
+            "line": 21
+          },
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "web/app.js",
+            "line": 31
+          },
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "README.md",
+            "line": 5
+          }
+        ],
+        "tracking-cookie": [
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "web/analytics.js",
+            "line": 16
+          },
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "web/analytics.js",
+            "line": 11
+          },
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "web/app.js",
+            "line": 19
+          }
+        ],
+        "client-id": [
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "web/analytics.js",
+            "line": 8
+          }
+        ],
+        "ios-tracking": [
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "ios/PrivacyInfo.xcprivacy",
+            "line": 4
+          }
+        ],
+        "consent-order": [
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "web/analytics.js",
+            "line": 4
+          },
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "web/analytics.js",
+            "line": 19
+          }
+        ],
+        "vendor-pii": [
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "web/app.js",
+            "line": 4
+          },
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "web/app.js",
+            "line": 5
+          }
+        ],
+        "external-endpoint": [
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "web/index.html",
+            "line": 54
+          },
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "web/app.js",
+            "line": 16
+          }
+        ],
+        "third-party-cdn": [
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "web/index.html",
+            "line": 24
+          },
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "web/index.html",
+            "line": 3
+          }
+        ],
+        "third-party-script": [
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "web/consent.html",
+            "line": 5
+          },
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "web/index.html",
+            "line": 30
+          },
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "web/index.html",
+            "line": 27
+          }
+        ],
+        "third-party-stylesheet": [
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "web/index.html",
+            "line": 36
+          },
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "web/index.html",
+            "line": 6
+          },
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "web/index.html",
+            "line": 3
+          }
+        ],
+        "third-party-media": [
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "web/index.html",
+            "line": 11
+          },
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "web/index.html",
+            "line": 12
+          },
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "web/style.css",
+            "line": 2
+          }
+        ],
+        "third-party-preconnect": [
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "web/index.html",
+            "line": 4
+          }
+        ],
+        "third-party-preload": [
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "web/index.html",
+            "line": 5
+          },
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "web/index.html",
+            "line": 55
+          }
+        ],
+        "third-party-embed": [
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "web/index.html",
+            "line": 61
+          },
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "web/index.html",
+            "line": 44
+          },
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "web/index.html",
+            "line": 41
+          }
+        ],
+        "third-party-form": [
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "web/index.html",
+            "line": 23
+          },
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "web/index.html",
+            "line": 50
+          }
+        ],
+        "cookie-flags": [
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "server.py",
+            "line": 29
+          },
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "server.py",
+            "line": 25
+          },
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "server.py",
+            "line": 7
+          }
+        ],
+        "cookie-write": [
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "web/analytics.js",
+            "line": 4
+          },
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "web/app.js",
+            "line": 24
+          }
+        ],
+        "cookie-lifetime": [
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "web/analytics.js",
+            "line": 15
+          },
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "web/app.js",
+            "line": 22
+          },
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "server.py",
+            "line": 7
+          }
+        ],
+        "referrer-policy": [
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "web/index.html",
+            "line": 8
+          },
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "web/analytics.js",
+            "line": 23
+          }
+        ],
+        "extension-resource": [
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "extension/manifest.json",
+            "line": 31
+          }
+        ],
+        "extension-connectable": [
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "extension/manifest.json",
+            "line": 42
+          }
+        ],
+        "telemetry-identify": [
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "web/app.js",
+            "line": 11
+          }
+        ],
+        "form-method": [
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "web/index.html",
+            "line": 56
+          }
+        ],
+        "permissions-policy": [
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "(repo)",
+            "line": 0
+          }
+        ],
+        "pii-email": [
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "README.md",
+            "line": 1
+          },
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "web/index.html",
+            "line": 21
+          },
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "support.js",
+            "line": 1
+          }
+        ],
+        "tracking-params": [
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "README.md",
+            "line": 3
+          }
+        ],
+        "ios-tracking-domain": [
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "ios/PrivacyInfo.xcprivacy",
+            "line": 14
+          }
+        ],
+        "ios-api-category": [
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "ios/PrivacyInfo.xcprivacy",
+            "line": 8
+          }
+        ],
+        "ios-data-type": [
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "ios/PrivacyInfo.xcprivacy",
+            "line": 1
+          }
+        ],
+        "ios-purpose-string": [
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "ios/Info.plist",
+            "line": 4
+          },
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "ios/Info.plist",
+            "line": 6
+          }
+        ],
+        "consent-mode": [
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "web/analytics.js",
+            "line": 19
+          }
+        ],
+        "consent-state": [
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "web/analytics.js",
+            "line": 20
+          },
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "web/app.js",
+            "line": 18
+          }
+        ],
+        "data-retention": [
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "web/app.js",
+            "line": 32
+          },
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "server.py",
+            "line": 13
+          }
+        ],
+        "upload-surface": [
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "server.py",
+            "line": 16
+          }
+        ],
+        "upload-limit": [
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "server.py",
+            "line": 14
+          }
+        ],
+        "store-disclosure": [
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "extension/manifest.json",
+            "line": 24
+          }
+        ],
+        "first-party-endpoint": [
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "server.py",
+            "line": 3
+          },
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "web/analytics.js",
+            "line": 5
+          }
+        ],
+        "browser-storage": [
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "web/analytics.js",
+            "line": 8
+          }
+        ],
+        "consent-manager": [
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "web/consent.html",
+            "line": 5
+          },
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "web/index.html",
+            "line": 30
+          },
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "web/analytics.js",
+            "line": 20
+          }
+        ],
+        "android-feature": [
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "AndroidManifest.xml",
+            "line": 6
+          }
+        ],
+        "android-queries": [
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "AndroidManifest.xml",
+            "line": 14
+          },
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "AndroidManifest.xml",
+            "line": 12
+          }
+        ],
+        "undisclosed-vendor": [
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "(repo)",
+            "line": 0
+          }
+        ],
+        "dnt-respect": [
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "(repo)",
+            "line": 0
+          }
+        ],
+        "session-replay-mask": [
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "(repo)",
+            "line": 0
+          }
+        ],
+        "ios-tracking-declaration": [
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "(repo)",
+            "line": 0
+          }
+        ],
+        "privacy-doc": [
+          {
+            "repo": "fixture:tests/fixtures/trap-privacy",
+            "sha": "worktree",
+            "file": "PRIVACY.md",
+            "line": 1
+          }
+        ]
+      }
     },
     {
       "path": "tests/fixtures/trap-supply",
@@ -753,7 +6905,85 @@
         "dockerfile-base-unpinned",
         "dependency-confusion",
         "submodule-uninspected"
-      ]
+      ],
+      "examples": {
+        "GuardDog npm package": [
+          {
+            "repo": "fixture:tests/fixtures/trap-supply",
+            "sha": "worktree",
+            "file": "package.json",
+            "line": 5
+          }
+        ],
+        "dependency-confusion": [
+          {
+            "repo": "fixture:tests/fixtures/trap-supply",
+            "sha": "worktree",
+            "file": "package.json",
+            "line": 5
+          },
+          {
+            "repo": "fixture:tests/fixtures/trap-supply",
+            "sha": "worktree",
+            "file": "requirements.txt",
+            "line": 1
+          },
+          {
+            "repo": "fixture:tests/fixtures/trap-supply",
+            "sha": "worktree",
+            "file": "package.json",
+            "line": 7
+          }
+        ],
+        "submodule-unpinned": [
+          {
+            "repo": "fixture:tests/fixtures/trap-supply",
+            "sha": "worktree",
+            "file": ".gitmodules",
+            "line": 1
+          }
+        ],
+        "dockerfile-base-unpinned": [
+          {
+            "repo": "fixture:tests/fixtures/trap-supply",
+            "sha": "worktree",
+            "file": "Dockerfile",
+            "line": 1
+          }
+        ],
+        "insecure-endpoint": [
+          {
+            "repo": "fixture:tests/fixtures/trap-supply",
+            "sha": "worktree",
+            "file": "package.json",
+            "line": 5
+          }
+        ],
+        "referrer-policy": [
+          {
+            "repo": "fixture:tests/fixtures/trap-supply",
+            "sha": "worktree",
+            "file": "(repo)",
+            "line": 0
+          }
+        ],
+        "privacy-doc": [
+          {
+            "repo": "fixture:tests/fixtures/trap-supply",
+            "sha": "worktree",
+            "file": "(repo)",
+            "line": 0
+          }
+        ],
+        "submodule-uninspected": [
+          {
+            "repo": "fixture:tests/fixtures/trap-supply",
+            "sha": "worktree",
+            "file": ".gitmodules",
+            "line": 1
+          }
+        ]
+      }
     },
     {
       "path": "tests/fixtures/trap-telemetry",
@@ -780,7 +7010,121 @@
         "telemetry-apm",
         "telemetry-identify",
         "session-replay-mask"
-      ]
+      ],
+      "examples": {
+        "telemetry-ads": [
+          {
+            "repo": "fixture:tests/fixtures/trap-telemetry",
+            "sha": "worktree",
+            "file": "src/app.js",
+            "line": 15
+          }
+        ],
+        "telemetry-session-replay": [
+          {
+            "repo": "fixture:tests/fixtures/trap-telemetry",
+            "sha": "worktree",
+            "file": "package.json",
+            "line": 7
+          },
+          {
+            "repo": "fixture:tests/fixtures/trap-telemetry",
+            "sha": "worktree",
+            "file": "src/app.js",
+            "line": 13
+          }
+        ],
+        "telemetry-analytics": [
+          {
+            "repo": "fixture:tests/fixtures/trap-telemetry",
+            "sha": "worktree",
+            "file": "src/app.js",
+            "line": 10
+          },
+          {
+            "repo": "fixture:tests/fixtures/trap-telemetry",
+            "sha": "worktree",
+            "file": "package.json",
+            "line": 8
+          }
+        ],
+        "telemetry-crash": [
+          {
+            "repo": "fixture:tests/fixtures/trap-telemetry",
+            "sha": "worktree",
+            "file": "src/app.js",
+            "line": 14
+          },
+          {
+            "repo": "fixture:tests/fixtures/trap-telemetry",
+            "sha": "worktree",
+            "file": "package.json",
+            "line": 6
+          }
+        ],
+        "telemetry-apm": [
+          {
+            "repo": "fixture:tests/fixtures/trap-telemetry",
+            "sha": "worktree",
+            "file": "package.json",
+            "line": 5
+          }
+        ],
+        "telemetry-identify": [
+          {
+            "repo": "fixture:tests/fixtures/trap-telemetry",
+            "sha": "worktree",
+            "file": "src/app.js",
+            "line": 12
+          },
+          {
+            "repo": "fixture:tests/fixtures/trap-telemetry",
+            "sha": "worktree",
+            "file": "telemetry.py",
+            "line": 8
+          }
+        ],
+        "session-replay-mask": [
+          {
+            "repo": "fixture:tests/fixtures/trap-telemetry",
+            "sha": "worktree",
+            "file": "(repo)",
+            "line": 0
+          }
+        ],
+        "consent-gating": [
+          {
+            "repo": "fixture:tests/fixtures/trap-telemetry",
+            "sha": "worktree",
+            "file": "(repo)",
+            "line": 0
+          }
+        ],
+        "data-retention": [
+          {
+            "repo": "fixture:tests/fixtures/trap-telemetry",
+            "sha": "worktree",
+            "file": "(repo)",
+            "line": 0
+          }
+        ],
+        "privacy-doc": [
+          {
+            "repo": "fixture:tests/fixtures/trap-telemetry",
+            "sha": "worktree",
+            "file": "(repo)",
+            "line": 0
+          }
+        ],
+        "dnt-respect": [
+          {
+            "repo": "fixture:tests/fixtures/trap-telemetry",
+            "sha": "worktree",
+            "file": "(repo)",
+            "line": 0
+          }
+        ]
+      }
     }
   ]
 }
