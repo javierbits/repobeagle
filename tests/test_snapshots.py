@@ -3,8 +3,9 @@
 
 The snapshot is the deterministic, environment-independent core of a scan: agent/privacy/
 telemetry findings plus the stable report metadata. External scanner findings and tool
-versions are excluded because their presence depends on what is installed; timings, run
-URLs and cache state are excluded because they are volatile by design.
+versions are excluded because their presence depends on what is installed; the tool
+version, timings, run URLs and cache state are excluded because they are volatile or
+release-scoped by design (report shape is covered by the schema/other tests).
 
 Run with --update to regenerate the goldens (then review the diff).
 """
@@ -50,7 +51,6 @@ def snapshot(d):
     findings.sort(key=lambda f: (f.get("tool") or "", f.get("severity") or "", str(f.get("title") or ""),
                                  f.get("file") or "", int(f.get("line") or 0)))
     snap = {
-        "version": d.get("version"),
         "findings": findings,
         "privacy_summary": d.get("privacy_summary") or {},
         "meta": {k: v for k, v in sorted(meta.items()) if k not in VOLATILE_META},

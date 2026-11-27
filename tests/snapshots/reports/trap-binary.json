@@ -127,6 +127,5 @@
     "suppressions": [],
     "target": "tests/fixtures/trap-binary"
   },
-  "privacy_summary": {},
-  "version": "1.194.0"
+  "privacy_summary": {}
 }

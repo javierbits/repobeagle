@@ -120,6 +120,5 @@
     "suppressions": [],
     "target": "tests/fixtures/trap-npm"
   },
-  "privacy_summary": {},
-  "version": "1.194.0"
+  "privacy_summary": {}
 }
