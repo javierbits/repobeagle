@@ -37,6 +37,7 @@ and the `meta` facts you need to judge how much the verdict covers.
 | A package runner is about to fetch code | `repobeagle run -- npx -y <pkg>` | RED refuses automatically; YELLOW prompts (CI needs `--yes`/`--force`) |
 | Registry/catalog listing | `repobeagle gate entries.txt` / `repobeagle batch entries.txt` | new RED fails; `unknown` entries were not verified |
 | A published badge/report | `repobeagle verify <owner/repo>` | signature invalid or stale: do not trust the colour |
+| What does this rule id mean? | `repobeagle explain <rule>` | severity, meaning, remediation and corpus examples with exact lines |
 | Existing report, what if I accept X | `repobeagle explain report.json --accept RULE` | shows the verdict after accepting; `--write` records it with a reason |
 | Dependency change vs yesterday | `repobeagle diff old.json new.json` | fails on added findings; use `scan --baseline old.json` for one step |
 | Is it getting safer or riskier? | `repobeagle trend <owner/repo>` | ordered verdicts, first RED, per-rule regressions and the current streak; never re-scans |

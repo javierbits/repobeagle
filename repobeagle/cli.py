@@ -1,3 +1,4 @@
+import difflib
 import argparse, base64, concurrent.futures, difflib, hashlib, hmac, json, os, platform, queue, re, shlex, shutil, signal, subprocess, sys, tempfile, threading, time, unicodedata, uuid, zipfile
 import urllib.error, urllib.parse, urllib.request
 from datetime import date, datetime, timezone
@@ -10,7 +11,7 @@ from pathlib import Path
 # --- cross-module imports ---
 
 from .app import cmd_app
-from .core import ARCHIVE_EXT, CONFIG_FILE, ConfigError, IMAGE, PERSONAS, PROFILES, RELEASE, SEV_ORDER, SUPPRESS_FILE, ScanDeadline, VERSION, _deadline_left, _explain_rule, _rule_of, _scan_alarm, _trend_epoch, apply_persona, apply_suppressions, cmd_rules, entry_command, explain_report, finding, gate_findings, load_repo_config, load_rule_packs, load_suppressions, parse_suppression, print_personas, privacy_mode_consistent, privacy_profile, privacy_summary, privacy_summary_consistent, redact_pii, remediation_for, report_fingerprint, rescan_difference, run_custom_checks, run_rule_packs, suppression_meta, suppression_notes, toolchain_drift, toolchain_pins, verdict, verdict_consistent
+from .core import ARCHIVE_EXT, known_rule_ids, CONFIG_FILE, ConfigError, IMAGE, PERSONAS, PROFILES, RELEASE, SEV_ORDER, SUPPRESS_FILE, ScanDeadline, VERSION, _deadline_left, _explain_rule, _rule_of, _scan_alarm, _trend_epoch, apply_persona, apply_suppressions, cmd_rules, entry_command, explain_report, finding, gate_findings, load_repo_config, load_rule_packs, load_suppressions, parse_suppression, print_personas, privacy_mode_consistent, privacy_profile, privacy_summary, privacy_summary_consistent, redact_pii, remediation_for, report_fingerprint, rescan_difference, run_custom_checks, run_rule_packs, suppression_meta, suppression_notes, toolchain_drift, toolchain_pins, verdict, verdict_consistent
 from .evidence import build_ledger
 from .freshness import age_seconds, human_age, parse_max_age, stale
 from .fetch import GITHUB_REPO_RE, VERIFY_IDENTITY, VERIFY_ISSUER, WEB_MAX_BYTES, WEB_UA, _ensure_cosign, _fetch_badge_file, _local_image_digest, _web_get, docker_ok, fetch_repo, rescan_image, run_in_docker
@@ -172,8 +173,52 @@ def cmd_feedback(a):
     return 0
 
 
+def explain_rule_id(rule):
+    """Rule teaching material: registry metadata, remediation and up to three recorded corpus examples."""
+    from .rules.registry import RULES
+    known = set(RULES) | set(known_rule_ids())
+    if rule not in known:
+        print(f"explain: unknown rule id {rule!r}", file=sys.stderr)
+        close = difflib.get_close_matches(rule, sorted(RULES), n=6, cutoff=0.3)
+        if close:
+            print("  did you mean: " + ", ".join(close), file=sys.stderr)
+        return 2
+    meta = RULES.get(rule)
+    print(f"rule: {rule}")
+    if meta:
+        print(f"severity: {meta.severity}")
+        print(f"meaning: {meta.meaning}")
+    else:
+        print("severity: not documented (sentence-style agent check)")
+    remediation = remediation_for({"rule": rule, "title": rule, "file": "", "line": 0})
+    print(f"remediation: {remediation}" if remediation else "remediation: none recorded")
+    if meta and meta.docs:
+        print(f"docs: {meta.docs}")
+    baseline = Path(__file__).resolve().parent.parent / "tests" / "corpus-baseline.json"
+    examples: list[dict] = []
+    try:
+        examples = (json.loads(baseline.read_text(encoding="utf-8")).get("examples") or {}).get(rule) or []
+    except (OSError, ValueError):
+        pass
+    if examples:
+        print("examples (R7 corpus, up to 3):")
+        for ex in examples[:3]:
+            repo, sha = str(ex.get("repo") or "?"), str(ex.get("sha") or "")
+            path, line = str(ex.get("file") or "?"), int(ex.get("line") or 0)
+            loc = f"{repo}@{sha[:12] or 'worktree'}:{path}:{line}"
+            url = ""
+            if not repo.startswith("fixture:") and re.fullmatch(r"[0-9a-f]{40}", sha):
+                url = f"  https://github.com/{repo}/blob/{sha}/{path}#L{line}"
+            print(f"  {loc}{url}")
+    else:
+        print("examples: none recorded in the R7 corpus (the rule never fired there)")
+    return 0
+
+
 def cmd_explain(a):
-    """Prints how a stored report's verdict follows from the profile thresholds, and simulates accepting rules. No scan, no network."""
+    """Explains a stored report's verdict, or a rule id with its corpus examples. No scan, no network."""
+    if not Path(a.report).is_file():
+        return explain_rule_id(a.report)
     if getattr(a, "write", False) and not (getattr(a, "accept", None) or getattr(a, "target", None)):
         print("explain: --write needs --accept or --target (nothing selected)", file=sys.stderr)
         return 1
@@ -2645,7 +2690,7 @@ def main():
     fx.add_argument("--json", metavar="FILE")
     fx.add_argument("--no-color", action="store_true")
     ex = sp.add_parser("explain", help="explain how a stored report's verdict follows from its profile thresholds")
-    ex.add_argument("report", help="report.json produced by 'scan --json'")
+    ex.add_argument("report", help="report.json produced by 'scan --json', or a rule id to explain that rule")
     ex.add_argument("--accept", nargs="+", metavar="RULE", default=[],
                     help="simulate accepting these rule ids or globs and print the verdict after (no re-scan)")
     ex.add_argument("--target", choices=["green", "yellow"],
