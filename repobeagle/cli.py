@@ -20,7 +20,7 @@ from .release import cmd_release
 from .report import ACTIONS, _WORKDIRS, _install_cleanup, banner, collapse, color_enabled, dedupe, html_report, markdown_report, render_capabilities, render_report, sarif_report, sbom_report
 from .rules.agent import run_agent_checks, trust_signals
 from .rules.privacy import RULESET
-from .scanners import REGISTRY_TTL, _cache_root, _registry_cache_path, _registry_fetch, _run, ai_review, analysis_cache_key, cache_load, cache_store, inner, osv_db_info, osv_db_warning, run_trace, scan_capabilities, scan_coverage, scan_osv, scan_release_assets, tool_version, verify_deps
+from .scanners import REGISTRY_TTL, ScanFailure, scan_json_report, _cache_root, _registry_cache_path, _registry_fetch, _run, ai_review, analysis_cache_key, cache_load, cache_store, inner, osv_db_info, osv_db_warning, run_trace, scan_capabilities, scan_coverage, scan_osv, scan_release_assets, tool_version, verify_deps
 from .service import cmd_serve
 
 
@@ -365,8 +365,153 @@ def cmd_fix(a):
     return 0
 
 
+def _ref_target(text):
+    """(git-url, ref) for a `url@ref` argument, or None for a report path."""
+    if "@" not in str(text):
+        return None
+    target, ref = str(text).rsplit("@", 1)
+    if not target or not ref or not re.match(r"^(https?://|git@|ssh://|file://)", target):
+        return None
+    return target, ref
+
+
+def _active_findings(report):
+    return [f for f in report.get("findings") or []
+            if isinstance(f, dict) and not f.get("suppressed") and f.get("severity") in SEV_ORDER]
+
+
+def _finding_signature(f):
+    return (int(f.get("line") or 0), str(f.get("title") or ""), str(f.get("snippet") or ""),
+            str(f.get("meaning") or ""))
+
+
+def _capability_sets(report):
+    caps = (report.get("meta") or {}).get("capabilities") or {}
+    out: dict[str, dict[str, dict]] = {}
+    for section, entries in caps.items():
+        if not isinstance(entries, list):
+            continue
+        for entry in entries:
+            if not isinstance(entry, dict):
+                continue
+            value = str(entry.get("value") or "")
+            if value:
+                out.setdefault(section, {}).setdefault(value, entry)
+    return out
+
+
+def version_review(a):
+    """Scans two refs of one repository and reports only what changed; exits 1 on new findings at/above --min-severity."""
+    old_target, old_ref = _ref_target(a.old)
+    new_target, new_ref = _ref_target(a.new)
+    if old_target != new_target:
+        print("diff: version review needs both refs of the same git URL", file=sys.stderr)
+        return 2
+    reports = {}
+    for side, ref in (("old", old_ref), ("new", new_ref)):
+        try:
+            raw = scan_json_report(old_target, ref,
+                                   profile="balanced",
+                                   no_docker=getattr(a, "no_docker", False),
+                                   no_osv=getattr(a, "no_osv", False),
+                                   no_trust=getattr(a, "no_trust", False),
+                                   jobs=1, timeout=getattr(a, "timeout", 1800))
+            reports[side] = json.loads(raw)
+        except ScanFailure as ex:
+            print(f"diff: scan of {old_target}@{ref} failed: {ex}", file=sys.stderr)
+            return 2
+    old, new = reports["old"], reports["new"]
+    mo = (old.get("meta") or {})
+    mn = (new.get("meta") or {})
+    old_by_key: dict[tuple[str, str], list[dict]] = {}
+    new_by_key: dict[tuple[str, str], list[dict]] = {}
+    for f in _active_findings(old):
+        old_by_key.setdefault((_rule_of(f), str(f.get("file") or "?")), []).append(f)
+    for f in _active_findings(new):
+        new_by_key.setdefault((_rule_of(f), str(f.get("file") or "?")), []).append(f)
+    removed_keys = [k for k in old_by_key if k not in new_by_key]
+    added_keys = [k for k in new_by_key if k not in old_by_key]
+    changed, moved = [], []
+    removed = [f for k in removed_keys for f in old_by_key[k]]
+    added = [f for k in added_keys for f in new_by_key[k]]
+    # Same rule and same evidence at a new path: a move, not an addition (renames must not gate).
+    for f in list(added):
+        match = next((r for r in removed
+                      if _rule_of(r) == _rule_of(f) and r.get("snippet") and r.get("snippet") == f.get("snippet")
+                      and r.get("title") == f.get("title")), None)
+        if match is not None:
+            moved.append({"rule": _rule_of(f), "severity": f.get("severity"), "title": f.get("title"),
+                          "from": match.get("file"), "to": f.get("file")})
+            added.remove(f)
+            removed.remove(match)
+    for key in sorted(set(old_by_key) & set(new_by_key)):
+        if sorted(_finding_signature(x) for x in old_by_key[key]) != sorted(_finding_signature(x) for x in new_by_key[key]):
+            changed.append({"rule": key[0], "file": key[1],
+                            "old": [_finding_signature(x)[:2] for x in old_by_key[key]],
+                            "new": [_finding_signature(x)[:2] for x in new_by_key[key]]})
+    gated = [f for f in added if SEV_ORDER.get(str(f.get("severity")), 0) >= SEV_ORDER[a.min_severity]]
+    old_caps, new_caps = _capability_sets(old), _capability_sets(new)
+    caps_added: dict[str, list[dict]] = {}
+    caps_removed: dict[str, list[dict]] = {}
+    for section in sorted(set(old_caps) | set(new_caps)):
+        before, after = old_caps.get(section) or {}, new_caps.get(section) or {}
+        for value in sorted(set(after) - set(before)):
+            caps_added.setdefault(section, []).append({"value": value, "file": after[value].get("file"),
+                                                       "line": after[value].get("line")})
+        for value in sorted(set(before) - set(after)):
+            caps_removed.setdefault(section, []).append({"value": value, "file": before[value].get("file"),
+                                                         "line": before[value].get("line")})
+    C = (lambda code, s: f"\033[{code}m{s}\033[0m") if (color_enabled() and not a.no_color) else (lambda code, s: s)
+    vc = {"RED": "1;41;97", "YELLOW": "1;43;30", "GREEN": "1;42;30"}
+    show = lambda v: C(vc[v], v) if v in vc else (v or "?")
+    print(f"version review: {old_target}")
+    print(f"old: {show(old.get('verdict'))}  commit {str(mo.get('commit') or '?')[:12]}  findings {len(_active_findings(old))}")
+    print(f"new: {show(new.get('verdict'))}  commit {str(mn.get('commit') or '?')[:12]}  findings {len(_active_findings(new))}")
+    print(f"findings: added {len(added)}, removed {len(removed)}, changed {len(changed)}, moved {len(moved)} "
+          f"(matching on rule + path; line moves are not additions)")
+    sc = {"critical": "1;91", "high": "91", "medium": "93", "low": "96", "info": "37"}
+    for label, items in (("added", added), ("removed", removed)):
+        for f in items[:50]:
+            loc = f"{f['file']}:{f['line']}" if f.get("line") else str(f.get("file"))
+            print(f"  {label:<7} {C(sc[f['severity']], f['severity'].upper().ljust(8))} {f['title']}  [{loc}]")
+        if len(items) > 50:
+            print(f"  {label:<7} ... {len(items) - 50} more")
+    for item in moved[:50]:
+        print(f"  moved   {C(sc[item['severity']], item['severity'].upper().ljust(8))} {item['title']}  "
+              f"[{item['from']} -> {item['to']}]")
+    for label, caps in (("+", caps_added), ("-", caps_removed)):
+        for section, entries in caps.items():
+            for entry in entries[:20]:
+                print(f"  capability {label} {section}: {entry['value']}  "
+                      f"[{entry.get('file')}:{entry.get('line')}]")
+    if not (added or removed or changed or moved or caps_added or caps_removed):
+        print("no changes between the refs")
+    if a.json:
+        Path(a.json).write_text(json.dumps({
+            "mode": "refs",
+            "old": {"target": old_target, "ref": old_ref, "commit": mo.get("commit"),
+                    "verdict": old.get("verdict"), "counts": old.get("counts"),
+                    "ruleset": mo.get("ruleset"), "findings": len(_active_findings(old))},
+            "new": {"target": new_target, "ref": new_ref, "commit": mn.get("commit"),
+                    "verdict": new.get("verdict"), "counts": new.get("counts"),
+                    "ruleset": mn.get("ruleset"), "findings": len(_active_findings(new))},
+            "added": added, "removed": removed, "changed": changed, "moved": moved,
+            "capabilities": {"added": caps_added, "removed": caps_removed},
+            "gate": {"min_severity": a.min_severity, "added": len(gated)}}, indent=2))
+        print(f"[repobeagle] diff JSON written to {a.json}", file=sys.stderr)
+    if gated:
+        print(C("1;91", f"gate: {len(gated)} new finding(s) at/above {a.min_severity}"))
+        return 1
+    print(f"gate: no new findings at/above {a.min_severity}")
+    return 0
+
+
 def cmd_diff(a):
-    """Compares two stored reports and fails when the change added findings at/above --min-severity. Never scans."""
+    """Compares two stored reports, or two refs of one repository (a version review)."""
+    old_ref = _ref_target(a.old)
+    new_ref = _ref_target(a.new)
+    if not (Path(a.old).is_file() and Path(a.new).is_file()) and old_ref and new_ref:
+        return version_review(a)
     try:
         old = json.loads(Path(a.old).read_text())
         new = json.loads(Path(a.new).read_text())
@@ -2701,13 +2846,18 @@ def main():
                     help=f"file written by --write (default: {SUPPRESS_FILE})")
     ex.add_argument("--reason", default="reviewed with repobeagle explain --write",
                     help="reason comment stored by --write")
-    df = sp.add_parser("diff", help="compare two stored reports; exit 1 when the change added findings at/above --min-severity")
-    df.add_argument("old", help="baseline report.json")
-    df.add_argument("new", help="current report.json")
+    df = sp.add_parser("diff", help="compare two stored reports or two refs of a repo; exit 1 on added findings at/above --min-severity")
+    df.add_argument("old", help="baseline report.json, or <git-url>@<refA> for a version review")
+    df.add_argument("new", help="current report.json, or <git-url>@<refB> for a version review")
     df.add_argument("--min-severity", choices=list(SEV_ORDER), default="medium",
-                    help="fail when an added finding is at/above this severity (default: medium)")
+                    help="fail when an added finding is at/above this severity (default: medium); also the "
+                         "gate for a repo@ref version review")
     df.add_argument("--json", metavar="FILE", help="write the added/removed findings as JSON")
     df.add_argument("--no-color", action="store_true")
+    df.add_argument("--no-docker", action="store_true", help="version review: scan on the host instead of the image")
+    df.add_argument("--no-osv", action="store_true", help="version review: skip OSV")
+    df.add_argument("--no-trust", action="store_true", help="version review: skip GitHub trust signals")
+    df.add_argument("--timeout", type=int, default=1800, metavar="SECONDS", help="version review: per-scan timeout")
     tr = sp.add_parser("trend", help="verdict/rule history from the per-SHA reports on a badge branch (or local report files)")
     tr.add_argument("target", nargs="+", help="github repo slug/URL, a directory of report-*.json, or report files")
     tr.add_argument("--branch", default="repobeagle", help="badge branch to read (default: repobeagle)")
