@@ -1210,6 +1210,17 @@ clean environment exits 0 with the scanned count.
 
 ## Built since the backlog was written
 
+- **T2 — done.** `repobeagle app` is the GitHub App webhook server: signature-verified
+  `pull_request`/default-branch `push` deliveries are queued (GitHub's 10 s timeout) and
+  scanned with the ordinary `scan` CLI, PRs with `--since <base>` (changed files only).
+  It maintains exactly one PR comment (marker lookup + PATCH, so a replayed delivery edits
+  instead of duplicating) and one check run per commit (created or PATCHed by
+  `(sha, name)`), with RED→failure / YELLOW→neutral / GREEN→success and an explicit
+  failing check when the scan itself fails. `tests/test_app.py` drives real HMAC-signed
+  webhooks against a stub GitHub API: comment/check dedupe, new-tree updates, push and
+  non-default-push handling, unknown repos, bad signatures and App JWT generation.
+  Installing the App is the only manual step; permissions are documented in the README.
+
 - **T1 — done.** `repobeagle serve` hosts the attestation API: `GET
   /v1/scan/<owner>/<repo>[/<ref>]` scans once per resolved commit (pinned image when
   Docker is available, in-process otherwise) and serves the immutable bytes from a disk
