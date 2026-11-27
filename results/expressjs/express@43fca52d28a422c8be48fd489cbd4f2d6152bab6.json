@@ -1,0 +1,1027 @@
+{
+  "version": "1.193.0",
+  "verdict": "GREEN",
+  "why": "No significant findings from any scanner",
+  "counts": {
+    "critical": 0,
+    "high": 0,
+    "medium": 0,
+    "low": 16,
+    "info": 32
+  },
+  "meta": {
+    "target": "https://github.com/expressjs/express.git",
+    "ref": "43fca52d28a422c8be48fd489cbd4f2d6152bab6",
+    "commit": "43fca52d28a422c8be48fd489cbd4f2d6152bab6",
+    "fetched_via": "git clone --depth 1 --filter=blob:none @ 43fca52d28a422c8be48fd489cbd4f2d6152bab6 + sparse checkout (0 archives/binaries listed, not downloaded)",
+    "mode": "docker (--network none, read-only)",
+    "profile": "balanced",
+    "files": 216,
+    "seconds": 52.3,
+    "scanned_at": "2026-11-27T02:11:30Z",
+    "tools": {
+      "gitleaks": {
+        "findings": 0,
+        "seconds": 3.6,
+        "ok": true,
+        "version": "8.30.1"
+      },
+      "semgrep": {
+        "findings": 0,
+        "seconds": 15.3,
+        "ok": true,
+        "version": "1.187.0"
+      },
+      "guarddog": {
+        "findings": 4,
+        "seconds": 7.5,
+        "ok": true,
+        "version": "3.2.0"
+      },
+      "bandit": {
+        "findings": 0,
+        "seconds": 0.0,
+        "ok": true,
+        "version": "1.9.4"
+      },
+      "agent-checks": {
+        "findings": 42,
+        "seconds": 14.3,
+        "ok": true,
+        "files": 216
+      },
+      "osv-scanner": {
+        "findings": 0,
+        "seconds": 0.0,
+        "ok": false
+      },
+      "trust": {
+        "findings": 2,
+        "seconds": 1.7,
+        "ok": true
+      }
+    },
+    "suppressed": 0,
+    "suppressions": [],
+    "pii_redacted": true,
+    "privacy_mode": "full",
+    "ruleset": "92559dde022f",
+    "complete": true,
+    "cache": "miss",
+    "capabilities": {
+      "files": 216,
+      "network": [
+        {
+          "value": "google.com",
+          "file": "test/res.location.js",
+          "line": 14,
+          "count": 46,
+          "doc": false,
+          "test": true,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "example.com",
+          "file": "test/Router.js",
+          "line": 295,
+          "count": 22,
+          "doc": false,
+          "test": true,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "github.com",
+          "file": "History.md",
+          "line": 6,
+          "count": 21,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "api.example.com",
+          "file": "test/res.links.js",
+          "line": 13,
+          "count": 16,
+          "doc": false,
+          "test": true,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "expressjs.com",
+          "file": "package.json",
+          "line": 17,
+          "count": 6,
+          "doc": false,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "img.shields.io",
+          "file": "Readme.md",
+          "line": 271,
+          "count": 4,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "docs.npmjs.com",
+          "file": "Readme.md",
+          "line": 59,
+          "count": 2,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "foobar.com",
+          "file": "test/req.get.js",
+          "line": 32,
+          "count": 2,
+          "doc": false,
+          "test": true,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "nodejs.org",
+          "file": "Readme.md",
+          "line": 52,
+          "count": 2,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "api.scorecard.dev",
+          "file": "Readme.md",
+          "line": 279,
+          "count": 1,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "coveralls.io",
+          "file": "Readme.md",
+          "line": 272,
+          "count": 1,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "npmcharts.com",
+          "file": "Readme.md",
+          "line": 276,
+          "count": 1,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "npmjs.org",
+          "file": "Readme.md",
+          "line": 277,
+          "count": 1,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "opencollective.com",
+          "file": "package.json",
+          "line": 20,
+          "count": 1,
+          "doc": false,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "ossf.github.io",
+          "file": "Readme.md",
+          "line": 280,
+          "count": 1,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "registry.npmjs.org",
+          "file": ".github/workflows/npm-publish.yml",
+          "line": 31,
+          "count": 1,
+          "doc": false,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "www.npmjs.com",
+          "file": "Readme.md",
+          "line": 53,
+          "count": 1,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        }
+      ],
+      "filesystem": [],
+      "processes": [
+        {
+          "value": "exec(",
+          "file": ".github/workflows/npm-publish.yml",
+          "line": 55,
+          "count": 2,
+          "doc": false,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "child_process",
+          "file": ".github/workflows/npm-publish.yml",
+          "line": 51,
+          "count": 1,
+          "doc": false,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        }
+      ],
+      "environment": [
+        {
+          "value": "NODE_ENV",
+          "file": "test/app.js",
+          "line": 76,
+          "count": 14,
+          "doc": false,
+          "test": true,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "GITHUB_OUTPUT",
+          "file": ".github/workflows/npm-publish.yml",
+          "line": 72,
+          "count": 1,
+          "doc": false,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "NO_DEPRECATION",
+          "file": "test/support/env.js",
+          "line": 3,
+          "count": 1,
+          "doc": false,
+          "test": true,
+          "verified": false,
+          "source": "static"
+        }
+      ],
+      "storage": [
+        {
+          "value": "LocalStorage",
+          "file": "test/res.download.js",
+          "line": 5,
+          "count": 48,
+          "doc": false,
+          "test": true,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "Set-Cookie",
+          "file": "test/res.clearCookie.js",
+          "line": 17,
+          "count": 43,
+          "doc": false,
+          "test": true,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "set-cookie",
+          "file": "test/req.signedCookies.js",
+          "line": 27,
+          "count": 5,
+          "doc": false,
+          "test": true,
+          "verified": false,
+          "source": "static"
+        }
+      ]
+    },
+    "coverage": {
+      "files_total": 216,
+      "files_scanned": 173,
+      "bytes_total": 726782,
+      "bytes_scanned": 717274,
+      "bytes_scanned_pct": 98.7,
+      "skipped": {
+        "archive": 0,
+        "binary": 0,
+        "oversize": 0,
+        "unreadable": 0,
+        "unsupported": 43
+      },
+      "unscanned_extensions": [
+        [
+          ".ejs",
+          21
+        ],
+        [
+          "(none)",
+          7
+        ],
+        [
+          ".tmpl",
+          7
+        ],
+        [
+          ".css",
+          4
+        ],
+        [
+          ".hbs",
+          3
+        ],
+        [
+          ".send",
+          1
+        ]
+      ],
+      "languages": {
+        "inspected": {
+          "JavaScript": 142
+        },
+        "no_rules": {}
+      }
+    },
+    "privacy_summary": {
+      "pii": [
+        "logged object likely containing PII",
+        "j***@learnboost.com",
+        "l***@learnboost.com",
+        "t***@learnboost.com",
+        "t***@vision-media.ca",
+        "a***@gmail.com",
+        "c***@gmail.com",
+        "docs: 1 address(es) in test/res.type.js",
+        "docs: 2 address(es) in test/acceptance/route-separation.js",
+        "docs: 3 address(es) in LICENSE",
+        "docs: 341 address(es) in History.md",
+        "d***@somethingdoug.com",
+        "h***@hanul.me",
+        "m***@jongleberry.com",
+        "r***@gmail.com",
+        "s***@gmail.com",
+        "name",
+        "name (docs link)"
+      ],
+      "storage": [
+        "Set-Cookie missing Secure/SameSite",
+        "Partitioned (CHIPS)",
+        "Set-Cookie missing HttpOnly/Secure/SameSite",
+        "Set-Cookie missing SameSite",
+        "set_cookie() without flags",
+        "cookie deletion (Max-Age=0)",
+        "expired cookie",
+        "session cookie"
+      ],
+      "first_party": [
+        "expressjs.com"
+      ],
+      "network": [
+        "opencollective.com",
+        "third-party requests with no Referrer-Policy",
+        "api.example.com",
+        "foobar.com",
+        "google.com",
+        "github.com",
+        "registry.npmjs.org"
+      ],
+      "retention": [
+        "retention-days"
+      ],
+      "uploads": [
+        "file upload",
+        "size cap"
+      ],
+      "transparency": [
+        "no privacy policy file"
+      ]
+    },
+    "privacy_profile": "Privacy profile: 0 tracker vendor(s), 6 third-party host(s), 18 PII item(s)",
+    "scanned_repo": "expressjs/express",
+    "scanned_sha": "43fca52d28a422c8be48fd489cbd4f2d6152bab6",
+    "index": {
+      "name": "repobeagle",
+      "version": "1.193.0",
+      "mode": "github"
+    }
+  },
+  "privacy_summary": {
+    "pii": [
+      "logged object likely containing PII",
+      "j***@learnboost.com",
+      "l***@learnboost.com",
+      "t***@learnboost.com",
+      "t***@vision-media.ca",
+      "a***@gmail.com",
+      "c***@gmail.com",
+      "docs: 1 address(es) in test/res.type.js",
+      "docs: 2 address(es) in test/acceptance/route-separation.js",
+      "docs: 3 address(es) in LICENSE",
+      "docs: 341 address(es) in History.md",
+      "d***@somethingdoug.com",
+      "h***@hanul.me",
+      "m***@jongleberry.com",
+      "r***@gmail.com",
+      "s***@gmail.com",
+      "name",
+      "name (docs link)"
+    ],
+    "storage": [
+      "Set-Cookie missing Secure/SameSite",
+      "Partitioned (CHIPS)",
+      "Set-Cookie missing HttpOnly/Secure/SameSite",
+      "Set-Cookie missing SameSite",
+      "set_cookie() without flags",
+      "cookie deletion (Max-Age=0)",
+      "expired cookie",
+      "session cookie"
+    ],
+    "first_party": [
+      "expressjs.com"
+    ],
+    "network": [
+      "opencollective.com",
+      "third-party requests with no Referrer-Policy",
+      "api.example.com",
+      "foobar.com",
+      "google.com",
+      "github.com",
+      "registry.npmjs.org"
+    ],
+    "retention": [
+      "retention-days"
+    ],
+    "uploads": [
+      "file upload",
+      "size cap"
+    ],
+    "transparency": [
+      "no privacy policy file"
+    ]
+  },
+  "ai_review": null,
+  "findings": [
+    {
+      "tool": "guarddog",
+      "severity": "low",
+      "file": "examples/markdown/index.js",
+      "line": 18,
+      "title": "GuardDog npm package: capability-filesystem-read",
+      "snippet": "app.engine('md', function(path, options, fn){ fs.readFile(path, 'utf8', function(err, str){ if (err) return fn(err); var html = marked.parse(str).replace(/\\{([^",
+      "meaning": "Detects filesystem read capabilities",
+      "rule": "GuardDog npm package",
+      "remediation": "read the flagged package behaviour; pin a version you reviewed, or replace the package"
+    },
+    {
+      "tool": "guarddog",
+      "severity": "low",
+      "file": "examples/view-constructor/github-view.js",
+      "line": 45,
+      "title": "GuardDog npm package: capability-network-download",
+      "snippet": "https.request(opts, function(res) { var buf = ''; res.setEncoding('utf8');",
+      "meaning": "Detects downloading files from network",
+      "rule": "GuardDog npm package",
+      "remediation": "read the flagged package behaviour; pin a version you reviewed, or replace the package"
+    },
+    {
+      "tool": "guarddog",
+      "severity": "low",
+      "file": "lib/application.js",
+      "line": 135,
+      "title": "GuardDog npm package: capability-network-outbound",
+      "snippet": "this.set('view', View); this.set('views', resolve('views')); this.set('jsonp callback name', 'callback');",
+      "meaning": "Detects network request capabilities (HTTP, sockets, etc.)",
+      "rule": "GuardDog npm package",
+      "remediation": "read the flagged package behaviour; pin a version you reviewed, or replace the package"
+    },
+    {
+      "tool": "guarddog",
+      "severity": "low",
+      "file": "test/res.redirect.js",
+      "line": 115,
+      "title": "GuardDog npm package: capability-process-spawn",
+      "snippet": "var app = express(); var xss = 'javascript:eval(document.body.innerHTML=`<p>XSS</p>`);'; var encodedXss = 'javascript:eval(document.body.innerHTML=%60%3Cp%3EXSS",
+      "meaning": "Detects process execution and spawning",
+      "rule": "GuardDog npm package",
+      "remediation": "read the flagged package behaviour; pin a version you reviewed, or replace the package"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "file": ".github/workflows/npm-publish.yml",
+      "line": 21,
+      "title": "gha-write-permissions: workflow token has write permissions",
+      "snippet": "id-token: write",
+      "meaning": "A compromised step can push code or publish packages.",
+      "rule": "gha-write-permissions",
+      "remediation": "add a least-privilege `permissions:` block to the workflow"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "file": ".github/workflows/scorecard.yml",
+      "line": 28,
+      "title": "gha-write-permissions: workflow token has write permissions",
+      "snippet": "id-token: write",
+      "meaning": "A compromised step can push code or publish packages.",
+      "rule": "gha-write-permissions",
+      "remediation": "add a least-privilege `permissions:` block to the workflow"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "examples/vhost/index.js",
+      "line": 38,
+      "title": "pii-log: logged object likely containing PII",
+      "snippet": "if (!module.parent) console.log(req.vhost);",
+      "meaning": "The logged argument name suggests personal data (user/account/profile/\u2026); verify the destination and retention.",
+      "rule": "pii-log",
+      "remediation": "log an id instead of the object; truncate/hash the address before logging"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "examples/ejs/index.js",
+      "line": 42,
+      "title": "pii-email: j***@learnboost.com",
+      "snippet": "{ name: 'jane', email: 'j***@learnboost.com' }",
+      "meaning": "Hardcoded email address (a person's PII or a DSN); check it is intended to be public.",
+      "rule": "pii-email",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "examples/ejs/index.js",
+      "line": 41,
+      "title": "pii-email: l***@learnboost.com",
+      "snippet": "{ name: 'loki', email: 'l***@learnboost.com' },",
+      "meaning": "Hardcoded email address (a person's PII or a DSN); check it is intended to be public.",
+      "rule": "pii-email",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "examples/ejs/index.js",
+      "line": 40,
+      "title": "pii-email: t***@learnboost.com",
+      "snippet": "{ name: 'tobi', email: 't***@learnboost.com' },",
+      "meaning": "Hardcoded email address (a person's PII or a DSN); check it is intended to be public.",
+      "rule": "pii-email",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "examples/route-separation/user.js",
+      "line": 7,
+      "title": "pii-email: t***@vision-media.ca",
+      "snippet": "{ name: 'Tobi', email: 't***@vision-media.ca' }",
+      "meaning": "Hardcoded email address (a person's PII or a DSN); check it is intended to be public.",
+      "rule": "pii-email",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "package.json",
+      "line": 20,
+      "title": "external-endpoint: opencollective.com",
+      "snippet": "\"url\": \"https://opencollective.com/express\"",
+      "meaning": "Unknown third-party host opencollective.com: verify what it receives and whether it sets cookies/tracks.",
+      "rule": "external-endpoint"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "lib/response.js",
+      "line": 626,
+      "title": "cookie-flags: Set-Cookie missing Secure/SameSite",
+      "snippet": "* res.append('Set-Cookie', 'foo=bar; Path=/; HttpOnly');",
+      "meaning": "Set-Cookie header without Secure/SameSite (sent in clear) (sent cross-site).",
+      "rule": "cookie-flags",
+      "remediation": "set `Secure; HttpOnly; SameSite=Lax` (or Strict) when writing the cookie"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "(repo)",
+      "line": 0,
+      "title": "referrer-policy: third-party requests with no Referrer-Policy",
+      "snippet": "no Referrer-Policy header or <meta name=referrer>",
+      "meaning": "By default the full page URL (including path and query) is sent as Referer to third parties.",
+      "rule": "referrer-policy",
+      "remediation": "send `Referrer-Policy: strict-origin-when-cross-origin` (or `no-referrer`)"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "(repo)",
+      "line": 0,
+      "title": "privacy-doc: no privacy policy file",
+      "snippet": "expected PRIVACY.md or PrivacyInfo.xcprivacy",
+      "meaning": "The repo collects/transmits data but ships no privacy policy/manifest file.",
+      "rule": "privacy-doc",
+      "remediation": "add a PRIVACY.md/policy (or link one) and state what is collected"
+    },
+    {
+      "tool": "trust",
+      "severity": "low",
+      "file": "(github)",
+      "line": 0,
+      "title": "release-mutable: latest release v5.3.0 is not immutable: its tag or assets can be replaced",
+      "snippet": "",
+      "meaning": "Context signal only; never decides the verdict alone.",
+      "rule": "release-mutable"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "package.json",
+      "line": 7,
+      "title": "pii-email: a***@gmail.com",
+      "snippet": "\"Aaron Heckmann <a***@gmail.com>\",",
+      "meaning": "Package metadata email: published by design on the registry. Seen 2 times.",
+      "rule": "pii-email",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "package.json",
+      "line": 8,
+      "title": "pii-email: c***@gmail.com",
+      "snippet": "\"Ciaran Jessup <c***@gmail.com>\",",
+      "meaning": "Package metadata email: published by design on the registry. Seen 2 times.",
+      "rule": "pii-email",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "test/res.type.js",
+      "line": 1,
+      "title": "pii-email: docs: 1 address(es) in test/res.type.js",
+      "snippet": "f***@test.json",
+      "meaning": "Docs publish these email addresses (contact/maintainer info); confirm they are meant to be public.",
+      "rule": "pii-email",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "test/acceptance/route-separation.js",
+      "line": 1,
+      "title": "pii-email: docs: 2 address(es) in test/acceptance/route-separation.js",
+      "snippet": "t***@vision-media.ca, t***@vision-media.ca",
+      "meaning": "Docs publish these email addresses (contact/maintainer info); confirm they are meant to be public.",
+      "rule": "pii-email",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "LICENSE",
+      "line": 1,
+      "title": "pii-email: docs: 3 address(es) in LICENSE",
+      "snippet": "d***@somethingdoug.com, s***@gmail.com, t***@vision-media.ca",
+      "meaning": "Docs publish these email addresses (contact/maintainer info); confirm they are meant to be public.",
+      "rule": "pii-email",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "History.md",
+      "line": 1,
+      "title": "pii-email: docs: 341 address(es) in History.md",
+      "snippet": "accepts@1.0.3, array-flatten@1.1.1, array-flatten@2.0.1, array-flatten@2.1.1, +337",
+      "meaning": "Docs publish these email addresses (contact/maintainer info); confirm they are meant to be public.",
+      "rule": "pii-email",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "package.json",
+      "line": 9,
+      "title": "pii-email: d***@somethingdoug.com",
+      "snippet": "\"Douglas Christopher Wilson <d***@somethingdoug.com>\",",
+      "meaning": "Package metadata email: published by design on the registry.",
+      "rule": "pii-email",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "package.json",
+      "line": 13,
+      "title": "pii-email: h***@hanul.me",
+      "snippet": "\"Young Jae Sim <h***@hanul.me>\"",
+      "meaning": "Package metadata email: published by design on the registry.",
+      "rule": "pii-email",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "package.json",
+      "line": 11,
+      "title": "pii-email: m***@jongleberry.com",
+      "snippet": "\"Jonathan Ong <m***@jongleberry.com>\",",
+      "meaning": "Package metadata email: published by design on the registry.",
+      "rule": "pii-email",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "package.json",
+      "line": 10,
+      "title": "pii-email: r***@gmail.com",
+      "snippet": "\"Guillermo Rauch <r***@gmail.com>\",",
+      "meaning": "Package metadata email: published by design on the registry.",
+      "rule": "pii-email",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "package.json",
+      "line": 12,
+      "title": "pii-email: s***@gmail.com",
+      "snippet": "\"Roman Shtylman <s***@gmail.com>\",",
+      "meaning": "Package metadata email: published by design on the registry.",
+      "rule": "pii-email",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "package.json",
+      "line": 5,
+      "title": "pii-email: t***@vision-media.ca",
+      "snippet": "\"author\": \"TJ Holowaychuk <t***@vision-media.ca>\",",
+      "meaning": "Package metadata email: published by design on the registry. Seen 3 times.",
+      "rule": "pii-email",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "test/app.request.js",
+      "line": 21,
+      "title": "pii-in-url: name",
+      "snippet": ".get('/foo?name=tobi')",
+      "meaning": "Personal data in the URL query: it leaks via Referer, access logs, proxies and browser history. Seen 3 times.",
+      "rule": "pii-in-url",
+      "remediation": "strip the parameter before it reaches logs/referers, or use a POST body instead"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "test/app.request.js",
+      "line": 21,
+      "title": "pii-in-url: name (docs link)",
+      "snippet": ".get('/foo?name=tobi')",
+      "meaning": "Example link puts personal data in the URL query: fine in docs, leaks via Referer/logs when used at runtime. Seen 3 times.",
+      "rule": "pii-in-url",
+      "remediation": "strip the parameter before it reaches logs/referers, or use a POST body instead"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": ".github/workflows/legacy.yml",
+      "line": 71,
+      "title": "data-retention: retention-days",
+      "snippet": "retention-days: 1",
+      "meaning": "A retention/expiry window is configured; verify it applies to the collected data. Seen 3 times.",
+      "rule": "data-retention",
+      "remediation": "set an explicit retention period and delete the data when it ends"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": ".github/workflows/legacy.yml",
+      "line": 66,
+      "title": "upload-surface: file upload",
+      "snippet": "- name: Upload code coverage",
+      "meaning": "Accepts user-supplied files or request bodies: data enters the service. Seen 10 times.",
+      "rule": "upload-surface",
+      "remediation": "check where the uploaded file is stored and who can read it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": ".github/dependabot.yml",
+      "line": 18,
+      "title": "upload-limit: size cap",
+      "snippet": "open-pull-requests-limit: 10",
+      "meaning": "A request/upload size cap is set (data-minimization guard).",
+      "rule": "upload-limit",
+      "remediation": "state and enforce the upload size/type limit"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "test/res.links.js",
+      "line": 13,
+      "title": "insecure-endpoint: api.example.com",
+      "snippet": "next: 'http://api.example.com/users?page=2',",
+      "meaning": "Plaintext http:// to api.example.com: test fixture URL, not a runtime request. Seen 16 times.",
+      "rule": "insecure-endpoint",
+      "remediation": "use https:// / wss://"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "test/req.get.js",
+      "line": 32,
+      "title": "insecure-endpoint: foobar.com",
+      "snippet": ".set('Referrer', 'http://foobar.com')",
+      "meaning": "Plaintext http:// to foobar.com: test fixture URL, not a runtime request. Seen 2 times.",
+      "rule": "insecure-endpoint",
+      "remediation": "use https:// / wss://"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "test/res.location.js",
+      "line": 14,
+      "title": "insecure-endpoint: google.com",
+      "snippet": "res.location('http://google.com/').end();",
+      "meaning": "Plaintext http:// to google.com: test fixture URL, not a runtime request. Seen 34 times.",
+      "rule": "insecure-endpoint",
+      "remediation": "use https:// / wss://"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "examples/web-service/index.js",
+      "line": 54,
+      "title": "external-endpoint: github.com",
+      "snippet": "{ name: 'express', url: 'https://github.com/expressjs/express' },",
+      "meaning": "Network destination github.com (known platform/infrastructure). Seen 3 times.",
+      "rule": "external-endpoint"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "test/res.location.js",
+      "line": 40,
+      "title": "external-endpoint: google.com",
+      "snippet": "res.location('https://google.com?q=\\u2603 \u00a710').end()",
+      "meaning": "Network destination google.com (known platform/infrastructure). Seen 14 times.",
+      "rule": "external-endpoint"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": ".github/workflows/npm-publish.yml",
+      "line": 31,
+      "title": "external-endpoint: registry.npmjs.org",
+      "snippet": "registry-url: \"https://registry.npmjs.org\"",
+      "meaning": "Network destination registry.npmjs.org (known platform/infrastructure).",
+      "rule": "external-endpoint"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "package.json",
+      "line": 17,
+      "title": "first-party-endpoint: expressjs.com",
+      "snippet": "\"homepage\": \"https://expressjs.com/\",",
+      "meaning": "Own/related domain expressjs.com: first-party traffic, not a third party.",
+      "rule": "first-party-endpoint"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "test/res.cookie.js",
+      "line": 84,
+      "title": "cookie-flags: Partitioned (CHIPS)",
+      "snippet": "describe('partitioned', function () {",
+      "meaning": "Partitioned cookie (CHIPS): stored per top-level site, which limits cross-site tracking. Seen 4 times.",
+      "rule": "cookie-flags",
+      "remediation": "set `Secure; HttpOnly; SameSite=Lax` (or Strict) when writing the cookie"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "test/req.signedCookies.js",
+      "line": 27,
+      "title": "cookie-flags: Set-Cookie missing HttpOnly/Secure/SameSite",
+      "snippet": "var cookie = res.header['set-cookie'];",
+      "meaning": "Set-Cookie header without HttpOnly/Secure/SameSite (readable by scripts) (sent in clear) (sent cross-site). Seen 46 times.",
+      "rule": "cookie-flags",
+      "remediation": "set `Secure; HttpOnly; SameSite=Lax` (or Strict) when writing the cookie"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "test/res.cookie.js",
+      "line": 65,
+      "title": "cookie-flags: Set-Cookie missing SameSite",
+      "snippet": ".expect('Set-Cookie', 'name=tobi; Path=/; HttpOnly; Secure')",
+      "meaning": "Set-Cookie header without SameSite (sent cross-site).",
+      "rule": "cookie-flags",
+      "remediation": "set `Secure; HttpOnly; SameSite=Lax` (or Strict) when writing the cookie"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "test/req.signedCookies.js",
+      "line": 16,
+      "title": "cookie-flags: set_cookie() without flags",
+      "snippet": "res.cookie('obj', { foo: 'bar' }, { signed: true });",
+      "meaning": "Framework cookie setter without HttpOnly/Secure/SameSite: readable by scripts, sent in clear or cross-site. Seen 23 times.",
+      "rule": "cookie-flags",
+      "remediation": "set `Secure; HttpOnly; SameSite=Lax` (or Strict) when writing the cookie"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "test/res.cookie.js",
+      "line": 111,
+      "title": "cookie-lifetime: cookie deletion (Max-Age=0)",
+      "snippet": ".expect('Set-Cookie', /name=tobi; Max-Age=1; Path=\\/; Expires=/)",
+      "meaning": "Zero lifetime deletes the cookie; a common logout/cleanup pattern. Seen 2 times.",
+      "rule": "cookie-lifetime"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "test/res.clearCookie.js",
+      "line": 17,
+      "title": "cookie-lifetime: expired cookie",
+      "snippet": ".expect('Set-Cookie', 'sid=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT')",
+      "meaning": "Cookie Expires is 20785 days in the past; browsers delete it. Seen 4 times.",
+      "rule": "cookie-lifetime"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "test/req.signedCookies.js",
+      "line": 16,
+      "title": "cookie-lifetime: session cookie",
+      "snippet": "res.cookie('obj', { foo: 'bar' }, { signed: true });",
+      "meaning": "Cookie without a usable Max-Age/Expires: session-scoped (better for privacy). Seen 68 times.",
+      "rule": "cookie-lifetime"
+    },
+    {
+      "tool": "trust",
+      "severity": "info",
+      "file": "(github)",
+      "line": 0,
+      "title": "trust-signals: repo 6362d old, 69766 stars, 25714 forks, 395 contributors, owner 4795d old",
+      "snippet": "",
+      "meaning": "Context signal only; never decides the verdict alone.",
+      "rule": "trust-signals"
+    }
+  ],
+  "raw_findings_count": 48,
+  "notes": [
+    "bandit: no Python files (skipped)",
+    "osv-scanner not installed (skipped)",
+    "AI review skipped (set BEAGLE_LLM_URL to enable; REPO_GUARD_LLM_URL also accepted)"
+  ],
+  "recommended_actions": [
+    "No red flags found by static analysis. Still pin versions and install in a venv/container.",
+    "Static scanning can't prove safety; it does not observe runtime behavior."
+  ]
+}

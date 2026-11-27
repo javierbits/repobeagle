@@ -1,0 +1,460 @@
+{
+  "version": "1.193.0",
+  "verdict": "GREEN",
+  "why": "No significant findings from any scanner",
+  "counts": {
+    "critical": 0,
+    "high": 0,
+    "medium": 0,
+    "low": 10,
+    "info": 6
+  },
+  "meta": {
+    "target": "https://github.com/chalk/chalk.git",
+    "ref": "72110019e147683f60e13fa0ff5c14a0c27cd9fe",
+    "commit": "72110019e147683f60e13fa0ff5c14a0c27cd9fe",
+    "fetched_via": "git clone --depth 1 --filter=blob:none @ 72110019e147683f60e13fa0ff5c14a0c27cd9fe + sparse checkout (0 archives/binaries listed, not downloaded)",
+    "mode": "docker (--network none, read-only)",
+    "profile": "balanced",
+    "files": 35,
+    "seconds": 33.1,
+    "scanned_at": "2026-11-27T02:11:10Z",
+    "tools": {
+      "gitleaks": {
+        "findings": 0,
+        "seconds": 2.4,
+        "ok": true,
+        "version": "8.30.1"
+      },
+      "semgrep": {
+        "findings": 0,
+        "seconds": 14.2,
+        "ok": true,
+        "version": "1.187.0"
+      },
+      "guarddog": {
+        "findings": 1,
+        "seconds": 3.6,
+        "ok": true,
+        "version": "3.2.0"
+      },
+      "bandit": {
+        "findings": 0,
+        "seconds": 0.0,
+        "ok": true,
+        "version": "1.9.4"
+      },
+      "agent-checks": {
+        "findings": 10,
+        "seconds": 2.8,
+        "ok": true,
+        "files": 35
+      },
+      "osv-scanner": {
+        "findings": 0,
+        "seconds": 0.0,
+        "ok": false
+      },
+      "trust": {
+        "findings": 4,
+        "seconds": 1.7,
+        "ok": true
+      }
+    },
+    "suppressed": 0,
+    "suppressions": [],
+    "pii_redacted": true,
+    "privacy_mode": "full",
+    "ruleset": "92559dde022f",
+    "complete": true,
+    "cache": "miss",
+    "capabilities": {
+      "files": 35,
+      "network": [
+        {
+          "value": "github.com",
+          "file": "package.json",
+          "line": 7,
+          "count": 32,
+          "doc": false,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "en.wikipedia.org",
+          "file": "readme.md",
+          "line": 276,
+          "count": 6,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "contributor-covenant.org",
+          "file": "code-of-conduct.md",
+          "line": 71,
+          "count": 3,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "www.npmjs.com",
+          "file": "readme.md",
+          "line": 13,
+          "count": 3,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "badgen.net",
+          "file": "readme.md",
+          "line": 13,
+          "count": 2,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "codecov.io",
+          "file": "readme.md",
+          "line": 12,
+          "count": 2,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "sindresorhus.com",
+          "file": "readme.md",
+          "line": 306,
+          "count": 2,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "developer.mozilla.org",
+          "file": "readme.md",
+          "line": 310,
+          "count": 1,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "nodejs.org",
+          "file": "readme.md",
+          "line": 102,
+          "count": 1,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        }
+      ],
+      "filesystem": [],
+      "processes": [
+        {
+          "value": "exec(",
+          "file": "source/vendor/ansi-styles/index.js",
+          "line": 174,
+          "count": 1,
+          "doc": false,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        }
+      ],
+      "environment": [
+        {
+          "value": "TERM",
+          "file": "test/chalk.js",
+          "line": 15,
+          "count": 1,
+          "doc": false,
+          "test": true,
+          "verified": false,
+          "source": "static"
+        }
+      ],
+      "storage": []
+    },
+    "coverage": {
+      "files_total": 35,
+      "files_scanned": 27,
+      "bytes_total": 426139,
+      "bytes_scanned": 84965,
+      "bytes_scanned_pct": 19.9,
+      "skipped": {
+        "archive": 0,
+        "binary": 0,
+        "oversize": 0,
+        "unreadable": 0,
+        "unsupported": 8
+      },
+      "unscanned_extensions": [
+        [
+          "(none)",
+          5
+        ],
+        [
+          ".png",
+          2
+        ],
+        [
+          ".svg",
+          1
+        ]
+      ],
+      "languages": {
+        "inspected": {
+          "JavaScript": 16,
+          "TypeScript": 4
+        },
+        "no_rules": {}
+      }
+    },
+    "privacy_summary": {
+      "pii": [
+        "docs: 1 address(es) in code-of-conduct.md",
+        "docs: 1 address(es) in license"
+      ],
+      "fingerprinting": [
+        "user-agent"
+      ],
+      "network": [
+        "en.wikipedia.org",
+        "sindresorhus.com",
+        "third-party requests with no Referrer-Policy",
+        "github.com"
+      ],
+      "retention": [
+        "data collected but no retention/expiry setting found"
+      ],
+      "transparency": [
+        "no privacy policy file"
+      ]
+    },
+    "privacy_profile": "Privacy profile: 0 tracker vendor(s), 3 third-party host(s), 2 PII item(s)",
+    "scanned_repo": "chalk/chalk",
+    "scanned_sha": "72110019e147683f60e13fa0ff5c14a0c27cd9fe",
+    "index": {
+      "name": "repobeagle",
+      "version": "1.193.0",
+      "mode": "github"
+    }
+  },
+  "privacy_summary": {
+    "pii": [
+      "docs: 1 address(es) in code-of-conduct.md",
+      "docs: 1 address(es) in license"
+    ],
+    "fingerprinting": [
+      "user-agent"
+    ],
+    "network": [
+      "en.wikipedia.org",
+      "sindresorhus.com",
+      "third-party requests with no Referrer-Policy",
+      "github.com"
+    ],
+    "retention": [
+      "data collected but no retention/expiry setting found"
+    ],
+    "transparency": [
+      "no privacy policy file"
+    ]
+  },
+  "ai_review": null,
+  "findings": [
+    {
+      "tool": "guarddog",
+      "severity": "low",
+      "file": "source/vendor/ansi-styles/index.js",
+      "line": 174,
+      "title": "GuardDog npm package: capability-process-spawn",
+      "snippet": "value(hex) { const matches = /[\\da-f]{6}|[\\da-f]{3}/i.exec(hex.toString(16)); if (!matches) { return [0, 0, 0];",
+      "meaning": "Detects process execution and spawning",
+      "rule": "GuardDog npm package",
+      "remediation": "read the flagged package behaviour; pin a version you reviewed, or replace the package"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "file": ".github/workflows/main.yml",
+      "line": 16,
+      "title": "gha-unpinned-action: 2 action(s) on a tag/branch, not a commit SHA",
+      "snippet": "- uses: actions/checkout@v7",
+      "meaning": "Tags can be moved to malicious code (e.g. tj-actions/changed-files, 2025).",
+      "rule": "gha-unpinned-action",
+      "remediation": "pin `uses:` to a full 40-character commit SHA"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "source/vendor/supports-color/browser.js",
+      "line": 6,
+      "title": "fingerprint: user-agent",
+      "snippet": "if (globalThis.navigator.userAgentData) {",
+      "meaning": "Device-fingerprinting signal: combine several and a browser can be recognized without cookies. Seen 3 times.",
+      "rule": "fingerprint",
+      "remediation": "self-host the asset, or document and gate the host behind consent"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "source/index.d.ts",
+      "line": 81,
+      "title": "external-endpoint: en.wikipedia.org",
+      "snippet": "Use an [8-bit unsigned number](https://en.wikipedia.org/wiki/ANSI_escape_code#8-bit) to set text color.",
+      "meaning": "Unknown third-party host en.wikipedia.org: verify what it receives and whether it sets cookies/tracks. Seen 3 times.",
+      "rule": "external-endpoint"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": ".github/funding.yml",
+      "line": 4,
+      "title": "external-endpoint: sindresorhus.com",
+      "snippet": "custom: https://sindresorhus.com/donate",
+      "meaning": "Unknown third-party host sindresorhus.com: verify what it receives and whether it sets cookies/tracks.",
+      "rule": "external-endpoint"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "(repo)",
+      "line": 0,
+      "title": "data-retention: data collected but no retention/expiry setting found",
+      "snippet": "no retention/ttl/expiry/delete_after value in the repo",
+      "meaning": "Personal data is collected but nothing says when it is deleted; check the privacy policy.",
+      "rule": "data-retention",
+      "remediation": "set an explicit retention period and delete the data when it ends"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "(repo)",
+      "line": 0,
+      "title": "referrer-policy: third-party requests with no Referrer-Policy",
+      "snippet": "no Referrer-Policy header or <meta name=referrer>",
+      "meaning": "By default the full page URL (including path and query) is sent as Referer to third parties.",
+      "rule": "referrer-policy",
+      "remediation": "send `Referrer-Policy: strict-origin-when-cross-origin` (or `no-referrer`)"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "(repo)",
+      "line": 0,
+      "title": "privacy-doc: no privacy policy file",
+      "snippet": "expected PRIVACY.md or PrivacyInfo.xcprivacy",
+      "meaning": "The repo collects/transmits data but ships no privacy policy/manifest file.",
+      "rule": "privacy-doc",
+      "remediation": "add a PRIVACY.md/policy (or link one) and state what is collected"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "file": "(repo)",
+      "line": 0,
+      "title": "Coverage-low: only 19.9% of source bytes were inspected",
+      "snippet": "27/35 files",
+      "meaning": "Large or unsupported files are skipped, so a GREEN verdict over them is not evidence of safety.",
+      "rule": "Coverage-low",
+      "remediation": "inspect the large or unsupported files manually; the verdict does not cover them"
+    },
+    {
+      "tool": "trust",
+      "severity": "low",
+      "file": "(github)",
+      "line": 0,
+      "title": "release-mutable: latest release v6.0.1 is not immutable: its tag or assets can be replaced",
+      "snippet": "",
+      "meaning": "Context signal only; never decides the verdict alone.",
+      "rule": "release-mutable"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "code-of-conduct.md",
+      "line": 1,
+      "title": "pii-email: docs: 1 address(es) in code-of-conduct.md",
+      "snippet": "s***@gmail.com",
+      "meaning": "Docs publish these email addresses (contact/maintainer info); confirm they are meant to be public.",
+      "rule": "pii-email",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "license",
+      "line": 1,
+      "title": "pii-email: docs: 1 address(es) in license",
+      "snippet": "s***@gmail.com",
+      "meaning": "Docs publish these email addresses (contact/maintainer info); confirm they are meant to be public.",
+      "rule": "pii-email",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "package.json",
+      "line": 7,
+      "title": "external-endpoint: github.com",
+      "snippet": "\"funding\": \"https://github.com/chalk/chalk?sponsor=1\",",
+      "meaning": "Network destination github.com (known platform/infrastructure). Seen 8 times.",
+      "rule": "external-endpoint"
+    },
+    {
+      "tool": "trust",
+      "severity": "info",
+      "file": "(github)",
+      "line": 0,
+      "title": "trust-signals: repo 4864d old, 23344 stars, 1569 forks, 67 contributors, owner 4167d old",
+      "snippet": "",
+      "meaning": "Context signal only; never decides the verdict alone.",
+      "rule": "trust-signals"
+    },
+    {
+      "tool": "trust",
+      "severity": "info",
+      "file": "(github)",
+      "line": 0,
+      "title": "commit-unsigned: default-branch commit is not signed (reason: unsigned)",
+      "snippet": "",
+      "meaning": "Context signal only; never decides the verdict alone.",
+      "rule": "commit-unsigned"
+    },
+    {
+      "tool": "trust",
+      "severity": "info",
+      "file": "(github)",
+      "line": 0,
+      "title": "tag-unsigned: latest tag v6.0.1 points at an unsigned commit (reason: unsigned)",
+      "snippet": "",
+      "meaning": "Context signal only; never decides the verdict alone.",
+      "rule": "tag-unsigned"
+    }
+  ],
+  "raw_findings_count": 16,
+  "notes": [
+    "bandit: no Python files (skipped)",
+    "osv-scanner not installed (skipped)",
+    "AI review skipped (set BEAGLE_LLM_URL to enable; REPO_GUARD_LLM_URL also accepted)"
+  ],
+  "recommended_actions": [
+    "No red flags found by static analysis. Still pin versions and install in a venv/container.",
+    "Static scanning can't prove safety; it does not observe runtime behavior."
+  ]
+}

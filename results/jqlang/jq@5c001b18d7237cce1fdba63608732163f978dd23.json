@@ -1,0 +1,1690 @@
+{
+  "version": "1.193.0",
+  "verdict": "YELLOW",
+  "why": "No critical issues; 4 high, 2 medium, 71 low findings worth a look",
+  "counts": {
+    "critical": 0,
+    "high": 4,
+    "medium": 2,
+    "low": 71,
+    "info": 25
+  },
+  "meta": {
+    "target": "https://github.com/jqlang/jq.git",
+    "ref": "5c001b18d7237cce1fdba63608732163f978dd23",
+    "commit": "5c001b18d7237cce1fdba63608732163f978dd23",
+    "fetched_via": "git clone --depth 1 --filter=blob:none @ 5c001b18d7237cce1fdba63608732163f978dd23 + sparse checkout (0 archives/binaries listed, not downloaded)",
+    "mode": "docker (--network none, read-only)",
+    "profile": "balanced",
+    "files": 434,
+    "seconds": 113.2,
+    "scanned_at": "2026-11-27T02:12:30Z",
+    "tools": {
+      "gitleaks": {
+        "findings": 0,
+        "seconds": 6.1,
+        "ok": true,
+        "version": "8.30.1"
+      },
+      "semgrep": {
+        "findings": 4,
+        "seconds": 24.9,
+        "ok": true,
+        "version": "1.187.0"
+      },
+      "guarddog": {
+        "findings": 0,
+        "seconds": 0.0,
+        "ok": true,
+        "version": "3.2.0"
+      },
+      "bandit": {
+        "findings": 2,
+        "seconds": 1.7,
+        "ok": true,
+        "version": "1.9.4"
+      },
+      "agent-checks": {
+        "findings": 93,
+        "seconds": 68.1,
+        "ok": true,
+        "files": 434
+      },
+      "osv-scanner": {
+        "findings": 0,
+        "seconds": 0.0,
+        "ok": false
+      },
+      "trust": {
+        "findings": 2,
+        "seconds": 1.8,
+        "ok": true
+      }
+    },
+    "suppressed": 0,
+    "suppressions": [],
+    "pii_redacted": true,
+    "privacy_mode": "full",
+    "ruleset": "92559dde022f",
+    "complete": true,
+    "cache": "miss",
+    "capabilities": {
+      "files": 434,
+      "network": [
+        {
+          "value": "github.com",
+          "file": "compile-ios.sh",
+          "line": 47,
+          "count": 109,
+          "doc": false,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "www.google.com",
+          "file": "docs/content/manual/v1.4/manual.yml",
+          "line": 1260,
+          "count": 14,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "raw.githubusercontent.com",
+          "file": "docs/content/download/default.yml",
+          "line": 242,
+          "count": 9,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "api.github.com",
+          "file": "docs/content/tutorial/default.yml",
+          "line": 41,
+          "count": 5,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "stackoverflow.com",
+          "file": "README.md",
+          "line": 73,
+          "count": 4,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "discord.gg",
+          "file": "README.md",
+          "line": 74,
+          "count": 3,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "jqlang.org",
+          "file": "NEWS.md",
+          "line": 343,
+          "count": 3,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "docs.github.com",
+          "file": "SECURITY.md",
+          "line": 3,
+          "count": 2,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "libera.chat",
+          "file": "docs/content/index.yml",
+          "line": 32,
+          "count": 2,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "web.libera.chat",
+          "file": "docs/content/index.yml",
+          "line": 31,
+          "count": 2,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "www.freebsd.org",
+          "file": "docs/content/download/default.yml",
+          "line": 159,
+          "count": 2,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "brew.sh",
+          "file": "docs/content/download/default.yml",
+          "line": 330,
+          "count": 1,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "developer.apple.com",
+          "file": "docs/content/download/default.yml",
+          "line": 328,
+          "count": 1,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "download.icu-project.org",
+          "file": "docs/content/download/default.yml",
+          "line": 18,
+          "count": 1,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "gist.github.com",
+          "file": ".github/ISSUE_TEMPLATE/bug_report.md",
+          "line": 19,
+          "count": 1,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "gnupg.org",
+          "file": "docs/content/download/default.yml",
+          "line": 245,
+          "count": 1,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "macports.org",
+          "file": "docs/content/download/default.yml",
+          "line": 331,
+          "count": 1,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "no-color.org",
+          "file": "NEWS.md",
+          "line": 463,
+          "count": 1,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "packages.ubuntu.com",
+          "file": "docs/content/download/default.yml",
+          "line": 24,
+          "count": 1,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "play.jqlang.org",
+          "file": "README.md",
+          "line": 8,
+          "count": 1,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "speleotrove.com",
+          "file": "vendor/decNumber/readme.txt",
+          "line": 12,
+          "count": 1,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "www.freshports.org",
+          "file": "docs/content/download/default.yml",
+          "line": 162,
+          "count": 1,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "www.gnu.org",
+          "file": "docs/content/download/default.yml",
+          "line": 336,
+          "count": 1,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        }
+      ],
+      "filesystem": [
+        {
+          "value": "$HOME",
+          "file": "NEWS.md",
+          "line": 213,
+          "count": 19,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        }
+      ],
+      "processes": [],
+      "environment": [],
+      "storage": []
+    },
+    "coverage": {
+      "files_total": 434,
+      "files_scanned": 52,
+      "bytes_total": 4830168,
+      "bytes_scanned": 942023,
+      "bytes_scanned_pct": 19.5,
+      "skipped": {
+        "archive": 0,
+        "binary": 0,
+        "oversize": 0,
+        "unreadable": 0,
+        "unsupported": 382
+      },
+      "unscanned_extensions": [
+        [
+          ".asc",
+          213
+        ],
+        [
+          ".c",
+          46
+        ],
+        [
+          ".h",
+          33
+        ],
+        [
+          "(none)",
+          26
+        ],
+        [
+          ".jq",
+          24
+        ],
+        [
+          ".m4",
+          8
+        ],
+        [
+          ".test",
+          7
+        ],
+        [
+          ".j2",
+          6
+        ],
+        [
+          ".cpp",
+          2
+        ],
+        [
+          ".key",
+          2
+        ],
+        [
+          ".supp",
+          2
+        ],
+        [
+          ".svg",
+          2
+        ]
+      ],
+      "languages": {
+        "inspected": {
+          "Python": 5,
+          "Shell": 2,
+          "JavaScript": 1
+        },
+        "no_rules": {
+          "C": 46,
+          "C/C++ header": 33,
+          "C++": 2
+        }
+      }
+    },
+    "privacy_summary": {
+      "pii": [
+        "logged object likely containing PII",
+        "a***@cleverdomain.org",
+        "a***@gmail.com",
+        "c***@joelpurra.com",
+        "c***@janrain.com",
+        "d***@drmaciver.com",
+        "d***@dmllr.de",
+        "d***@github.con.com",
+        "d***@gmail.com",
+        "f***@gmail.com",
+        "f***@ga-group.nl",
+        "i***@gmail.com",
+        "i***@sdf.org",
+        "j***@gmail.com",
+        "j***@locationlabs.com",
+        "j***@nokia.com",
+        "j***@stedolan.github.io",
+        "k***@zalora.com",
+        "k***@gmail.com",
+        "k***@bplglobal.net",
+        "m***@marc-abramowitz.com",
+        "m***@spotify.com",
+        "m***@gmx.net",
+        "m***@archive.org",
+        "m***@gmail.com",
+        "m***@mdaines.com",
+        "m***@netsoc.tcd.ie",
+        "n***@cryptonector.com",
+        "n***@gmail.com",
+        "o***@gmail.com",
+        "p***@cleanclothes.org",
+        "p***@7bits.nl",
+        "p***@phihag.de",
+        "p***@gmail.com",
+        "q***@gmail.com",
+        "r***@gmail.com",
+        "s***@gmail.com",
+        "s***@typeform.com",
+        "s***@iodev.org",
+        "s***@seemayer.de",
+        "t***@whatexit.org",
+        "t***@gockelhut.com",
+        "w***@gmail.com",
+        "z***@gmail.com",
+        "+012****-05",
+        "+999****999",
+        "docs: 213 address(es) in AUTHORS",
+        "h***@alind.io",
+        "docs:+012****-05"
+      ],
+      "network": [
+        "third-party requests with no Referrer-Policy",
+        "api.github.com",
+        "brew.sh",
+        "developer.apple.com",
+        "discord.gg",
+        "download.icu-project.org",
+        "github.com",
+        "gnupg.org",
+        "jqlang.org",
+        "libera.chat",
+        "macports.org",
+        "packages.ubuntu.com",
+        "raw.githubusercontent.com",
+        "stackoverflow.com",
+        "www.freebsd.org",
+        "www.freshports.org",
+        "www.gnu.org",
+        "www.google.com"
+      ],
+      "retention": [
+        "expires",
+        "retention-days"
+      ],
+      "uploads": [
+        "uploads accepted with no size cap found",
+        "file upload"
+      ],
+      "transparency": [
+        "no privacy policy file"
+      ]
+    },
+    "privacy_profile": "Privacy profile: 0 tracker vendor(s), 17 third-party host(s), 49 PII item(s)",
+    "scanned_repo": "jqlang/jq",
+    "scanned_sha": "5c001b18d7237cce1fdba63608732163f978dd23",
+    "index": {
+      "name": "repobeagle",
+      "version": "1.193.0",
+      "mode": "github"
+    }
+  },
+  "privacy_summary": {
+    "pii": [
+      "logged object likely containing PII",
+      "a***@cleverdomain.org",
+      "a***@gmail.com",
+      "c***@joelpurra.com",
+      "c***@janrain.com",
+      "d***@drmaciver.com",
+      "d***@dmllr.de",
+      "d***@github.con.com",
+      "d***@gmail.com",
+      "f***@gmail.com",
+      "f***@ga-group.nl",
+      "i***@gmail.com",
+      "i***@sdf.org",
+      "j***@gmail.com",
+      "j***@locationlabs.com",
+      "j***@nokia.com",
+      "j***@stedolan.github.io",
+      "k***@zalora.com",
+      "k***@gmail.com",
+      "k***@bplglobal.net",
+      "m***@marc-abramowitz.com",
+      "m***@spotify.com",
+      "m***@gmx.net",
+      "m***@archive.org",
+      "m***@gmail.com",
+      "m***@mdaines.com",
+      "m***@netsoc.tcd.ie",
+      "n***@cryptonector.com",
+      "n***@gmail.com",
+      "o***@gmail.com",
+      "p***@cleanclothes.org",
+      "p***@7bits.nl",
+      "p***@phihag.de",
+      "p***@gmail.com",
+      "q***@gmail.com",
+      "r***@gmail.com",
+      "s***@gmail.com",
+      "s***@typeform.com",
+      "s***@iodev.org",
+      "s***@seemayer.de",
+      "t***@whatexit.org",
+      "t***@gockelhut.com",
+      "w***@gmail.com",
+      "z***@gmail.com",
+      "+012****-05",
+      "+999****999",
+      "docs: 213 address(es) in AUTHORS",
+      "h***@alind.io",
+      "docs:+012****-05"
+    ],
+    "network": [
+      "third-party requests with no Referrer-Policy",
+      "api.github.com",
+      "brew.sh",
+      "developer.apple.com",
+      "discord.gg",
+      "download.icu-project.org",
+      "github.com",
+      "gnupg.org",
+      "jqlang.org",
+      "libera.chat",
+      "macports.org",
+      "packages.ubuntu.com",
+      "raw.githubusercontent.com",
+      "stackoverflow.com",
+      "www.freebsd.org",
+      "www.freshports.org",
+      "www.gnu.org",
+      "www.google.com"
+    ],
+    "retention": [
+      "expires",
+      "retention-days"
+    ],
+    "uploads": [
+      "uploads accepted with no size cap found",
+      "file upload"
+    ],
+    "transparency": [
+      "no privacy policy file"
+    ]
+  },
+  "ai_review": null,
+  "findings": [
+    {
+      "tool": "semgrep",
+      "severity": "high",
+      "file": "src/compile.c",
+      "line": 378,
+      "title": "c-unbounded-string-copy",
+      "snippet": "requires login",
+      "meaning": "unbounded strcpy/strcat can overflow the destination buffer (CWE-676)",
+      "rule": "c-unbounded-string-copy",
+      "remediation": "fix what the rule message describes (the rule id is the title; its registry page has an example)"
+    },
+    {
+      "tool": "semgrep",
+      "severity": "high",
+      "file": "src/compile.c",
+      "line": 379,
+      "title": "c-unbounded-string-copy",
+      "snippet": "requires login",
+      "meaning": "unbounded strcpy/strcat can overflow the destination buffer (CWE-676)",
+      "rule": "c-unbounded-string-copy",
+      "remediation": "fix what the rule message describes (the rule id is the title; its registry page has an example)"
+    },
+    {
+      "tool": "semgrep",
+      "severity": "high",
+      "file": "src/compile.c",
+      "line": 387,
+      "title": "c-unbounded-string-copy",
+      "snippet": "requires login",
+      "meaning": "unbounded strcpy/strcat can overflow the destination buffer (CWE-676)",
+      "rule": "c-unbounded-string-copy",
+      "remediation": "fix what the rule message describes (the rule id is the title; its registry page has an example)"
+    },
+    {
+      "tool": "semgrep",
+      "severity": "high",
+      "file": "src/compile.c",
+      "line": 388,
+      "title": "c-unbounded-string-copy",
+      "snippet": "requires login",
+      "meaning": "unbounded strcpy/strcat can overflow the destination buffer (CWE-676)",
+      "rule": "c-unbounded-string-copy",
+      "remediation": "fix what the rule message describes (the rule id is the title; its registry page has an example)"
+    },
+    {
+      "tool": "bandit",
+      "severity": "medium",
+      "file": "docs/build_website.py",
+      "line": 36,
+      "title": "Bandit B704: markupsafe_markup_xss",
+      "snippet": "35 re.sub(r'[`;]|: .*|\\(.*?\\)| \\[.+\\]', '', input)))).lower() 36 env.filters['markdownify'] = lambda input: Markup( 37 markdown(input, extensions=['md_in_html']",
+      "meaning": "Potential XSS with ``markupsafe.Markup`` detected. Do not use ``Markup`` on untrusted data.",
+      "rule": "Bandit B704",
+      "remediation": "read the bandit rule documentation for the flagged call and fix the call site"
+    },
+    {
+      "tool": "bandit",
+      "severity": "medium",
+      "file": "docs/build_website.py",
+      "line": 38,
+      "title": "Bandit B704: markupsafe_markup_xss",
+      "snippet": "37 markdown(input, extensions=['md_in_html'])) 38 env.filters['no_paragraph'] = lambda input: Markup(re.sub(r'</?p>', '', input)) 39",
+      "meaning": "Potential XSS with ``markupsafe.Markup`` detected. Do not use ``Markup`` on untrusted data.",
+      "rule": "Bandit B704",
+      "remediation": "read the bandit rule documentation for the flagged call and fix the call site"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "file": ".github/workflows/decnum.yml",
+      "line": 13,
+      "title": "gha-unpinned-action: 2 action(s) on a tag/branch, not a commit SHA",
+      "snippet": "uses: actions/checkout@v7",
+      "meaning": "Tags can be moved to malicious code (e.g. tj-actions/changed-files, 2025).",
+      "rule": "gha-unpinned-action",
+      "remediation": "pin `uses:` to a full 40-character commit SHA"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "file": ".github/workflows/valgrind.yml",
+      "line": 13,
+      "title": "gha-unpinned-action: 2 action(s) on a tag/branch, not a commit SHA",
+      "snippet": "uses: actions/checkout@v7",
+      "meaning": "Tags can be moved to malicious code (e.g. tj-actions/changed-files, 2025).",
+      "rule": "gha-unpinned-action",
+      "remediation": "pin `uses:` to a full 40-character commit SHA"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "file": ".github/workflows/scanbuild.yml",
+      "line": 13,
+      "title": "gha-unpinned-action: 2 action(s) on a tag/branch, not a commit SHA",
+      "snippet": "uses: actions/checkout@v7",
+      "meaning": "Tags can be moved to malicious code (e.g. tj-actions/changed-files, 2025).",
+      "rule": "gha-unpinned-action",
+      "remediation": "pin `uses:` to a full 40-character commit SHA"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "file": ".github/workflows/manpage.yml",
+      "line": 25,
+      "title": "gha-unpinned-action: 2 action(s) on a tag/branch, not a commit SHA",
+      "snippet": "uses: actions/checkout@v7",
+      "meaning": "Tags can be moved to malicious code (e.g. tj-actions/changed-files, 2025).",
+      "rule": "gha-unpinned-action",
+      "remediation": "pin `uses:` to a full 40-character commit SHA"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "file": ".github/workflows/website.yml",
+      "line": 39,
+      "title": "gha-write-permissions: workflow token has write permissions",
+      "snippet": "id-token: write",
+      "meaning": "A compromised step can push code or publish packages.",
+      "rule": "gha-write-permissions",
+      "remediation": "add a least-privilege `permissions:` block to the workflow"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "file": ".github/workflows/ci.yml",
+      "line": 302,
+      "title": "gha-write-permissions: workflow token has write permissions",
+      "snippet": "id-token: write",
+      "meaning": "A compromised step can push code or publish packages.",
+      "rule": "gha-write-permissions",
+      "remediation": "add a least-privilege `permissions:` block to the workflow"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "file": ".github/workflows/ci.yml",
+      "line": 306,
+      "title": "gha-write-permissions: workflow token has write permissions",
+      "snippet": "packages: write",
+      "meaning": "A compromised step can push code or publish packages.",
+      "rule": "gha-write-permissions",
+      "remediation": "add a least-privilege `permissions:` block to the workflow"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "file": ".github/workflows/ci.yml",
+      "line": 377,
+      "title": "gha-write-permissions: workflow token has write permissions",
+      "snippet": "contents: write",
+      "meaning": "A compromised step can push code or publish packages.",
+      "rule": "gha-write-permissions",
+      "remediation": "add a least-privilege `permissions:` block to the workflow"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "file": ".github/workflows/ci.yml",
+      "line": 378,
+      "title": "gha-write-permissions: workflow token has write permissions",
+      "snippet": "id-token: write",
+      "meaning": "A compromised step can push code or publish packages.",
+      "rule": "gha-write-permissions",
+      "remediation": "add a least-privilege `permissions:` block to the workflow"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "file": ".github/workflows/ci.yml",
+      "line": 381,
+      "title": "gha-write-permissions: workflow token has write permissions",
+      "snippet": "pull-requests: write",
+      "meaning": "A compromised step can push code or publish packages.",
+      "rule": "gha-write-permissions",
+      "remediation": "add a least-privilege `permissions:` block to the workflow"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "file": ".github/workflows/website.yml",
+      "line": 18,
+      "title": "gha-unpinned-action: 4 action(s) on a tag/branch, not a commit SHA",
+      "snippet": "uses: actions/checkout@v7",
+      "meaning": "Tags can be moved to malicious code (e.g. tj-actions/changed-files, 2025).",
+      "rule": "gha-unpinned-action",
+      "remediation": "pin `uses:` to a full 40-character commit SHA"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "file": ".github/workflows/oniguruma.yml",
+      "line": 15,
+      "title": "gha-unpinned-action: 4 action(s) on a tag/branch, not a commit SHA",
+      "snippet": "uses: actions/checkout@v7",
+      "meaning": "Tags can be moved to malicious code (e.g. tj-actions/changed-files, 2025).",
+      "rule": "gha-unpinned-action",
+      "remediation": "pin `uses:` to a full 40-character commit SHA"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "file": ".github/workflows/ci.yml",
+      "line": 81,
+      "title": "gha-unpinned-action: 24 action(s) on a tag/branch, not a commit SHA",
+      "snippet": "uses: actions/checkout@v7",
+      "meaning": "Tags can be moved to malicious code (e.g. tj-actions/changed-files, 2025).",
+      "rule": "gha-unpinned-action",
+      "remediation": "pin `uses:` to a full 40-character commit SHA"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "file": ".github/workflows/bsd.yml",
+      "line": 17,
+      "title": "gha-unpinned-action: 6 action(s) on a tag/branch, not a commit SHA",
+      "snippet": "uses: actions/checkout@v7",
+      "meaning": "Tags can be moved to malicious code (e.g. tj-actions/changed-files, 2025).",
+      "rule": "gha-unpinned-action",
+      "remediation": "pin `uses:` to a full 40-character commit SHA"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "docs/templates/default.html.j2",
+      "line": 20,
+      "title": "pii-log: logged object likely containing PII",
+      "snippet": "<button type=\"button\" class=\"btn btn-sm btn-secondary text-body-secondary bg-secondary-subtle link-body-emphasis flex-shrink-0 d-flex align-items-center border ",
+      "meaning": "The logged argument name suggests personal data (user/account/profile/\u2026); verify the destination and retention. Seen 4 times.",
+      "rule": "pii-log",
+      "remediation": "log an id instead of the object; truncate/hash the address before logging"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "ChangeLog",
+      "line": 837,
+      "title": "pii-email: a***@cleverdomain.org",
+      "snippet": "2014-02-26 Andrew Rodland <a***@cleverdomain.org>",
+      "meaning": "Hardcoded email address (a person's PII or a DSN); check it is intended to be public. Seen 2 times.",
+      "rule": "pii-email",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "ChangeLog",
+      "line": 1149,
+      "title": "pii-email: a***@gmail.com",
+      "snippet": "2013-09-01 Ankur <a***@gmail.com>",
+      "meaning": "Hardcoded email address (a person's PII or a DSN); check it is intended to be public.",
+      "rule": "pii-email",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "ChangeLog",
+      "line": 135,
+      "title": "pii-email: a***@gmail.com",
+      "snippet": "2015-04-17 Assaf Gordon a***@gmail.com",
+      "meaning": "Hardcoded email address (a person's PII or a DSN); check it is intended to be public. Seen 9 times.",
+      "rule": "pii-email",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "ChangeLog",
+      "line": 287,
+      "title": "pii-email: c***@joelpurra.com",
+      "snippet": "2015-01-14 Joel Purra c***@joelpurra.com",
+      "meaning": "Hardcoded email address (a person's PII or a DSN); check it is intended to be public.",
+      "rule": "pii-email",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "ChangeLog",
+      "line": 437,
+      "title": "pii-email: c***@janrain.com",
+      "snippet": "2014-11-23 Colin von Heuring c***@janrain.com",
+      "meaning": "Hardcoded email address (a person's PII or a DSN); check it is intended to be public.",
+      "rule": "pii-email",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "ChangeLog",
+      "line": 990,
+      "title": "pii-email: d***@drmaciver.com",
+      "snippet": "2013-12-10 David R. MacIver <d***@drmaciver.com>",
+      "meaning": "Hardcoded email address (a person's PII or a DSN); check it is intended to be public. Seen 4 times.",
+      "rule": "pii-email",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "docs/content/tutorial/default.yml",
+      "line": 228,
+      "title": "pii-email: d***@dmllr.de",
+      "snippet": "\"message\": \"Tighten string length bounds and propagate invalid jv in implode\\n\\nThe bound added in CVE-2026-32316 (e47e56d22) still allowed\\n`sizeof(jvp_string)",
+      "meaning": "Hardcoded email address (a person's PII or a DSN); check it is intended to be public. Seen 2 times.",
+      "rule": "pii-email",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "ChangeLog",
+      "line": 83,
+      "title": "pii-email: d***@github.con.com",
+      "snippet": "2015-06-18 Doug Luce d***@github.con.com",
+      "meaning": "Hardcoded email address (a person's PII or a DSN); check it is intended to be public.",
+      "rule": "pii-email",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "ChangeLog",
+      "line": 13,
+      "title": "pii-email: d***@gmail.com",
+      "snippet": "2015-07-04 David Tolnay d***@gmail.com",
+      "meaning": "Hardcoded email address (a person's PII or a DSN); check it is intended to be public. Seen 8 times.",
+      "rule": "pii-email",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "ChangeLog",
+      "line": 902,
+      "title": "pii-email: f***@gmail.com",
+      "snippet": "2013-12-27 Filippo Giunchedi <f***@gmail.com>",
+      "meaning": "Hardcoded email address (a person's PII or a DSN); check it is intended to be public.",
+      "rule": "pii-email",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "ChangeLog",
+      "line": 824,
+      "title": "pii-email: f***@gmail.com",
+      "snippet": "2014-03-07 Filippo Valsorda <f***@gmail.com>",
+      "meaning": "Hardcoded email address (a person's PII or a DSN); check it is intended to be public.",
+      "rule": "pii-email",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "ChangeLog",
+      "line": 255,
+      "title": "pii-email: f***@ga-group.nl",
+      "snippet": "2015-02-16 Sebastian Freundt f***@ga-group.nl",
+      "meaning": "Hardcoded email address (a person's PII or a DSN); check it is intended to be public.",
+      "rule": "pii-email",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "ChangeLog",
+      "line": 441,
+      "title": "pii-email: i***@gmail.com",
+      "snippet": "2014-11-11 Ian Miell i***@gmail.com",
+      "meaning": "Hardcoded email address (a person's PII or a DSN); check it is intended to be public.",
+      "rule": "pii-email",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "ChangeLog",
+      "line": 283,
+      "title": "pii-email: i***@sdf.org",
+      "snippet": "2015-01-27 i i***@sdf.org",
+      "meaning": "Hardcoded email address (a person's PII or a DSN); check it is intended to be public.",
+      "rule": "pii-email",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "ChangeLog",
+      "line": 1145,
+      "title": "pii-email: j***@gmail.com",
+      "snippet": "2013-09-04 Jack Pearkes <j***@gmail.com>",
+      "meaning": "Hardcoded email address (a person's PII or a DSN); check it is intended to be public.",
+      "rule": "pii-email",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "ChangeLog",
+      "line": 9,
+      "title": "pii-email: j***@locationlabs.com",
+      "snippet": "2015-07-06 James Andariese j***@locationlabs.com",
+      "meaning": "Hardcoded email address (a person's PII or a DSN); check it is intended to be public.",
+      "rule": "pii-email",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "ChangeLog",
+      "line": 721,
+      "title": "pii-email: j***@gmail.com",
+      "snippet": "2014-06-12 Jingwen Owen Ou j***@gmail.com",
+      "meaning": "Hardcoded email address (a person's PII or a DSN); check it is intended to be public. Seen 2 times.",
+      "rule": "pii-email",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "ChangeLog",
+      "line": 895,
+      "title": "pii-email: j***@nokia.com",
+      "snippet": "2013-12-27 Joe Littlejohn <j***@nokia.com>",
+      "meaning": "Hardcoded email address (a person's PII or a DSN); check it is intended to be public. Seen 2 times.",
+      "rule": "pii-email",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "KEYS",
+      "line": 3,
+      "title": "pii-email: j***@stedolan.github.io",
+      "snippet": "uid jq Release Signing Key <j***@stedolan.github.io>",
+      "meaning": "Hardcoded email address (a person's PII or a DSN); check it is intended to be public.",
+      "rule": "pii-email",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "ChangeLog",
+      "line": 1125,
+      "title": "pii-email: j***@gmail.com",
+      "snippet": "2013-10-06 Juan Guerrero <j***@gmail.com>",
+      "meaning": "Hardcoded email address (a person's PII or a DSN); check it is intended to be public.",
+      "rule": "pii-email",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "ChangeLog",
+      "line": 1129,
+      "title": "pii-email: k***@zalora.com",
+      "snippet": "2013-09-19 Kenny Shen <k***@zalora.com>",
+      "meaning": "Hardcoded email address (a person's PII or a DSN); check it is intended to be public.",
+      "rule": "pii-email",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "ChangeLog",
+      "line": 729,
+      "title": "pii-email: k***@gmail.com",
+      "snippet": "2014-06-11 Kim De Mey k***@gmail.com",
+      "meaning": "Hardcoded email address (a person's PII or a DSN); check it is intended to be public.",
+      "rule": "pii-email",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "ChangeLog",
+      "line": 275,
+      "title": "pii-email: k***@bplglobal.net",
+      "snippet": "2015-02-10 Kim Toms k***@bplglobal.net",
+      "meaning": "Hardcoded email address (a person's PII or a DSN); check it is intended to be public.",
+      "rule": "pii-email",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "ChangeLog",
+      "line": 393,
+      "title": "pii-email: m***@marc-abramowitz.com",
+      "snippet": "2014-12-22 Marc Abramowitz m***@marc-abramowitz.com",
+      "meaning": "Hardcoded email address (a person's PII or a DSN); check it is intended to be public.",
+      "rule": "pii-email",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "ChangeLog",
+      "line": 565,
+      "title": "pii-email: m***@spotify.com",
+      "snippet": "2014-07-13 Marc Bruggmann m***@spotify.com",
+      "meaning": "Hardcoded email address (a person's PII or a DSN); check it is intended to be public.",
+      "rule": "pii-email",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "ChangeLog",
+      "line": 1282,
+      "title": "pii-email: m***@gmx.net",
+      "snippet": "2013-06-04 Markus Lanthaler <m***@gmx.net>",
+      "meaning": "Hardcoded email address (a person's PII or a DSN); check it is intended to be public.",
+      "rule": "pii-email",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "ChangeLog",
+      "line": 856,
+      "title": "pii-email: m***@archive.org",
+      "snippet": "2014-02-21 Mike McCabe <m***@archive.org>",
+      "meaning": "Hardcoded email address (a person's PII or a DSN); check it is intended to be public.",
+      "rule": "pii-email",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "ChangeLog",
+      "line": 1300,
+      "title": "pii-email: m***@gmail.com",
+      "snippet": "2013-05-31 Brendan Macmillan <m***@gmail.com>",
+      "meaning": "Hardcoded email address (a person's PII or a DSN); check it is intended to be public. Seen 2 times.",
+      "rule": "pii-email",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "ChangeLog",
+      "line": 1133,
+      "title": "pii-email: m***@mdaines.com",
+      "snippet": "2013-09-14 Michael Daines <m***@mdaines.com>",
+      "meaning": "Hardcoded email address (a person's PII or a DSN); check it is intended to be public. Seen 3 times.",
+      "rule": "pii-email",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "ChangeLog",
+      "line": 947,
+      "title": "pii-email: m***@netsoc.tcd.ie",
+      "snippet": "2013-12-17 Stephen Dolan <m***@netsoc.tcd.ie>",
+      "meaning": "Hardcoded email address (a person's PII or a DSN); check it is intended to be public. Seen 28 times.",
+      "rule": "pii-email",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "ChangeLog",
+      "line": 1,
+      "title": "pii-email: n***@cryptonector.com",
+      "snippet": "2015-07-10 Nicolas Williams n***@cryptonector.com",
+      "meaning": "Hardcoded email address (a person's PII or a DSN); check it is intended to be public. Seen 117 times.",
+      "rule": "pii-email",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "ChangeLog",
+      "line": 1104,
+      "title": "pii-email: n***@gmail.com",
+      "snippet": "2013-11-30 Nicolas Pouillard <n***@gmail.com>",
+      "meaning": "Hardcoded email address (a person's PII or a DSN); check it is intended to be public.",
+      "rule": "pii-email",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "ChangeLog",
+      "line": 187,
+      "title": "pii-email: o***@gmail.com",
+      "snippet": "2015-04-21 Andrew O'Brien o***@gmail.com",
+      "meaning": "Hardcoded email address (a person's PII or a DSN); check it is intended to be public.",
+      "rule": "pii-email",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "ChangeLog",
+      "line": 882,
+      "title": "pii-email: p***@cleanclothes.org",
+      "snippet": "2014-01-25 polyester <p***@cleanclothes.org>",
+      "meaning": "Hardcoded email address (a person's PII or a DSN); check it is intended to be public.",
+      "rule": "pii-email",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "ChangeLog",
+      "line": 1112,
+      "title": "pii-email: p***@7bits.nl",
+      "snippet": "2013-11-07 Peter van Dijk <p***@7bits.nl>",
+      "meaning": "Hardcoded email address (a person's PII or a DSN); check it is intended to be public.",
+      "rule": "pii-email",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "ChangeLog",
+      "line": 938,
+      "title": "pii-email: p***@phihag.de",
+      "snippet": "2013-12-20 Philipp Hagemeister <p***@phihag.de>",
+      "meaning": "Hardcoded email address (a person's PII or a DSN); check it is intended to be public.",
+      "rule": "pii-email",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "ChangeLog",
+      "line": 339,
+      "title": "pii-email: p***@gmail.com",
+      "snippet": "2014-10-06 pkoppstein p***@gmail.com",
+      "meaning": "Hardcoded email address (a person's PII or a DSN); check it is intended to be public. Seen 7 times.",
+      "rule": "pii-email",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "ChangeLog",
+      "line": 569,
+      "title": "pii-email: q***@gmail.com",
+      "snippet": "2014-07-09 Hanfei Shen q***@gmail.com",
+      "meaning": "Hardcoded email address (a person's PII or a DSN); check it is intended to be public.",
+      "rule": "pii-email",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "ChangeLog",
+      "line": 955,
+      "title": "pii-email: r***@gmail.com",
+      "snippet": "2013-12-13 R\u00e9my L\u00e9one <r***@gmail.com>",
+      "meaning": "Hardcoded email address (a person's PII or a DSN); check it is intended to be public.",
+      "rule": "pii-email",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "ChangeLog",
+      "line": 1121,
+      "title": "pii-email: r***@gmail.com",
+      "snippet": "2013-10-16 Ryoichi KATO <r***@gmail.com>",
+      "meaning": "Hardcoded email address (a person's PII or a DSN); check it is intended to be public.",
+      "rule": "pii-email",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "ChangeLog",
+      "line": 217,
+      "title": "pii-email: s***@gmail.com",
+      "snippet": "2015-03-18 Santiago Lapresta s***@gmail.com",
+      "meaning": "Hardcoded email address (a person's PII or a DSN); check it is intended to be public. Seen 13 times.",
+      "rule": "pii-email",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "ChangeLog",
+      "line": 57,
+      "title": "pii-email: s***@typeform.com",
+      "snippet": "2015-06-04 Santiago Lapresta s***@typeform.com",
+      "meaning": "Hardcoded email address (a person's PII or a DSN); check it is intended to be public.",
+      "rule": "pii-email",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "ChangeLog",
+      "line": 409,
+      "title": "pii-email: s***@gmail.com",
+      "snippet": "2014-12-21 Eiichi Sato s***@gmail.com",
+      "meaning": "Hardcoded email address (a person's PII or a DSN); check it is intended to be public.",
+      "rule": "pii-email",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "ChangeLog",
+      "line": 561,
+      "title": "pii-email: s***@iodev.org",
+      "snippet": "2014-07-14 Simon Elsbrock s***@iodev.org",
+      "meaning": "Hardcoded email address (a person's PII or a DSN); check it is intended to be public.",
+      "rule": "pii-email",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "ChangeLog",
+      "line": 247,
+      "title": "pii-email: s***@seemayer.de",
+      "snippet": "2015-02-18 Stefan Seemayer s***@seemayer.de",
+      "meaning": "Hardcoded email address (a person's PII or a DSN); check it is intended to be public.",
+      "rule": "pii-email",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "ChangeLog",
+      "line": 195,
+      "title": "pii-email: t***@whatexit.org",
+      "snippet": "2015-04-03 t***@whatexit.org t***@whatexit.org",
+      "meaning": "Hardcoded email address (a person's PII or a DSN); check it is intended to be public.",
+      "rule": "pii-email",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "ChangeLog",
+      "line": 131,
+      "title": "pii-email: t***@gockelhut.com",
+      "snippet": "2015-03-04 Travis Gockel t***@gockelhut.com",
+      "meaning": "Hardcoded email address (a person's PII or a DSN); check it is intended to be public.",
+      "rule": "pii-email",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "ChangeLog",
+      "line": 229,
+      "title": "pii-email: w***@gmail.com",
+      "snippet": "2015-03-23 William Langford w***@gmail.com",
+      "meaning": "Hardcoded email address (a person's PII or a DSN); check it is intended to be public. Seen 11 times.",
+      "rule": "pii-email",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "ChangeLog",
+      "line": 573,
+      "title": "pii-email: z***@gmail.com",
+      "snippet": "2014-07-08 Zhiming Wang z***@gmail.com",
+      "meaning": "Hardcoded email address (a person's PII or a DSN); check it is intended to be public. Seen 2 times.",
+      "rule": "pii-email",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "docs/content/manual/dev/manual.yml",
+      "line": 2265,
+      "title": "pii-phone: +012****-05",
+      "snippet": "are written with a sign and six digits, as in `+012****-05`.",
+      "meaning": "Hardcoded phone number in source/config (personal data); check it is intentional.",
+      "rule": "pii-phone",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "vendor/decNumber/decNumber.c",
+      "line": 3745,
+      "title": "pii-phone: +999****999",
+      "snippet": "base maximum and minimum of +999****999 through -999999999, but",
+      "meaning": "Hardcoded phone number in source/config (personal data); check it is intentional.",
+      "rule": "pii-phone",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "(repo)",
+      "line": 0,
+      "title": "upload-limit: uploads accepted with no size cap found",
+      "snippet": "no max file/body size setting in the repo",
+      "meaning": "Unbounded request bodies can carry more data than intended; check the server/framework default.",
+      "rule": "upload-limit",
+      "remediation": "state and enforce the upload size/type limit"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "(repo)",
+      "line": 0,
+      "title": "referrer-policy: third-party requests with no Referrer-Policy",
+      "snippet": "no Referrer-Policy header or <meta name=referrer>",
+      "meaning": "By default the full page URL (including path and query) is sent as Referer to third parties.",
+      "rule": "referrer-policy",
+      "remediation": "send `Referrer-Policy: strict-origin-when-cross-origin` (or `no-referrer`)"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "(repo)",
+      "line": 0,
+      "title": "privacy-doc: no privacy policy file",
+      "snippet": "expected PRIVACY.md or PrivacyInfo.xcprivacy",
+      "meaning": "The repo collects/transmits data but ships no privacy policy/manifest file.",
+      "rule": "privacy-doc",
+      "remediation": "add a PRIVACY.md/policy (or link one) and state what is collected"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "file": "(repo)",
+      "line": 0,
+      "title": "Coverage-low: only 19.5% of source bytes were inspected",
+      "snippet": "52/434 files",
+      "meaning": "Large or unsupported files are skipped, so a GREEN verdict over them is not evidence of safety.",
+      "rule": "Coverage-low",
+      "remediation": "inspect the large or unsupported files manually; the verdict does not cover them"
+    },
+    {
+      "tool": "trust",
+      "severity": "low",
+      "file": "(github)",
+      "line": 0,
+      "title": "release-mutable: latest release jq-1.8.2 is not immutable: its tag or assets can be replaced",
+      "snippet": "",
+      "meaning": "Context signal only; never decides the verdict alone.",
+      "rule": "release-mutable"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "info",
+      "file": ".gitmodules",
+      "line": 1,
+      "title": "submodule-uninspected: 1 submodule(s) not fetched",
+      "snippet": "vendor/oniguruma",
+      "meaning": "Fetch runs with `--no-recurse-submodules`, so only `.gitmodules` is inspected: this code was not scanned.",
+      "rule": "submodule-uninspected"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "AUTHORS",
+      "line": 1,
+      "title": "pii-email: docs: 213 address(es) in AUTHORS",
+      "snippet": "0***@gmail.com, a***@transtex-llc.com, a***@alexchamberlain.co.uk, a***@jurkiewi.cz, +209",
+      "meaning": "Docs publish these email addresses (contact/maintainer info); confirm they are meant to be public.",
+      "rule": "pii-email",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "ChangeLog",
+      "line": 537,
+      "title": "pii-email: h***@alind.io",
+      "snippet": "2014-08-01 Adam Lindberg h***@alind.io",
+      "meaning": "Role mailbox (support@, noreply@, \u2026): not personal data.",
+      "rule": "pii-email",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "tests/jq.test",
+      "line": 2046,
+      "title": "pii-phone: docs:+012****-05",
+      "snippet": "[(\"+012****-05T23:51:47Z\", \"-000001-01-01T00:00:00Z\", \"+002****305T235147Z\", \"+202****-05\", \"+020****-05\", \"+000****-05\") | try fromdateiso8601 catch \"ERR",
+      "meaning": "Docs publish a phone number (contact info by design).",
+      "rule": "pii-phone",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "KEYS",
+      "line": 5,
+      "title": "data-retention: expires",
+      "snippet": "pub 2048R/D15684DB 2015-10-12 [expires: 2017-10-11]",
+      "meaning": "A retention/expiry window is configured; verify it applies to the collected data. Seen 2 times.",
+      "rule": "data-retention",
+      "remediation": "set an explicit retention period and delete the data when it ends"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": ".github/workflows/decnum.yml",
+      "line": 39,
+      "title": "data-retention: retention-days",
+      "snippet": "retention-days: 7",
+      "meaning": "A retention/expiry window is configured; verify it applies to the collected data. Seen 14 times.",
+      "rule": "data-retention",
+      "remediation": "set an explicit retention period and delete the data when it ends"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "docs/content/tutorial/default.yml",
+      "line": 224,
+      "title": "upload-surface: file upload",
+      "snippet": "\"message\": \"Upload attestation bundle as a release artifact (#3563)\\n\\nThe bundle generated by actions/attest is currently only retrievable\\nvia the GitHub atte",
+      "meaning": "Accepts user-supplied files or request bodies: data enters the service. Seen 34 times.",
+      "rule": "upload-surface",
+      "remediation": "check where the uploaded file is stored and who can read it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "docs/content/tutorial/default.yml",
+      "line": 41,
+      "title": "external-endpoint: api.github.com",
+      "snippet": "'https://api.github.com/repos/jqlang/jq/commits?until=2026-09-02' >",
+      "meaning": "Unknown third-party host api.github.com: docs link; not fetched at runtime. Seen 5 times.",
+      "rule": "external-endpoint"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "docs/content/download/default.yml",
+      "line": 330,
+      "title": "external-endpoint: brew.sh",
+      "snippet": "by Apple. This can be found in [Homebrew](https://brew.sh/) or",
+      "meaning": "Unknown third-party host brew.sh: docs link; not fetched at runtime.",
+      "rule": "external-endpoint"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "docs/content/download/default.yml",
+      "line": 328,
+      "title": "external-endpoint: developer.apple.com",
+      "snippet": "be installed from [Xcode](https://developer.apple.com/xcode/). However,",
+      "meaning": "Unknown third-party host developer.apple.com: docs link; not fetched at runtime.",
+      "rule": "external-endpoint"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "docs/content/index.yml",
+      "line": 32,
+      "title": "external-endpoint: discord.gg",
+      "snippet": "on [Libera.Chat](https://libera.chat/). For more interactive discussions, feel free to join our [Discord server](https://discord.gg/yg6yjNmgAC).",
+      "meaning": "Network destination discord.gg (known platform/infrastructure).",
+      "rule": "external-endpoint"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "docs/content/download/default.yml",
+      "line": 18,
+      "title": "external-endpoint: download.icu-project.org",
+      "snippet": "<https://download.icu-project.org/files/decNumber/decNumber-icu-368.zip>",
+      "meaning": "Unknown third-party host download.icu-project.org: docs link; not fetched at runtime.",
+      "rule": "external-endpoint"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "compile-ios.sh",
+      "line": 47,
+      "title": "external-endpoint: github.com",
+      "snippet": "onig_url=\"https://github.com/kkos/oniguruma/releases/download/v${oniguruma}/onig-${oniguruma}.tar.gz\"",
+      "meaning": "Network destination github.com (known platform/infrastructure). Seen 95 times.",
+      "rule": "external-endpoint"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "docs/content/download/default.yml",
+      "line": 245,
+      "title": "external-endpoint: gnupg.org",
+      "snippet": "You can use [GnuPG](https://gnupg.org/) to verify a signature by downloading",
+      "meaning": "Unknown third-party host gnupg.org: docs link; not fetched at runtime.",
+      "rule": "external-endpoint"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "docs/build_website.py",
+      "line": 24,
+      "title": "external-endpoint: jqlang.org",
+      "snippet": "env.globals['url'] = 'https://jqlang.org'",
+      "meaning": "Unknown third-party host jqlang.org: docs link; not fetched at runtime.",
+      "rule": "external-endpoint"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "docs/content/index.yml",
+      "line": 32,
+      "title": "external-endpoint: libera.chat",
+      "snippet": "on [Libera.Chat](https://libera.chat/). For more interactive discussions, feel free to join our [Discord server](https://discord.gg/yg6yjNmgAC).",
+      "meaning": "Unknown third-party host libera.chat: docs link; not fetched at runtime.",
+      "rule": "external-endpoint"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "docs/content/download/default.yml",
+      "line": 331,
+      "title": "external-endpoint: macports.org",
+      "snippet": "[MacPorts](https://macports.org/).",
+      "meaning": "Unknown third-party host macports.org: docs link; not fetched at runtime.",
+      "rule": "external-endpoint"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "docs/content/download/default.yml",
+      "line": 24,
+      "title": "external-endpoint: packages.ubuntu.com",
+      "snippet": "[Ubuntu](https://packages.ubuntu.com/jq) repositories. Install using",
+      "meaning": "Unknown third-party host packages.ubuntu.com: docs link; not fetched at runtime.",
+      "rule": "external-endpoint"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "docs/content/download/default.yml",
+      "line": 242,
+      "title": "external-endpoint: raw.githubusercontent.com",
+      "snippet": "[one for 1.6 and older releases](https://raw.githubusercontent.com/jqlang/jq/master/sig/jq-release-old.key),",
+      "meaning": "Network destination raw.githubusercontent.com (known platform/infrastructure). Seen 9 times.",
+      "rule": "external-endpoint"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "docs/content/index.yml",
+      "line": 30,
+      "title": "external-endpoint: stackoverflow.com",
+      "snippet": "Have a question related to jq? You can seek answers on [Stack Overflow](https://stackoverflow.com/)",
+      "meaning": "Unknown third-party host stackoverflow.com: docs link; not fetched at runtime. Seen 2 times.",
+      "rule": "external-endpoint"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "docs/content/download/default.yml",
+      "line": 159,
+      "title": "external-endpoint: www.freebsd.org",
+      "snippet": "[binary package](https://www.freebsd.org/doc/en_US.ISO8859-1/books/handbook/pkgng-intro.html).",
+      "meaning": "Unknown third-party host www.freebsd.org: docs link; not fetched at runtime. Seen 2 times.",
+      "rule": "external-endpoint"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "docs/content/download/default.yml",
+      "line": 162,
+      "title": "external-endpoint: www.freshports.org",
+      "snippet": "[jq](https://www.freshports.org/textproc/jq/)",
+      "meaning": "Unknown third-party host www.freshports.org: docs link; not fetched at runtime.",
+      "rule": "external-endpoint"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "docs/content/download/default.yml",
+      "line": 336,
+      "title": "external-endpoint: www.gnu.org",
+      "snippet": "[Bison](https://www.gnu.org/software/bison/).",
+      "meaning": "Unknown third-party host www.gnu.org: docs link; not fetched at runtime.",
+      "rule": "external-endpoint"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "docs/content/manual/v1.4/manual.yml",
+      "line": 1260,
+      "title": "external-endpoint: www.google.com",
+      "snippet": "@uri \"https://www.google.com/search?q=\\(.search)\"",
+      "meaning": "Unknown third-party host www.google.com: docs link; not fetched at runtime. Seen 14 times.",
+      "rule": "external-endpoint"
+    },
+    {
+      "tool": "trust",
+      "severity": "info",
+      "file": "(github)",
+      "line": 0,
+      "title": "trust-signals: repo 5244d old, 36361 stars, 2303 forks, 272 contributors, owner 1669d old",
+      "snippet": "",
+      "meaning": "Context signal only; never decides the verdict alone.",
+      "rule": "trust-signals"
+    }
+  ],
+  "raw_findings_count": 102,
+  "notes": [
+    "guarddog: no python/npm package manifest at repo root (skipped)",
+    "osv-scanner not installed (skipped)",
+    "AI review skipped (set BEAGLE_LLM_URL to enable; REPO_GUARD_LLM_URL also accepted)"
+  ],
+  "recommended_actions": [
+    "Read the listed findings before trusting it; most may be benign, but confirm each.",
+    "Install only in an isolated environment (container/VM/throwaway user) with no secrets present.",
+    "Don't let an AI agent auto-run its install steps or MCP servers without reviewing them."
+  ]
+}

@@ -1,0 +1,1160 @@
+{
+  "version": "1.193.0",
+  "verdict": "YELLOW",
+  "why": "No critical issues; 0 high, 5 medium, 15 low findings worth a look",
+  "counts": {
+    "critical": 0,
+    "high": 0,
+    "medium": 5,
+    "low": 15,
+    "info": 10
+  },
+  "meta": {
+    "target": "https://github.com/BurntSushi/ripgrep.git",
+    "ref": "3e85c6c148fdce38a99ceeb9d2780dc7b03b4a4f",
+    "commit": "3e85c6c148fdce38a99ceeb9d2780dc7b03b4a4f",
+    "fetched_via": "git clone --depth 1 --filter=blob:none @ 3e85c6c148fdce38a99ceeb9d2780dc7b03b4a4f + sparse checkout (4 archives/binaries listed, not downloaded)",
+    "mode": "docker (--network none, read-only)",
+    "profile": "balanced",
+    "files": 227,
+    "seconds": 113.0,
+    "scanned_at": "2026-11-27T02:12:30Z",
+    "tools": {
+      "gitleaks": {
+        "findings": 0,
+        "seconds": 7.4,
+        "ok": true,
+        "version": "8.30.1"
+      },
+      "semgrep": {
+        "findings": 0,
+        "seconds": 14.5,
+        "ok": true,
+        "version": "1.187.0"
+      },
+      "guarddog": {
+        "findings": 0,
+        "seconds": 0.0,
+        "ok": true,
+        "version": "3.2.0"
+      },
+      "bandit": {
+        "findings": 0,
+        "seconds": 0.0,
+        "ok": true,
+        "version": "1.9.4"
+      },
+      "agent-checks": {
+        "findings": 24,
+        "seconds": 80.4,
+        "ok": true,
+        "files": 227
+      },
+      "osv-scanner": {
+        "findings": 0,
+        "seconds": 0.0,
+        "ok": false
+      },
+      "trust": {
+        "findings": 2,
+        "seconds": 1.6,
+        "ok": true
+      }
+    },
+    "suppressed": 0,
+    "suppressions": [],
+    "pii_redacted": true,
+    "privacy_mode": "full",
+    "ruleset": "92559dde022f",
+    "complete": true,
+    "cache": "miss",
+    "workspace": {
+      "packages": [
+        {
+          "name": "grep-cli",
+          "path": "crates/cli",
+          "kind": "cargo"
+        },
+        {
+          "name": "globset",
+          "path": "crates/globset",
+          "kind": "cargo"
+        },
+        {
+          "name": "grep",
+          "path": "crates/grep",
+          "kind": "cargo"
+        },
+        {
+          "name": "ignore",
+          "path": "crates/ignore",
+          "kind": "cargo"
+        },
+        {
+          "name": "grep-matcher",
+          "path": "crates/matcher",
+          "kind": "cargo"
+        },
+        {
+          "name": "grep-pcre2",
+          "path": "crates/pcre2",
+          "kind": "cargo"
+        },
+        {
+          "name": "grep-printer",
+          "path": "crates/printer",
+          "kind": "cargo"
+        },
+        {
+          "name": "grep-regex",
+          "path": "crates/regex",
+          "kind": "cargo"
+        },
+        {
+          "name": "grep-searcher",
+          "path": "crates/searcher",
+          "kind": "cargo"
+        }
+      ],
+      "dropped": 0,
+      "counts": {
+        "(root)": {
+          "critical": 0,
+          "high": 0,
+          "medium": 5,
+          "low": 13,
+          "info": 7
+        },
+        "grep-cli": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 0,
+          "info": 0
+        },
+        "globset": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 0,
+          "info": 1
+        },
+        "grep": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 0,
+          "info": 1
+        },
+        "ignore": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 0,
+          "info": 0
+        },
+        "grep-matcher": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 0,
+          "info": 0
+        },
+        "grep-pcre2": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 1,
+          "info": 0
+        },
+        "grep-printer": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 1,
+          "info": 0
+        },
+        "grep-regex": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 0,
+          "info": 1
+        },
+        "grep-searcher": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 0,
+          "info": 0
+        }
+      }
+    },
+    "capabilities": {
+      "files": 227,
+      "network": [
+        {
+          "value": "github.com",
+          "file": "cliff.toml",
+          "line": 28,
+          "count": 148,
+          "doc": false,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "docs.rs",
+          "file": "GUIDE.md",
+          "line": 113,
+          "count": 42,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "crates.io",
+          "file": "README.md",
+          "line": 12,
+          "count": 16,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "unlicense.org",
+          "file": "FAQ.md",
+          "line": 957,
+          "count": 11,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "img.shields.io",
+          "file": "README.md",
+          "line": 12,
+          "count": 10,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "www.gnu.org",
+          "file": "FAQ.md",
+          "line": 944,
+          "count": 7,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "blog.burntsushi.net",
+          "file": "FAQ.md",
+          "line": 1001,
+          "count": 5,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "burntsushi.net",
+          "file": "GUIDE.md",
+          "line": 71,
+          "count": 5,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "dl.fedoraproject.org",
+          "file": "README.md",
+          "line": 310,
+          "count": 3,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "docs.fedoraproject.org",
+          "file": "README.md",
+          "line": 306,
+          "count": 3,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "encoding.spec.whatwg.org",
+          "file": "GUIDE.md",
+          "line": 665,
+          "count": 3,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "www.kernel.org",
+          "file": "README.md",
+          "line": 55,
+          "count": 3,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "beyondgrep.com",
+          "file": "README.md",
+          "line": 213,
+          "count": 2,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "codapi.org",
+          "file": "README.md",
+          "line": 226,
+          "count": 2,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "en.wikipedia.org",
+          "file": "GUIDE.md",
+          "line": 76,
+          "count": 2,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "gist.github.com",
+          "file": "crates/core/flags/defs.rs",
+          "line": 3129,
+          "count": 2,
+          "doc": false,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "opensource.org",
+          "file": "benchsuite/runs/2020-10-14-archlinux-frink/README.md",
+          "line": 32,
+          "count": 2,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "repology.org",
+          "file": "README.md",
+          "line": 13,
+          "count": 2,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "schemas.microsoft.com",
+          "file": "pkg/windows/Manifest.xml",
+          "line": 18,
+          "count": 2,
+          "doc": false,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "technet.microsoft.com",
+          "file": "FAQ.md",
+          "line": 149,
+          "count": 2,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "chocolatey.org",
+          "file": "README.md",
+          "line": 257,
+          "count": 1,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "code.visualstudio.com",
+          "file": "CHANGELOG.md",
+          "line": 352,
+          "count": 1,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "cve.mitre.org",
+          "file": "CHANGELOG.md",
+          "line": 500,
+          "count": 1,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "dandavison.github.io",
+          "file": "README.md",
+          "line": 524,
+          "count": 1,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "docs.microsoft.com",
+          "file": "pkg/windows/Manifest.xml",
+          "line": 4,
+          "count": 1,
+          "doc": false,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "jsonlines.org",
+          "file": "crates/printer/src/lib.rs",
+          "line": 15,
+          "count": 1,
+          "doc": false,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "launchpad.net",
+          "file": "README.md",
+          "line": 369,
+          "count": 1,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "learn.microsoft.com",
+          "file": "pkg/windows/README.md",
+          "line": 14,
+          "count": 1,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "object.pouta.csc.fi",
+          "file": "README.md",
+          "line": 75,
+          "count": 1,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "openports.se",
+          "file": "README.md",
+          "line": 396,
+          "count": 1,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "packages.altlinux.org",
+          "file": "README.md",
+          "line": 382,
+          "count": 1,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "packages.gentoo.org",
+          "file": "README.md",
+          "line": 285,
+          "count": 1,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "pkgsrc.se",
+          "file": "README.md",
+          "line": 403,
+          "count": 1,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "poppler.freedesktop.org",
+          "file": "GUIDE.md",
+          "line": 811,
+          "count": 1,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "tracker.debian.org",
+          "file": "README.md",
+          "line": 361,
+          "count": 1,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "voidlinux.org",
+          "file": "README.md",
+          "line": 424,
+          "count": 1,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "www.cs.tufts.edu",
+          "file": "GUIDE.md",
+          "line": 795,
+          "count": 1,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "www.freshports.org",
+          "file": "README.md",
+          "line": 389,
+          "count": 1,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "www.macports.org",
+          "file": "README.md",
+          "line": 250,
+          "count": 1,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "www.pcre.org",
+          "file": "crates/pcre2/src/lib.rs",
+          "line": 3,
+          "count": 1,
+          "doc": false,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "www.rust-lang.org",
+          "file": "README.md",
+          "line": 454,
+          "count": 1,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        }
+      ],
+      "filesystem": [
+        {
+          "value": "$HOME",
+          "file": "GUIDE.md",
+          "line": 64,
+          "count": 12,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": ".env",
+          "file": "tests/feature.rs",
+          "line": 332,
+          "count": 6,
+          "doc": false,
+          "test": true,
+          "verified": false,
+          "source": "static"
+        }
+      ],
+      "processes": [
+        {
+          "value": "command::new",
+          "file": "build.rs",
+          "line": 37,
+          "count": 8,
+          "doc": false,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        }
+      ],
+      "environment": [
+        {
+          "value": "CROSS_RUNNER",
+          "file": "tests/util.rs",
+          "line": 488,
+          "count": 2,
+          "doc": false,
+          "test": true,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "CARGO_CFG_TARGET_ENV",
+          "file": "build.rs",
+          "line": 16,
+          "count": 1,
+          "doc": false,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "CARGO_CFG_TARGET_OS",
+          "file": "build.rs",
+          "line": 15,
+          "count": 1,
+          "doc": false,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        }
+      ],
+      "storage": []
+    },
+    "coverage": {
+      "files_total": 227,
+      "files_scanned": 155,
+      "bytes_total": 3359058,
+      "bytes_scanned": 2391051,
+      "bytes_scanned_pct": 71.2,
+      "skipped": {
+        "archive": 0,
+        "binary": 0,
+        "oversize": 0,
+        "unreadable": 0,
+        "unsupported": 72
+      },
+      "unscanned_extensions": [
+        [
+          "(none)",
+          46
+        ],
+        [
+          ".csv",
+          12
+        ],
+        [
+          ".gitignore",
+          2
+        ],
+        [
+          ".help",
+          2
+        ],
+        [
+          ".lock",
+          2
+        ],
+        [
+          ".setup",
+          2
+        ],
+        [
+          ".1",
+          1
+        ],
+        [
+          ".br",
+          1
+        ],
+        [
+          ".fish",
+          1
+        ],
+        [
+          ".lz4",
+          1
+        ],
+        [
+          ".lzma",
+          1
+        ],
+        [
+          ".z",
+          1
+        ]
+      ],
+      "languages": {
+        "inspected": {
+          "Rust": 105,
+          "Shell": 3,
+          "Lua": 1,
+          "Ruby": 1
+        },
+        "no_rules": {}
+      }
+    },
+    "privacy_summary": {
+      "pii": [
+        "f***@gmail.com",
+        "j***@gmail.com",
+        "name (docs link)"
+      ],
+      "first_party": [
+        "docs.rs",
+        "gist.github.com",
+        "github.com"
+      ],
+      "network": [
+        "docs.microsoft.com",
+        "jsonlines.org",
+        "www.pcre.org",
+        "third-party requests with no Referrer-Policy",
+        "schemas.microsoft.com",
+        "crates.io"
+      ],
+      "retention": [
+        "data collected but no retention/expiry setting found"
+      ],
+      "uploads": [
+        "file upload",
+        "size cap"
+      ],
+      "transparency": [
+        "no privacy policy file"
+      ]
+    },
+    "privacy_profile": "Privacy profile: 0 tracker vendor(s), 5 third-party host(s), 3 PII item(s)",
+    "scanned_repo": "BurntSushi/ripgrep",
+    "scanned_sha": "3e85c6c148fdce38a99ceeb9d2780dc7b03b4a4f",
+    "index": {
+      "name": "repobeagle",
+      "version": "1.193.0",
+      "mode": "github"
+    }
+  },
+  "privacy_summary": {
+    "pii": [
+      "f***@gmail.com",
+      "j***@gmail.com",
+      "name (docs link)"
+    ],
+    "first_party": [
+      "docs.rs",
+      "gist.github.com",
+      "github.com"
+    ],
+    "network": [
+      "docs.microsoft.com",
+      "jsonlines.org",
+      "www.pcre.org",
+      "third-party requests with no Referrer-Policy",
+      "schemas.microsoft.com",
+      "crates.io"
+    ],
+    "retention": [
+      "data collected but no retention/expiry setting found"
+    ],
+    "uploads": [
+      "file upload",
+      "size cap"
+    ],
+    "transparency": [
+      "no privacy policy file"
+    ]
+  },
+  "ai_review": null,
+  "findings": [
+    {
+      "tool": "agent-checks",
+      "severity": "medium",
+      "file": "build.rs",
+      "line": 37,
+      "title": "rust-build-rs: Cargo build script runs commands / network",
+      "snippet": "let output = Command::new(\"git\").args(args).output();",
+      "meaning": "build.rs executes on `cargo build` with your permissions.",
+      "rule": "rust-build-rs",
+      "remediation": "review the build script/backend; it runs at install or build time"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "medium",
+      "file": "tests/data/sherlock.bz2",
+      "line": 0,
+      "title": "Archive in repo (not downloaded/inspected)",
+      "snippet": "tests/data/sherlock.bz2",
+      "meaning": "Archives/binaries are never downloaded or extracted; their contents cannot be vetted.",
+      "rule": "Archive in repo"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "medium",
+      "file": "tests/data/sherlock.gz",
+      "line": 0,
+      "title": "Archive in repo (not downloaded/inspected)",
+      "snippet": "tests/data/sherlock.gz",
+      "meaning": "Archives/binaries are never downloaded or extracted; their contents cannot be vetted.",
+      "rule": "Archive in repo"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "medium",
+      "file": "tests/data/sherlock.xz",
+      "line": 0,
+      "title": "Archive in repo (not downloaded/inspected)",
+      "snippet": "tests/data/sherlock.xz",
+      "meaning": "Archives/binaries are never downloaded or extracted; their contents cannot be vetted.",
+      "rule": "Archive in repo"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "medium",
+      "file": "tests/data/sherlock.zst",
+      "line": 0,
+      "title": "Archive in repo (not downloaded/inspected)",
+      "snippet": "tests/data/sherlock.zst",
+      "meaning": "Archives/binaries are never downloaded or extracted; their contents cannot be vetted.",
+      "rule": "Archive in repo"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "file": ".github/workflows/publish.yml",
+      "line": 9,
+      "title": "gha-write-permissions: workflow token has write permissions",
+      "snippet": "id-token: write",
+      "meaning": "A compromised step can push code or publish packages.",
+      "rule": "gha-write-permissions",
+      "remediation": "add a least-privilege `permissions:` block to the workflow"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "file": ".github/workflows/release.yml",
+      "line": 17,
+      "title": "gha-write-permissions: workflow token has write permissions",
+      "snippet": "contents: write",
+      "meaning": "A compromised step can push code or publish packages.",
+      "rule": "gha-write-permissions",
+      "remediation": "add a least-privilege `permissions:` block to the workflow"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "file": ".github/workflows/release.yml",
+      "line": 18,
+      "title": "gha-write-permissions: workflow token has write permissions",
+      "snippet": "id-token: write # for build provenance signing",
+      "meaning": "A compromised step can push code or publish packages.",
+      "rule": "gha-write-permissions",
+      "remediation": "add a least-privilege `permissions:` block to the workflow"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "file": ".github/workflows/ci.yml",
+      "line": 10,
+      "title": "gha-write-permissions: workflow token has write permissions",
+      "snippet": "# The section is needed to drop write-all permissions that are granted on",
+      "meaning": "A compromised step can push code or publish packages.",
+      "rule": "gha-write-permissions",
+      "remediation": "add a least-privilege `permissions:` block to the workflow"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "file": ".github/workflows/publish.yml",
+      "line": 11,
+      "title": "gha-unpinned-action: 2 action(s) on a tag/branch, not a commit SHA",
+      "snippet": "- uses: actions/checkout@v7",
+      "meaning": "Tags can be moved to malicious code (e.g. tj-actions/changed-files, 2025).",
+      "rule": "gha-unpinned-action",
+      "remediation": "pin `uses:` to a full 40-character commit SHA"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "file": ".github/workflows/release.yml",
+      "line": 29,
+      "title": "gha-unpinned-action: 5 action(s) on a tag/branch, not a commit SHA",
+      "snippet": "- uses: actions/checkout@v7",
+      "meaning": "Tags can be moved to malicious code (e.g. tj-actions/changed-files, 2025).",
+      "rule": "gha-unpinned-action",
+      "remediation": "pin `uses:` to a full 40-character commit SHA"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "file": ".github/workflows/ci.yml",
+      "line": 120,
+      "title": "gha-unpinned-action: 13 action(s) on a tag/branch, not a commit SHA",
+      "snippet": "uses: actions/checkout@v7",
+      "meaning": "Tags can be moved to malicious code (e.g. tj-actions/changed-files, 2025).",
+      "rule": "gha-unpinned-action",
+      "remediation": "pin `uses:` to a full 40-character commit SHA"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "crates/core/flags/doc/template.rg.1",
+      "line": 438,
+      "title": "pii-email: f***@gmail.com",
+      "snippet": "Andrew Gallant <\\f***@gmail.com\\fP>",
+      "meaning": "Hardcoded email address (a person's PII or a DSN); check it is intended to be public.",
+      "rule": "pii-email",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "pkg/windows/Manifest.xml",
+      "line": 4,
+      "title": "external-endpoint: docs.microsoft.com",
+      "snippet": "See: https://docs.microsoft.com/en-us/windows/win32/sbscs/application-manifests",
+      "meaning": "Unknown third-party host docs.microsoft.com: verify what it receives and whether it sets cookies/tracks.",
+      "rule": "external-endpoint"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "crates/printer/src/lib.rs",
+      "line": 15,
+      "title": "external-endpoint: jsonlines.org",
+      "snippet": "Lines](https://jsonlines.org/) by emitting a series of messages as search",
+      "meaning": "Unknown third-party host jsonlines.org: verify what it receives and whether it sets cookies/tracks.",
+      "package": "grep-printer",
+      "package_path": "crates/printer",
+      "rule": "external-endpoint"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "crates/pcre2/src/lib.rs",
+      "line": 3,
+      "title": "external-endpoint: www.pcre.org",
+      "snippet": "[PCRE2](https://www.pcre.org/).",
+      "meaning": "Unknown third-party host www.pcre.org: verify what it receives and whether it sets cookies/tracks.",
+      "package": "grep-pcre2",
+      "package_path": "crates/pcre2",
+      "rule": "external-endpoint"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "(repo)",
+      "line": 0,
+      "title": "data-retention: data collected but no retention/expiry setting found",
+      "snippet": "no retention/ttl/expiry/delete_after value in the repo",
+      "meaning": "Personal data is collected but nothing says when it is deleted; check the privacy policy.",
+      "rule": "data-retention",
+      "remediation": "set an explicit retention period and delete the data when it ends"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "(repo)",
+      "line": 0,
+      "title": "referrer-policy: third-party requests with no Referrer-Policy",
+      "snippet": "no Referrer-Policy header or <meta name=referrer>",
+      "meaning": "By default the full page URL (including path and query) is sent as Referer to third parties.",
+      "rule": "referrer-policy",
+      "remediation": "send `Referrer-Policy: strict-origin-when-cross-origin` (or `no-referrer`)"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "(repo)",
+      "line": 0,
+      "title": "privacy-doc: no privacy policy file",
+      "snippet": "expected PRIVACY.md or PrivacyInfo.xcprivacy",
+      "meaning": "The repo collects/transmits data but ships no privacy policy/manifest file.",
+      "rule": "privacy-doc",
+      "remediation": "add a PRIVACY.md/policy (or link one) and state what is collected"
+    },
+    {
+      "tool": "trust",
+      "severity": "low",
+      "file": "(github)",
+      "line": 0,
+      "title": "release-mutable: latest release 16.0.0 is not immutable: its tag or assets can be replaced",
+      "snippet": "",
+      "meaning": "Context signal only; never decides the verdict alone.",
+      "rule": "release-mutable"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "Cargo.toml",
+      "line": 4,
+      "title": "pii-email: j***@gmail.com",
+      "snippet": "authors = [\"Andrew Gallant <j***@gmail.com>\"]",
+      "meaning": "Package metadata email: published by design on the registry. Seen 12 times.",
+      "rule": "pii-email",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "README.md",
+      "line": 382,
+      "title": "pii-in-url: name (docs link)",
+      "snippet": "[official repo](https://packages.altlinux.org/en/search?name=ripgrep):",
+      "meaning": "Example link puts personal data in the URL query: fine in docs, leaks via Referer/logs when used at runtime. Seen 3 times.",
+      "rule": "pii-in-url",
+      "remediation": "strip the parameter before it reaches logs/referers, or use a POST body instead"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": ".github/workflows/release.yml",
+      "line": 297,
+      "title": "upload-surface: file upload",
+      "snippet": "- name: Upload release archive",
+      "meaning": "Accepts user-supplied files or request bodies: data enters the service. Seen 4 times.",
+      "rule": "upload-surface",
+      "remediation": "check where the uploaded file is stored and who can read it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "crates/regex/src/literal.rs",
+      "line": 282,
+      "title": "upload-limit: size cap",
+      "snippet": "let limit =",
+      "meaning": "A request/upload size cap is set (data-minimization guard). Seen 110 times.",
+      "package": "grep-regex",
+      "package_path": "crates/regex",
+      "rule": "upload-limit",
+      "remediation": "state and enforce the upload size/type limit"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "pkg/windows/Manifest.xml",
+      "line": 18,
+      "title": "insecure-endpoint: schemas.microsoft.com",
+      "snippet": "<asmv3:windowsSettings xmlns=\"http://schemas.microsoft.com/SMI/2019/WindowsSettings\">",
+      "meaning": "Plaintext http:// to schemas.microsoft.com: XML namespace/schema identifier, not a fetched URL. Seen 2 times.",
+      "rule": "insecure-endpoint",
+      "remediation": "use https:// / wss://"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "crates/globset/src/lib.rs",
+      "line": 112,
+      "title": "external-endpoint: crates.io",
+      "snippet": "[`arbitrary`](https://crates.io/crates/arbitrary)",
+      "meaning": "Network destination crates.io (known platform/infrastructure). Seen 5 times.",
+      "package": "globset",
+      "package_path": "crates/globset",
+      "rule": "external-endpoint"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "crates/grep/Cargo.toml",
+      "line": 8,
+      "title": "first-party-endpoint: docs.rs",
+      "snippet": "documentation = \"https://docs.rs/grep\"",
+      "meaning": "Own/related domain docs.rs: first-party traffic, not a third party. Seen 11 times.",
+      "package": "grep",
+      "package_path": "crates/grep",
+      "rule": "first-party-endpoint"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "crates/core/flags/defs.rs",
+      "line": 3129,
+      "title": "first-party-endpoint: gist.github.com",
+      "snippet": "https://gist.github.com/egmontkob/eb114294efbcd5adb1944c9f3cb5feda",
+      "meaning": "Own/related domain gist.github.com: first-party traffic, not a third party. Seen 2 times.",
+      "rule": "first-party-endpoint"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "cliff.toml",
+      "line": 28,
+      "title": "first-party-endpoint: github.com",
+      "snippet": "[{{ commit.id | truncate(length=7, end=\"\") }}](https://github.com/BurntSushi/ripgrep/commit/{{ commit.id }})",
+      "meaning": "Own/related domain github.com: first-party traffic, not a third party. Seen 20 times.",
+      "rule": "first-party-endpoint"
+    },
+    {
+      "tool": "trust",
+      "severity": "info",
+      "file": "(github)",
+      "line": 0,
+      "title": "trust-signals: repo 3913d old, 70393 stars, 3494 forks, 543 contributors, owner 5874d old",
+      "snippet": "",
+      "meaning": "Context signal only; never decides the verdict alone.",
+      "rule": "trust-signals"
+    }
+  ],
+  "raw_findings_count": 30,
+  "notes": [
+    "guarddog: no python/npm package manifest at repo root (skipped)",
+    "bandit: no Python files (skipped)",
+    "osv-scanner not installed (skipped)",
+    "workspace: 9 package(s) detected",
+    "AI review skipped (set BEAGLE_LLM_URL to enable; REPO_GUARD_LLM_URL also accepted)"
+  ],
+  "recommended_actions": [
+    "Read the listed findings before trusting it; most may be benign, but confirm each.",
+    "Install only in an isolated environment (container/VM/throwaway user) with no secrets present.",
+    "Don't let an AI agent auto-run its install steps or MCP servers without reviewing them."
+  ]
+}

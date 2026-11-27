@@ -1,0 +1,3950 @@
+{
+  "version": "1.193.0",
+  "verdict": "YELLOW",
+  "why": "No critical issues; 10 high, 20 medium, 74 low findings worth a look",
+  "counts": {
+    "critical": 0,
+    "high": 10,
+    "medium": 20,
+    "low": 74,
+    "info": 62
+  },
+  "meta": {
+    "target": "https://github.com/vitejs/vite.git",
+    "ref": "adc761d6e123c1fd0917c8b80e0d1050689ccbcd",
+    "commit": "adc761d6e123c1fd0917c8b80e0d1050689ccbcd",
+    "fetched_via": "git clone --depth 1 --filter=blob:none @ adc761d6e123c1fd0917c8b80e0d1050689ccbcd + sparse checkout (0 archives/binaries listed, not downloaded)",
+    "mode": "docker (--network none, read-only)",
+    "profile": "balanced",
+    "files": 3004,
+    "seconds": 212.3,
+    "scanned_at": "2026-11-27T02:14:09Z",
+    "tools": {
+      "gitleaks": {
+        "findings": 0,
+        "seconds": 16.6,
+        "ok": true,
+        "version": "8.30.1"
+      },
+      "semgrep": {
+        "findings": 1,
+        "seconds": 33.1,
+        "ok": true,
+        "version": "1.187.0"
+      },
+      "guarddog": {
+        "findings": 12,
+        "seconds": 33.2,
+        "ok": true,
+        "version": "3.2.0"
+      },
+      "bandit": {
+        "findings": 0,
+        "seconds": 0.2,
+        "ok": true,
+        "version": "1.9.4"
+      },
+      "agent-checks": {
+        "findings": 150,
+        "seconds": 110.4,
+        "ok": true,
+        "files": 3004
+      },
+      "osv-scanner": {
+        "findings": 0,
+        "seconds": 0.0,
+        "ok": false
+      },
+      "trust": {
+        "findings": 2,
+        "seconds": 1.6,
+        "ok": true
+      }
+    },
+    "suppressed": 0,
+    "suppressions": [],
+    "pii_redacted": true,
+    "privacy_mode": "full",
+    "ruleset": "92559dde022f",
+    "complete": true,
+    "cache": "miss",
+    "workspace": {
+      "packages": [
+        {
+          "name": "@vitejs/monorepo-docs",
+          "path": "docs",
+          "kind": "npm"
+        },
+        {
+          "name": "create-vite",
+          "path": "packages/create-vite",
+          "kind": "npm"
+        },
+        {
+          "name": "@vitejs/plugin-legacy",
+          "path": "packages/plugin-legacy",
+          "kind": "npm"
+        },
+        {
+          "name": "vite",
+          "path": "packages/vite",
+          "kind": "npm"
+        },
+        {
+          "name": "@vitejs/unit-ssr",
+          "path": "packages/vite/src/node/__tests__",
+          "kind": "npm"
+        },
+        {
+          "name": "@vitejs/cjs-ssr-dep",
+          "path": "packages/vite/src/node/__tests__/fixtures/cjs-ssr-dep",
+          "kind": "npm"
+        },
+        {
+          "name": "cjs-module-vars-in-esm",
+          "path": "packages/vite/src/node/__tests__/fixtures/config/cjs-module-vars-in-esm",
+          "kind": "npm"
+        },
+        {
+          "name": "@vite/test-config-entry",
+          "path": "packages/vite/src/node/__tests__/fixtures/config/entry",
+          "kind": "npm"
+        },
+        {
+          "name": "import-meta",
+          "path": "packages/vite/src/node/__tests__/fixtures/config/import-meta",
+          "kind": "npm"
+        },
+        {
+          "name": "@vitejs/test-native-compat",
+          "path": "packages/vite/src/node/__tests__/fixtures/config/native-compat",
+          "kind": "npm"
+        },
+        {
+          "name": "@vitejs/test-native-compat-commonjs",
+          "path": "packages/vite/src/node/__tests__/fixtures/config/native-compat/esm-in-commonjs-pkg",
+          "kind": "npm"
+        },
+        {
+          "name": "some-pkg",
+          "path": "packages/vite/src/node/__tests__/fixtures/config/native-compat/json-named-import-bare/node_modules/some-pkg",
+          "kind": "npm"
+        },
+        {
+          "name": "some-pkg",
+          "path": "packages/vite/src/node/__tests__/fixtures/config/native-compat/json-named-import-ok/node_modules/some-pkg",
+          "kind": "npm"
+        },
+        {
+          "name": "@vitejs/test-native-compat-mts",
+          "path": "packages/vite/src/node/__tests__/fixtures/config/native-compat/mts-config",
+          "kind": "npm"
+        },
+        {
+          "name": "native-import",
+          "path": "packages/vite/src/node/__tests__/fixtures/config/native-import",
+          "kind": "npm"
+        },
+        {
+          "name": "@vite/test-config-plugin-module-condition",
+          "path": "packages/vite/src/node/__tests__/fixtures/config/plugin-module-condition",
+          "kind": "npm"
+        },
+        {
+          "name": "shebang",
+          "path": "packages/vite/src/node/__tests__/fixtures/config/shebang",
+          "kind": "npm"
+        },
+        {
+          "name": "shebang-crlf",
+          "path": "packages/vite/src/node/__tests__/fixtures/config/shebang-crlf",
+          "kind": "npm"
+        },
+        {
+          "name": "@vite/test-config-sibling",
+          "path": "packages/vite/src/node/__tests__/fixtures/config/siblings",
+          "kind": "npm"
+        },
+        {
+          "name": "file-url",
+          "path": "packages/vite/src/node/__tests__/fixtures/file-url",
+          "kind": "npm"
+        },
+        {
+          "name": "my-pkg",
+          "path": "packages/vite/src/node/__tests__/fixtures/glob-exports/node_modules/my-pkg",
+          "kind": "npm"
+        },
+        {
+          "name": "resolve-subpath-imports",
+          "path": "packages/vite/src/node/__tests__/fixtures/resolve-subpath-imports",
+          "kind": "npm"
+        },
+        {
+          "name": "scan-subpath-import-glob",
+          "path": "packages/vite/src/node/__tests__/fixtures/scan-subpath-import-glob",
+          "kind": "npm"
+        },
+        {
+          "name": "@vitejs/test-dep-conditions",
+          "path": "packages/vite/src/node/__tests__/fixtures/test-dep-conditions",
+          "kind": "npm"
+        },
+        {
+          "name": "watch-rebuild-manifest",
+          "path": "packages/vite/src/node/__tests__/fixtures/watch-rebuild-manifest",
+          "kind": "npm"
+        },
+        {
+          "name": "named-testing-package",
+          "path": "packages/vite/src/node/__tests__/packages",
+          "kind": "npm"
+        },
+        {
+          "name": "@vitejs/child",
+          "path": "packages/vite/src/node/__tests__/packages/child",
+          "kind": "npm"
+        },
+        {
+          "name": "mylib",
+          "path": "packages/vite/src/node/__tests__/packages/module",
+          "kind": "npm"
+        },
+        {
+          "name": "mylib",
+          "path": "packages/vite/src/node/__tests__/packages/name",
+          "kind": "npm"
+        },
+        {
+          "name": "noname",
+          "path": "packages/vite/src/node/__tests__/packages/noname",
+          "kind": "npm"
+        },
+        {
+          "name": "@vitejs/parent",
+          "path": "packages/vite/src/node/__tests__/packages/parent",
+          "kind": "npm"
+        },
+        {
+          "name": "css-url-imports",
+          "path": "packages/vite/src/node/__tests__/plugins/fixtures/css-url-imports",
+          "kind": "npm"
+        },
+        {
+          "name": "nested",
+          "path": "packages/vite/src/node/__tests__/plugins/fixtures/css-url-imports/nested",
+          "kind": "npm"
+        },
+        {
+          "name": "@vitejs/test-license",
+          "path": "packages/vite/src/node/__tests__/plugins/fixtures/license",
+          "kind": "npm"
+        },
+        {
+          "name": "@vitejs/test-dep-licence-cc0",
+          "path": "packages/vite/src/node/__tests__/plugins/fixtures/license/dep-licence-cc0",
+          "kind": "npm"
+        },
+        {
+          "name": "@vitejs/test-dep-license-mit",
+          "path": "packages/vite/src/node/__tests__/plugins/fixtures/license/dep-license-mit",
+          "kind": "npm"
+        },
+        {
+          "name": "@vitejs/test-dep-license-type-marker",
+          "path": "packages/vite/src/node/__tests__/plugins/fixtures/license/dep-license-type-marker",
+          "kind": "npm"
+        },
+        {
+          "name": "@vitejs/test-dep-license-type-marker-devtools",
+          "path": "packages/vite/src/node/__tests__/plugins/fixtures/license/dep-license-type-marker/build/devtools",
+          "kind": "npm"
+        },
+        {
+          "name": "@vitejs/test-dep-license-type-marker",
+          "path": "packages/vite/src/node/__tests__/plugins/fixtures/license/dep-license-type-marker/build/esm",
+          "kind": "npm"
+        },
+        {
+          "name": "@vitejs/test-dep-nested-license-isc",
+          "path": "packages/vite/src/node/__tests__/plugins/fixtures/license/dep-nested-license-isc",
+          "kind": "npm"
+        },
+        {
+          "name": "sass-pkg-with-index",
+          "path": "packages/vite/src/node/__tests__/plugins/fixtures/sass-package-resolution/node_modules/sass-pkg-with-index",
+          "kind": "npm"
+        },
+        {
+          "name": "nested",
+          "path": "packages/vite/src/node/server/__tests__/fixtures/deno/nested",
+          "kind": "npm"
+        },
+        {
+          "name": "nested",
+          "path": "packages/vite/src/node/server/__tests__/fixtures/lerna/nested",
+          "kind": "npm"
+        },
+        {
+          "name": "nested",
+          "path": "packages/vite/src/node/server/__tests__/fixtures/none/nested",
+          "kind": "npm"
+        },
+        {
+          "name": "pnpm",
+          "path": "packages/vite/src/node/server/__tests__/fixtures/pnpm",
+          "kind": "npm"
+        },
+        {
+          "name": "nested",
+          "path": "packages/vite/src/node/server/__tests__/fixtures/pnpm/nested",
+          "kind": "npm"
+        },
+        {
+          "name": "watcher",
+          "path": "packages/vite/src/node/server/__tests__/fixtures/watcher",
+          "kind": "npm"
+        },
+        {
+          "name": "yarn",
+          "path": "packages/vite/src/node/server/__tests__/fixtures/yarn",
+          "kind": "npm"
+        },
+        {
+          "name": "nested",
+          "path": "packages/vite/src/node/server/__tests__/fixtures/yarn/nested",
+          "kind": "npm"
+        },
+        {
+          "name": "@vitejs/unit-runtime",
+          "path": "packages/vite/src/node/ssr/runtime/__tests__",
+          "kind": "npm"
+        }
+      ],
+      "dropped": 255,
+      "counts": {
+        "(root)": {
+          "critical": 0,
+          "high": 8,
+          "medium": 13,
+          "low": 44,
+          "info": 11
+        },
+        "@vitejs/monorepo-docs": {
+          "critical": 0,
+          "high": 0,
+          "medium": 2,
+          "low": 4,
+          "info": 36
+        },
+        "create-vite": {
+          "critical": 0,
+          "high": 2,
+          "medium": 0,
+          "low": 21,
+          "info": 4
+        },
+        "@vitejs/plugin-legacy": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 1,
+          "info": 1
+        },
+        "vite": {
+          "critical": 0,
+          "high": 0,
+          "medium": 5,
+          "low": 4,
+          "info": 10
+        },
+        "@vitejs/unit-ssr": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 0,
+          "info": 0
+        },
+        "@vitejs/cjs-ssr-dep": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 0,
+          "info": 0
+        },
+        "cjs-module-vars-in-esm": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 0,
+          "info": 0
+        },
+        "@vite/test-config-entry": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 0,
+          "info": 0
+        },
+        "import-meta": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 0,
+          "info": 0
+        },
+        "@vitejs/test-native-compat": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 0,
+          "info": 0
+        },
+        "@vitejs/test-native-compat-commonjs": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 0,
+          "info": 0
+        },
+        "some-pkg": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 0,
+          "info": 0
+        },
+        "@vitejs/test-native-compat-mts": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 0,
+          "info": 0
+        },
+        "native-import": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 0,
+          "info": 0
+        },
+        "@vite/test-config-plugin-module-condition": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 0,
+          "info": 0
+        },
+        "shebang": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 0,
+          "info": 0
+        },
+        "shebang-crlf": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 0,
+          "info": 0
+        },
+        "@vite/test-config-sibling": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 0,
+          "info": 0
+        },
+        "file-url": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 0,
+          "info": 0
+        },
+        "my-pkg": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 0,
+          "info": 0
+        },
+        "resolve-subpath-imports": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 0,
+          "info": 0
+        },
+        "scan-subpath-import-glob": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 0,
+          "info": 0
+        },
+        "@vitejs/test-dep-conditions": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 0,
+          "info": 0
+        },
+        "watch-rebuild-manifest": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 0,
+          "info": 0
+        },
+        "named-testing-package": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 0,
+          "info": 0
+        },
+        "@vitejs/child": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 0,
+          "info": 0
+        },
+        "mylib": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 0,
+          "info": 0
+        },
+        "noname": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 0,
+          "info": 0
+        },
+        "@vitejs/parent": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 0,
+          "info": 0
+        },
+        "css-url-imports": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 0,
+          "info": 0
+        },
+        "nested": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 0,
+          "info": 0
+        },
+        "@vitejs/test-license": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 0,
+          "info": 0
+        },
+        "@vitejs/test-dep-licence-cc0": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 0,
+          "info": 0
+        },
+        "@vitejs/test-dep-license-mit": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 0,
+          "info": 0
+        },
+        "@vitejs/test-dep-license-type-marker": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 0,
+          "info": 0
+        },
+        "@vitejs/test-dep-license-type-marker-devtools": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 0,
+          "info": 0
+        },
+        "@vitejs/test-dep-nested-license-isc": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 0,
+          "info": 0
+        },
+        "sass-pkg-with-index": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 0,
+          "info": 0
+        },
+        "pnpm": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 0,
+          "info": 0
+        },
+        "watcher": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 0,
+          "info": 0
+        },
+        "yarn": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 0,
+          "info": 0
+        },
+        "@vitejs/unit-runtime": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 0,
+          "info": 0
+        }
+      }
+    },
+    "capabilities": {
+      "files": 3004,
+      "network": [
+        {
+          "value": "github.com",
+          "file": "package.json",
+          "line": 11,
+          "count": 979,
+          "doc": false,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "vite.dev",
+          "file": "package.json",
+          "line": 8,
+          "count": 132,
+          "doc": false,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "rolldown.rs",
+          "file": "README.md",
+          "line": 38,
+          "count": 89,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "twitter.com",
+          "file": "docs/_data/team.js",
+          "line": 26,
+          "count": 44,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "chat.vite.dev",
+          "file": "README.md",
+          "line": 19,
+          "count": 42,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "vite.new",
+          "file": "docs/guide/index.md",
+          "line": 31,
+          "count": 41,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "bsky.app",
+          "file": "packages/create-vite/template-qwik/src/app.jsx",
+          "line": 86,
+          "count": 38,
+          "doc": false,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "esbuild.github.io",
+          "file": "docs/guide/migration.md",
+          "line": 18,
+          "count": 31,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "developer.mozilla.org",
+          "file": "README.md",
+          "line": 36,
+          "count": 29,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "example.com",
+          "file": "playground/resolve/vite.config.js",
+          "line": 17,
+          "count": 29,
+          "doc": false,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "www.typescriptlang.org",
+          "file": "packages/create-vite/template-vanilla-ts/src/main.ts",
+          "line": 36,
+          "count": 28,
+          "doc": false,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "evanw.github.io",
+          "file": "playground/vitestSetup.ts",
+          "line": 18,
+          "count": 27,
+          "doc": false,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "oxc.rs",
+          "file": "packages/create-vite/template-react/README.md",
+          "line": 7,
+          "count": 26,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "x.com",
+          "file": "packages/create-vite/template-qwik/src/app.jsx",
+          "line": 78,
+          "count": 25,
+          "doc": false,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "voidzero.dev",
+          "file": "docs/_data/team.js",
+          "line": 21,
+          "count": 20,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "cn.vite.dev",
+          "file": "packages/vite/CHANGELOG.md",
+          "line": 1023,
+          "count": 14,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "es.vite.dev",
+          "file": "packages/vite/CHANGELOG.md",
+          "line": 1023,
+          "count": 14,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "ja.vite.dev",
+          "file": "packages/vite/CHANGELOG.md",
+          "line": 1023,
+          "count": 14,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "vitest.dev",
+          "file": "CONTRIBUTING.md",
+          "line": 141,
+          "count": 13,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "discord.com",
+          "file": "docs/blog/announcing-vite6.md",
+          "line": 69,
+          "count": 12,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "nodejs.org",
+          "file": "README.md",
+          "line": 17,
+          "count": 12,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "www.youtube.com",
+          "file": "docs/.vitepress/config.ts",
+          "line": 205,
+          "count": 12,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "astro.build",
+          "file": "docs/guide/why.md",
+          "line": 38,
+          "count": 11,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "caniuse.com",
+          "file": "packages/plugin-legacy/README.md",
+          "line": 3,
+          "count": 11,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "de.vite.dev",
+          "file": "packages/vite/CHANGELOG.md",
+          "line": 1023,
+          "count": 11,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "ko.vite.dev",
+          "file": "packages/vite/CHANGELOG.md",
+          "line": 1023,
+          "count": 11,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "elk.zone",
+          "file": "docs/_data/team.js",
+          "line": 27,
+          "count": 10,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "nuxtlabs.com",
+          "file": "docs/blog/announcing-vite3.md",
+          "line": 268,
+          "count": 10,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "opencollective.com",
+          "file": "docs/acknowledgements.md",
+          "line": 31,
+          "count": 10,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "pnpm.io",
+          "file": "CONTRIBUTING.md",
+          "line": 7,
+          "count": 10,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "pt.vite.dev",
+          "file": "packages/vite/CHANGELOG.md",
+          "line": 1023,
+          "count": 10,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "pbs.twimg.com",
+          "file": "docs/.vitepress/theme/landing/Community.vue",
+          "line": 16,
+          "count": 8,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "qwik.dev",
+          "file": "packages/create-vite/template-qwik/README.md",
+          "line": 17,
+          "count": 8,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "react.dev",
+          "file": "packages/create-vite/template-react/README.md",
+          "line": 12,
+          "count": 8,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "stackblitz.com",
+          "file": "docs/blog/announcing-vite3.md",
+          "line": 268,
+          "count": 8,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "viteconf.org",
+          "file": "docs/.vitepress/config.ts",
+          "line": 231,
+          "count": 8,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "web-platform-dx.github.io",
+          "file": "docs/guide/migration.md",
+          "line": 14,
+          "count": 8,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "rollupjs.org",
+          "file": "docs/guide/performance.md",
+          "line": 52,
+          "count": 7,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "scrimba.com",
+          "file": "docs/guide/env-and-mode.md",
+          "line": 16,
+          "count": 7,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "vercel.com",
+          "file": "docs/_data/team.js",
+          "line": 47,
+          "count": 7,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "webtoo.ls",
+          "file": "docs/blog/announcing-vite6.md",
+          "line": 71,
+          "count": 7,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "www.npmjs.com",
+          "file": "docs/releases.md",
+          "line": 7,
+          "count": 7,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "babeljs.io",
+          "file": "packages/plugin-legacy/README.md",
+          "line": 7,
+          "count": 6,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "bolt.new",
+          "file": "docs/blog/announcing-vite6.md",
+          "line": 50,
+          "count": 6,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "code.visualstudio.com",
+          "file": "CONTRIBUTING.md",
+          "line": 87,
+          "count": 6,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "developers.cloudflare.com",
+          "file": "docs/guide/static-deploy.md",
+          "line": 175,
+          "count": 6,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "img.shields.io",
+          "file": "README.md",
+          "line": 16,
+          "count": 6,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "pkg.pr.new",
+          "file": "docs/guide/index.md",
+          "line": 231,
+          "count": 6,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "vuejs.org",
+          "file": "packages/create-vite/template-vue-ts/README.md",
+          "line": 5,
+          "count": 6,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "endoflife.date",
+          "file": "docs/releases.md",
+          "line": 17,
+          "count": 5,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "fa.vite.dev",
+          "file": "packages/vite/CHANGELOG.md",
+          "line": 1023,
+          "count": 5,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "foo.localhost",
+          "file": "packages/vite/src/node/__tests__/utils.spec.ts",
+          "line": 1382,
+          "count": 5,
+          "doc": false,
+          "test": true,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "lightningcss.dev",
+          "file": "docs/guide/migration.md",
+          "line": 226,
+          "count": 5,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "nuxt.com",
+          "file": "packages/create-vite/src/index.ts",
+          "line": 132,
+          "count": 5,
+          "doc": false,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "paulmillr.com",
+          "file": "packages/vite/LICENSE.md",
+          "line": 198,
+          "count": 5,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "registry.vite.dev",
+          "file": "docs/plugins/index.md",
+          "line": 43,
+          "count": 5,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "storybook.js.org",
+          "file": "docs/guide/why.md",
+          "line": 38,
+          "count": 5,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "svelte.dev",
+          "file": "packages/create-vite/template-svelte-ts/src/App.svelte",
+          "line": 38,
+          "count": 5,
+          "doc": false,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "swc.rs",
+          "file": "packages/create-vite/template-react/README.md",
+          "line": 8,
+          "count": 5,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "tanstack.com",
+          "file": "packages/create-vite/src/index.ts",
+          "line": 187,
+          "count": 5,
+          "doc": false,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        }
+      ],
+      "filesystem": [
+        {
+          "value": ".env",
+          "file": "playground/define/index.html",
+          "line": 77,
+          "count": 109,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "$HOME",
+          "file": ".github/workflows/copilot-setup-steps.yml",
+          "line": 31,
+          "count": 4,
+          "doc": false,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": ".npmrc",
+          "file": "packages/vite/src/node/server/index.ts",
+          "line": 1300,
+          "count": 2,
+          "doc": false,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": ".EnV",
+          "file": "playground/fs-serve/root/src/index.html",
+          "line": 179,
+          "count": 1,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        }
+      ],
+      "processes": [
+        {
+          "value": "exec(",
+          "file": "playground/worker/__tests__/sourcemap-inline/worker-sourcemap-inline.spec.ts",
+          "line": 100,
+          "count": 65,
+          "doc": false,
+          "test": true,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "child_process",
+          "file": "playground/ssr-html/__tests__/ssr-html.spec.ts",
+          "line": 1,
+          "count": 14,
+          "doc": false,
+          "test": true,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "exec (",
+          "file": "packages/create-vite/src/index.ts",
+          "line": 1208,
+          "count": 1,
+          "doc": false,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        }
+      ],
+      "environment": [
+        {
+          "value": "NODE_ENV",
+          "file": "playground/vitestSetupUtils.ts",
+          "line": 393,
+          "count": 82,
+          "doc": false,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "VITEST",
+          "file": "playground/ssr-conditions/server.js",
+          "line": 6,
+          "count": 13,
+          "doc": false,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "SOMEVAR",
+          "file": "playground/define/vite.config.js",
+          "line": 47,
+          "count": 11,
+          "doc": false,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "CI",
+          "file": "vitest.config.e2e.ts",
+          "line": 11,
+          "count": 10,
+          "doc": false,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS",
+          "file": "packages/vite/src/node/__tests__/config.spec.ts",
+          "line": 2451,
+          "count": 10,
+          "doc": false,
+          "test": true,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "VITE_USER_NODE_ENV",
+          "file": "packages/vite/src/node/env.ts",
+          "line": 67,
+          "count": 7,
+          "doc": false,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "BROWSER_ARGS",
+          "file": "packages/vite/src/node/env.ts",
+          "line": 74,
+          "count": 6,
+          "doc": false,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "BROWSER",
+          "file": "packages/vite/src/node/env.ts",
+          "line": 71,
+          "count": 5,
+          "doc": false,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "DEBUG",
+          "file": "packages/vite/bin/vite.js",
+          "line": 38,
+          "count": 5,
+          "doc": false,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "INPUT_ISSUE_NUMBER",
+          "file": ".github/actions/issues-helper/action.yml",
+          "line": 39,
+          "count": 4,
+          "doc": false,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "PR_DATA",
+          "file": ".github/workflows/ecosystem-ci-trigger.yml",
+          "line": 120,
+          "count": 4,
+          "doc": false,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "INPUT_LABELS",
+          "file": ".github/actions/issues-helper/action.yml",
+          "line": 35,
+          "count": 3,
+          "doc": false,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "VITE_INLINE",
+          "file": "playground/vitestSetupUtils.ts",
+          "line": 299,
+          "count": 3,
+          "doc": false,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "npm_config_user_agent",
+          "file": "packages/create-vite/src/index.ts",
+          "line": 499,
+          "count": 3,
+          "doc": false,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "DEBUG_DISABLE_SOURCE_MAP",
+          "file": "packages/vite/rolldown.config.ts",
+          "line": 13,
+          "count": 2,
+          "doc": false,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "INPUT_INACTIVE_DAY",
+          "file": ".github/actions/issues-helper/action.yml",
+          "line": 107,
+          "count": 2,
+          "doc": false,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "VITE_DEBUG_FILTER",
+          "file": "packages/vite/bin/vite.js",
+          "line": 45,
+          "count": 2,
+          "doc": false,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "VITE_DEBUG_SERVE",
+          "file": "playground/vitestSetupUtils.ts",
+          "line": 174,
+          "count": 2,
+          "doc": false,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "_VITE_TEST_CLI",
+          "file": "packages/create-vite/src/index.ts",
+          "line": 443,
+          "count": 2,
+          "doc": false,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "COMMENT",
+          "file": ".github/workflows/ecosystem-ci-trigger.yml",
+          "line": 251,
+          "count": 1,
+          "doc": false,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "COMMIT_REF",
+          "file": "docs/.vitepress/config.ts",
+          "line": 25,
+          "count": 1,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "DEBUG_VITE_SOURCEMAP_COMBINE_FILTER",
+          "file": "packages/vite/src/node/server/pluginContainer.ts",
+          "line": 110,
+          "count": 1,
+          "doc": false,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "DEPLOY_PRIME_URL",
+          "file": "docs/.vitepress/config.ts",
+          "line": 24,
+          "count": 1,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "ENV_VARIABLE",
+          "file": "docs/config/shared-options.md",
+          "line": 605,
+          "count": 1,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "EXPAND",
+          "file": "playground/env/vite.config.js",
+          "line": 3,
+          "count": 1,
+          "doc": false,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "INPUT_BODY",
+          "file": ".github/actions/issues-helper/action.yml",
+          "line": 79,
+          "count": 1,
+          "doc": false,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "PWDEBUG",
+          "file": "vitest.config.e2e.ts",
+          "line": 11,
+          "count": 1,
+          "doc": false,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "REACTION",
+          "file": ".github/workflows/ecosystem-ci-trigger.yml",
+          "line": 181,
+          "count": 1,
+          "doc": false,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "TEST",
+          "file": "playground/ssr-webworker/worker.js",
+          "line": 4,
+          "count": 1,
+          "doc": false,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "VITE_CONFIG_NATIVE_IGNORE_WARNING",
+          "file": "packages/vite/src/node/config.ts",
+          "line": 2621,
+          "count": 1,
+          "doc": false,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "VITE_DEPRECATION_TRACE",
+          "file": "packages/vite/src/node/utils.ts",
+          "line": 1613,
+          "count": 1,
+          "doc": false,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "VITE_ENV_TEST_ENV",
+          "file": "packages/vite/src/node/__tests__/env.spec.ts",
+          "line": 72,
+          "count": 1,
+          "doc": false,
+          "test": true,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "VITE_PRESERVE_BUILD_ARTIFACTS",
+          "file": "playground/vitestGlobalSetup.ts",
+          "line": 75,
+          "count": 1,
+          "doc": false,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "VP_USER_AGENT",
+          "file": "packages/create-vite/src/index.ts",
+          "line": 499,
+          "count": 1,
+          "doc": false,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "WORKER_MODE",
+          "file": "playground/worker/worker-sourcemap-config.js",
+          "line": 8,
+          "count": 1,
+          "doc": false,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        }
+      ],
+      "storage": []
+    },
+    "coverage": {
+      "files_total": 3004,
+      "files_scanned": 2430,
+      "bytes_total": 18198667,
+      "bytes_scanned": 5703403,
+      "bytes_scanned_pct": 31.3,
+      "skipped": {
+        "archive": 0,
+        "binary": 0,
+        "oversize": 0,
+        "unreadable": 0,
+        "unsupported": 574
+      },
+      "unscanned_extensions": [
+        [
+          ".css",
+          213
+        ],
+        [
+          ".svg",
+          115
+        ],
+        [
+          "(none)",
+          51
+        ],
+        [
+          ".png",
+          41
+        ],
+        [
+          ".scss",
+          33
+        ],
+        [
+          ".webp",
+          27
+        ],
+        [
+          ".less",
+          13
+        ],
+        [
+          ".wasm",
+          12
+        ],
+        [
+          ".snap",
+          7
+        ],
+        [
+          ".jpg",
+          6
+        ],
+        [
+          ".styl",
+          6
+        ],
+        [
+          ".map",
+          5
+        ]
+      ],
+      "languages": {
+        "inspected": {
+          "JavaScript": 1065,
+          "TypeScript": 631,
+          "Vue": 26,
+          "Svelte": 6,
+          "Astro": 1,
+          "Shell": 1
+        },
+        "no_rules": {}
+      }
+    },
+    "privacy_summary": {
+      "pii": [
+        "logged object likely containing PII",
+        "a@2.0.0",
+        "b@1.0.0",
+        "c@1.0.0",
+        "chokidar@3.6.0",
+        "d-nested@1.0.0",
+        "d@1.0.0",
+        "devframe@1.4.0",
+        "dotenv-expand@13.0.0",
+        "es-c@1.0.0",
+        "f@2.0.0",
+        "napi-windows-process-start-time@0.1.0",
+        "pkg-pr-new@0.0",
+        "semver@6.3.1",
+        "sirv@3.0.2",
+        "t***@7.1.0-beta.tsrs4",
+        "name",
+        "docs: 125 address(es) in packages/create-vite/CHANGELOG.md",
+        "docs: 22 address(es) in packages/vite/LICENSE.md",
+        "docs: 3 address(es) in packages/create-vite/LICENSE",
+        "docs: 7 address(es) in playground/nested-deps/__tests__/nested-deps.spec.ts",
+        "docs: 91 address(es) in packages/plugin-legacy/CHANGELOG.md"
+      ],
+      "storage": [
+        "clientid"
+      ],
+      "first_party": [
+        "chat.vite.dev",
+        "git-lfs.github.com",
+        "github.com",
+        "vite.dev"
+      ],
+      "network": [
+        "javascript module scope",
+        "agentscan.tools",
+        "antfu.me",
+        "bsky.app",
+        "chat.vite.dev",
+        "docs.microsoft.com",
+        "drafts.csswg.org",
+        "evanw.github.io",
+        "html.spec.whatwg.org",
+        "json.schemastore.org",
+        "npmx.dev",
+        "nuxt.com",
+        "pkg.pr.new",
+        "react.dev",
+        "reactrouter.com",
+        "rwsdk.com",
+        "stackoverflow.com",
+        "tanstack.com",
+        "typescript-eslint.io",
+        "vike.dev",
+        "vite.dev",
+        "vite.new",
+        "cdn.jsdelivr.net",
+        "unpkg.com",
+        "api.iconify.design",
+        "developer.mozilla.org",
+        "lit.dev",
+        "preactjs.com",
+        "qwik.dev",
+        "solidjs.com",
+        "svelte.dev",
+        "vuejs.org",
+        "www.typescriptlang.org",
+        "www.youtube.com",
+        "utm/campaign parameters",
+        "192.0.2",
+        "foo.example.com",
+        "localhost.example.com",
+        "usr.vite",
+        "vite.origin.example.com",
+        "avatars.githubusercontent.com",
+        "bitbucket.org",
+        "bjornlu.com",
+        "calendar.google.com",
+        "cn.vite.dev",
+        "de.vite.dev",
+        "dev.to",
+        "discord.gg",
+        "elk.zone",
+        "es.vite.dev",
+        "fakerjs.dev",
+        "github.com",
+        "gitlab.com",
+        "i.imgur.com",
+        "ja.vite.dev",
+        "ko.vite.dev",
+        "m.webtoo.ls",
+        "main--vite-docs-main.netlify.app",
+        "main.vite.dev",
+        "pbs.twimg.com",
+        "raw.githubusercontent.com",
+        "registry.vite.dev",
+        "rolldown.rs",
+        "sponsors.vite.dev",
+        "twitter.com",
+        "vercel.com",
+        "viteconf.org",
+        "voidzero.dev",
+        "www.cloudflare.com",
+        "www.cultrepo.com",
+        "www.github.com",
+        "www.netlify.com",
+        "www.youtube-nocookie.com",
+        "x.com",
+        "fonts.googleapis.com",
+        "esm.sh",
+        "policy",
+        "unsafe-url"
+      ],
+      "retention": [
+        "data collected but no retention/expiry setting found"
+      ],
+      "uploads": [
+        "file upload",
+        "size cap"
+      ],
+      "transparency": [
+        "no privacy policy file"
+      ]
+    },
+    "privacy_profile": "Privacy profile: 0 tracker vendor(s), 74 third-party host(s), 22 PII item(s)",
+    "scanned_repo": "vitejs/vite",
+    "scanned_sha": "adc761d6e123c1fd0917c8b80e0d1050689ccbcd",
+    "index": {
+      "name": "repobeagle",
+      "version": "1.193.0",
+      "mode": "github"
+    }
+  },
+  "privacy_summary": {
+    "pii": [
+      "logged object likely containing PII",
+      "a@2.0.0",
+      "b@1.0.0",
+      "c@1.0.0",
+      "chokidar@3.6.0",
+      "d-nested@1.0.0",
+      "d@1.0.0",
+      "devframe@1.4.0",
+      "dotenv-expand@13.0.0",
+      "es-c@1.0.0",
+      "f@2.0.0",
+      "napi-windows-process-start-time@0.1.0",
+      "pkg-pr-new@0.0",
+      "semver@6.3.1",
+      "sirv@3.0.2",
+      "t***@7.1.0-beta.tsrs4",
+      "name",
+      "docs: 125 address(es) in packages/create-vite/CHANGELOG.md",
+      "docs: 22 address(es) in packages/vite/LICENSE.md",
+      "docs: 3 address(es) in packages/create-vite/LICENSE",
+      "docs: 7 address(es) in playground/nested-deps/__tests__/nested-deps.spec.ts",
+      "docs: 91 address(es) in packages/plugin-legacy/CHANGELOG.md"
+    ],
+    "storage": [
+      "clientid"
+    ],
+    "first_party": [
+      "chat.vite.dev",
+      "git-lfs.github.com",
+      "github.com",
+      "vite.dev"
+    ],
+    "network": [
+      "javascript module scope",
+      "agentscan.tools",
+      "antfu.me",
+      "bsky.app",
+      "chat.vite.dev",
+      "docs.microsoft.com",
+      "drafts.csswg.org",
+      "evanw.github.io",
+      "html.spec.whatwg.org",
+      "json.schemastore.org",
+      "npmx.dev",
+      "nuxt.com",
+      "pkg.pr.new",
+      "react.dev",
+      "reactrouter.com",
+      "rwsdk.com",
+      "stackoverflow.com",
+      "tanstack.com",
+      "typescript-eslint.io",
+      "vike.dev",
+      "vite.dev",
+      "vite.new",
+      "cdn.jsdelivr.net",
+      "unpkg.com",
+      "api.iconify.design",
+      "developer.mozilla.org",
+      "lit.dev",
+      "preactjs.com",
+      "qwik.dev",
+      "solidjs.com",
+      "svelte.dev",
+      "vuejs.org",
+      "www.typescriptlang.org",
+      "www.youtube.com",
+      "utm/campaign parameters",
+      "192.0.2",
+      "foo.example.com",
+      "localhost.example.com",
+      "usr.vite",
+      "vite.origin.example.com",
+      "avatars.githubusercontent.com",
+      "bitbucket.org",
+      "bjornlu.com",
+      "calendar.google.com",
+      "cn.vite.dev",
+      "de.vite.dev",
+      "dev.to",
+      "discord.gg",
+      "elk.zone",
+      "es.vite.dev",
+      "fakerjs.dev",
+      "github.com",
+      "gitlab.com",
+      "i.imgur.com",
+      "ja.vite.dev",
+      "ko.vite.dev",
+      "m.webtoo.ls",
+      "main--vite-docs-main.netlify.app",
+      "main.vite.dev",
+      "pbs.twimg.com",
+      "raw.githubusercontent.com",
+      "registry.vite.dev",
+      "rolldown.rs",
+      "sponsors.vite.dev",
+      "twitter.com",
+      "vercel.com",
+      "viteconf.org",
+      "voidzero.dev",
+      "www.cloudflare.com",
+      "www.cultrepo.com",
+      "www.github.com",
+      "www.netlify.com",
+      "www.youtube-nocookie.com",
+      "x.com",
+      "fonts.googleapis.com",
+      "esm.sh",
+      "policy",
+      "unsafe-url"
+    ],
+    "retention": [
+      "data collected but no retention/expiry setting found"
+    ],
+    "uploads": [
+      "file upload",
+      "size cap"
+    ],
+    "transparency": [
+      "no privacy policy file"
+    ]
+  },
+  "ai_review": null,
+  "findings": [
+    {
+      "tool": "guarddog",
+      "severity": "high",
+      "file": "module-runner/createImportMeta.ts",
+      "line": 9,
+      "title": "GuardDog npm package: threat-filesystem-read",
+      "snippet": "throw new Error( `[module runner] Dynamic access of \"import.meta.env\" is not supported. Please, use \"import.meta.env.${String(p)}\" instead.`, ) },",
+      "meaning": "Detects access to sensitive files (credentials, configs, keys)",
+      "rule": "GuardDog npm package",
+      "remediation": "read the flagged package behaviour; pin a version you reviewed, or replace the package"
+    },
+    {
+      "tool": "guarddog",
+      "severity": "high",
+      "file": "node/config.ts",
+      "line": 1038,
+      "title": "GuardDog npm package: threat-filesystem-read",
+      "snippet": "if (options.define?.['process.env']) { const processEnvDefine = options.define['process.env'] if (typeof processEnvDefine === 'object') {",
+      "meaning": "Detects access to sensitive files (credentials, configs, keys)",
+      "rule": "GuardDog npm package",
+      "remediation": "read the flagged package behaviour; pin a version you reviewed, or replace the package"
+    },
+    {
+      "tool": "guarddog",
+      "severity": "high",
+      "file": "node/config.ts",
+      "line": 1039,
+      "title": "GuardDog npm package: threat-filesystem-read",
+      "snippet": "if (options.define?.['process.env']) { const processEnvDefine = options.define['process.env'] if (typeof processEnvDefine === 'object') { const pathKey = Object",
+      "meaning": "Detects access to sensitive files (credentials, configs, keys)",
+      "rule": "GuardDog npm package",
+      "remediation": "read the flagged package behaviour; pin a version you reviewed, or replace the package"
+    },
+    {
+      "tool": "guarddog",
+      "severity": "high",
+      "file": "node/config.ts",
+      "line": 1048,
+      "title": "GuardDog npm package: threat-filesystem-read",
+      "snippet": "colors.yellow( `The \\`define\\` option contains an object with ${JSON.stringify(pathKey)} for \"process.env\" key. ` + 'It looks like you may have passed the entir",
+      "meaning": "Detects access to sensitive files (credentials, configs, keys)",
+      "rule": "GuardDog npm package",
+      "remediation": "read the flagged package behaviour; pin a version you reviewed, or replace the package"
+    },
+    {
+      "tool": "guarddog",
+      "severity": "high",
+      "file": "node/__tests__/env.spec.ts",
+      "line": 71,
+      "title": "GuardDog npm package: threat-filesystem-read",
+      "snippet": "test('prioritize existing process.env', () => { process.env.VITE_ENV_TEST_ENV = 'EXIST' expect(loadEnv('existing', join(dirname, './env'))).toMatchInlineSnapsho",
+      "meaning": "Detects access to sensitive files (credentials, configs, keys)",
+      "rule": "GuardDog npm package",
+      "remediation": "read the flagged package behaviour; pin a version you reviewed, or replace the package"
+    },
+    {
+      "tool": "guarddog",
+      "severity": "high",
+      "file": "playground/css/__tests__/tests.ts",
+      "line": 518,
+      "title": "GuardDog npm package: threat-runtime-obfuscation-steganography",
+      "snippet": "expect( await page.$eval( '.imports-field-fragment', (el) => getComputedStyle(el).filter,",
+      "meaning": "Detects steganography decode followed by code execution",
+      "rule": "GuardDog npm package",
+      "remediation": "read the flagged package behaviour; pin a version you reviewed, or replace the package"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "high",
+      "file": "package.json",
+      "line": 21,
+      "title": "npm lifecycle script 'preinstall' runs automatically on install",
+      "snippet": "\"preinstall\": \"npx only-allow pnpm\"",
+      "meaning": "npm runs this on `npm install` with your user's permissions.",
+      "rule": "npm lifecycle script 'preinstall' runs automatically on install",
+      "remediation": "run `npm ci --ignore-scripts`, or review the script; `postinstall` runs automatically on every install"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "high",
+      "file": "package.json",
+      "line": 22,
+      "title": "npm lifecycle script 'postinstall' runs automatically on install",
+      "snippet": "\"postinstall\": \"simple-git-hooks\"",
+      "meaning": "npm runs this on `npm install` with your user's permissions.",
+      "rule": "npm lifecycle script 'postinstall' runs automatically on install",
+      "remediation": "run `npm ci --ignore-scripts`, or review the script; `postinstall` runs automatically on every install"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "high",
+      "file": "packages/create-vite/template-preact/package.json",
+      "line": 2,
+      "title": "typosquat-dep: npm 'preact' looks like 'react'",
+      "snippet": "preact",
+      "meaning": "Name is one edit away from a popular package: a common way to slip in malware. Check the registry page before installing.",
+      "package": "create-vite",
+      "package_path": "packages/create-vite",
+      "rule": "typosquat-dep",
+      "remediation": "verify the package name against the registry before adding it"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "high",
+      "file": "packages/create-vite/template-preact-ts/package.json",
+      "line": 2,
+      "title": "typosquat-dep: npm 'preact' looks like 'react'",
+      "snippet": "preact",
+      "meaning": "Name is one edit away from a popular package: a common way to slip in malware. Check the registry page before installing.",
+      "package": "create-vite",
+      "package_path": "packages/create-vite",
+      "rule": "typosquat-dep",
+      "remediation": "verify the package name against the registry before adding it"
+    },
+    {
+      "tool": "semgrep",
+      "severity": "medium",
+      "file": "playground/fs-serve/root/windows83Filename.ts",
+      "line": 6,
+      "title": "js-child-process-network-shell",
+      "snippet": "requires login",
+      "meaning": "child_process exec of a shell string (check for curl/wget/download-and-run)",
+      "rule": "js-child-process-network-shell",
+      "remediation": "fix what the rule message describes (the rule id is the title; its registry page has an example)"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "medium",
+      "file": "CONTRIBUTING.md",
+      "line": 228,
+      "title": "md-comment-instruction: hidden HTML comment with agent/exfil wording",
+      "snippet": "Adapted from https://github.com/nuxt/nuxt/blob/main/CONTRIBUTING.md#ai-assisted-contributions",
+      "meaning": "Not visible when the markdown is rendered, but read by agents.",
+      "rule": "md-comment-instruction",
+      "remediation": "move the instruction to visible text, or keep it if it is intentionally written for agents"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "medium",
+      "file": "playground/css-sourcemap/__tests__/css-sourcemap.spec.ts",
+      "line": 89,
+      "title": "high-entropy-blob: 456-char encoded blob (entropy 5.57)",
+      "snippet": "visualization: \"https://evanw.github.io/source-map-visualization/#Nj...",
+      "meaning": "Embedded high-entropy payloads are often used to hide malware.",
+      "rule": "high-entropy-blob",
+      "remediation": "confirm the blob's origin (generated asset, certificate, embedded binary), or move it out of the source tree"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "medium",
+      "file": "playground/css-sourcemap/__tests__/css-sourcemap.spec.ts",
+      "line": 126,
+      "title": "high-entropy-blob: 440-char encoded blob (entropy 5.58)",
+      "snippet": "visualization: \"https://evanw.github.io/source-map-visualization/#NjkALm...",
+      "meaning": "Embedded high-entropy payloads are often used to hide malware.",
+      "rule": "high-entropy-blob",
+      "remediation": "confirm the blob's origin (generated asset, certificate, embedded binary), or move it out of the source tree"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "medium",
+      "file": "playground/css-sourcemap/__tests__/css-sourcemap.spec.ts",
+      "line": 209,
+      "title": "high-entropy-blob: 464-char encoded blob (entropy 5.57)",
+      "snippet": "visualization: \"https://evanw.github.io/source-map-visualization/#NzEALm...",
+      "meaning": "Embedded high-entropy payloads are often used to hide malware.",
+      "rule": "high-entropy-blob",
+      "remediation": "confirm the blob's origin (generated asset, certificate, embedded binary), or move it out of the source tree"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "medium",
+      "file": "playground/css-sourcemap/__tests__/lightningcss/lightningcss.spec.ts",
+      "line": 109,
+      "title": "high-entropy-blob: 404-char encoded blob (entropy 5.54)",
+      "snippet": "visualization: \"https://evanw.github.io/source-map-visualization/#NzAALm...",
+      "meaning": "Embedded high-entropy payloads are often used to hide malware.",
+      "rule": "high-entropy-blob",
+      "remediation": "confirm the blob's origin (generated asset, certificate, embedded binary), or move it out of the source tree"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "medium",
+      "file": "playground/css-sourcemap/__tests__/lightningcss/lightningcss.spec.ts",
+      "line": 198,
+      "title": "high-entropy-blob: 412-char encoded blob (entropy 5.51)",
+      "snippet": "visualization: \"https://evanw.github.io/source-map-visualization/#NzIALm...",
+      "meaning": "Embedded high-entropy payloads are often used to hide malware.",
+      "rule": "high-entropy-blob",
+      "remediation": "confirm the blob's origin (generated asset, certificate, embedded binary), or move it out of the source tree"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "medium",
+      "file": "playground/worker/__tests__/iife/worker-iife.spec.ts",
+      "line": 231,
+      "title": "high-entropy-blob: 3180-char encoded blob (entropy 5.69)",
+      "snippet": "visualization: \"https://evanw.github.io/source-map-visualization/#OTg5AGNv...",
+      "meaning": "Embedded high-entropy payloads are often used to hide malware.",
+      "rule": "high-entropy-blob",
+      "remediation": "confirm the blob's origin (generated asset, certificate, embedded binary), or move it out of the source tree"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "medium",
+      "file": "playground/js-sourcemap/__tests__/js-sourcemap.spec.ts",
+      "line": 247,
+      "title": "high-entropy-blob: 672-char encoded blob (entropy 5.56)",
+      "snippet": "visualization: \"https://evanw.github.io/source-map-visualization/#MjQ3AG...",
+      "meaning": "Embedded high-entropy payloads are often used to hide malware.",
+      "rule": "high-entropy-blob",
+      "remediation": "confirm the blob's origin (generated asset, certificate, embedded binary), or move it out of the source tree"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "medium",
+      "file": "playground/js-sourcemap/__tests__/js-sourcemap.spec.ts",
+      "line": 383,
+      "title": "high-entropy-blob: 3156-char encoded blob (entropy 5.72)",
+      "snippet": "visualization: \"https://evanw.github.io/source-map-visualization/#MjA3...",
+      "meaning": "Embedded high-entropy payloads are often used to hide malware.",
+      "rule": "high-entropy-blob",
+      "remediation": "confirm the blob's origin (generated asset, certificate, embedded binary), or move it out of the source tree"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "medium",
+      "file": "playground/js-sourcemap/__tests__/js-sourcemap.spec.ts",
+      "line": 456,
+      "title": "high-entropy-blob: 1008-char encoded blob (entropy 5.70)",
+      "snippet": "visualization: \"https://evanw.github.io/source-map-visualization/#MTkw...",
+      "meaning": "Embedded high-entropy payloads are often used to hide malware.",
+      "rule": "high-entropy-blob",
+      "remediation": "confirm the blob's origin (generated asset, certificate, embedded binary), or move it out of the source tree"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "medium",
+      "file": "packages/vite/src/node/__tests__/utils.spec.ts",
+      "line": 981,
+      "title": "high-entropy-blob: 564-char encoded blob (entropy 5.41)",
+      "snippet": "// https://evanw.github.io/source-map-visualization/#NzcALyogY29tbWVudCAqL...",
+      "meaning": "Embedded high-entropy payloads are often used to hide malware.",
+      "package": "vite",
+      "package_path": "packages/vite",
+      "rule": "high-entropy-blob",
+      "remediation": "confirm the blob's origin (generated asset, certificate, embedded binary), or move it out of the source tree"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "medium",
+      "file": "packages/vite/src/node/__tests__/utils.spec.ts",
+      "line": 1012,
+      "title": "high-entropy-blob: 444-char encoded blob (entropy 5.47)",
+      "snippet": "// https://evanw.github.io/source-map-visualization/#NTYALmltcG9ydGVkMiB7C...",
+      "meaning": "Embedded high-entropy payloads are often used to hide malware.",
+      "package": "vite",
+      "package_path": "packages/vite",
+      "rule": "high-entropy-blob",
+      "remediation": "confirm the blob's origin (generated asset, certificate, embedded binary), or move it out of the source tree"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "medium",
+      "file": "packages/vite/src/node/__tests__/utils.spec.ts",
+      "line": 1024,
+      "title": "high-entropy-blob: 728-char encoded blob (entropy 5.54)",
+      "snippet": "// https://evanw.github.io/source-map-visualization/#NDQACkB1c2UgJy4vaW1wb...",
+      "meaning": "Embedded high-entropy payloads are often used to hide malware.",
+      "package": "vite",
+      "package_path": "packages/vite",
+      "rule": "high-entropy-blob",
+      "remediation": "confirm the blob's origin (generated asset, certificate, embedded binary), or move it out of the source tree"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "medium",
+      "file": "packages/vite/src/node/__tests__/utils.spec.ts",
+      "line": 1051,
+      "title": "high-entropy-blob: 440-char encoded blob (entropy 5.54)",
+      "snippet": "// https://evanw.github.io/source-map-visualization/#NjYALmZvbyB7CiAgb3Zlc...",
+      "meaning": "Embedded high-entropy payloads are often used to hide malware.",
+      "package": "vite",
+      "package_path": "packages/vite",
+      "rule": "high-entropy-blob",
+      "remediation": "confirm the blob's origin (generated asset, certificate, embedded binary), or move it out of the source tree"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "medium",
+      "file": "packages/vite/src/node/ssr/runtime/__tests__/fixtures/pre-source-mapped-file.js",
+      "line": 9,
+      "title": "Large base64-like blob in source",
+      "snippet": "//# sourceMappingURL=data:application/json;base64,ewogICJ2ZXJzaW9uIjogMywKICAic2...",
+      "meaning": "Embedded encoded payloads are often used to hide malware.",
+      "package": "vite",
+      "package_path": "packages/vite",
+      "rule": "Large base64-like blob in source"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "medium",
+      "file": "docs/guide/cli.md",
+      "line": 21,
+      "title": "md-padded-line: Line padded with whitespace to push text off-screen",
+      "snippet": "| Options |",
+      "meaning": "Long runs of spaces hide trailing text past the visible edge of viewers.",
+      "package": "@vitejs/monorepo-docs",
+      "package_path": "docs",
+      "rule": "md-padded-line",
+      "remediation": "move the instruction to visible text, or keep it if it is intentionally written for agents"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "medium",
+      "file": "docs/blog/announcing-vite3.md",
+      "line": 113,
+      "title": "md-css-hidden: CSS-hidden text in markdown",
+      "snippet": "<span style=\"color:white",
+      "meaning": "Text styled to be invisible when rendered; agents still read it.",
+      "package": "@vitejs/monorepo-docs",
+      "package_path": "docs",
+      "rule": "md-css-hidden",
+      "remediation": "move the instruction to visible text, or keep it if it is intentionally written for agents"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "medium",
+      "file": ".github/workflows/semantic-pull-request.yml",
+      "line": 5,
+      "title": "gha-privileged-trigger: workflow uses pull_request_target",
+      "snippet": "pull_request_target",
+      "meaning": "Runs with repository secrets on events from forks; review carefully.",
+      "rule": "gha-privileged-trigger",
+      "remediation": "prefer `pull_request`, and check who can push to `workflow_run` upstream branches"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "medium",
+      "file": ".github/workflows/bot.yml",
+      "line": 7,
+      "title": "gha-privileged-trigger: workflow uses pull_request_target",
+      "snippet": "pull_request_target",
+      "meaning": "Runs with repository secrets on events from forks; review carefully.",
+      "rule": "gha-privileged-trigger",
+      "remediation": "prefer `pull_request`, and check who can push to `workflow_run` upstream branches"
+    },
+    {
+      "tool": "guarddog",
+      "severity": "low",
+      "file": "packages/create-vite/__tests__/cli.spec.ts",
+      "line": 60,
+      "title": "GuardDog npm package: capability-filesystem-delete",
+      "snippet": "if (fs.existsSync(genPath)) { fs.rmSync(genPath, { recursive: true, force: true }) } if (fs.existsSync(genPathWithSubfolder)) {",
+      "meaning": "Detects file/directory deletion capabilities",
+      "package": "create-vite",
+      "package_path": "packages/create-vite",
+      "rule": "GuardDog npm package",
+      "remediation": "read the flagged package behaviour; pin a version you reviewed, or replace the package"
+    },
+    {
+      "tool": "guarddog",
+      "severity": "low",
+      "file": "docs/_data/acknowledgements.data.ts",
+      "line": 114,
+      "title": "GuardDog npm package: capability-filesystem-read",
+      "snippet": "function parseBundledDependenciesFromLicense(licensePath: string): string[] { const content = fs.readFileSync(licensePath, 'utf-8') // Find the \"# Bundled depen",
+      "meaning": "Detects filesystem read capabilities",
+      "package": "@vitejs/monorepo-docs",
+      "package_path": "docs",
+      "rule": "GuardDog npm package",
+      "remediation": "read the flagged package behaviour; pin a version you reviewed, or replace the package"
+    },
+    {
+      "tool": "guarddog",
+      "severity": "low",
+      "file": "node/__tests__/utils.spec.ts",
+      "line": 646,
+      "title": "GuardDog npm package: capability-filesystem-write-executable",
+      "snippet": "test('file with read-only permission', async () => { fs.chmodSync(testFile, '400') expect(isFileReadable(testFile)).toBe(true) })",
+      "meaning": "Detects writing executable files or changing file permissions to executable",
+      "rule": "GuardDog npm package",
+      "remediation": "read the flagged package behaviour; pin a version you reviewed, or replace the package"
+    },
+    {
+      "tool": "guarddog",
+      "severity": "low",
+      "file": "docs/.vitepress/theme/composables/sponsor.ts",
+      "line": 18,
+      "title": "GuardDog npm package: capability-network-download",
+      "snippet": "const result = await fetch('https://sponsors.vite.dev/sponsors.json') const sponsors: Sponsors = await result.json()",
+      "meaning": "Detects downloading files from network",
+      "package": "@vitejs/monorepo-docs",
+      "package_path": "docs",
+      "rule": "GuardDog npm package",
+      "remediation": "read the flagged package behaviour; pin a version you reviewed, or replace the package"
+    },
+    {
+      "tool": "guarddog",
+      "severity": "low",
+      "file": "vitest.config.e2e.ts",
+      "line": 17,
+      "title": "GuardDog npm package: capability-network-outbound",
+      "snippet": "// eslint-disable-next-line n/no-unsupported-features/node-builtins '~utils': resolve(import.meta.dirname, './playground/test-utils'), }, },",
+      "meaning": "Detects network request capabilities (HTTP, sockets, etc.)",
+      "rule": "GuardDog npm package",
+      "remediation": "read the flagged package behaviour; pin a version you reviewed, or replace the package"
+    },
+    {
+      "tool": "guarddog",
+      "severity": "low",
+      "file": "docs/_data/acknowledgements.data.ts",
+      "line": 183,
+      "title": "GuardDog npm package: capability-process-spawn",
+      "snippet": "let url: string | undefined const urlMatch = /\\(([^)]+)\\)$/.exec(str) if (urlMatch) { url = urlMatch[1]",
+      "meaning": "Detects process execution and spawning",
+      "package": "@vitejs/monorepo-docs",
+      "package_path": "docs",
+      "rule": "GuardDog npm package",
+      "remediation": "read the flagged package behaviour; pin a version you reviewed, or replace the package"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "file": "packages/vite/src/node/env.ts",
+      "line": 44,
+      "title": "Code reads .env (project config, not a credential store)",
+      "snippet": "`the .local postfix for .env files.`,",
+      "meaning": "Reading the repo's own .env is normal; review only that the values are not sent somewhere unexpected.",
+      "package": "vite",
+      "package_path": "packages/vite",
+      "rule": "Code reads .env"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "file": ".github/workflows/prepare-release.yml",
+      "line": 50,
+      "title": "gha-write-permissions: workflow token has write permissions",
+      "snippet": "contents: write",
+      "meaning": "A compromised step can push code or publish packages.",
+      "rule": "gha-write-permissions",
+      "remediation": "add a least-privilege `permissions:` block to the workflow"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "file": ".github/workflows/prepare-release.yml",
+      "line": 51,
+      "title": "gha-write-permissions: workflow token has write permissions",
+      "snippet": "pull-requests: write",
+      "meaning": "A compromised step can push code or publish packages.",
+      "rule": "gha-write-permissions",
+      "remediation": "add a least-privilege `permissions:` block to the workflow"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "file": ".github/workflows/copilot-setup-steps.yml",
+      "line": 14,
+      "title": "gha-write-permissions: workflow token has write permissions",
+      "snippet": "contents: write",
+      "meaning": "A compromised step can push code or publish packages.",
+      "rule": "gha-write-permissions",
+      "remediation": "add a least-privilege `permissions:` block to the workflow"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "file": ".github/workflows/issue-labeled.yml",
+      "line": 13,
+      "title": "gha-write-permissions: workflow token has write permissions",
+      "snippet": "pull-requests: write # for actions/issues-helper to update PRs",
+      "meaning": "A compromised step can push code or publish packages.",
+      "rule": "gha-write-permissions",
+      "remediation": "add a least-privilege `permissions:` block to the workflow"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "file": ".github/workflows/publish.yml",
+      "line": 44,
+      "title": "gha-write-permissions: workflow token has write permissions",
+      "snippet": "contents: write",
+      "meaning": "A compromised step can push code or publish packages.",
+      "rule": "gha-write-permissions",
+      "remediation": "add a least-privilege `permissions:` block to the workflow"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "file": ".github/workflows/publish.yml",
+      "line": 45,
+      "title": "gha-write-permissions: workflow token has write permissions",
+      "snippet": "id-token: write",
+      "meaning": "A compromised step can push code or publish packages.",
+      "rule": "gha-write-permissions",
+      "remediation": "add a least-privilege `permissions:` block to the workflow"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "file": ".github/workflows/issue-close-require.yml",
+      "line": 14,
+      "title": "gha-write-permissions: workflow token has write permissions",
+      "snippet": "pull-requests: write # for actions/issues-helper to update PRs",
+      "meaning": "A compromised step can push code or publish packages.",
+      "rule": "gha-write-permissions",
+      "remediation": "add a least-privilege `permissions:` block to the workflow"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "file": ".github/workflows/bot.yml",
+      "line": 29,
+      "title": "gha-write-permissions: workflow token has write permissions",
+      "snippet": "pull-requests: write",
+      "meaning": "A compromised step can push code or publish packages.",
+      "rule": "gha-write-permissions",
+      "remediation": "add a least-privilege `permissions:` block to the workflow"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "file": ".github/workflows/bot.yml",
+      "line": 122,
+      "title": "gha-write-permissions: workflow token has write permissions",
+      "snippet": "pull-requests: write",
+      "meaning": "A compromised step can push code or publish packages.",
+      "rule": "gha-write-permissions",
+      "remediation": "add a least-privilege `permissions:` block to the workflow"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "file": ".github/workflows/ecosystem-ci-trigger.yml",
+      "line": 13,
+      "title": "gha-write-permissions: workflow token has write permissions",
+      "snippet": "pull-requests: write # to read PR data, and to add labels",
+      "meaning": "A compromised step can push code or publish packages.",
+      "rule": "gha-write-permissions",
+      "remediation": "add a least-privilege `permissions:` block to the workflow"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "file": ".github/workflows/preview-release.yml",
+      "line": 8,
+      "title": "gha-write-permissions: workflow token has write permissions",
+      "snippet": "pull-requests: write",
+      "meaning": "A compromised step can push code or publish packages.",
+      "rule": "gha-write-permissions",
+      "remediation": "add a least-privilege `permissions:` block to the workflow"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "playground/optimize-deps/glob/foo.js",
+      "line": 3,
+      "title": "import-time-network: javascript module scope",
+      "snippet": "axios.get('/ping').then((res) => {",
+      "meaning": "Network call at module top level: runs when the module loads (startup page views, update checks).",
+      "rule": "import-time-network",
+      "remediation": "move the side effect out of module scope or gate it behind a flag"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "packages/plugin-legacy/src/snippets.ts",
+      "line": 27,
+      "title": "pii-log: logged object likely containing PII",
+      "snippet": "export const dynamicFallbackInlineCode: string = `!function(){if(window.${detectModernBrowserVarName})return;console.warn(\"vite: loading legacy chunks, syntax e",
+      "meaning": "The logged argument name suggests personal data (user/account/profile/\u2026); verify the destination and retention. Seen 3 times.",
+      "package": "@vitejs/plugin-legacy",
+      "package_path": "packages/plugin-legacy",
+      "rule": "pii-log",
+      "remediation": "log an id instead of the object; truncate/hash the address before logging"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "playground/nested-deps/test-package-a/index.js",
+      "line": 1,
+      "title": "pii-email: a@2.0.0",
+      "snippet": "export default 'A@2.0.0'",
+      "meaning": "Hardcoded email address (a person's PII or a DSN); check it is intended to be public.",
+      "rule": "pii-email",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "playground/nested-deps/test-package-b/index.js",
+      "line": 3,
+      "title": "pii-email: b@1.0.0",
+      "snippet": "export default 'B@1.0.0'",
+      "meaning": "Hardcoded email address (a person's PII or a DSN); check it is intended to be public.",
+      "rule": "pii-email",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "playground/nested-deps/test-package-c/index.js",
+      "line": 2,
+      "title": "pii-email: c@1.0.0",
+      "snippet": "export default 'C@1.0.0'",
+      "meaning": "Hardcoded email address (a person's PII or a DSN); check it is intended to be public.",
+      "rule": "pii-email",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "pnpm-workspace.yaml",
+      "line": 23,
+      "title": "pii-email: chokidar@3.6.0",
+      "snippet": "\"chokidar@3.6.0\": \"patches/c***@3.6.0.patch\"",
+      "meaning": "Hardcoded email address (a person's PII or a DSN); check it is intended to be public.",
+      "rule": "pii-email",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "playground/nested-deps/test-package-d/test-package-d-nested/index.js",
+      "line": 1,
+      "title": "pii-email: d-nested@1.0.0",
+      "snippet": "export default 'D-nested@1.0.0'",
+      "meaning": "Hardcoded email address (a person's PII or a DSN); check it is intended to be public.",
+      "rule": "pii-email",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "playground/nested-deps/test-package-d/index.js",
+      "line": 3,
+      "title": "pii-email: d@1.0.0",
+      "snippet": "export default 'D@1.0.0'",
+      "meaning": "Hardcoded email address (a person's PII or a DSN); check it is intended to be public.",
+      "rule": "pii-email",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "pnpm-workspace.yaml",
+      "line": 25,
+      "title": "pii-email: devframe@1.4.0",
+      "snippet": "\"devframe@1.4.0\": \"patches/d***@1.4.0.patch\"",
+      "meaning": "Hardcoded email address (a person's PII or a DSN); check it is intended to be public.",
+      "rule": "pii-email",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "pnpm-workspace.yaml",
+      "line": 24,
+      "title": "pii-email: dotenv-expand@13.0.0",
+      "snippet": "\"dotenv-expand@13.0.0\": \"patches/d***@13.0.0.patch\"",
+      "meaning": "Hardcoded email address (a person's PII or a DSN); check it is intended to be public.",
+      "rule": "pii-email",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "playground/nested-deps/test-package-c/index-es.js",
+      "line": 1,
+      "title": "pii-email: es-c@1.0.0",
+      "snippet": "export default 'es-C@1.0.0'",
+      "meaning": "Hardcoded email address (a person's PII or a DSN); check it is intended to be public.",
+      "rule": "pii-email",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "playground/nested-deps/test-package-f/index.js",
+      "line": 1,
+      "title": "pii-email: f@2.0.0",
+      "snippet": "export default 'F@2.0.0'",
+      "meaning": "Hardcoded email address (a person's PII or a DSN); check it is intended to be public.",
+      "rule": "pii-email",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "pnpm-workspace.yaml",
+      "line": 75,
+      "title": "pii-email: napi-windows-process-start-time@0.1.0",
+      "snippet": "- napi-windows-process-start-time@0.1.0",
+      "meaning": "Hardcoded email address (a person's PII or a DSN); check it is intended to be public.",
+      "rule": "pii-email",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": ".github/workflows/preview-release.yml",
+      "line": 48,
+      "title": "pii-email: pkg-pr-new@0.0",
+      "snippet": "run: pnpm dlx pkg-pr-new@0.0 publish --pnpm './packages/vite' './packages/plugin-legacy' --packageManager=pnpm,npm,yarn --commentWithDev",
+      "meaning": "Hardcoded email address (a person's PII or a DSN); check it is intended to be public.",
+      "rule": "pii-email",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "pnpm-workspace.yaml",
+      "line": 79,
+      "title": "pii-email: semver@6.3.1",
+      "snippet": "- semver@6.3.1",
+      "meaning": "Hardcoded email address (a person's PII or a DSN); check it is intended to be public.",
+      "rule": "pii-email",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "pnpm-workspace.yaml",
+      "line": 22,
+      "title": "pii-email: sirv@3.0.2",
+      "snippet": "\"sirv@3.0.2\": \"patches/s***@3.0.2.patch\"",
+      "meaning": "Hardcoded email address (a person's PII or a DSN); check it is intended to be public.",
+      "rule": "pii-email",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "pnpm-workspace.yaml",
+      "line": 80,
+      "title": "pii-email: t***@7.1.0-beta.tsrs4",
+      "snippet": "- t***@7.1.0-beta.tsrs4 # https://github.com/oxc-project/tsrs/issues/945",
+      "meaning": "Hardcoded email address (a person's PII or a DSN); check it is intended to be public.",
+      "rule": "pii-email",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "playground/worker/index.html",
+      "line": 67,
+      "title": "pii-in-url: name",
+      "snippet": "import mySharedWorker from '../my-shared-worker?sharedworker&name=shared'",
+      "meaning": "Personal data in the URL query: it leaks via Referer, access logs, proxies and browser history. Seen 3 times.",
+      "rule": "pii-in-url",
+      "remediation": "strip the parameter before it reaches logs/referers, or use a POST body instead"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "packages/vite/src/client/bundledDevClient.ts",
+      "line": 46,
+      "title": "client-id: clientid",
+      "snippet": "const clientId = nanoid()",
+      "meaning": "Named persistent client identifier: links sessions or devices without relying on a login.",
+      "package": "vite",
+      "package_path": "packages/vite",
+      "rule": "client-id",
+      "remediation": "self-host the asset, or document and gate the host behind consent"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": ".github/workflows/bot.yml",
+      "line": 62,
+      "title": "external-endpoint: agentscan.tools",
+      "snippet": "This PR has been [automatically flagged](https://agentscan.tools/user/${{ github.event.pull_request.user.login }}) as likely to be created by a bot, LLM, or age",
+      "meaning": "Unknown third-party host agentscan.tools: verify what it receives and whether it sets cookies/tracks.",
+      "rule": "external-endpoint"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": ".github/ISSUE_TEMPLATE/bug_report.yml",
+      "line": 22,
+      "title": "external-endpoint: antfu.me",
+      "snippet": "description: Please provide a link via [vite.new](https://vite.new/) or a link to a repo that can reproduce the problem you ran into. `npm create vite@latest` a",
+      "meaning": "Unknown third-party host antfu.me: verify what it receives and whether it sets cookies/tracks.",
+      "rule": "external-endpoint"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "packages/create-vite/template-qwik/src/app.jsx",
+      "line": 86,
+      "title": "external-endpoint: bsky.app",
+      "snippet": "<a href=\"https://bsky.app/profile/vite.dev\" target=\"_blank\">",
+      "meaning": "Unknown third-party host bsky.app: verify what it receives and whether it sets cookies/tracks. Seen 33 times.",
+      "package": "create-vite",
+      "package_path": "packages/create-vite",
+      "rule": "external-endpoint"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "packages/create-vite/template-qwik/src/app.jsx",
+      "line": 70,
+      "title": "external-endpoint: chat.vite.dev",
+      "snippet": "<a href=\"https://chat.vite.dev/\" target=\"_blank\">",
+      "meaning": "Unknown third-party host chat.vite.dev: verify what it receives and whether it sets cookies/tracks. Seen 20 times.",
+      "package": "create-vite",
+      "package_path": "packages/create-vite",
+      "rule": "external-endpoint"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "playground/vitestGlobalSetup.ts",
+      "line": 89,
+      "title": "external-endpoint: docs.microsoft.com",
+      "snippet": "'Could not create symlinks. On Windows, consider activating Developer Mode to allow non-admin users to create symlinks by following the instructions at https://",
+      "meaning": "Unknown third-party host docs.microsoft.com: verify what it receives and whether it sets cookies/tracks.",
+      "rule": "external-endpoint"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "packages/vite/src/node/utils.ts",
+      "line": 859,
+      "title": "external-endpoint: drafts.csswg.org",
+      "snippet": "@see https://drafts.csswg.org/css-images-4/#image-set-notation",
+      "meaning": "Unknown third-party host drafts.csswg.org: verify what it receives and whether it sets cookies/tracks.",
+      "package": "vite",
+      "package_path": "packages/vite",
+      "rule": "external-endpoint"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "playground/vitestSetup.ts",
+      "line": 18,
+      "title": "external-endpoint: evanw.github.io",
+      "snippet": "return `https://evanw.github.io/source-map-visualization/#${btoa(hash)}`",
+      "meaning": "Unknown third-party host evanw.github.io: verify what it receives and whether it sets cookies/tracks. Seen 27 times.",
+      "rule": "external-endpoint"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "packages/vite/src/node/utils.ts",
+      "line": 858,
+      "title": "external-endpoint: html.spec.whatwg.org",
+      "snippet": "@see https://html.spec.whatwg.org/multipage/images.html#srcset-attribute",
+      "meaning": "Unknown third-party host html.spec.whatwg.org: verify what it receives and whether it sets cookies/tracks.",
+      "package": "vite",
+      "package_path": "packages/vite",
+      "rule": "external-endpoint"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "scripts/tsconfig.json",
+      "line": 2,
+      "title": "external-endpoint: json.schemastore.org",
+      "snippet": "\"$schema\": \"https://json.schemastore.org/tsconfig\",",
+      "meaning": "Unknown third-party host json.schemastore.org: verify what it receives and whether it sets cookies/tracks.",
+      "rule": "external-endpoint"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "packages/create-vite/src/index.ts",
+      "line": 1081,
+      "title": "external-endpoint: npmx.dev",
+      "snippet": "You can also install [eslint-plugin-react-x](https://npmx.dev/package/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://npmx.dev/package/eslint-plugi",
+      "meaning": "Unknown third-party host npmx.dev: verify what it receives and whether it sets cookies/tracks. Seen 2 times.",
+      "package": "create-vite",
+      "package_path": "packages/create-vite",
+      "rule": "external-endpoint"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "packages/create-vite/src/index.ts",
+      "line": 132,
+      "title": "external-endpoint: nuxt.com",
+      "snippet": "link: 'https://nuxt.com',",
+      "meaning": "Unknown third-party host nuxt.com: verify what it receives and whether it sets cookies/tracks.",
+      "package": "create-vite",
+      "package_path": "packages/create-vite",
+      "rule": "external-endpoint"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": ".github/workflows/ecosystem-ci-trigger.yml",
+      "line": 121,
+      "title": "external-endpoint: pkg.pr.new",
+      "snippet": "const url = `https://pkg.pr.new/vite@${prData.commit}`",
+      "meaning": "Unknown third-party host pkg.pr.new: verify what it receives and whether it sets cookies/tracks.",
+      "rule": "external-endpoint"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "packages/create-vite/src/index.ts",
+      "line": 910,
+      "title": "external-endpoint: react.dev",
+      "snippet": "'The React Compiler is enabled on this template. See [this documentation](https://react.dev/learn/react-compiler) for more information.\\n\\n' +",
+      "meaning": "Unknown third-party host react.dev: verify what it receives and whether it sets cookies/tracks.",
+      "package": "create-vite",
+      "package_path": "packages/create-vite",
+      "rule": "external-endpoint"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "packages/create-vite/src/index.ts",
+      "line": 180,
+      "title": "external-endpoint: reactrouter.com",
+      "snippet": "link: 'https://reactrouter.com',",
+      "meaning": "Unknown third-party host reactrouter.com: verify what it receives and whether it sets cookies/tracks.",
+      "package": "create-vite",
+      "package_path": "packages/create-vite",
+      "rule": "external-endpoint"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "packages/create-vite/src/index.ts",
+      "line": 203,
+      "title": "external-endpoint: rwsdk.com",
+      "snippet": "link: 'https://rwsdk.com',",
+      "meaning": "Unknown third-party host rwsdk.com: verify what it receives and whether it sets cookies/tracks.",
+      "package": "create-vite",
+      "package_path": "packages/create-vite",
+      "rule": "external-endpoint"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": ".github/workflows/issue-labeled.yml",
+      "line": 41,
+      "title": "external-endpoint: stackoverflow.com",
+      "snippet": "Hello @${{ github.event.issue.user.login }}. Please provide a [minimal reproduction](https://stackoverflow.com/help/minimal-reproducible-example) using a GitHub",
+      "meaning": "Unknown third-party host stackoverflow.com: verify what it receives and whether it sets cookies/tracks. Seen 3 times.",
+      "rule": "external-endpoint"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "packages/create-vite/src/index.ts",
+      "line": 187,
+      "title": "external-endpoint: tanstack.com",
+      "snippet": "link: 'https://tanstack.com/start',",
+      "meaning": "Unknown third-party host tanstack.com: verify what it receives and whether it sets cookies/tracks. Seen 4 times.",
+      "package": "create-vite",
+      "package_path": "packages/create-vite",
+      "rule": "external-endpoint"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "packages/create-vite/src/index.ts",
+      "line": 1089,
+      "title": "external-endpoint: typescript-eslint.io",
+      "snippet": "If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com",
+      "meaning": "Unknown third-party host typescript-eslint.io: verify what it receives and whether it sets cookies/tracks.",
+      "package": "create-vite",
+      "package_path": "packages/create-vite",
+      "rule": "external-endpoint"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "packages/create-vite/src/index.ts",
+      "line": 139,
+      "title": "external-endpoint: vike.dev",
+      "snippet": "link: 'https://vike.dev',",
+      "meaning": "Unknown third-party host vike.dev: verify what it receives and whether it sets cookies/tracks. Seen 3 times.",
+      "package": "create-vite",
+      "package_path": "packages/create-vite",
+      "rule": "external-endpoint"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "packages/create-vite/template-qwik/src/app.jsx",
+      "line": 41,
+      "title": "external-endpoint: vite.dev",
+      "snippet": "<a href=\"https://vite.dev/\" target=\"_blank\">",
+      "meaning": "Unknown third-party host vite.dev: verify what it receives and whether it sets cookies/tracks. Seen 27 times.",
+      "package": "create-vite",
+      "package_path": "packages/create-vite",
+      "rule": "external-endpoint"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": ".github/workflows/issue-labeled.yml",
+      "line": 41,
+      "title": "external-endpoint: vite.new",
+      "snippet": "Hello @${{ github.event.issue.user.login }}. Please provide a [minimal reproduction](https://stackoverflow.com/help/minimal-reproducible-example) using a GitHub",
+      "meaning": "Unknown third-party host vite.new: verify what it receives and whether it sets cookies/tracks. Seen 3 times.",
+      "rule": "external-endpoint"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "playground/lib/src/dynamic.css",
+      "line": 1,
+      "title": "third-party-cdn: cdn.jsdelivr.net",
+      "snippet": "@import 'https://cdn.jsdelivr.net/npm/@mdi/font@5.9.55/css/materialdesignicons.min.css';",
+      "meaning": "Asset requested from cdn.jsdelivr.net: it sees your IP and the page URL (third-party font/CDN).",
+      "rule": "third-party-cdn",
+      "remediation": "self-host the asset, or document and gate the host behind consent"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "playground/html/vite.config.js",
+      "line": 236,
+      "title": "third-party-cdn: unpkg.com",
+      "snippet": "\"vue\": \"https://unpkg.com/vue@3.5.42/dist/vue.runtime.esm-browser.js\"",
+      "meaning": "Asset requested from unpkg.com: it sees your IP and the page URL (third-party font/CDN).",
+      "rule": "third-party-cdn",
+      "remediation": "self-host the asset, or document and gate the host behind consent"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "playground/css-lightningcss/external.css",
+      "line": 1,
+      "title": "third-party-stylesheet: api.iconify.design",
+      "snippet": "@import 'https://api.iconify.design/mdi-light.css?icons=help-circle';",
+      "meaning": "CSS @import from api.iconify.design: sees your IP/referrer and can chain further requests. Seen 2 times.",
+      "rule": "third-party-stylesheet",
+      "remediation": "self-host the asset, or document and gate the host behind consent"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "packages/create-vite/template-vanilla/src/main.js",
+      "line": 36,
+      "title": "third-party-media: developer.mozilla.org",
+      "snippet": "<a href=\"https://developer.mozilla.org/en-US/docs/Web/JavaScript\" target=\"_blank\">",
+      "meaning": "Media attribute on a tag opened above loads from developer.mozilla.org: it sees your IP and the page URL.",
+      "package": "create-vite",
+      "package_path": "packages/create-vite",
+      "rule": "third-party-media",
+      "remediation": "self-host the asset, or document and gate the host behind consent"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "packages/create-vite/template-lit-ts/src/my-element.ts",
+      "line": 63,
+      "title": "third-party-media: lit.dev",
+      "snippet": "<a href=\"https://lit.dev/\" target=\"_blank\">",
+      "meaning": "Media attribute on a tag opened above loads from lit.dev: it sees your IP and the page URL. Seen 2 times.",
+      "package": "create-vite",
+      "package_path": "packages/create-vite",
+      "rule": "third-party-media",
+      "remediation": "self-host the asset, or document and gate the host behind consent"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "packages/create-vite/template-preact/src/app.jsx",
+      "line": 50,
+      "title": "third-party-media: preactjs.com",
+      "snippet": "<a href=\"https://preactjs.com/\" target=\"_blank\">",
+      "meaning": "Media attribute on a tag opened above loads from preactjs.com: it sees your IP and the page URL. Seen 2 times.",
+      "package": "create-vite",
+      "package_path": "packages/create-vite",
+      "rule": "third-party-media",
+      "remediation": "self-host the asset, or document and gate the host behind consent"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "packages/create-vite/template-qwik/src/app.jsx",
+      "line": 47,
+      "title": "third-party-media: qwik.dev",
+      "snippet": "<a href=\"https://qwik.dev/\" target=\"_blank\">",
+      "meaning": "Media attribute on a tag opened above loads from qwik.dev: it sees your IP and the page URL. Seen 2 times.",
+      "package": "create-vite",
+      "package_path": "packages/create-vite",
+      "rule": "third-party-media",
+      "remediation": "self-host the asset, or document and gate the host behind consent"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "packages/create-vite/template-react/src/App.jsx",
+      "line": 50,
+      "title": "third-party-media: react.dev",
+      "snippet": "<a href=\"https://react.dev/\" target=\"_blank\">",
+      "meaning": "Media attribute on a tag opened above loads from react.dev: it sees your IP and the page URL. Seen 2 times.",
+      "package": "create-vite",
+      "package_path": "packages/create-vite",
+      "rule": "third-party-media",
+      "remediation": "self-host the asset, or document and gate the host behind consent"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "packages/create-vite/template-solid-ts/src/App.tsx",
+      "line": 50,
+      "title": "third-party-media: solidjs.com",
+      "snippet": "<a href=\"https://solidjs.com/\" target=\"_blank\">",
+      "meaning": "Media attribute on a tag opened above loads from solidjs.com: it sees your IP and the page URL. Seen 2 times.",
+      "package": "create-vite",
+      "package_path": "packages/create-vite",
+      "rule": "third-party-media",
+      "remediation": "self-host the asset, or document and gate the host behind consent"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "packages/create-vite/template-svelte-ts/src/App.svelte",
+      "line": 38,
+      "title": "third-party-media: svelte.dev",
+      "snippet": "<a href=\"https://svelte.dev/\" target=\"_blank\" rel=\"noreferrer\">",
+      "meaning": "Media attribute on a tag opened above loads from svelte.dev: it sees your IP and the page URL. Seen 2 times.",
+      "package": "create-vite",
+      "package_path": "packages/create-vite",
+      "rule": "third-party-media",
+      "remediation": "self-host the asset, or document and gate the host behind consent"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "packages/create-vite/template-vue-ts/src/components/HelloWorld.vue",
+      "line": 43,
+      "title": "third-party-media: vuejs.org",
+      "snippet": "<a href=\"https://vuejs.org/\" target=\"_blank\">",
+      "meaning": "Media attribute on a tag opened above loads from vuejs.org: it sees your IP and the page URL. Seen 2 times.",
+      "package": "create-vite",
+      "package_path": "packages/create-vite",
+      "rule": "third-party-media",
+      "remediation": "self-host the asset, or document and gate the host behind consent"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "packages/create-vite/template-vanilla-ts/src/main.ts",
+      "line": 36,
+      "title": "third-party-media: www.typescriptlang.org",
+      "snippet": "<a href=\"https://www.typescriptlang.org\" target=\"_blank\">",
+      "meaning": "Media attribute on a tag opened above loads from www.typescriptlang.org: it sees your IP and the page URL.",
+      "package": "create-vite",
+      "package_path": "packages/create-vite",
+      "rule": "third-party-media",
+      "remediation": "self-host the asset, or document and gate the host behind consent"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "docs/.vitepress/theme/components/YouTubeVideo.vue",
+      "line": 12,
+      "title": "third-party-embed: www.youtube.com",
+      "snippet": ":src=\"`https://www.youtube.com/embed/${videoId}`\"",
+      "meaning": "Embed attribute on a tag opened above includes content/code from www.youtube.com.",
+      "package": "@vitejs/monorepo-docs",
+      "package_path": "docs",
+      "rule": "third-party-embed",
+      "remediation": "self-host the asset, or document and gate the host behind consent"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "(repo)",
+      "line": 0,
+      "title": "data-retention: data collected but no retention/expiry setting found",
+      "snippet": "no retention/ttl/expiry/delete_after value in the repo",
+      "meaning": "Personal data is collected but nothing says when it is deleted; check the privacy policy.",
+      "rule": "data-retention",
+      "remediation": "set an explicit retention period and delete the data when it ends"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "file": "(repo)",
+      "line": 0,
+      "title": "privacy-doc: no privacy policy file",
+      "snippet": "expected PRIVACY.md or PrivacyInfo.xcprivacy",
+      "meaning": "The repo collects/transmits data but ships no privacy policy/manifest file.",
+      "rule": "privacy-doc",
+      "remediation": "add a PRIVACY.md/policy (or link one) and state what is collected"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "file": "(repo)",
+      "line": 0,
+      "title": "Coverage-low: only 31.3% of source bytes were inspected",
+      "snippet": "2430/3004 files",
+      "meaning": "Large or unsupported files are skipped, so a GREEN verdict over them is not evidence of safety.",
+      "rule": "Coverage-low",
+      "remediation": "inspect the large or unsupported files manually; the verdict does not cover them"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "packages/create-vite/CHANGELOG.md",
+      "line": 1,
+      "title": "pii-email: docs: 125 address(es) in packages/create-vite/CHANGELOG.md",
+      "snippet": "...create-app@1.0.1, ...create-app@1.0.2, ...create-app@1.0.3, ...create-app@1.0.4, +121",
+      "meaning": "Docs publish these email addresses (contact/maintainer info); confirm they are meant to be public.",
+      "package": "create-vite",
+      "package_path": "packages/create-vite",
+      "rule": "pii-email",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "packages/vite/LICENSE.md",
+      "line": 1,
+      "title": "pii-email: docs: 22 address(es) in packages/vite/LICENSE.md",
+      "snippet": "0***@gmail.com, a***@madyankin.name, b***@gmail.com, d***@somethingdoug.com, +18",
+      "meaning": "Docs publish these email addresses (contact/maintainer info); confirm they are meant to be public.",
+      "package": "vite",
+      "package_path": "packages/vite",
+      "rule": "pii-email",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "packages/create-vite/LICENSE",
+      "line": 1,
+      "title": "pii-email: docs: 3 address(es) in packages/create-vite/LICENSE",
+      "snippet": "l***@gmail.com, p***@pi0.io, s***@gmail.com",
+      "meaning": "Docs publish these email addresses (contact/maintainer info); confirm they are meant to be public.",
+      "package": "create-vite",
+      "package_path": "packages/create-vite",
+      "rule": "pii-email",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "playground/nested-deps/__tests__/nested-deps.spec.ts",
+      "line": 1,
+      "title": "pii-email: docs: 7 address(es) in playground/nested-deps/__tests__/nested-deps.spec.ts",
+      "snippet": "a@1.0.0, a@2.0.0, b@1.0.0, d-nested@1.0.0, +3",
+      "meaning": "Docs publish these email addresses (contact/maintainer info); confirm they are meant to be public.",
+      "rule": "pii-email",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "packages/plugin-legacy/CHANGELOG.md",
+      "line": 1,
+      "title": "pii-email: docs: 91 address(es) in packages/plugin-legacy/CHANGELOG.md",
+      "snippet": "...plugin-legacy@1.0.1, ...plugin-legacy@1.1.0, ...plugin-legacy@1.1.1, ...plugin-legacy@1.2.0, +87",
+      "meaning": "Docs publish these email addresses (contact/maintainer info); confirm they are meant to be public.",
+      "package": "@vitejs/plugin-legacy",
+      "package_path": "packages/plugin-legacy",
+      "rule": "pii-email",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "docs/blog/announcing-vite6.md",
+      "line": 48,
+      "title": "tracking-params: utm/campaign parameters",
+      "snippet": "<YouTubeVideo videoId=\"EKvvptbTx6k?si=EZ-rFJn4pDW3tUvp\" />",
+      "meaning": "Link carries campaign/tracking parameters (utm_*, fbclid, gclid, \u2026). Seen 3 times.",
+      "package": "@vitejs/monorepo-docs",
+      "package_path": "docs",
+      "rule": "tracking-params",
+      "remediation": "strip the parameter before it reaches logs/referers, or use a POST body instead"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "docs/guide/static-deploy-github-pages.yaml",
+      "line": 48,
+      "title": "upload-surface: file upload",
+      "snippet": "- name: Upload artifact",
+      "meaning": "Accepts user-supplied files or request bodies: data enters the service. Seen 6 times.",
+      "package": "@vitejs/monorepo-docs",
+      "package_path": "docs",
+      "rule": "upload-surface",
+      "remediation": "check where the uploaded file is stored and who can read it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "playground/assets/vite.config-relative-base.js",
+      "line": 12,
+      "title": "upload-limit: size cap",
+      "snippet": "assetsInlineLimit: 0,",
+      "meaning": "A request/upload size cap is set (data-minimization guard). Seen 29 times.",
+      "rule": "upload-limit",
+      "remediation": "state and enforce the upload size/type limit"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "packages/vite/src/node/__tests__/constants.spec.ts",
+      "line": 19,
+      "title": "insecure-endpoint: 192.0.2",
+      "snippet": "'http://192.0.2',",
+      "meaning": "Plaintext http:// to 192.0.2: test fixture URL, not a runtime request.",
+      "package": "vite",
+      "package_path": "packages/vite",
+      "rule": "insecure-endpoint",
+      "remediation": "use https:// / wss://"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "packages/vite/src/node/__tests__/utils.spec.ts",
+      "line": 1267,
+      "title": "insecure-endpoint: foo.example.com",
+      "snippet": "network: ['http://foo.example.com:5173'],",
+      "meaning": "Plaintext http:// to foo.example.com: test fixture URL, not a runtime request. Seen 3 times.",
+      "package": "vite",
+      "package_path": "packages/vite",
+      "rule": "insecure-endpoint",
+      "remediation": "use https:// / wss://"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "packages/vite/src/node/__tests__/constants.spec.ts",
+      "line": 16,
+      "title": "insecure-endpoint: localhost.example.com",
+      "snippet": "'http://localhost.example.com',",
+      "meaning": "Plaintext http:// to localhost.example.com: test fixture URL, not a runtime request.",
+      "package": "vite",
+      "package_path": "packages/vite",
+      "rule": "insecure-endpoint",
+      "remediation": "use https:// / wss://"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "packages/vite/src/node/__tests__/utils.spec.ts",
+      "line": 202,
+      "title": "insecure-endpoint: usr.vite",
+      "snippet": "expect(injectQuery('http://usr.vite/%20a%20', 'direct')).toMatch(",
+      "meaning": "Plaintext http:// to usr.vite: test fixture URL, not a runtime request. Seen 2 times.",
+      "package": "vite",
+      "package_path": "packages/vite",
+      "rule": "insecure-endpoint",
+      "remediation": "use https:// / wss://"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "playground/fs-serve/__tests__/commonTests.ts",
+      "line": 526,
+      "title": "insecure-endpoint: vite.dev",
+      "snippet": "await page2.route('http://vite.dev/**', (route) =>",
+      "meaning": "Plaintext http:// to vite.dev: test fixture URL, not a runtime request. Seen 7 times.",
+      "rule": "insecure-endpoint",
+      "remediation": "use https:// / wss://"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "packages/vite/src/node/server/middlewares/__tests__/hostCheck.spec.ts",
+      "line": 11,
+      "title": "insecure-endpoint: vite.origin.example.com",
+      "snippet": "origin: 'http://vite.origin.example.com:5173',",
+      "meaning": "Plaintext http:// to vite.origin.example.com: test fixture URL, not a runtime request.",
+      "package": "vite",
+      "package_path": "packages/vite",
+      "rule": "insecure-endpoint",
+      "remediation": "use https:// / wss://"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "docs/.vitepress/theme/landing/Community.vue",
+      "line": 84,
+      "title": "external-endpoint: avatars.githubusercontent.com",
+      "snippet": "avatar: 'https://avatars.githubusercontent.com/u/13629190?v=4',",
+      "meaning": "Network destination avatars.githubusercontent.com (known platform/infrastructure).",
+      "package": "@vitejs/monorepo-docs",
+      "package_path": "docs",
+      "rule": "external-endpoint"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "packages/vite/rollupLicensePlugin.ts",
+      "line": 198,
+      "title": "external-endpoint: bitbucket.org",
+      "snippet": "return `https://bitbucket.org/${url.slice(10)}`",
+      "meaning": "Network destination bitbucket.org (known platform/infrastructure). Seen 2 times.",
+      "package": "vite",
+      "package_path": "packages/vite",
+      "rule": "external-endpoint"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "docs/_data/team.js",
+      "line": 67,
+      "title": "external-endpoint: bjornlu.com",
+      "snippet": "sponsor: 'https://bjornlu.com/sponsor',",
+      "meaning": "Unknown third-party host bjornlu.com: docs link; not fetched at runtime.",
+      "package": "@vitejs/monorepo-docs",
+      "package_path": "docs",
+      "rule": "external-endpoint"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "docs/.vitepress/theme/live/Hero.vue",
+      "line": 22,
+      "title": "external-endpoint: calendar.google.com",
+      "snippet": "href=\"https://calendar.google.com/calendar/render?action=TEMPLATE&text=Vite.%20The%20documentary&dates=20260319T150000/20260319T160000&ctz=Europe/London&details",
+      "meaning": "Unknown third-party host calendar.google.com: docs link; not fetched at runtime.",
+      "package": "@vitejs/monorepo-docs",
+      "package_path": "docs",
+      "rule": "external-endpoint"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "docs/.vitepress/config.ts",
+      "line": 106,
+      "title": "external-endpoint: cn.vite.dev",
+      "snippet": "zh: { label: '\u7b80\u4f53\u4e2d\u6587', link: 'https://cn.vite.dev' },",
+      "meaning": "Unknown third-party host cn.vite.dev: docs link; not fetched at runtime.",
+      "package": "@vitejs/monorepo-docs",
+      "package_path": "docs",
+      "rule": "external-endpoint"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "docs/.vitepress/config.ts",
+      "line": 110,
+      "title": "external-endpoint: de.vite.dev",
+      "snippet": "de: { label: 'Deutsch', link: 'https://de.vite.dev' },",
+      "meaning": "Unknown third-party host de.vite.dev: docs link; not fetched at runtime.",
+      "package": "@vitejs/monorepo-docs",
+      "package_path": "docs",
+      "rule": "external-endpoint"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "docs/.vitepress/config.ts",
+      "line": 235,
+      "title": "external-endpoint: dev.to",
+      "snippet": "link: 'https://dev.to/t/vite',",
+      "meaning": "Unknown third-party host dev.to: docs link; not fetched at runtime.",
+      "package": "@vitejs/monorepo-docs",
+      "package_path": "docs",
+      "rule": "external-endpoint"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "docs/.vitepress/config.ts",
+      "line": 560,
+      "title": "external-endpoint: developer.mozilla.org",
+      "snippet": "- A dev server that provides [rich feature enhancements](https://vite.dev/guide/features.md) over [native ES modules](https://developer.mozilla.org/en-US/docs/W",
+      "meaning": "Unknown third-party host developer.mozilla.org: docs link; not fetched at runtime.",
+      "package": "@vitejs/monorepo-docs",
+      "package_path": "docs",
+      "rule": "external-endpoint"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "docs/.vitepress/theme/live/VideoIframe.vue",
+      "line": 156,
+      "title": "external-endpoint: discord.gg",
+      "snippet": "href=\"https://discord.gg/spmbbvPb9Q\"",
+      "meaning": "Network destination discord.gg (known platform/infrastructure).",
+      "package": "@vitejs/monorepo-docs",
+      "package_path": "docs",
+      "rule": "external-endpoint"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "docs/_data/team.js",
+      "line": 27,
+      "title": "external-endpoint: elk.zone",
+      "snippet": "{ icon: 'mastodon', link: 'https://elk.zone/m.webtoo.ls/@sapphi_red' },",
+      "meaning": "Unknown third-party host elk.zone: docs link; not fetched at runtime. Seen 10 times.",
+      "package": "@vitejs/monorepo-docs",
+      "package_path": "docs",
+      "rule": "external-endpoint"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "docs/.vitepress/config.ts",
+      "line": 108,
+      "title": "external-endpoint: es.vite.dev",
+      "snippet": "es: { label: 'Espa\u00f1ol', link: 'https://es.vite.dev' },",
+      "meaning": "Unknown third-party host es.vite.dev: docs link; not fetched at runtime.",
+      "package": "@vitejs/monorepo-docs",
+      "package_path": "docs",
+      "rule": "external-endpoint"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "docs/_data/team.js",
+      "line": 229,
+      "title": "external-endpoint: fakerjs.dev",
+      "snippet": "orgLink: 'https://fakerjs.dev',",
+      "meaning": "Unknown third-party host fakerjs.dev: docs link; not fetched at runtime.",
+      "package": "@vitejs/monorepo-docs",
+      "package_path": "docs",
+      "rule": "external-endpoint"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "docs/_data/team.js",
+      "line": 10,
+      "title": "external-endpoint: github.com",
+      "snippet": "{ icon: 'github', link: 'https://github.com/yyx990803' },",
+      "meaning": "Network destination github.com (known platform/infrastructure). Seen 67 times.",
+      "package": "@vitejs/monorepo-docs",
+      "package_path": "docs",
+      "rule": "external-endpoint"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "packages/vite/rollupLicensePlugin.ts",
+      "line": 196,
+      "title": "external-endpoint: gitlab.com",
+      "snippet": "return `https://gitlab.com/${url.slice(7)}`",
+      "meaning": "Network destination gitlab.com (known platform/infrastructure). Seen 2 times.",
+      "package": "vite",
+      "package_path": "packages/vite",
+      "rule": "external-endpoint"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "docs/_data/team.js",
+      "line": 158,
+      "title": "external-endpoint: i.imgur.com",
+      "snippet": "avatar: 'https://i.imgur.com/KMed6rQ.jpeg',",
+      "meaning": "Unknown third-party host i.imgur.com: docs link; not fetched at runtime.",
+      "package": "@vitejs/monorepo-docs",
+      "package_path": "docs",
+      "rule": "external-endpoint"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "docs/.vitepress/config.ts",
+      "line": 107,
+      "title": "external-endpoint: ja.vite.dev",
+      "snippet": "ja: { label: '\u65e5\u672c\u8a9e', link: 'https://ja.vite.dev' },",
+      "meaning": "Unknown third-party host ja.vite.dev: docs link; not fetched at runtime.",
+      "package": "@vitejs/monorepo-docs",
+      "package_path": "docs",
+      "rule": "external-endpoint"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "docs/.vitepress/config.ts",
+      "line": 109,
+      "title": "external-endpoint: ko.vite.dev",
+      "snippet": "ko: { label: '\ud55c\uad6d\uc5b4', link: 'https://ko.vite.dev' },",
+      "meaning": "Unknown third-party host ko.vite.dev: docs link; not fetched at runtime.",
+      "package": "@vitejs/monorepo-docs",
+      "package_path": "docs",
+      "rule": "external-endpoint"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "docs/.vitepress/config.ts",
+      "line": 92,
+      "title": "external-endpoint: m.webtoo.ls",
+      "snippet": "['link', { rel: 'me', href: 'https://m.webtoo.ls/@vite' }],",
+      "meaning": "Unknown third-party host m.webtoo.ls: docs link; not fetched at runtime.",
+      "package": "@vitejs/monorepo-docs",
+      "package_path": "docs",
+      "rule": "external-endpoint"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "docs/.vitepress/config.ts",
+      "line": 29,
+      "title": "external-endpoint: main--vite-docs-main.netlify.app",
+      "snippet": "case 'https://main--vite-docs-main.netlify.app':",
+      "meaning": "Unknown third-party host main--vite-docs-main.netlify.app: docs link; not fetched at runtime.",
+      "package": "@vitejs/monorepo-docs",
+      "package_path": "docs",
+      "rule": "external-endpoint"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "docs/.vitepress/config.ts",
+      "line": 53,
+      "title": "external-endpoint: main.vite.dev",
+      "snippet": "link: 'https://main.vite.dev',",
+      "meaning": "Unknown third-party host main.vite.dev: docs link; not fetched at runtime.",
+      "package": "@vitejs/monorepo-docs",
+      "package_path": "docs",
+      "rule": "external-endpoint"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "docs/.vitepress/theme/landing/Community.vue",
+      "line": 16,
+      "title": "external-endpoint: pbs.twimg.com",
+      "snippet": "'https://pbs.twimg.com/profile_images/1810837163447308292/8Piov0f6_400x400.jpg',",
+      "meaning": "Unknown third-party host pbs.twimg.com: docs link; not fetched at runtime. Seen 8 times.",
+      "package": "@vitejs/monorepo-docs",
+      "package_path": "docs",
+      "rule": "external-endpoint"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "packages/vite/src/node/server/__tests__/sourcemap.spec.ts",
+      "line": 88,
+      "title": "external-endpoint: raw.githubusercontent.com",
+      "snippet": "sourceRoot: 'https://raw.githubusercontent.com/fb55/domutils/abc123/src/',",
+      "meaning": "Network destination raw.githubusercontent.com (known platform/infrastructure). Seen 2 times.",
+      "package": "vite",
+      "package_path": "packages/vite",
+      "rule": "external-endpoint"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "docs/.vitepress/config.ts",
+      "line": 201,
+      "title": "external-endpoint: registry.vite.dev",
+      "snippet": "link: 'https://registry.vite.dev/plugins',",
+      "meaning": "Unknown third-party host registry.vite.dev: docs link; not fetched at runtime.",
+      "package": "@vitejs/monorepo-docs",
+      "package_path": "docs",
+      "rule": "external-endpoint"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "docs/.vitepress/config.ts",
+      "line": 562,
+      "title": "external-endpoint: rolldown.rs",
+      "snippet": "- A build command that bundles your code with [Rolldown](https://rolldown.rs), pre-configured to output highly optimized static assets for production.",
+      "meaning": "Unknown third-party host rolldown.rs: docs link; not fetched at runtime.",
+      "package": "@vitejs/monorepo-docs",
+      "package_path": "docs",
+      "rule": "external-endpoint"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "docs/.vitepress/theme/composables/sponsor.ts",
+      "line": 18,
+      "title": "external-endpoint: sponsors.vite.dev",
+      "snippet": "const result = await fetch('https://sponsors.vite.dev/sponsors.json')",
+      "meaning": "Unknown third-party host sponsors.vite.dev: docs link; not fetched at runtime.",
+      "package": "@vitejs/monorepo-docs",
+      "package_path": "docs",
+      "rule": "external-endpoint"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "docs/_data/team.js",
+      "line": 26,
+      "title": "external-endpoint: twitter.com",
+      "snippet": "{ icon: 'twitter', link: 'https://twitter.com/sapphi_red' },",
+      "meaning": "Network destination twitter.com (known platform/infrastructure). Seen 2 times.",
+      "package": "@vitejs/monorepo-docs",
+      "package_path": "docs",
+      "rule": "external-endpoint"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "docs/_data/team.js",
+      "line": 47,
+      "title": "external-endpoint: vercel.com",
+      "snippet": "orgLink: 'https://vercel.com/',",
+      "meaning": "Unknown third-party host vercel.com: docs link; not fetched at runtime. Seen 2 times.",
+      "package": "@vitejs/monorepo-docs",
+      "package_path": "docs",
+      "rule": "external-endpoint"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "docs/.vitepress/config.ts",
+      "line": 231,
+      "title": "external-endpoint: viteconf.org",
+      "snippet": "link: 'https://viteconf.org',",
+      "meaning": "Unknown third-party host viteconf.org: docs link; not fetched at runtime. Seen 2 times.",
+      "package": "@vitejs/monorepo-docs",
+      "package_path": "docs",
+      "rule": "external-endpoint"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "docs/_data/team.js",
+      "line": 21,
+      "title": "external-endpoint: voidzero.dev",
+      "snippet": "orgLink: 'https://voidzero.dev/',",
+      "meaning": "Unknown third-party host voidzero.dev: docs link; not fetched at runtime. Seen 4 times.",
+      "package": "@vitejs/monorepo-docs",
+      "package_path": "docs",
+      "rule": "external-endpoint"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "docs/_data/team.js",
+      "line": 7,
+      "title": "external-endpoint: vuejs.org",
+      "snippet": "orgLink: 'https://vuejs.org/',",
+      "meaning": "Unknown third-party host vuejs.org: docs link; not fetched at runtime. Seen 2 times.",
+      "package": "@vitejs/monorepo-docs",
+      "package_path": "docs",
+      "rule": "external-endpoint"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "docs/_data/team.js",
+      "line": 137,
+      "title": "external-endpoint: www.cloudflare.com",
+      "snippet": "orgLink: 'https://www.cloudflare.com/',",
+      "meaning": "Network destination www.cloudflare.com (known platform/infrastructure).",
+      "package": "@vitejs/monorepo-docs",
+      "package_path": "docs",
+      "rule": "external-endpoint"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "docs/.vitepress/theme/live/Hero.vue",
+      "line": 39,
+      "title": "external-endpoint: www.cultrepo.com",
+      "snippet": "href=\"https://www.cultrepo.com/\"",
+      "meaning": "Unknown third-party host www.cultrepo.com: docs link; not fetched at runtime.",
+      "package": "@vitejs/monorepo-docs",
+      "package_path": "docs",
+      "rule": "external-endpoint"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "docs/_data/team.js",
+      "line": 3,
+      "title": "external-endpoint: www.github.com",
+      "snippet": "avatar: 'https://www.github.com/yyx990803.png',",
+      "meaning": "Unknown third-party host www.github.com: docs link; not fetched at runtime. Seen 3 times.",
+      "package": "@vitejs/monorepo-docs",
+      "package_path": "docs",
+      "rule": "external-endpoint"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "docs/_data/team.js",
+      "line": 125,
+      "title": "external-endpoint: www.netlify.com",
+      "snippet": "orgLink: 'https://www.netlify.com/',",
+      "meaning": "Unknown third-party host www.netlify.com: docs link; not fetched at runtime.",
+      "package": "@vitejs/monorepo-docs",
+      "package_path": "docs",
+      "rule": "external-endpoint"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "docs/.vitepress/theme/live/VideoIframe.vue",
+      "line": 46,
+      "title": "external-endpoint: www.youtube-nocookie.com",
+      "snippet": "return `https://www.youtube-nocookie.com/embed/bmWQqAKLgT4?${params.toString()}`",
+      "meaning": "Unknown third-party host www.youtube-nocookie.com: docs link; not fetched at runtime.",
+      "package": "@vitejs/monorepo-docs",
+      "package_path": "docs",
+      "rule": "external-endpoint"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "docs/.vitepress/config.ts",
+      "line": 205,
+      "title": "external-endpoint: www.youtube.com",
+      "snippet": "link: 'https://www.youtube.com/watch?v=bmWQqAKLgT4',",
+      "meaning": "Unknown third-party host www.youtube.com: docs link; not fetched at runtime. Seen 5 times.",
+      "package": "@vitejs/monorepo-docs",
+      "package_path": "docs",
+      "rule": "external-endpoint"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "packages/create-vite/template-qwik/src/app.jsx",
+      "line": 78,
+      "title": "external-endpoint: x.com",
+      "snippet": "<a href=\"https://x.com/vite_js\" target=\"_blank\">",
+      "meaning": "Network destination x.com (known platform/infrastructure). Seen 24 times.",
+      "package": "create-vite",
+      "package_path": "packages/create-vite",
+      "rule": "external-endpoint"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": ".github/ISSUE_TEMPLATE/config.yml",
+      "line": 10,
+      "title": "first-party-endpoint: chat.vite.dev",
+      "snippet": "url: https://chat.vite.dev",
+      "meaning": "Own/related domain chat.vite.dev: first-party traffic, not a third party. Seen 2 times.",
+      "rule": "first-party-endpoint"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "packages/vite/src/node/plugins/asset.ts",
+      "line": 544,
+      "title": "first-party-endpoint: git-lfs.github.com",
+      "snippet": "const GIT_LFS_PREFIX = Buffer.from('version https://git-lfs.github.com')",
+      "meaning": "Own/related domain git-lfs.github.com: first-party traffic, not a third party.",
+      "package": "vite",
+      "package_path": "packages/vite",
+      "rule": "first-party-endpoint"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "package.json",
+      "line": 11,
+      "title": "first-party-endpoint: github.com",
+      "snippet": "\"url\": \"git+https://github.com/vitejs/vite.git\"",
+      "meaning": "Own/related domain github.com: first-party traffic, not a third party. Seen 58 times.",
+      "rule": "first-party-endpoint"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "package.json",
+      "line": 8,
+      "title": "first-party-endpoint: vite.dev",
+      "snippet": "\"homepage\": \"https://vite.dev/\",",
+      "meaning": "Own/related domain vite.dev: first-party traffic, not a third party. Seen 19 times.",
+      "rule": "first-party-endpoint"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "docs/.vitepress/config.ts",
+      "line": 91,
+      "title": "third-party-cdn: fonts.googleapis.com",
+      "snippet": "['link', { rel: 'preconnect', href: 'https://fonts.googleapis.com' }],",
+      "meaning": "Asset requested from fonts.googleapis.com: it sees your IP and the page URL (third-party font/CDN) (docs/test reference).",
+      "package": "@vitejs/monorepo-docs",
+      "package_path": "docs",
+      "rule": "third-party-cdn",
+      "remediation": "self-host the asset, or document and gate the host behind consent"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "playground/ssr-html/src/network-imports.js",
+      "line": 5,
+      "title": "third-party-script: esm.sh",
+      "snippet": "// import slash from 'https://esm.sh/slash@3.0.0'",
+      "meaning": "Module import from esm.sh: code fetched and executed from a third-party server.",
+      "rule": "third-party-script",
+      "remediation": "self-host the asset, or document and gate the host behind consent"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "playground/lib/src/dynamic.css",
+      "line": 1,
+      "title": "third-party-stylesheet: cdn.jsdelivr.net",
+      "snippet": "@import 'https://cdn.jsdelivr.net/npm/@mdi/font@5.9.55/css/materialdesignicons.min.css';",
+      "meaning": "CSS @import from cdn.jsdelivr.net: sees your IP/referrer and can chain further requests.",
+      "rule": "third-party-stylesheet",
+      "remediation": "self-host the asset, or document and gate the host behind consent"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "packages/create-vite/template-svelte-ts/src/App.svelte",
+      "line": 32,
+      "title": "referrer-policy: policy",
+      "snippet": "<a href=\"https://vite.dev/\" target=\"_blank\" rel=\"noreferrer\">",
+      "meaning": "Referrer policy present: third parties see a reduced URL instead of the full one. Seen 20 times.",
+      "package": "create-vite",
+      "package_path": "packages/create-vite",
+      "rule": "referrer-policy",
+      "remediation": "send `Referrer-Policy: strict-origin-when-cross-origin` (or `no-referrer`)"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "file": "playground/fs-serve/__tests__/commonTests.ts",
+      "line": 211,
+      "title": "referrer-policy: unsafe-url",
+      "snippet": "testId: 'unsafe-url',",
+      "meaning": "Referrer policy is unsafe-url: the full URL (including path and query) is sent to third parties anyway. Seen 3 times.",
+      "rule": "referrer-policy",
+      "remediation": "send `Referrer-Policy: strict-origin-when-cross-origin` (or `no-referrer`)"
+    },
+    {
+      "tool": "trust",
+      "severity": "info",
+      "file": "(github)",
+      "line": 0,
+      "title": "trust-signals: repo 2410d old, 84129 stars, 9302 forks, 1399 contributors, owner 2382d old",
+      "snippet": "",
+      "meaning": "Context signal only; never decides the verdict alone.",
+      "rule": "trust-signals"
+    },
+    {
+      "tool": "trust",
+      "severity": "info",
+      "file": "(github)",
+      "line": 0,
+      "title": "release-immutable: latest release v8.4.0 is immutable",
+      "snippet": "",
+      "meaning": "Context signal only; never decides the verdict alone.",
+      "rule": "release-immutable"
+    }
+  ],
+  "raw_findings_count": 166,
+  "notes": [
+    "bandit: no Python files (skipped)",
+    "osv-scanner not installed (skipped)",
+    "workspace: 50 package(s) detected, 255 beyond BEAGLE_MAX_PACKAGES",
+    "AI review skipped (set BEAGLE_LLM_URL to enable; REPO_GUARD_LLM_URL also accepted)"
+  ],
+  "recommended_actions": [
+    "Read the listed findings before trusting it; most may be benign, but confirm each.",
+    "Install only in an isolated environment (container/VM/throwaway user) with no secrets present.",
+    "Don't let an AI agent auto-run its install steps or MCP servers without reviewing them."
+  ]
+}
