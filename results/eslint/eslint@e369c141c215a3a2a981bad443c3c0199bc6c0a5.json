@@ -1,0 +1,3623 @@
+{
+  "version": "1.201.0",
+  "verdict": "YELLOW",
+  "why": "No critical issues; 6 high, 6 medium, 70 low findings worth a look",
+  "counts": {
+    "critical": 0,
+    "high": 6,
+    "medium": 6,
+    "low": 70,
+    "info": 125
+  },
+  "meta": {
+    "target": "https://github.com/eslint/eslint.git",
+    "ref": "e369c141c215a3a2a981bad443c3c0199bc6c0a5",
+    "commit": "e369c141c215a3a2a981bad443c3c0199bc6c0a5",
+    "fetched_via": "git clone --depth 1 --filter=blob:none @ e369c141c215a3a2a981bad443c3c0199bc6c0a5 + sparse checkout (0 archives/binaries listed, not downloaded)",
+    "mode": "docker (--network none, read-only)",
+    "profile": "balanced",
+    "files": 2305,
+    "seconds": 117.5,
+    "scanned_at": "2026-11-28T14:58:56Z",
+    "tools": {
+      "gitleaks": {
+        "findings": 0,
+        "seconds": 4.2,
+        "ok": true,
+        "version": "8.30.1"
+      },
+      "semgrep": {
+        "findings": 0,
+        "seconds": 5.5,
+        "ok": true,
+        "version": "1.187.0"
+      },
+      "guarddog": {
+        "findings": 11,
+        "seconds": 12.7,
+        "ok": true,
+        "version": "3.2.0"
+      },
+      "bandit": {
+        "findings": 0,
+        "seconds": 0.0,
+        "ok": true,
+        "version": "1.9.4"
+      },
+      "agent-checks": {
+        "findings": 191,
+        "seconds": 76.6,
+        "ok": true,
+        "files": 2305
+      },
+      "osv-scanner": {
+        "findings": 0,
+        "seconds": 0.0,
+        "ok": false
+      },
+      "trust": {
+        "findings": 5,
+        "seconds": 1.8,
+        "ok": true
+      }
+    },
+    "suppressed": 0,
+    "suppressions": [],
+    "pii_redacted": true,
+    "privacy_mode": "full",
+    "ruleset": "92559dde022f",
+    "complete": true,
+    "cache": "miss",
+    "workspace": {
+      "packages": [
+        {
+          "name": "eslint-config-eslint",
+          "path": "packages/eslint-config-eslint",
+          "kind": "npm"
+        },
+        {
+          "name": "@eslint/js",
+          "path": "packages/js",
+          "kind": "npm"
+        }
+      ],
+      "dropped": 0,
+      "counts": {
+        "(root)": {
+          "critical": 0,
+          "high": 5,
+          "medium": 6,
+          "low": 70,
+          "info": 124
+        },
+        "eslint-config-eslint": {
+          "critical": 0,
+          "high": 1,
+          "medium": 0,
+          "low": 0,
+          "info": 1
+        },
+        "@eslint/js": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 0,
+          "info": 0
+        }
+      }
+    },
+    "capabilities": {
+      "files": 2305,
+      "network": [
+        {
+          "value": "eslint.org",
+          "file": "CONTRIBUTING.md",
+          "line": 7,
+          "count": 1028,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "eslint.style",
+          "file": "docs/src/_data/rules.json",
+          "line": 1608,
+          "count": 688,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "github.com",
+          "file": "CONTRIBUTING.md",
+          "line": 22,
+          "count": 334,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "developer.mozilla.org",
+          "file": "docs/src/_data/further_reading_links.json",
+          "line": 2,
+          "count": 154,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "www.npmjs.com",
+          "file": "README.md",
+          "line": 1,
+          "count": 46,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "web.archive.org",
+          "file": "docs/src/_data/further_reading_links.json",
+          "line": 58,
+          "count": 35,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "en.wikipedia.org",
+          "file": "docs/src/_data/further_reading_links.json",
+          "line": 44,
+          "count": 31,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "leanpub.com",
+          "file": "docs/src/_data/further_reading_links.json",
+          "line": 156,
+          "count": 30,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "nodejs.org",
+          "file": "README.md",
+          "line": 48,
+          "count": 29,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "es5.github.io",
+          "file": "docs/src/_data/further_reading_links.json",
+          "line": 282,
+          "count": 24,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "tc39.es",
+          "file": "docs/src/_data/further_reading_links.json",
+          "line": 366,
+          "count": 19,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "docs.npmjs.com",
+          "file": "docs/src/contribute/package-json-conventions.md",
+          "line": 34,
+          "count": 17,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "www.ecma-international.org",
+          "file": "docs/src/_data/further_reading_links.json",
+          "line": 352,
+          "count": 13,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "2ality.com",
+          "file": "docs/src/_data/further_reading_links.json",
+          "line": 149,
+          "count": 12,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "img.shields.io",
+          "file": "README.md",
+          "line": 1,
+          "count": 12,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "compat-table.github.io",
+          "file": "docs/src/_data/further_reading_links.json",
+          "line": 849,
+          "count": 9,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "javascriptweblog.wordpress.com",
+          "file": "docs/src/_data/further_reading_links.json",
+          "line": 170,
+          "count": 9,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "raw.githubusercontent.com",
+          "file": "README.md",
+          "line": 355,
+          "count": 9,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "avatars.githubusercontent.com",
+          "file": "README.md",
+          "line": 350,
+          "count": 8,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "benalman.com",
+          "file": "docs/src/_data/further_reading_links.json",
+          "line": 289,
+          "count": 8,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "howtonode.org",
+          "file": "docs/src/_data/further_reading_links.json",
+          "line": 198,
+          "count": 8,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "opencollective.com",
+          "file": "README.md",
+          "line": 5,
+          "count": 8,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "v8.dev",
+          "file": "docs/src/_data/further_reading_links.json",
+          "line": 709,
+          "count": 8,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "wiki.sei.cmu.edu",
+          "file": "docs/src/_data/further_reading_links.json",
+          "line": 758,
+          "count": 8,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "www.typescriptlang.org",
+          "file": "docs/src/rules/class-methods-use-this.md",
+          "line": 149,
+          "count": 8,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "developers.google.com",
+          "file": "docs/src/assets/fonts/Inter/README.txt",
+          "line": 37,
+          "count": 7,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "explorer.eslint.org",
+          "file": "docs/src/_data/links.json",
+          "line": 10,
+          "count": 7,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "262.ecma-international.org",
+          "file": "docs/src/_data/further_reading_links.json",
+          "line": 772,
+          "count": 6,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "images.opencollective.com",
+          "file": "README.md",
+          "line": 350,
+          "count": 6,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "stackoverflow.com",
+          "file": "docs/src/_data/further_reading_links.json",
+          "line": 387,
+          "count": 6,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "www.adequatelygood.com",
+          "file": "docs/src/_data/further_reading_links.json",
+          "line": 30,
+          "count": 6,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "app.codemod.com",
+          "file": "docs/src/use/migrate-to-10.0.0.md",
+          "line": 12,
+          "count": 5,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "archive.org",
+          "file": "docs/src/_data/further_reading_links.json",
+          "line": 61,
+          "count": 5,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "blog.izs.me",
+          "file": "docs/src/_data/further_reading_links.json",
+          "line": 597,
+          "count": 5,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "code.visualstudio.com",
+          "file": "docs/src/pages/flags.md",
+          "line": 125,
+          "count": 5,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "craftsmanshipforsoftware.com",
+          "file": "docs/src/_data/further_reading_links.json",
+          "line": 114,
+          "count": 5,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "example.com",
+          "file": "tests/lib/cli-engine/formatters/html.js",
+          "line": 804,
+          "count": 5,
+          "doc": false,
+          "test": true,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "gist.github.com",
+          "file": "docs/src/_data/further_reading_links.json",
+          "line": 93,
+          "count": 5,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "jsdoc.app",
+          "file": "docs/src/_data/further_reading_links.json",
+          "line": 632,
+          "count": 5,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "mathiasbynens.be",
+          "file": "docs/src/_data/further_reading_links.json",
+          "line": 576,
+          "count": 5,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "npmjs.com",
+          "file": "docs/src/extend/languages.md",
+          "line": 39,
+          "count": 5,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "openjsf.org",
+          "file": "docs/src/_includes/partials/site-footer.html",
+          "line": 9,
+          "count": 5,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "typescript-eslint.io",
+          "file": "docs/src/extend/ways-to-extend.md",
+          "line": 56,
+          "count": 5,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "ariya.io",
+          "file": "docs/src/_data/further_reading_links.json",
+          "line": 107,
+          "count": 4,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "bsky.app",
+          "file": "README.md",
+          "line": 19,
+          "count": 4,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "bugs.chromium.org",
+          "file": "docs/src/_data/further_reading_links.json",
+          "line": 548,
+          "count": 4,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "codepoints.net",
+          "file": "docs/src/_data/further_reading_links.json",
+          "line": 730,
+          "count": 4,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "cwe.mitre.org",
+          "file": "docs/src/_data/further_reading_links.json",
+          "line": 751,
+          "count": 4,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "danhough.com",
+          "file": "docs/src/_data/further_reading_links.json",
+          "line": 646,
+          "count": 4,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "davidwalsh.name",
+          "file": "docs/src/_data/further_reading_links.json",
+          "line": 583,
+          "count": 4,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "docs.nodejitsu.com",
+          "file": "docs/src/_data/further_reading_links.json",
+          "line": 58,
+          "count": 4,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "dojotoolkit.org",
+          "file": "docs/src/_data/further_reading_links.json",
+          "line": 86,
+          "count": 4,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "exploringjs.com",
+          "file": "docs/src/_data/further_reading_links.json",
+          "line": 625,
+          "count": 4,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "fosstodon.org",
+          "file": "README.md",
+          "line": 18,
+          "count": 4,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "git-scm.com",
+          "file": "docs/src/rules/linebreak-style.md",
+          "line": 94,
+          "count": 4,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "jakearchibald.com",
+          "file": "docs/src/_data/further_reading_links.json",
+          "line": 422,
+          "count": 4,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "johnresig.com",
+          "file": "docs/src/_data/further_reading_links.json",
+          "line": 408,
+          "count": 4,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "jscs-dev.github.io",
+          "file": "docs/src/_data/further_reading_links.json",
+          "line": 506,
+          "count": 4,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "json-schema.org",
+          "file": "docs/src/extend/custom-rules.md",
+          "line": 683,
+          "count": 4,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "markdaggett.com",
+          "file": "docs/src/_data/further_reading_links.json",
+          "line": 142,
+          "count": 4,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        }
+      ],
+      "filesystem": [
+        {
+          "value": ".npmrc",
+          "file": "README.md",
+          "line": 68,
+          "count": 4,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "$HOME",
+          "file": "docs/src/use/migrating-to-7.0.0.md",
+          "line": 108,
+          "count": 1,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        }
+      ],
+      "processes": [
+        {
+          "value": "exec(",
+          "file": "Makefile.js",
+          "line": 101,
+          "count": 79,
+          "doc": false,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "child_process",
+          "file": "Makefile.js",
+          "line": 23,
+          "count": 11,
+          "doc": false,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        }
+      ],
+      "environment": [
+        {
+          "value": "ESLINT_FLAGS",
+          "file": "lib/eslint/eslint-helpers.js",
+          "line": 1329,
+          "count": 16,
+          "doc": false,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "TIMING",
+          "file": "lib/linter/timing.js",
+          "line": 44,
+          "count": 16,
+          "doc": false,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "FORCE_COLOR",
+          "file": "tests/lib/cli-engine/formatters/stylish.js",
+          "line": 71,
+          "count": 12,
+          "doc": false,
+          "test": true,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "BRANCH",
+          "file": "docs/.eleventy.js",
+          "line": 45,
+          "count": 10,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "ESLINT_USE_FLAT_CONFIG",
+          "file": "tests/lib/api.js",
+          "line": 46,
+          "count": 6,
+          "doc": false,
+          "test": true,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "CONTEXT",
+          "file": "docs/.eleventy.js",
+          "line": 47,
+          "count": 5,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "ESLINT_TEST_ENV",
+          "file": "tests/lib/eslint/eslint.js",
+          "line": 9234,
+          "count": 5,
+          "doc": false,
+          "test": true,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "NODE_ENV",
+          "file": "docs/src/rules/no-process-env.md",
+          "line": 22,
+          "count": 2,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "CI",
+          "file": "Makefile.js",
+          "line": 602,
+          "count": 1,
+          "doc": false,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "ENV",
+          "file": "tests/lib/rules/no-process-env.js",
+          "line": 38,
+          "count": 1,
+          "doc": false,
+          "test": true,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "ESLINT_MOCHA_TIMEOUT",
+          "file": "Makefile.js",
+          "line": 89,
+          "count": 1,
+          "doc": false,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "ESLINT_SITE_NAME",
+          "file": "docs/.eleventy.js",
+          "line": 62,
+          "count": 1,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "FORMATTER_SKIP_WARNINGS",
+          "file": "docs/src/extend/custom-formatters.md",
+          "line": 138,
+          "count": 1,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "NODE_DEBUG",
+          "file": "tests/bench/large.js",
+          "line": 7281,
+          "count": 1,
+          "doc": false,
+          "test": true,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "SUMMARY_TEXT",
+          "file": "tools/test-ecosystem/sync-ecosystem-issue.js",
+          "line": 18,
+          "count": 1,
+          "doc": false,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        }
+      ],
+      "storage": [
+        {
+          "value": "localStorage",
+          "file": "docs/src/_includes/layouts/base.html",
+          "line": 77,
+          "count": 6,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "sessionStorage",
+          "file": "tests/bench/large.js",
+          "line": 19057,
+          "count": 2,
+          "doc": false,
+          "test": true,
+          "verified": false,
+          "source": "static"
+        }
+      ]
+    },
+    "coverage": {
+      "files_total": 2305,
+      "files_scanned": 2099,
+      "bytes_total": 23910951,
+      "bytes_scanned": 17539099,
+      "bytes_scanned_pct": 73.4,
+      "skipped": {
+        "archive": 0,
+        "binary": 0,
+        "oversize": 0,
+        "unreadable": 0,
+        "unsupported": 206
+      },
+      "unscanned_extensions": [
+        [
+          ".svg",
+          56
+        ],
+        [
+          "(none)",
+          46
+        ],
+        [
+          ".scss",
+          35
+        ],
+        [
+          ".ttf",
+          24
+        ],
+        [
+          ".mts",
+          9
+        ],
+        [
+          ".png",
+          8
+        ],
+        [
+          ".cts",
+          5
+        ],
+        [
+          ".woff",
+          5
+        ],
+        [
+          ".njk",
+          4
+        ],
+        [
+          ".woff2",
+          4
+        ],
+        [
+          ".js2",
+          3
+        ],
+        [
+          ".ejs",
+          2
+        ]
+      ],
+      "languages": {
+        "inspected": {
+          "JavaScript": 1460,
+          "TypeScript": 22,
+          "Shell": 1
+        },
+        "no_rules": {}
+      }
+    },
+    "privacy_summary": {
+      "trackers": {
+        "analytics": [
+          "Google Analytics",
+          "Google Tag Manager"
+        ]
+      },
+      "pii": [
+        "e***@googlegroups.com",
+        "docs: 1 address(es) in docs/src/assets/fonts/Inter/OFL.txt",
+        "docs: 1 address(es) in tests/fixtures/autofix-integration/left-pad-expected-quiet.js",
+        "docs: 1 address(es) in tests/fixtures/autofix-integration/left-pad-expected.js",
+        "docs: 1 address(es) in tests/fixtures/autofix-integration/left-pad.js",
+        "docs: 1 address(es) in tests/fixtures/testers/rule-tester/no-test-runners.js",
+        "docs: 1 address(es) in tests/lib/config/config.js",
+        "docs: 1 address(es) in tests/lib/rules/for-direction.js",
+        "docs: 1 address(es) in tests/lib/rules/getter-return.js",
+        "docs: 1 address(es) in tests/lib/rules/lines-between-class-members.js",
+        "docs: 1 address(es) in tests/lib/rules/max-lines-per-function.js",
+        "docs: 1 address(es) in tests/lib/rules/no-compare-neg-zero.js",
+        "docs: 1 address(es) in tests/lib/rules/no-extra-bind.js",
+        "docs: 1 address(es) in tests/lib/universal.js",
+        "docs: 2 address(es) in tests/lib/config/flat-config-array.js",
+        "docs: 57 address(es) in CHANGELOG.md",
+        "n***@nczconsulting.com",
+        "typescript@5.3",
+        "typescript@5.x"
+      ],
+      "permissions": [
+        "browsing history"
+      ],
+      "storage": [
+        "localStorage/sessionStorage"
+      ],
+      "consent": [
+        "trackers but no Do-Not-Track/opt-out reference",
+        "trackers with no consent manager detected"
+      ],
+      "first_party": [
+        "cn.eslint.org",
+        "eslint.org",
+        "explorer.eslint.org",
+        "fr.eslint.org",
+        "github.com",
+        "ja.eslint.org"
+      ],
+      "network": [
+        "stackblitz.com",
+        "cdn.carbonads.com",
+        "media.ethicalads.io",
+        "www.googletagmanager.com",
+        "utm/campaign parameters",
+        "bluebirdjs.com",
+        "inimino.org",
+        "jscomplexity.org",
+        "markdaggett.com",
+        "thomas.tuerke.net",
+        "timelessrepo.com",
+        "www.amazon.de",
+        "www.google.de",
+        "www.mind2b.com",
+        "262.ecma-international.org",
+        "2ality.com",
+        "archive.org",
+        "ariya.io",
+        "benalman.com",
+        "blog.benhall.me.uk",
+        "blog.izs.me",
+        "bocoup.com",
+        "book.mixu.net",
+        "bsky.app",
+        "bugs.chromium.org",
+        "bylaws.openjsf.org",
+        "cdn.sstatic.net",
+        "codepoints.net",
+        "compat-table.github.io",
+        "craftsmanshipforsoftware.com",
+        "cwe.mitre.org",
+        "danhough.com",
+        "davidwalsh.name",
+        "dev-to-uploads.s3.amazonaws.com",
+        "dev.to",
+        "developer.mozilla.org",
+        "docs.nodejitsu.com",
+        "dojotoolkit.org",
+        "en.wikipedia.org",
+        "ericlippert.com",
+        "es5.github.io",
+        "eslint.style",
+        "eslint.threadless.com",
+        "exploringjs.com",
+        "fosstodon.org",
+        "gist.github.com",
+        "github.com",
+        "github.githubassets.com",
+        "howtonode.org",
+        "inklingstatic.a.ssl.fastly.net",
+        "jakearchibald.com",
+        "javascriptweblog.wordpress.com",
+        "johnresig.com",
+        "jscs-dev.github.io",
+        "jsdoc.app",
+        "jshint.com",
+        "leanpub.com",
+        "mathiasbynens.be",
+        "media2.dev.to",
+        "opencollective.com",
+        "openjsf.org",
+        "oreilly.com",
+        "privacy-policy.openjsf.org",
+        "raw.githubusercontent.com",
+        "registry.npmjs.org",
+        "rules.sonarsource.com",
+        "s0.wp.com",
+        "s1.wp.com",
+        "spin.atomicobject.com",
+        "stackoverflow.com",
+        "static3.bocoup.com",
+        "tc39.es",
+        "terms-of-use.openjsf.org",
+        "trademark-list.openjsf.org",
+        "trademark-policy.openjsf.org",
+        "twitter.com",
+        "v8.dev",
+        "web.archive.org",
+        "wiki.sei.cmu.edu",
+        "www.adequatelygood.com",
+        "www.algolia.com",
+        "www.crockford.com",
+        "www.ecma-international.org",
+        "www.emacswiki.org",
+        "www.inkling.com",
+        "www.linuxfoundation.org",
+        "www.nczonline.net",
+        "www.openjsf.org",
+        "www.oreilly.com",
+        "www.smashingmagazine.com",
+        "yuiblog.com",
+        "unpkg.com",
+        "cdn.jsdelivr.net",
+        "policy"
+      ],
+      "retention": [
+        "retention-days"
+      ],
+      "uploads": [
+        "file upload",
+        "size cap"
+      ],
+      "transparency": [
+        "no privacy policy file"
+      ]
+    },
+    "privacy_profile": "Privacy profile: 2 tracker vendor(s), 92 third-party host(s), 19 PII item(s), 1 permission scope(s), 2 consent signal(s)",
+    "checks": {
+      "gha-curl-pipe-shell": {
+        "evaluated": true,
+        "files": 2305,
+        "hits": 0,
+        "suppressed": 0,
+        "negative": "no workflow pipes a downloaded script into a shell",
+        "family": "agent",
+        "documented": false
+      },
+      "gha-unpinned-action": {
+        "evaluated": true,
+        "files": 2305,
+        "hits": 10,
+        "suppressed": 0,
+        "negative": "no action is referenced by a moving tag/branch instead of a commit SHA",
+        "family": "agent",
+        "documented": false
+      },
+      "gha-pwn-request": {
+        "evaluated": true,
+        "files": 2305,
+        "hits": 0,
+        "suppressed": 0,
+        "negative": "no pull_request_target/workflow_run workflow checks out the PR head with secrets",
+        "family": "agent",
+        "documented": false
+      },
+      "npm lifecycle script 'postinstall' runs automatically on install": {
+        "evaluated": true,
+        "files": 2305,
+        "hits": 0,
+        "suppressed": 0,
+        "negative": "no npm lifecycle hook runs automatically on install",
+        "family": "agent",
+        "documented": false
+      },
+      "Download-and-execute": {
+        "evaluated": true,
+        "files": 2305,
+        "hits": 0,
+        "suppressed": 0,
+        "negative": "no installer/script is downloaded and executed",
+        "family": "agent",
+        "documented": false
+      },
+      "gguf-chat-template-command": {
+        "evaluated": true,
+        "files": 2305,
+        "hits": 0,
+        "suppressed": 0,
+        "negative": "no GGUF chat template makes the model print a shell command",
+        "family": "agent",
+        "documented": false
+      },
+      "Code reads secrets/credentials near a network call": {
+        "evaluated": true,
+        "files": 2305,
+        "hits": 0,
+        "suppressed": 0,
+        "negative": "no credential file is read next to a network sink",
+        "family": "agent",
+        "documented": false
+      },
+      "import-time-network": {
+        "evaluated": true,
+        "files": 2305,
+        "hits": 0,
+        "suppressed": 0,
+        "negative": "no network call runs at module scope",
+        "family": "privacy",
+        "documented": true
+      },
+      "third-party-script": {
+        "evaluated": true,
+        "files": 2305,
+        "hits": 4,
+        "suppressed": 0,
+        "negative": "no script is loaded from a third-party host",
+        "family": "privacy",
+        "documented": true
+      },
+      "cookie-flags": {
+        "evaluated": true,
+        "files": 2305,
+        "hits": 0,
+        "suppressed": 0,
+        "negative": "no cookie is written without Secure/SameSite where it matters",
+        "family": "privacy",
+        "documented": true
+      },
+      "pii-in-url": {
+        "evaluated": true,
+        "files": 2305,
+        "hits": 0,
+        "suppressed": 0,
+        "negative": "no PII is placed in URL query parameters",
+        "family": "privacy",
+        "documented": true
+      }
+    },
+    "scanned_repo": "eslint/eslint",
+    "scanned_sha": "e369c141c215a3a2a981bad443c3c0199bc6c0a5",
+    "index": {
+      "name": "repobeagle",
+      "version": "1.201.0",
+      "mode": "github"
+    }
+  },
+  "privacy_summary": {
+    "trackers": {
+      "analytics": [
+        "Google Analytics",
+        "Google Tag Manager"
+      ]
+    },
+    "pii": [
+      "e***@googlegroups.com",
+      "docs: 1 address(es) in docs/src/assets/fonts/Inter/OFL.txt",
+      "docs: 1 address(es) in tests/fixtures/autofix-integration/left-pad-expected-quiet.js",
+      "docs: 1 address(es) in tests/fixtures/autofix-integration/left-pad-expected.js",
+      "docs: 1 address(es) in tests/fixtures/autofix-integration/left-pad.js",
+      "docs: 1 address(es) in tests/fixtures/testers/rule-tester/no-test-runners.js",
+      "docs: 1 address(es) in tests/lib/config/config.js",
+      "docs: 1 address(es) in tests/lib/rules/for-direction.js",
+      "docs: 1 address(es) in tests/lib/rules/getter-return.js",
+      "docs: 1 address(es) in tests/lib/rules/lines-between-class-members.js",
+      "docs: 1 address(es) in tests/lib/rules/max-lines-per-function.js",
+      "docs: 1 address(es) in tests/lib/rules/no-compare-neg-zero.js",
+      "docs: 1 address(es) in tests/lib/rules/no-extra-bind.js",
+      "docs: 1 address(es) in tests/lib/universal.js",
+      "docs: 2 address(es) in tests/lib/config/flat-config-array.js",
+      "docs: 57 address(es) in CHANGELOG.md",
+      "n***@nczconsulting.com",
+      "typescript@5.3",
+      "typescript@5.x"
+    ],
+    "permissions": [
+      "browsing history"
+    ],
+    "storage": [
+      "localStorage/sessionStorage"
+    ],
+    "consent": [
+      "trackers but no Do-Not-Track/opt-out reference",
+      "trackers with no consent manager detected"
+    ],
+    "first_party": [
+      "cn.eslint.org",
+      "eslint.org",
+      "explorer.eslint.org",
+      "fr.eslint.org",
+      "github.com",
+      "ja.eslint.org"
+    ],
+    "network": [
+      "stackblitz.com",
+      "cdn.carbonads.com",
+      "media.ethicalads.io",
+      "www.googletagmanager.com",
+      "utm/campaign parameters",
+      "bluebirdjs.com",
+      "inimino.org",
+      "jscomplexity.org",
+      "markdaggett.com",
+      "thomas.tuerke.net",
+      "timelessrepo.com",
+      "www.amazon.de",
+      "www.google.de",
+      "www.mind2b.com",
+      "262.ecma-international.org",
+      "2ality.com",
+      "archive.org",
+      "ariya.io",
+      "benalman.com",
+      "blog.benhall.me.uk",
+      "blog.izs.me",
+      "bocoup.com",
+      "book.mixu.net",
+      "bsky.app",
+      "bugs.chromium.org",
+      "bylaws.openjsf.org",
+      "cdn.sstatic.net",
+      "codepoints.net",
+      "compat-table.github.io",
+      "craftsmanshipforsoftware.com",
+      "cwe.mitre.org",
+      "danhough.com",
+      "davidwalsh.name",
+      "dev-to-uploads.s3.amazonaws.com",
+      "dev.to",
+      "developer.mozilla.org",
+      "docs.nodejitsu.com",
+      "dojotoolkit.org",
+      "en.wikipedia.org",
+      "ericlippert.com",
+      "es5.github.io",
+      "eslint.style",
+      "eslint.threadless.com",
+      "exploringjs.com",
+      "fosstodon.org",
+      "gist.github.com",
+      "github.com",
+      "github.githubassets.com",
+      "howtonode.org",
+      "inklingstatic.a.ssl.fastly.net",
+      "jakearchibald.com",
+      "javascriptweblog.wordpress.com",
+      "johnresig.com",
+      "jscs-dev.github.io",
+      "jsdoc.app",
+      "jshint.com",
+      "leanpub.com",
+      "mathiasbynens.be",
+      "media2.dev.to",
+      "opencollective.com",
+      "openjsf.org",
+      "oreilly.com",
+      "privacy-policy.openjsf.org",
+      "raw.githubusercontent.com",
+      "registry.npmjs.org",
+      "rules.sonarsource.com",
+      "s0.wp.com",
+      "s1.wp.com",
+      "spin.atomicobject.com",
+      "stackoverflow.com",
+      "static3.bocoup.com",
+      "tc39.es",
+      "terms-of-use.openjsf.org",
+      "trademark-list.openjsf.org",
+      "trademark-policy.openjsf.org",
+      "twitter.com",
+      "v8.dev",
+      "web.archive.org",
+      "wiki.sei.cmu.edu",
+      "www.adequatelygood.com",
+      "www.algolia.com",
+      "www.crockford.com",
+      "www.ecma-international.org",
+      "www.emacswiki.org",
+      "www.inkling.com",
+      "www.linuxfoundation.org",
+      "www.nczonline.net",
+      "www.openjsf.org",
+      "www.oreilly.com",
+      "www.smashingmagazine.com",
+      "yuiblog.com",
+      "unpkg.com",
+      "cdn.jsdelivr.net",
+      "policy"
+    ],
+    "retention": [
+      "retention-days"
+    ],
+    "uploads": [
+      "file upload",
+      "size cap"
+    ],
+    "transparency": [
+      "no privacy policy file"
+    ]
+  },
+  "ai_review": null,
+  "findings": [
+    {
+      "tool": "guarddog",
+      "severity": "high",
+      "rule": "GuardDog npm package",
+      "file": "tests/lib/rules/no-process-env.js",
+      "line": 22,
+      "title": "GuardDog npm package: threat-filesystem-read",
+      "snippet": "valid: [ \"Process.env\", \"process[env]\", \"process.nextTick\",",
+      "meaning": "Detects access to sensitive files (credentials, configs, keys)",
+      "remediation": "read the flagged package behaviour; pin a version you reviewed, or replace the package"
+    },
+    {
+      "tool": "guarddog",
+      "severity": "high",
+      "rule": "GuardDog npm package",
+      "file": "tests/lib/rules/no-process-env.js",
+      "line": 30,
+      "title": "GuardDog npm package: threat-filesystem-read",
+      "snippet": "{ code: \"process.env\", errors: [ {",
+      "meaning": "Detects access to sensitive files (credentials, configs, keys)",
+      "remediation": "read the flagged package behaviour; pin a version you reviewed, or replace the package"
+    },
+    {
+      "tool": "guarddog",
+      "severity": "high",
+      "rule": "GuardDog npm package",
+      "file": "tests/lib/rules/no-process-env.js",
+      "line": 38,
+      "title": "GuardDog npm package: threat-filesystem-read",
+      "snippet": "{ code: \"process.env.ENV\", errors: [ {",
+      "meaning": "Detects access to sensitive files (credentials, configs, keys)",
+      "remediation": "read the flagged package behaviour; pin a version you reviewed, or replace the package"
+    },
+    {
+      "tool": "guarddog",
+      "severity": "high",
+      "rule": "GuardDog npm package",
+      "file": "tests/bench/large.js",
+      "line": 7926,
+      "title": "GuardDog npm package: threat-runtime-obfuscation-log-suppress",
+      "snippet": "} else { console = window.console = {}; }",
+      "meaning": "Detects log/console suppression combined with obfuscated code, a common malware evasion pattern",
+      "remediation": "read the flagged package behaviour; pin a version you reviewed, or replace the package"
+    },
+    {
+      "tool": "guarddog",
+      "severity": "high",
+      "rule": "GuardDog npm package",
+      "file": "tests/lib/rules/utils/char-source.js",
+      "line": 18,
+      "title": "GuardDog npm package: threat-runtime-obfuscation-unicode",
+      "snippet": "description: \"works with surrogate pairs\", source: '\"a\ud834\udd1ez\"', expectedCodeUnits: [ { start: 1, source: \"a\" },",
+      "meaning": "Detects unicode homoglyphs and uncommon characters used for obfuscation",
+      "remediation": "read the flagged package behaviour; pin a version you reviewed, or replace the package"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "high",
+      "rule": "npm lifecycle script 'prepublish' runs automatically on install",
+      "file": "packages/eslint-config-eslint/package.json",
+      "line": 45,
+      "title": "npm lifecycle script 'prepublish' runs automatically on install",
+      "snippet": "\"prepublish\": \"npm test\"",
+      "meaning": "npm runs this on `npm install` with your user's permissions.",
+      "package": "eslint-config-eslint",
+      "package_path": "packages/eslint-config-eslint",
+      "remediation": "run `npm ci --ignore-scripts`, or review the script; `postinstall` runs automatically on every install"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "medium",
+      "rule": "md-alt-title-instruction",
+      "file": "README.md",
+      "line": 352,
+      "title": "md-alt-title-instruction: Image alt/title text carries agent instructions",
+      "snippet": "alt=\"Citadel AI",
+      "meaning": "Alt/title text is rarely seen by humans but is read by agents.",
+      "remediation": "move the instruction to visible text, or keep it if it is intentionally written for agents"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "medium",
+      "rule": "gha-privileged-trigger",
+      "file": ".github/workflows/pr-labeler.yml",
+      "line": 2,
+      "title": "gha-privileged-trigger: workflow uses pull_request_target",
+      "snippet": "pull_request_target",
+      "meaning": "Runs with repository secrets on events from forks; review carefully.",
+      "remediation": "prefer `pull_request`, and check who can push to `workflow_run` upstream branches"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "medium",
+      "rule": "Large base64-like blob in source",
+      "file": "lib/cli-engine/formatters/html.js",
+      "line": 42,
+      "title": "Large base64-like blob in source",
+      "snippet": "<link rel=\"icon\" type=\"image/png\" sizes=\"any\" href=\"data:image/png;base6...",
+      "meaning": "Embedded encoded payloads are often used to hide malware."
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "medium",
+      "rule": "Large base64-like blob in source",
+      "file": "lib/cli-engine/formatters/html.js",
+      "line": 43,
+      "title": "Large base64-like blob in source",
+      "snippet": "<link rel=\"icon\" type=\"image/svg+xml\" href=\"data:image/svg+xml;base64,PH...",
+      "meaning": "Embedded encoded payloads are often used to hide malware."
+    },
+    {
+      "tool": "telemetry",
+      "severity": "medium",
+      "rule": "telemetry-analytics",
+      "file": "docs/src/_data/sites/en.yml",
+      "line": 24,
+      "title": "telemetry-analytics: Google Analytics",
+      "snippet": "code: \"G-7DGPHY308T\"",
+      "meaning": "Product/web analytics: page views, events and a persistent identifier leave the device. Seen 7 times; first at docs/src/_data/sites/en.yml:24. No opt-out / disable flag found in the repo.",
+      "remediation": "gate the SDK behind consent, or disable it with its documented opt-out"
+    },
+    {
+      "tool": "telemetry",
+      "severity": "medium",
+      "rule": "telemetry-analytics",
+      "file": "docs/src/_includes/layouts/base.html",
+      "line": 73,
+      "title": "telemetry-analytics: Google Tag Manager",
+      "snippet": "<link rel=\"preconnect\" href=\"https://www.googletagmanager.com/\">",
+      "meaning": "Product/web analytics: page views, events and a persistent identifier leave the device. Seen 2 times; first at docs/src/_includes/layouts/base.html:73. No opt-out / disable flag found in the repo.",
+      "remediation": "gate the SDK behind consent, or disable it with its documented opt-out"
+    },
+    {
+      "tool": "guarddog",
+      "severity": "low",
+      "rule": "GuardDog npm package",
+      "file": "lib/eslint/eslint.js",
+      "line": 1015,
+      "title": "GuardDog npm package: capability-filesystem-delete",
+      "snippet": "if (existsSync(cacheFilePath)) { await fs.unlink(cacheFilePath); } } catch (error) {",
+      "meaning": "Detects file/directory deletion capabilities",
+      "remediation": "read the flagged package behaviour; pin a version you reviewed, or replace the package"
+    },
+    {
+      "tool": "guarddog",
+      "severity": "low",
+      "rule": "GuardDog npm package",
+      "file": "bin/eslint.js",
+      "line": 55,
+      "title": "GuardDog npm package: capability-filesystem-read",
+      "snippet": ".on(\"readable\", () => { while ((chunk = process.stdin.read()) !== null) { content += chunk; }",
+      "meaning": "Detects filesystem read capabilities",
+      "remediation": "read the flagged package behaviour; pin a version you reviewed, or replace the package"
+    },
+    {
+      "tool": "guarddog",
+      "severity": "low",
+      "rule": "GuardDog npm package",
+      "file": "tests/bench/large.js",
+      "line": 1837,
+      "title": "GuardDog npm package: capability-filesystem-write-executable",
+      "snippet": "20746, 20747, 20748, 20749, 20750, 20751, 20752, 20753, 20754, 20755, 20756, 20757, 20758, 20759, 20760, 20761, 20762, 20763, 20764, 20765, 20766, 20767, 20768,",
+      "meaning": "Detects writing executable files or changing file permissions to executable",
+      "remediation": "read the flagged package behaviour; pin a version you reviewed, or replace the package"
+    },
+    {
+      "tool": "guarddog",
+      "severity": "low",
+      "rule": "GuardDog npm package",
+      "file": "tests/lib/rules/newline-per-chained-call.js",
+      "line": 196,
+      "title": "GuardDog npm package: capability-network-download",
+      "snippet": "code: [ \"http.request({\", \" // Param\", \" // Param\",",
+      "meaning": "Detects downloading files from network",
+      "remediation": "read the flagged package behaviour; pin a version you reviewed, or replace the package"
+    },
+    {
+      "tool": "guarddog",
+      "severity": "low",
+      "rule": "GuardDog npm package",
+      "file": "Makefile.js",
+      "line": 181,
+      "title": "GuardDog npm package: capability-network-outbound",
+      "snippet": "ruleTypes = \"conf/rule-type-list.json\", ruleTypesData = JSON.parse(cat(path.resolve(ruleTypes))); const meta = {};",
+      "meaning": "Detects network request capabilities (HTTP, sockets, etc.)",
+      "remediation": "read the flagged package behaviour; pin a version you reviewed, or replace the package"
+    },
+    {
+      "tool": "guarddog",
+      "severity": "low",
+      "rule": "GuardDog npm package",
+      "file": "Makefile.js",
+      "line": 101,
+      "title": "GuardDog npm package: capability-process-spawn",
+      "snippet": "function execSilent(cmd) { return exec(cmd, { silent: true }).stdout; }",
+      "meaning": "Detects process execution and spawning",
+      "remediation": "read the flagged package behaviour; pin a version you reviewed, or replace the package"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "rule": "gha-unpinned-action",
+      "file": ".github/workflows/ci.yml",
+      "line": 16,
+      "title": "gha-unpinned-action: 12 action(s) on a tag/branch, not a commit SHA",
+      "snippet": "- uses: actions/checkout@v7",
+      "meaning": "Tags can be moved to malicious code (e.g. tj-actions/changed-files, 2025).",
+      "remediation": "pin `uses:` to a full 40-character commit SHA"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "rule": "gha-unpinned-action",
+      "file": ".github/workflows/codeql-analysis.yml",
+      "line": 43,
+      "title": "gha-unpinned-action: 4 action(s) on a tag/branch, not a commit SHA",
+      "snippet": "uses: actions/checkout@v7",
+      "meaning": "Tags can be moved to malicious code (e.g. tj-actions/changed-files, 2025).",
+      "remediation": "pin `uses:` to a full 40-character commit SHA"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "rule": "gha-unpinned-action",
+      "file": ".github/workflows/docs-ci.yml",
+      "line": 21,
+      "title": "gha-unpinned-action: 2 action(s) on a tag/branch, not a commit SHA",
+      "snippet": "- uses: actions/checkout@v7",
+      "meaning": "Tags can be moved to malicious code (e.g. tj-actions/changed-files, 2025).",
+      "remediation": "pin `uses:` to a full 40-character commit SHA"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "rule": "gha-unpinned-action",
+      "file": ".github/workflows/ecosystem-updates.yml",
+      "line": 18,
+      "title": "gha-unpinned-action: 2 action(s) on a tag/branch, not a commit SHA",
+      "snippet": "- uses: actions/checkout@v7",
+      "meaning": "Tags can be moved to malicious code (e.g. tj-actions/changed-files, 2025).",
+      "remediation": "pin `uses:` to a full 40-character commit SHA"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "rule": "gha-unpinned-action",
+      "file": ".github/workflows/update-readme.yml",
+      "line": 17,
+      "title": "gha-unpinned-action: 2 action(s) on a tag/branch, not a commit SHA",
+      "snippet": "uses: actions/checkout@v7",
+      "meaning": "Tags can be moved to malicious code (e.g. tj-actions/changed-files, 2025).",
+      "remediation": "pin `uses:` to a full 40-character commit SHA"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "rule": "gha-unpinned-action",
+      "file": ".github/workflows/ecosystem-tests.yml",
+      "line": 36,
+      "title": "gha-unpinned-action: 8 action(s) on a tag/branch, not a commit SHA",
+      "snippet": "- uses: actions/checkout@v7",
+      "meaning": "Tags can be moved to malicious code (e.g. tj-actions/changed-files, 2025).",
+      "remediation": "pin `uses:` to a full 40-character commit SHA"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "rule": "gha-write-permissions",
+      "file": ".github/workflows/ecosystem-updates.yml",
+      "line": 10,
+      "title": "gha-write-permissions: workflow token has write permissions",
+      "snippet": "contents: write",
+      "meaning": "A compromised step can push code or publish packages.",
+      "remediation": "add a least-privilege `permissions:` block to the workflow"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "rule": "gha-write-permissions",
+      "file": ".github/workflows/ecosystem-updates.yml",
+      "line": 11,
+      "title": "gha-write-permissions: workflow token has write permissions",
+      "snippet": "pull-requests: write",
+      "meaning": "A compromised step can push code or publish packages.",
+      "remediation": "add a least-privilege `permissions:` block to the workflow"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "rule": "gha-write-permissions",
+      "file": ".github/workflows/pr-labeler.yml",
+      "line": 7,
+      "title": "gha-write-permissions: workflow token has write permissions",
+      "snippet": "pull-requests: write",
+      "meaning": "A compromised step can push code or publish packages.",
+      "remediation": "add a least-privilege `permissions:` block to the workflow"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "rule": "gha-write-permissions",
+      "file": ".github/workflows/stale.yml",
+      "line": 9,
+      "title": "gha-write-permissions: workflow token has write permissions",
+      "snippet": "pull-requests: write",
+      "meaning": "A compromised step can push code or publish packages.",
+      "remediation": "add a least-privilege `permissions:` block to the workflow"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "rule": "gha-unpinned-action",
+      "file": ".github/workflows/pr-labeler.yml",
+      "line": 10,
+      "title": "gha-unpinned-action: 1 action(s) on a tag/branch, not a commit SHA",
+      "snippet": "- uses: actions/labeler@v7",
+      "meaning": "Tags can be moved to malicious code (e.g. tj-actions/changed-files, 2025).",
+      "remediation": "pin `uses:` to a full 40-character commit SHA"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "rule": "gha-unpinned-action",
+      "file": ".github/workflows/rebuild-docs-sites.yml",
+      "line": 17,
+      "title": "gha-unpinned-action: 1 action(s) on a tag/branch, not a commit SHA",
+      "snippet": "- uses: actions/checkout@v7",
+      "meaning": "Tags can be moved to malicious code (e.g. tj-actions/changed-files, 2025).",
+      "remediation": "pin `uses:` to a full 40-character commit SHA"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "rule": "gha-unpinned-action",
+      "file": ".github/workflows/stale.yml",
+      "line": 13,
+      "title": "gha-unpinned-action: 1 action(s) on a tag/branch, not a commit SHA",
+      "snippet": "uses: eslint/workflows/.github/workflows/stale.yml@main",
+      "meaning": "Tags can be moved to malicious code (e.g. tj-actions/changed-files, 2025).",
+      "remediation": "pin `uses:` to a full 40-character commit SHA"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "rule": "gha-unpinned-action",
+      "file": ".github/workflows/types-integration.yml",
+      "line": 17,
+      "title": "gha-unpinned-action: 26 action(s) on a tag/branch, not a commit SHA",
+      "snippet": "uses: actions/checkout@v7",
+      "meaning": "Tags can be moved to malicious code (e.g. tj-actions/changed-files, 2025).",
+      "remediation": "pin `uses:` to a full 40-character commit SHA"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "rule": "Zero-width characters",
+      "file": "docs/src/assets/js/css-vars-ponyfill@2.js",
+      "line": 402,
+      "title": "Zero-width characters (1)",
+      "snippet": "return e.replace(/,/g, \"\");",
+      "meaning": "Zero-width chars can hide text or break keyword filters; text with them removed: \"return e.replace(/,/g, \"\");\"",
+      "remediation": "strip the invisible characters (U+200B\u2013U+200F, U+2060\u2013U+2064, U+00AD, or tag characters) unless they are deliberate"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "rule": "Zero-width characters",
+      "file": "docs/src/rules/no-irregular-whitespace.md",
+      "line": 139,
+      "title": "Zero-width characters (1)",
+      "snippet": "return '<ZWSP>thing';",
+      "meaning": "Zero-width chars can hide text or break keyword filters; text with them removed: \"return '<ZWSP>thing';\"",
+      "remediation": "strip the invisible characters (U+200B\u2013U+200F, U+2060\u2013U+2064, U+00AD, or tag characters) unless they are deliberate"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "rule": "Zero-width characters",
+      "file": "docs/src/rules/require-unicode-regexp.md",
+      "line": 41,
+      "title": "Zero-width characters (1)",
+      "snippet": "re.test('\ud83d\udc68\ud83c\udffe\u2695\ufe0f'); // '\\u{1F468}\\u{1F3FE}\\u200D\\u2695\\uFE0F'",
+      "meaning": "Zero-width chars can hide text or break keyword filters; text with them removed: \"re.test('\ud83d\udc68\ud83c\udffe\u2695\ufe0f'); // '\\u{1F468}\\u{1F3FE}\\u200D\\u2695\\uFE0F'\"",
+      "remediation": "strip the invisible characters (U+200B\u2013U+200F, U+2060\u2013U+2064, U+00AD, or tag characters) unless they are deliberate"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "rule": "Zero-width characters",
+      "file": "docs/src/rules/unicode-bom.md",
+      "line": 34,
+      "title": "Zero-width characters (1)",
+      "snippet": "// U+FEFF at the beginning",
+      "meaning": "Zero-width chars can hide text or break keyword filters; text with them removed: \"// U+FEFF at the beginning\"",
+      "remediation": "strip the invisible characters (U+200B\u2013U+200F, U+2060\u2013U+2064, U+00AD, or tag characters) unless they are deliberate"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "rule": "Zero-width characters",
+      "file": "docs/src/rules/unicode-bom.md",
+      "line": 74,
+      "title": "Zero-width characters (1)",
+      "snippet": "// U+FEFF at the beginning",
+      "meaning": "Zero-width chars can hide text or break keyword filters; text with them removed: \"// U+FEFF at the beginning\"",
+      "remediation": "strip the invisible characters (U+200B\u2013U+200F, U+2060\u2013U+2064, U+00AD, or tag characters) unless they are deliberate"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "rule": "Zero-width characters",
+      "file": "docs/src/use/migrate-to-10.0.0.md",
+      "line": 429,
+      "title": "Zero-width characters (1)",
+      "snippet": "Example of invalid usage:",
+      "meaning": "Zero-width chars can hide text or break keyword filters; text with them removed: \"Example of invalid usage:\"",
+      "remediation": "strip the invisible characters (U+200B\u2013U+200F, U+2060\u2013U+2064, U+00AD, or tag characters) unless they are deliberate"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "rule": "Zero-width characters",
+      "file": "tests/lib/rules/key-spacing.js",
+      "line": 1078,
+      "title": "Zero-width characters (1)",
+      "snippet": "\"\ud83c\udff3\ufe0f\ud83c\udf08\": \"xyz\", // 1 grapheme, 4 code points, 6 code units",
+      "meaning": "Zero-width chars can hide text or break keyword filters; text with them removed: \"\"\ud83c\udff3\ufe0f\ud83c\udf08\": \"xyz\", // 1 grapheme, 4 code points, 6 code units\"",
+      "remediation": "strip the invisible characters (U+200B\u2013U+200F, U+2060\u2013U+2064, U+00AD, or tag characters) unless they are deliberate"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "rule": "Zero-width characters",
+      "file": "tests/lib/rules/key-spacing.js",
+      "line": 3270,
+      "title": "Zero-width characters (1)",
+      "snippet": "\"\ud83c\udff3\ufe0f\ud83c\udf08\": \"xyz\", // 1 grapheme, 4 code points, 6 code units",
+      "meaning": "Zero-width chars can hide text or break keyword filters; text with them removed: \"\"\ud83c\udff3\ufe0f\ud83c\udf08\": \"xyz\", // 1 grapheme, 4 code points, 6 code units\"",
+      "remediation": "strip the invisible characters (U+200B\u2013U+200F, U+2060\u2013U+2064, U+00AD, or tag characters) unless they are deliberate"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "rule": "Zero-width characters",
+      "file": "tests/lib/rules/key-spacing.js",
+      "line": 3278,
+      "title": "Zero-width characters (1)",
+      "snippet": "\"\ud83c\udff3\ufe0f\ud83c\udf08\": \"xyz\", // 1 grapheme, 4 code points, 6 code units",
+      "meaning": "Zero-width chars can hide text or break keyword filters; text with them removed: \"\"\ud83c\udff3\ufe0f\ud83c\udf08\": \"xyz\", // 1 grapheme, 4 code points, 6 code units\"",
+      "remediation": "strip the invisible characters (U+200B\u2013U+200F, U+2060\u2013U+2064, U+00AD, or tag characters) unless they are deliberate"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "rule": "Zero-width characters",
+      "file": "tests/lib/rules/no-misleading-character-class.js",
+      "line": 668,
+      "title": "Zero-width characters (1)",
+      "snippet": "code: \"var r = /[\ud83d\udc69\ud83d\udc66]/u\",",
+      "meaning": "Zero-width chars can hide text or break keyword filters; text with them removed: \"code: \"var r = /[\ud83d\udc69\ud83d\udc66]/u\",\"",
+      "remediation": "strip the invisible characters (U+200B\u2013U+200F, U+2060\u2013U+2064, U+00AD, or tag characters) unless they are deliberate"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "rule": "Zero-width characters",
+      "file": "tests/lib/rules/no-misleading-character-class.js",
+      "line": 1631,
+      "title": "Zero-width characters (1)",
+      "snippet": "code: String.raw`var r = new RegExp(\"[\ud83d\udc69\ud83d\udc66]\", \"u\")`,",
+      "meaning": "Zero-width chars can hide text or break keyword filters; text with them removed: \"code: String.raw`var r = new RegExp(\"[\ud83d\udc69\ud83d\udc66]\", \"u\")`,\"",
+      "remediation": "strip the invisible characters (U+200B\u2013U+200F, U+2060\u2013U+2064, U+00AD, or tag characters) unless they are deliberate"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "rule": "Zero-width characters",
+      "file": "docs/src/rules/no-misleading-character-class.md",
+      "line": 40,
+      "title": "Zero-width characters (4)",
+      "snippet": "/^[\ud83d\udc68\ud83d\udc69\ud83d\udc66]$/u.test(\"\ud83d\udc68\ud83d\udc69\ud83d\udc66\"); //\u2192 false",
+      "meaning": "Zero-width chars can hide text or break keyword filters; text with them removed: \"/^[\ud83d\udc68\ud83d\udc69\ud83d\udc66]$/u.test(\"\ud83d\udc68\ud83d\udc69\ud83d\udc66\"); //\u2192 false\"",
+      "remediation": "strip the invisible characters (U+200B\u2013U+200F, U+2060\u2013U+2064, U+00AD, or tag characters) unless they are deliberate"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "rule": "Zero-width characters",
+      "file": "tests/lib/rules/no-misleading-character-class.js",
+      "line": 696,
+      "title": "Zero-width characters (4)",
+      "snippet": "code: \"var r = /[\ud83d\udc68\ud83d\udc69\ud83d\udc66]foo[\ud83d\udc68\ud83d\udc69\ud83d\udc66]/u\",",
+      "meaning": "Zero-width chars can hide text or break keyword filters; text with them removed: \"code: \"var r = /[\ud83d\udc68\ud83d\udc69\ud83d\udc66]foo[\ud83d\udc68\ud83d\udc69\ud83d\udc66]/u\",\"",
+      "remediation": "strip the invisible characters (U+200B\u2013U+200F, U+2060\u2013U+2064, U+00AD, or tag characters) unless they are deliberate"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "rule": "Zero-width characters",
+      "file": "tests/lib/rules/no-misleading-character-class.js",
+      "line": 1659,
+      "title": "Zero-width characters (4)",
+      "snippet": "code: String.raw`var r = new RegExp(\"[\ud83d\udc68\ud83d\udc69\ud83d\udc66]foo[\ud83d\udc68\ud83d\udc69\ud83d\udc66]\", \"u\")`,",
+      "meaning": "Zero-width chars can hide text or break keyword filters; text with them removed: \"code: String.raw`var r = new RegExp(\"[\ud83d\udc68\ud83d\udc69\ud83d\udc66]foo[\ud83d\udc68\ud83d\udc69\ud83d\udc66]\", \"u\")`,\"",
+      "remediation": "strip the invisible characters (U+200B\u2013U+200F, U+2060\u2013U+2064, U+00AD, or tag characters) unless they are deliberate"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "rule": "Zero-width characters",
+      "file": "tests/lib/shared/string-utils.js",
+      "line": 79,
+      "title": "Zero-width characters (4)",
+      "snippet": "\"\ud83d\udc68\ud83d\udc69\ud83d\udc66\ud83d\udc68\ud83d\udc69\ud83d\udc66\": 2,",
+      "meaning": "Zero-width chars can hide text or break keyword filters; text with them removed: \"\"\ud83d\udc68\ud83d\udc69\ud83d\udc66\ud83d\udc68\ud83d\udc69\ud83d\udc66\": 2,\"",
+      "remediation": "strip the invisible characters (U+200B\u2013U+200F, U+2060\u2013U+2064, U+00AD, or tag characters) unless they are deliberate"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "rule": "Zero-width characters",
+      "file": "tests/lib/shared/string-utils.js",
+      "line": 80,
+      "title": "Zero-width characters (4)",
+      "snippet": "\"\ud83d\udc68\ud83d\udc69\ud83d\udc66a\ud83d\udc68\ud83d\udc69\ud83d\udc66\": 3,",
+      "meaning": "Zero-width chars can hide text or break keyword filters; text with them removed: \"\"\ud83d\udc68\ud83d\udc69\ud83d\udc66a\ud83d\udc68\ud83d\udc69\ud83d\udc66\": 3,\"",
+      "remediation": "strip the invisible characters (U+200B\u2013U+200F, U+2060\u2013U+2064, U+00AD, or tag characters) unless they are deliberate"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "rule": "Zero-width characters",
+      "file": "tests/lib/shared/string-utils.js",
+      "line": 81,
+      "title": "Zero-width characters (4)",
+      "snippet": "\"a\ud83d\udc68\ud83d\udc69\ud83d\udc66b\ud83d\udc68\ud83d\udc69\ud83d\udc66c\": 5,",
+      "meaning": "Zero-width chars can hide text or break keyword filters; text with them removed: \"\"a\ud83d\udc68\ud83d\udc69\ud83d\udc66b\ud83d\udc68\ud83d\udc69\ud83d\udc66c\": 5,\"",
+      "remediation": "strip the invisible characters (U+200B\u2013U+200F, U+2060\u2013U+2064, U+00AD, or tag characters) unless they are deliberate"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "rule": "Zero-width characters",
+      "file": "docs/src/rules/no-misleading-character-class.md",
+      "line": 67,
+      "title": "Zero-width characters (2)",
+      "snippet": "/^[\ud83d\udc68\ud83d\udc69\ud83d\udc66]$/u;",
+      "meaning": "Zero-width chars can hide text or break keyword filters; text with them removed: \"/^[\ud83d\udc68\ud83d\udc69\ud83d\udc66]$/u;\"",
+      "remediation": "strip the invisible characters (U+200B\u2013U+200F, U+2060\u2013U+2064, U+00AD, or tag characters) unless they are deliberate"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "rule": "Zero-width characters",
+      "file": "tests/lib/rules/no-misleading-character-class.js",
+      "line": 25,
+      "title": "Zero-width characters (2)",
+      "snippet": "* /[\ud83d\udc68\ud83d\udc69\ud83d\udc66]/u // ERROR: ZWJ in a character class.",
+      "meaning": "Zero-width chars can hide text or break keyword filters; text with them removed: \"* /[\ud83d\udc68\ud83d\udc69\ud83d\udc66]/u // ERROR: ZWJ in a character class.\"",
+      "remediation": "strip the invisible characters (U+200B\u2013U+200F, U+2060\u2013U+2064, U+00AD, or tag characters) unless they are deliberate"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "rule": "Zero-width characters",
+      "file": "tests/lib/rules/no-misleading-character-class.js",
+      "line": 42,
+      "title": "Zero-width characters (2)",
+      "snippet": "\"var r = /\ud83d\udc68\ud83d\udc69\ud83d\udc66/\",",
+      "meaning": "Zero-width chars can hide text or break keyword filters; text with them removed: \"\"var r = /\ud83d\udc68\ud83d\udc69\ud83d\udc66/\",\"",
+      "remediation": "strip the invisible characters (U+200B\u2013U+200F, U+2060\u2013U+2064, U+00AD, or tag characters) unless they are deliberate"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "rule": "Zero-width characters",
+      "file": "tests/lib/rules/no-misleading-character-class.js",
+      "line": 607,
+      "title": "Zero-width characters (2)",
+      "snippet": "code: \"var r = /[\ud83d\udc68\ud83d\udc69\ud83d\udc66]/\",",
+      "meaning": "Zero-width chars can hide text or break keyword filters; text with them removed: \"code: \"var r = /[\ud83d\udc68\ud83d\udc69\ud83d\udc66]/\",\"",
+      "remediation": "strip the invisible characters (U+200B\u2013U+200F, U+2060\u2013U+2064, U+00AD, or tag characters) unless they are deliberate"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "rule": "Zero-width characters",
+      "file": "tests/lib/rules/no-misleading-character-class.js",
+      "line": 616,
+      "title": "Zero-width characters (2)",
+      "snippet": "output: \"var r = /[\ud83d\udc68\ud83d\udc69\ud83d\udc66]/u\",",
+      "meaning": "Zero-width chars can hide text or break keyword filters; text with them removed: \"output: \"var r = /[\ud83d\udc68\ud83d\udc69\ud83d\udc66]/u\",\"",
+      "remediation": "strip the invisible characters (U+200B\u2013U+200F, U+2060\u2013U+2064, U+00AD, or tag characters) unless they are deliberate"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "rule": "Zero-width characters",
+      "file": "tests/lib/rules/no-misleading-character-class.js",
+      "line": 633,
+      "title": "Zero-width characters (2)",
+      "snippet": "output: \"var r = /[\ud83d\udc68\ud83d\udc69\ud83d\udc66]/u\",",
+      "meaning": "Zero-width chars can hide text or break keyword filters; text with them removed: \"output: \"var r = /[\ud83d\udc68\ud83d\udc69\ud83d\udc66]/u\",\"",
+      "remediation": "strip the invisible characters (U+200B\u2013U+200F, U+2060\u2013U+2064, U+00AD, or tag characters) unless they are deliberate"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "rule": "Zero-width characters",
+      "file": "tests/lib/rules/no-misleading-character-class.js",
+      "line": 650,
+      "title": "Zero-width characters (2)",
+      "snippet": "output: \"var r = /[\ud83d\udc68\ud83d\udc69\ud83d\udc66]/u\",",
+      "meaning": "Zero-width chars can hide text or break keyword filters; text with them removed: \"output: \"var r = /[\ud83d\udc68\ud83d\udc69\ud83d\udc66]/u\",\"",
+      "remediation": "strip the invisible characters (U+200B\u2013U+200F, U+2060\u2013U+2064, U+00AD, or tag characters) unless they are deliberate"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "rule": "Zero-width characters",
+      "file": "tests/lib/rules/no-misleading-character-class.js",
+      "line": 657,
+      "title": "Zero-width characters (2)",
+      "snippet": "code: \"var r = /[\ud83d\udc68\ud83d\udc69\ud83d\udc66]/u\",",
+      "meaning": "Zero-width chars can hide text or break keyword filters; text with them removed: \"code: \"var r = /[\ud83d\udc68\ud83d\udc69\ud83d\udc66]/u\",\"",
+      "remediation": "strip the invisible characters (U+200B\u2013U+200F, U+2060\u2013U+2064, U+00AD, or tag characters) unless they are deliberate"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "rule": "Zero-width characters",
+      "file": "tests/lib/rules/no-misleading-character-class.js",
+      "line": 679,
+      "title": "Zero-width characters (2)",
+      "snippet": "code: \"var r = /[\ud83d\udc69\ud83d\udc66][\ud83d\udc69\ud83d\udc66]/u\",",
+      "meaning": "Zero-width chars can hide text or break keyword filters; text with them removed: \"code: \"var r = /[\ud83d\udc69\ud83d\udc66][\ud83d\udc69\ud83d\udc66]/u\",\"",
+      "remediation": "strip the invisible characters (U+200B\u2013U+200F, U+2060\u2013U+2064, U+00AD, or tag characters) unless they are deliberate"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "rule": "Zero-width characters",
+      "file": "tests/lib/rules/no-misleading-character-class.js",
+      "line": 1570,
+      "title": "Zero-width characters (2)",
+      "snippet": "code: String.raw`var r = new RegExp(\"[\ud83d\udc68\ud83d\udc69\ud83d\udc66]\", \"\")`,",
+      "meaning": "Zero-width chars can hide text or break keyword filters; text with them removed: \"code: String.raw`var r = new RegExp(\"[\ud83d\udc68\ud83d\udc69\ud83d\udc66]\", \"\")`,\"",
+      "remediation": "strip the invisible characters (U+200B\u2013U+200F, U+2060\u2013U+2064, U+00AD, or tag characters) unless they are deliberate"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "rule": "Zero-width characters",
+      "file": "tests/lib/rules/no-misleading-character-class.js",
+      "line": 1579,
+      "title": "Zero-width characters (2)",
+      "snippet": "output: String.raw`var r = new RegExp(\"[\ud83d\udc68\ud83d\udc69\ud83d\udc66]\", \"u\")`,",
+      "meaning": "Zero-width chars can hide text or break keyword filters; text with them removed: \"output: String.raw`var r = new RegExp(\"[\ud83d\udc68\ud83d\udc69\ud83d\udc66]\", \"u\")`,\"",
+      "remediation": "strip the invisible characters (U+200B\u2013U+200F, U+2060\u2013U+2064, U+00AD, or tag characters) unless they are deliberate"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "rule": "Zero-width characters",
+      "file": "tests/lib/rules/no-misleading-character-class.js",
+      "line": 1596,
+      "title": "Zero-width characters (2)",
+      "snippet": "output: String.raw`var r = new RegExp(\"[\ud83d\udc68\ud83d\udc69\ud83d\udc66]\", \"u\")`,",
+      "meaning": "Zero-width chars can hide text or break keyword filters; text with them removed: \"output: String.raw`var r = new RegExp(\"[\ud83d\udc68\ud83d\udc69\ud83d\udc66]\", \"u\")`,\"",
+      "remediation": "strip the invisible characters (U+200B\u2013U+200F, U+2060\u2013U+2064, U+00AD, or tag characters) unless they are deliberate"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "rule": "Zero-width characters",
+      "file": "tests/lib/rules/no-misleading-character-class.js",
+      "line": 1613,
+      "title": "Zero-width characters (2)",
+      "snippet": "output: String.raw`var r = new RegExp(\"[\ud83d\udc68\ud83d\udc69\ud83d\udc66]\", \"u\")`,",
+      "meaning": "Zero-width chars can hide text or break keyword filters; text with them removed: \"output: String.raw`var r = new RegExp(\"[\ud83d\udc68\ud83d\udc69\ud83d\udc66]\", \"u\")`,\"",
+      "remediation": "strip the invisible characters (U+200B\u2013U+200F, U+2060\u2013U+2064, U+00AD, or tag characters) unless they are deliberate"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "rule": "Zero-width characters",
+      "file": "tests/lib/rules/no-misleading-character-class.js",
+      "line": 1620,
+      "title": "Zero-width characters (2)",
+      "snippet": "code: String.raw`var r = new RegExp(\"[\ud83d\udc68\ud83d\udc69\ud83d\udc66]\", \"u\")`,",
+      "meaning": "Zero-width chars can hide text or break keyword filters; text with them removed: \"code: String.raw`var r = new RegExp(\"[\ud83d\udc68\ud83d\udc69\ud83d\udc66]\", \"u\")`,\"",
+      "remediation": "strip the invisible characters (U+200B\u2013U+200F, U+2060\u2013U+2064, U+00AD, or tag characters) unless they are deliberate"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "rule": "Zero-width characters",
+      "file": "tests/lib/rules/no-misleading-character-class.js",
+      "line": 1642,
+      "title": "Zero-width characters (2)",
+      "snippet": "code: String.raw`var r = new RegExp(\"[\ud83d\udc69\ud83d\udc66][\ud83d\udc69\ud83d\udc66]\", \"u\")`,",
+      "meaning": "Zero-width chars can hide text or break keyword filters; text with them removed: \"code: String.raw`var r = new RegExp(\"[\ud83d\udc69\ud83d\udc66][\ud83d\udc69\ud83d\udc66]\", \"u\")`,\"",
+      "remediation": "strip the invisible characters (U+200B\u2013U+200F, U+2060\u2013U+2064, U+00AD, or tag characters) unless they are deliberate"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "rule": "Zero-width characters",
+      "file": "tests/lib/shared/string-utils.js",
+      "line": 78,
+      "title": "Zero-width characters (2)",
+      "snippet": "\"\ud83d\udc68\ud83d\udc69\ud83d\udc66\": 1, // 1 grapheme, 5 code points, 8 code units",
+      "meaning": "Zero-width chars can hide text or break keyword filters; text with them removed: \"\"\ud83d\udc68\ud83d\udc69\ud83d\udc66\": 1, // 1 grapheme, 5 code points, 8 code units\"",
+      "remediation": "strip the invisible characters (U+200B\u2013U+200F, U+2060\u2013U+2064, U+00AD, or tag characters) unless they are deliberate"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "rule": "Zero-width characters",
+      "file": "tests/lib/shared/string-utils.js",
+      "line": 82,
+      "title": "Zero-width characters (2)",
+      "snippet": "\"\ud83d\udc68\ud83d\udc69\ud83d\udc66\ud83d\udc4d\": 2,",
+      "meaning": "Zero-width chars can hide text or break keyword filters; text with them removed: \"\"\ud83d\udc68\ud83d\udc69\ud83d\udc66\ud83d\udc4d\": 2,\"",
+      "remediation": "strip the invisible characters (U+200B\u2013U+200F, U+2060\u2013U+2064, U+00AD, or tag characters) unless they are deliberate"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "rule": "Zero-width characters",
+      "file": "tests/lib/shared/string-utils.js",
+      "line": 83,
+      "title": "Zero-width characters (2)",
+      "snippet": "\"\ud83d\udc76\ud83c\udffd\ud83d\udc68\ud83d\udc69\ud83d\udc66\": 2,",
+      "meaning": "Zero-width chars can hide text or break keyword filters; text with them removed: \"\"\ud83d\udc76\ud83c\udffd\ud83d\udc68\ud83d\udc69\ud83d\udc66\": 2,\"",
+      "remediation": "strip the invisible characters (U+200B\u2013U+200F, U+2060\u2013U+2064, U+00AD, or tag characters) unless they are deliberate"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "rule": "Zero-width characters",
+      "file": "docs/src/use/migrate-to-10.0.0.md",
+      "line": 424,
+      "title": "Zero-width characters (3)",
+      "snippet": "What changed:",
+      "meaning": "Zero-width chars can hide text or break keyword filters; text with them removed: \"What changed:\"",
+      "remediation": "strip the invisible characters (U+200B\u2013U+200F, U+2060\u2013U+2064, U+00AD, or tag characters) unless they are deliberate"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "rule": "Zero-width characters",
+      "file": "tests/lib/rules/no-misleading-character-class.js",
+      "line": 713,
+      "title": "Zero-width characters (3)",
+      "snippet": "code: \"var r = /[\ud83d\udc68\ud83d\udc69\ud83d\udc66\ud83d\udc69\ud83d\udc66]/u\",",
+      "meaning": "Zero-width chars can hide text or break keyword filters; text with them removed: \"code: \"var r = /[\ud83d\udc68\ud83d\udc69\ud83d\udc66\ud83d\udc69\ud83d\udc66]/u\",\"",
+      "remediation": "strip the invisible characters (U+200B\u2013U+200F, U+2060\u2013U+2064, U+00AD, or tag characters) unless they are deliberate"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "rule": "Zero-width characters",
+      "file": "tests/lib/rules/no-misleading-character-class.js",
+      "line": 1676,
+      "title": "Zero-width characters (3)",
+      "snippet": "code: String.raw`var r = new RegExp(\"[\ud83d\udc68\ud83d\udc69\ud83d\udc66\ud83d\udc69\ud83d\udc66]\", \"u\")`,",
+      "meaning": "Zero-width chars can hide text or break keyword filters; text with them removed: \"code: String.raw`var r = new RegExp(\"[\ud83d\udc68\ud83d\udc69\ud83d\udc66\ud83d\udc69\ud83d\udc66]\", \"u\")`,\"",
+      "remediation": "strip the invisible characters (U+200B\u2013U+200F, U+2060\u2013U+2064, U+00AD, or tag characters) unless they are deliberate"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "rule": "Zero-width characters",
+      "file": "tests/lib/shared/string-utils.js",
+      "line": 84,
+      "title": "Zero-width characters (5)",
+      "snippet": "\"\ud83d\udc69\ud83e\uddb0\ud83d\udc69\ud83d\udc69\ud83d\udc66\ud83d\udc66\ud83c\udff3\ufe0f\ud83c\udf08\": 3, // 3 grapheme, 14 code points, 22 code units",
+      "meaning": "Zero-width chars can hide text or break keyword filters; text with them removed: \"\"\ud83d\udc69\ud83e\uddb0\ud83d\udc69\ud83d\udc69\ud83d\udc66\ud83d\udc66\ud83c\udff3\ufe0f\ud83c\udf08\": 3, // 3 grapheme, 14 code points, 22 code units\"",
+      "remediation": "strip the invisible characters (U+200B\u2013U+200F, U+2060\u2013U+2064, U+00AD, or tag characters) unless they are deliberate"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "rule": "pii-email",
+      "file": ".github/workflows/update-readme.yml",
+      "line": 35,
+      "title": "pii-email: e***@googlegroups.com",
+      "snippet": "git config user.email \"<e***@googlegroups.com>\"",
+      "meaning": "Hardcoded email address (a person's PII or a DSN); check it is intended to be public.",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "rule": "browser-capability",
+      "file": "docs/src/assets/js/tabs.js",
+      "line": 65,
+      "title": "browser-capability: browsing history",
+      "snippet": "* Use history.replaceState so clicking through Tabs",
+      "meaning": "Reads or influences browser history (length / pushState / replaceState). Seen 3 times.",
+      "remediation": "feature-detect and request permission before using the capability"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "rule": "external-endpoint",
+      "file": ".github/ISSUE_TEMPLATE/bug-report.yml",
+      "line": 80,
+      "title": "external-endpoint: stackblitz.com",
+      "snippet": "description: \"Link to a [playground](https://eslint.org/play), [StackBlitz](https://stackblitz.com), or GitHub repo with a minimal reproduction of the problem. ",
+      "meaning": "Unknown third-party host stackblitz.com: verify what it receives and whether it sets cookies/tracks. Seen 2 times."
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "rule": "third-party-script",
+      "file": "docs/src/_includes/partials/ad.html",
+      "line": 7,
+      "title": "third-party-script: cdn.carbonads.com",
+      "snippet": "s.src = \"//cdn.carbonads.com/carbon.js?serve={{ site.carbon_ads.serve }}&placement={{ site.carbon_ads.placement}}\";",
+      "meaning": "Script attribute on a tag opened above loads executable code from cdn.carbonads.com.",
+      "remediation": "self-host the asset, or document and gate the host behind consent"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "rule": "third-party-script",
+      "file": "docs/src/_includes/partials/ad.html",
+      "line": 19,
+      "title": "third-party-script: media.ethicalads.io",
+      "snippet": "s.src = \"//media.ethicalads.io/media/client/ethicalads.min.js\";",
+      "meaning": "Script attribute on a tag opened above loads executable code from media.ethicalads.io.",
+      "remediation": "self-host the asset, or document and gate the host behind consent"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "rule": "third-party-script",
+      "file": "docs/src/_includes/partials/analytics.html",
+      "line": 4,
+      "title": "third-party-script: www.googletagmanager.com",
+      "snippet": "<script async src=\"https://www.googletagmanager.com/gtag/js?id=G-7DGPHY308T\"></script>",
+      "meaning": "Loads executable script from www.googletagmanager.com: it runs with page privileges and can read cookies/DOM and beacon data.",
+      "remediation": "self-host the asset, or document and gate the host behind consent"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "rule": "third-party-preconnect",
+      "file": "docs/src/_includes/layouts/base.html",
+      "line": 73,
+      "title": "third-party-preconnect: www.googletagmanager.com",
+      "snippet": "<link rel=\"preconnect\" href=\"https://www.googletagmanager.com/\">",
+      "meaning": "Preconnect/DNS-prefetch to www.googletagmanager.com: the browser opens a connection (IP, TLS) before any consent or request.",
+      "remediation": "self-host the asset, or document and gate the host behind consent"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "rule": "dnt-respect",
+      "file": "(repo)",
+      "line": 0,
+      "title": "dnt-respect: trackers but no Do-Not-Track/opt-out reference",
+      "snippet": "no DO_NOT_TRACK / navigator.doNotTrack found",
+      "meaning": "Browsers send Do-Not-Track and DO_NOT_TRACK is a de-facto standard; without a reference these signals are ignored.",
+      "remediation": "read `navigator.doNotTrack`/`Sec-GPC` before starting analytics, not only your own opt-out"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "rule": "consent-gating",
+      "file": "(repo)",
+      "line": 0,
+      "title": "consent-gating: trackers with no consent manager detected",
+      "snippet": "no CMP found",
+      "meaning": "Analytics/ads/session replay are present but no OneTrust/Cookiebot/Osano/\u2026 was detected; verify tracking waits for consent.",
+      "remediation": "load the tracker only after consent, and keep the consent decision server-side where possible"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "rule": "privacy-doc",
+      "file": "(repo)",
+      "line": 0,
+      "title": "privacy-doc: no privacy policy file",
+      "snippet": "expected PRIVACY.md or PrivacyInfo.xcprivacy",
+      "meaning": "The repo collects/transmits data but ships no privacy policy/manifest file.",
+      "remediation": "add a PRIVACY.md/policy (or link one) and state what is collected"
+    },
+    {
+      "tool": "trust",
+      "severity": "low",
+      "rule": "commit-unassociated",
+      "file": "(github)",
+      "line": 0,
+      "title": "commit-unassociated: default-branch commit author email is not linked to a GitHub account",
+      "snippet": "",
+      "meaning": "Context signal only; never decides the verdict alone."
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "pii-email",
+      "file": "docs/src/assets/fonts/Inter/OFL.txt",
+      "line": 1,
+      "title": "pii-email: docs: 1 address(es) in docs/src/assets/fonts/Inter/OFL.txt",
+      "snippet": "m***@rsms.me",
+      "meaning": "Docs publish these email addresses (contact/maintainer info); confirm they are meant to be public.",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "pii-email",
+      "file": "tests/fixtures/autofix-integration/left-pad-expected-quiet.js",
+      "line": 1,
+      "title": "pii-email: docs: 1 address(es) in tests/fixtures/autofix-integration/left-pad-expected-quiet.js",
+      "snippet": "left-pad@0.0.3",
+      "meaning": "Docs publish these email addresses (contact/maintainer info); confirm they are meant to be public.",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "pii-email",
+      "file": "tests/fixtures/autofix-integration/left-pad-expected.js",
+      "line": 1,
+      "title": "pii-email: docs: 1 address(es) in tests/fixtures/autofix-integration/left-pad-expected.js",
+      "snippet": "left-pad@0.0.3",
+      "meaning": "Docs publish these email addresses (contact/maintainer info); confirm they are meant to be public.",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "pii-email",
+      "file": "tests/fixtures/autofix-integration/left-pad.js",
+      "line": 1,
+      "title": "pii-email: docs: 1 address(es) in tests/fixtures/autofix-integration/left-pad.js",
+      "snippet": "left-pad@0.0.3",
+      "meaning": "Docs publish these email addresses (contact/maintainer info); confirm they are meant to be public.",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "pii-email",
+      "file": "tests/fixtures/testers/rule-tester/no-test-runners.js",
+      "line": 1,
+      "title": "pii-email: docs: 1 address(es) in tests/fixtures/testers/rule-tester/no-test-runners.js",
+      "snippet": "s***@126.com",
+      "meaning": "Docs publish these email addresses (contact/maintainer info); confirm they are meant to be public.",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "pii-email",
+      "file": "tests/lib/config/config.js",
+      "line": 1,
+      "title": "pii-email: docs: 1 address(es) in tests/lib/config/config.js",
+      "snippet": "testprocessor@1.0.0",
+      "meaning": "Docs publish these email addresses (contact/maintainer info); confirm they are meant to be public.",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "pii-email",
+      "file": "tests/lib/rules/for-direction.js",
+      "line": 1,
+      "title": "pii-email: docs: 1 address(es) in tests/lib/rules/for-direction.js",
+      "snippet": "h***@foxmail.com",
+      "meaning": "Docs publish these email addresses (contact/maintainer info); confirm they are meant to be public.",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "pii-email",
+      "file": "tests/lib/rules/getter-return.js",
+      "line": 1,
+      "title": "pii-email: docs: 1 address(es) in tests/lib/rules/getter-return.js",
+      "snippet": "h***@foxmail.com",
+      "meaning": "Docs publish these email addresses (contact/maintainer info); confirm they are meant to be public.",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "pii-email",
+      "file": "tests/lib/rules/lines-between-class-members.js",
+      "line": 1,
+      "title": "pii-email: docs: 1 address(es) in tests/lib/rules/lines-between-class-members.js",
+      "snippet": "h***@foxmail.com",
+      "meaning": "Docs publish these email addresses (contact/maintainer info); confirm they are meant to be public.",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "pii-email",
+      "file": "tests/lib/rules/max-lines-per-function.js",
+      "line": 1,
+      "title": "pii-email: docs: 1 address(es) in tests/lib/rules/max-lines-per-function.js",
+      "snippet": "p***@gmail.com",
+      "meaning": "Docs publish these email addresses (contact/maintainer info); confirm they are meant to be public.",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "pii-email",
+      "file": "tests/lib/rules/no-compare-neg-zero.js",
+      "line": 1,
+      "title": "pii-email: docs: 1 address(es) in tests/lib/rules/no-compare-neg-zero.js",
+      "snippet": "h***@foxmail.com",
+      "meaning": "Docs publish these email addresses (contact/maintainer info); confirm they are meant to be public.",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "pii-email",
+      "file": "tests/lib/rules/no-extra-bind.js",
+      "line": 1,
+      "title": "pii-email: docs: 1 address(es) in tests/lib/rules/no-extra-bind.js",
+      "snippet": "b***@danyi.me",
+      "meaning": "Docs publish these email addresses (contact/maintainer info); confirm they are meant to be public.",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "pii-email",
+      "file": "tests/lib/universal.js",
+      "line": 1,
+      "title": "pii-email: docs: 1 address(es) in tests/lib/universal.js",
+      "snippet": "w***@outlook.com",
+      "meaning": "Docs publish these email addresses (contact/maintainer info); confirm they are meant to be public.",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "pii-email",
+      "file": "tests/lib/config/flat-config-array.js",
+      "line": 1,
+      "title": "pii-email: docs: 2 address(es) in tests/lib/config/flat-config-array.js",
+      "snippet": "custom-parser@0.1.0, custom-processor@1.2.3",
+      "meaning": "Docs publish these email addresses (contact/maintainer info); confirm they are meant to be public.",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "pii-email",
+      "file": "CHANGELOG.md",
+      "line": 1,
+      "title": "pii-email: docs: 57 address(es) in CHANGELOG.md",
+      "snippet": "ajv@5.3.0, doctrine@0.7.1, escope@3.3.0, eslint-plugin-eslint-plugin@0.8.0, +53",
+      "meaning": "Docs publish these email addresses (contact/maintainer info); confirm they are meant to be public.",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "pii-email",
+      "file": "package.json",
+      "line": 4,
+      "title": "pii-email: n***@nczconsulting.com",
+      "snippet": "\"author\": \"Nicholas C. Zakas <n***@nczconsulting.com>\",",
+      "meaning": "Package metadata email: published by design on the registry. Seen 2 times.",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "pii-email",
+      "file": "package.json",
+      "line": 82,
+      "title": "pii-email: typescript@5.3",
+      "snippet": "\"test:types:5.3\": \"npx -p typescript@5.3 -y -- tsc -p tsconfig.types-legacy.json\",",
+      "meaning": "Package metadata email: published by design on the registry.",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "pii-email",
+      "file": "package.json",
+      "line": 83,
+      "title": "pii-email: typescript@5.x",
+      "snippet": "\"test:types:5.x\": \"npx -p typescript@5.x -y -- tsc -p tsconfig.types.json\",",
+      "meaning": "Package metadata email: published by design on the registry.",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "tracking-params",
+      "file": "README.md",
+      "line": 350,
+      "title": "tracking-params: utm/campaign parameters",
+      "snippet": "<p><a href=\"#\"><img src=\"https://images.opencollective.com/vite-ecosystem-fund/logo.png\" alt=\"Vite Ecosystem Fund\" height=\"96\"></a> <a href=\"https://qlty.sh/\"><",
+      "meaning": "Link carries campaign/tracking parameters (utm_*, fbclid, gclid, \u2026). Seen 3 times.",
+      "remediation": "strip the parameter before it reaches logs/referers, or use a POST body instead"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "data-retention",
+      "file": ".github/workflows/ecosystem-tests.yml",
+      "line": 63,
+      "title": "data-retention: retention-days",
+      "snippet": "retention-days: 1",
+      "meaning": "A retention/expiry window is configured; verify it applies to the collected data.",
+      "remediation": "set an explicit retention period and delete the data when it ends"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "upload-surface",
+      "file": ".github/workflows/ecosystem-tests.yml",
+      "line": 57,
+      "title": "upload-surface: file upload",
+      "snippet": "- name: Upload Test Results",
+      "meaning": "Accepts user-supplied files or request bodies: data enters the service. Seen 2 times.",
+      "remediation": "check where the uploaded file is stored and who can read it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "upload-limit",
+      "file": "lib/rules/no-warning-comments.js",
+      "line": 11,
+      "title": "upload-limit: size cap",
+      "snippet": "const CHAR_LIMIT = 40;",
+      "meaning": "A request/upload size cap is set (data-minimization guard). Seen 3 times.",
+      "remediation": "state and enforce the upload size/type limit"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "insecure-endpoint",
+      "file": "docs/src/_data/further_reading_links.json",
+      "line": 562,
+      "title": "insecure-endpoint: bluebirdjs.com",
+      "snippet": "\"http://bluebirdjs.com/docs/warning-explanations.html#warning-a-promise-was-rejected-with-a-non-error\": {",
+      "meaning": "Plaintext http:// to bluebirdjs.com: reference URL in docs, not a request. Seen 2 times.",
+      "remediation": "use https:// / wss://"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "insecure-endpoint",
+      "file": "docs/src/_data/further_reading_links.json",
+      "line": 604,
+      "title": "insecure-endpoint: inimino.org",
+      "snippet": "\"https://web.archive.org/web/20200420230322/http://inimino.org/~inimino/blog/javascript_semicolons\": {",
+      "meaning": "Plaintext http:// to inimino.org: historical URL inside a web.archive.org link. Seen 2 times.",
+      "remediation": "use https:// / wss://"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "insecure-endpoint",
+      "file": "docs/src/_data/further_reading_links.json",
+      "line": 121,
+      "title": "insecure-endpoint: jscomplexity.org",
+      "snippet": "\"https://web.archive.org/web/20160808115119/http://jscomplexity.org/complexity\": {",
+      "meaning": "Plaintext http:// to jscomplexity.org: historical URL inside a web.archive.org link. Seen 2 times.",
+      "remediation": "use https:// / wss://"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "insecure-endpoint",
+      "file": "docs/src/_data/further_reading_links.json",
+      "line": 142,
+      "title": "insecure-endpoint: markdaggett.com",
+      "snippet": "\"https://web.archive.org/web/20201112040809/http://markdaggett.com/blog/2013/02/15/functions-explained/\": {",
+      "meaning": "Plaintext http:// to markdaggett.com: historical URL inside a web.archive.org link. Seen 3 times.",
+      "remediation": "use https:// / wss://"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "insecure-endpoint",
+      "file": "docs/src/_data/further_reading_links.json",
+      "line": 667,
+      "title": "insecure-endpoint: thomas.tuerke.net",
+      "snippet": "\"http://thomas.tuerke.net/on/design/?with=1249091668#msg1146181680\": {",
+      "meaning": "Plaintext http:// to thomas.tuerke.net: reference URL in docs, not a request. Seen 2 times.",
+      "remediation": "use https:// / wss://"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "insecure-endpoint",
+      "file": "docs/src/_data/further_reading_links.json",
+      "line": 324,
+      "title": "insecure-endpoint: timelessrepo.com",
+      "snippet": "\"https://web.archive.org/web/20200414142829/http://timelessrepo.com/json-isnt-a-javascript-subset\": {",
+      "meaning": "Plaintext http:// to timelessrepo.com: historical URL inside a web.archive.org link. Seen 2 times.",
+      "remediation": "use https:// / wss://"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "insecure-endpoint",
+      "file": "tests/lib/rules/array-bracket-spacing.js",
+      "line": 160,
+      "title": "insecure-endpoint: www.amazon.de",
+      "snippet": "code: \"this.db.mappings.insert([\\n { alias: 'a', url: 'http://www.amazon.de' },\\n { alias: 'g', url: 'http://www.google.de' }\\n], function() {});\",",
+      "meaning": "Plaintext http:// to www.amazon.de: test fixture URL, not a runtime request.",
+      "remediation": "use https:// / wss://"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "insecure-endpoint",
+      "file": "tests/lib/rules/array-bracket-spacing.js",
+      "line": 160,
+      "title": "insecure-endpoint: www.google.de",
+      "snippet": "code: \"this.db.mappings.insert([\\n { alias: 'a', url: 'http://www.amazon.de' },\\n { alias: 'g', url: 'http://www.google.de' }\\n], function() {});\",",
+      "meaning": "Plaintext http:// to www.google.de: test fixture URL, not a runtime request.",
+      "remediation": "use https:// / wss://"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "insecure-endpoint",
+      "file": "docs/src/_data/further_reading_links.json",
+      "line": 184,
+      "title": "insecure-endpoint: www.mind2b.com",
+      "snippet": "\"https://web.archive.org/web/20160725154648/http://www.mind2b.com/component/content/article/24-software-module-size-and-file-size\": {",
+      "meaning": "Plaintext http:// to www.mind2b.com: historical URL inside a web.archive.org link. Seen 2 times.",
+      "remediation": "use https:// / wss://"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "external-endpoint",
+      "file": "docs/src/_data/further_reading_links.json",
+      "line": 772,
+      "title": "external-endpoint: 262.ecma-international.org",
+      "snippet": "\"https://262.ecma-international.org/11.0/#sec-value-properties-of-the-global-object\": {",
+      "meaning": "Unknown third-party host 262.ecma-international.org: docs link; not fetched at runtime. Seen 4 times."
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "external-endpoint",
+      "file": "docs/src/_data/further_reading_links.json",
+      "line": 149,
+      "title": "external-endpoint: 2ality.com",
+      "snippet": "\"https://2ality.com/2015/09/function-names-es6.html\": {",
+      "meaning": "Unknown third-party host 2ality.com: docs link; not fetched at runtime. Seen 9 times."
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "external-endpoint",
+      "file": "docs/src/_data/further_reading_links.json",
+      "line": 61,
+      "title": "external-endpoint: archive.org",
+      "snippet": "\"logo\": \"https://archive.org/favicon.ico\",",
+      "meaning": "Unknown third-party host archive.org: docs link; not fetched at runtime. Seen 5 times."
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "external-endpoint",
+      "file": "docs/src/_data/further_reading_links.json",
+      "line": 107,
+      "title": "external-endpoint: ariya.io",
+      "snippet": "\"https://ariya.io/2012/12/complexity-analysis-of-javascript-code\": {",
+      "meaning": "Unknown third-party host ariya.io: docs link; not fetched at runtime. Seen 3 times."
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "external-endpoint",
+      "file": "docs/src/_data/further_reading_links.json",
+      "line": 289,
+      "title": "external-endpoint: benalman.com",
+      "snippet": "\"https://benalman.com/news/2010/11/immediately-invoked-function-expression/\": {",
+      "meaning": "Unknown third-party host benalman.com: docs link; not fetched at runtime. Seen 6 times."
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "external-endpoint",
+      "file": "docs/src/_data/further_reading_links.json",
+      "line": 394,
+      "title": "external-endpoint: blog.benhall.me.uk",
+      "snippet": "\"https://blog.benhall.me.uk/2012/02/storing-application-config-data-in/\": {",
+      "meaning": "Unknown third-party host blog.benhall.me.uk: docs link; not fetched at runtime. Seen 2 times."
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "external-endpoint",
+      "file": "docs/src/_data/further_reading_links.json",
+      "line": 597,
+      "title": "external-endpoint: blog.izs.me",
+      "snippet": "\"https://blog.izs.me/2010/12/an-open-letter-to-javascript-leaders-regarding/\": {",
+      "meaning": "Unknown third-party host blog.izs.me: docs link; not fetched at runtime. Seen 3 times."
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "external-endpoint",
+      "file": "docs/src/_data/further_reading_links.json",
+      "line": 565,
+      "title": "external-endpoint: bluebirdjs.com",
+      "snippet": "\"logo\": \"//bluebirdjs.com/img/favicon.png\",",
+      "meaning": "Unknown third-party host bluebirdjs.com: docs link; not fetched at runtime."
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "external-endpoint",
+      "file": "docs/src/_data/further_reading_links.json",
+      "line": 254,
+      "title": "external-endpoint: bocoup.com",
+      "snippet": "\"https://bocoup.com/blog/the-catch-with-try-catch\": {",
+      "meaning": "Unknown third-party host bocoup.com: docs link; not fetched at runtime. Seen 2 times."
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "external-endpoint",
+      "file": "docs/src/_data/further_reading_links.json",
+      "line": 191,
+      "title": "external-endpoint: book.mixu.net",
+      "snippet": "\"https://book.mixu.net/node/ch7.html\": {",
+      "meaning": "Unknown third-party host book.mixu.net: docs link; not fetched at runtime. Seen 2 times."
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "external-endpoint",
+      "file": "docs/src/_data/links.json",
+      "line": 6,
+      "title": "external-endpoint: bsky.app",
+      "snippet": "\"bluesky\": \"https://bsky.app/profile/eslint.org\",",
+      "meaning": "Unknown third-party host bsky.app: docs link; not fetched at runtime."
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "external-endpoint",
+      "file": "docs/src/_data/further_reading_links.json",
+      "line": 548,
+      "title": "external-endpoint: bugs.chromium.org",
+      "snippet": "\"https://bugs.chromium.org/p/v8/issues/detail?id=5848\": {",
+      "meaning": "Unknown third-party host bugs.chromium.org: docs link; not fetched at runtime. Seen 3 times."
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "external-endpoint",
+      "file": "docs/src/_includes/partials/site-footer.html",
+      "line": 17,
+      "title": "external-endpoint: bylaws.openjsf.org",
+      "snippet": "<li><a href=\"https://bylaws.openjsf.org/\">OpenJS Foundation Bylaws</a></li>",
+      "meaning": "Unknown third-party host bylaws.openjsf.org: docs link; not fetched at runtime."
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "external-endpoint",
+      "file": "docs/src/_data/further_reading_links.json",
+      "line": 390,
+      "title": "external-endpoint: cdn.sstatic.net",
+      "snippet": "\"logo\": \"https://cdn.sstatic.net/Sites/stackoverflow/Img/apple-touch-icon.png?v=c78bd457575a\",",
+      "meaning": "Unknown third-party host cdn.sstatic.net: docs link; not fetched at runtime. Seen 2 times."
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "external-endpoint",
+      "file": "docs/src/_data/further_reading_links.json",
+      "line": 730,
+      "title": "external-endpoint: codepoints.net",
+      "snippet": "\"https://codepoints.net/U+1680\": {",
+      "meaning": "Unknown third-party host codepoints.net: docs link; not fetched at runtime. Seen 3 times."
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "external-endpoint",
+      "file": "docs/src/_data/further_reading_links.json",
+      "line": 849,
+      "title": "external-endpoint: compat-table.github.io",
+      "snippet": "\"https://compat-table.github.io/compat-table/es5/#test-Object/array_literal_extensions_Reserved_words_as_property_names\": {",
+      "meaning": "Unknown third-party host compat-table.github.io: docs link; not fetched at runtime. Seen 6 times."
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "external-endpoint",
+      "file": "docs/src/_data/further_reading_links.json",
+      "line": 114,
+      "title": "external-endpoint: craftsmanshipforsoftware.com",
+      "snippet": "\"https://craftsmanshipforsoftware.com/2015/05/25/complexity-for-javascript/\": {",
+      "meaning": "Unknown third-party host craftsmanshipforsoftware.com: docs link; not fetched at runtime. Seen 4 times."
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "external-endpoint",
+      "file": "docs/src/_data/further_reading_links.json",
+      "line": 751,
+      "title": "external-endpoint: cwe.mitre.org",
+      "snippet": "\"https://cwe.mitre.org/data/definitions/563.html\": {",
+      "meaning": "Unknown third-party host cwe.mitre.org: docs link; not fetched at runtime. Seen 3 times."
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "external-endpoint",
+      "file": "docs/src/_data/further_reading_links.json",
+      "line": 646,
+      "title": "external-endpoint: danhough.com",
+      "snippet": "\"https://danhough.com/blog/single-var-pattern-rant/\": {",
+      "meaning": "Unknown third-party host danhough.com: docs link; not fetched at runtime. Seen 3 times."
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "external-endpoint",
+      "file": "docs/src/_data/further_reading_links.json",
+      "line": 583,
+      "title": "external-endpoint: davidwalsh.name",
+      "snippet": "\"https://davidwalsh.name/parseint-radix\": {",
+      "meaning": "Unknown third-party host davidwalsh.name: docs link; not fetched at runtime. Seen 3 times."
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "external-endpoint",
+      "file": "docs/src/_data/further_reading_links.json",
+      "line": 810,
+      "title": "external-endpoint: dev-to-uploads.s3.amazonaws.com",
+      "snippet": "\"logo\": \"https://media2.dev.to/dynamic/image/quality=100/https://dev-to-uploads.s3.amazonaws.com/uploads/logos/resized_logo_UQww2soKuUsjaOGNB38o.png\",",
+      "meaning": "Network destination dev-to-uploads.s3.amazonaws.com (known platform/infrastructure)."
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "external-endpoint",
+      "file": "docs/src/_data/further_reading_links.json",
+      "line": 807,
+      "title": "external-endpoint: dev.to",
+      "snippet": "\"https://dev.to/amnish04/never-lose-valuable-error-context-in-javascript-3aco\": {",
+      "meaning": "Unknown third-party host dev.to: docs link; not fetched at runtime. Seen 2 times."
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "external-endpoint",
+      "file": "docs/src/_data/further_reading_links.json",
+      "line": 2,
+      "title": "external-endpoint: developer.mozilla.org",
+      "snippet": "\"https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Functions/set\": {",
+      "meaning": "Unknown third-party host developer.mozilla.org: docs link; not fetched at runtime. Seen 93 times."
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "external-endpoint",
+      "file": "docs/src/_data/further_reading_links.json",
+      "line": 58,
+      "title": "external-endpoint: docs.nodejitsu.com",
+      "snippet": "\"https://web.archive.org/web/20171224042620/https://docs.nodejitsu.com/articles/errors/what-are-the-error-conventions/\": {",
+      "meaning": "Unknown third-party host docs.nodejitsu.com: docs link; not fetched at runtime. Seen 2 times."
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "external-endpoint",
+      "file": "docs/src/_data/further_reading_links.json",
+      "line": 86,
+      "title": "external-endpoint: dojotoolkit.org",
+      "snippet": "\"https://dojotoolkit.org/reference-guide/1.9/developer/styleguide.html\": {",
+      "meaning": "Unknown third-party host dojotoolkit.org: docs link; not fetched at runtime. Seen 3 times."
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "external-endpoint",
+      "file": "docs/src/_data/further_reading_links.json",
+      "line": 44,
+      "title": "external-endpoint: en.wikipedia.org",
+      "snippet": "\"https://en.wikipedia.org/wiki/Indent_style\": {",
+      "meaning": "Unknown third-party host en.wikipedia.org: docs link; not fetched at runtime. Seen 15 times."
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "external-endpoint",
+      "file": "docs/src/_data/further_reading_links.json",
+      "line": 240,
+      "title": "external-endpoint: ericlippert.com",
+      "snippet": "\"https://ericlippert.com/2003/11/01/eval-is-evil-part-one/\": {",
+      "meaning": "Unknown third-party host ericlippert.com: docs link; not fetched at runtime. Seen 2 times."
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "external-endpoint",
+      "file": "docs/src/_data/further_reading_links.json",
+      "line": 282,
+      "title": "external-endpoint: es5.github.io",
+      "snippet": "\"https://es5.github.io/#C\": {",
+      "meaning": "Unknown third-party host es5.github.io: docs link; not fetched at runtime. Seen 18 times."
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "external-endpoint",
+      "file": "docs/src/_data/rules.json",
+      "line": 1608,
+      "title": "external-endpoint: eslint.style",
+      "snippet": "\"url\": \"https://eslint.style/guide/migration\",",
+      "meaning": "Unknown third-party host eslint.style: docs link; not fetched at runtime. Seen 660 times."
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "external-endpoint",
+      "file": "docs/src/_data/links.json",
+      "line": 14,
+      "title": "external-endpoint: eslint.threadless.com",
+      "snippet": "\"store\": \"https://eslint.threadless.com\",",
+      "meaning": "Unknown third-party host eslint.threadless.com: docs link; not fetched at runtime. Seen 2 times."
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "external-endpoint",
+      "file": "docs/src/_data/further_reading_links.json",
+      "line": 625,
+      "title": "external-endpoint: exploringjs.com",
+      "snippet": "\"https://exploringjs.com/es6/ch_template-literals.html#_examples-of-using-tagged-template-literals\": {",
+      "meaning": "Unknown third-party host exploringjs.com: docs link; not fetched at runtime. Seen 3 times."
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "external-endpoint",
+      "file": "docs/src/_data/links.json",
+      "line": 5,
+      "title": "external-endpoint: fosstodon.org",
+      "snippet": "\"mastodon\": \"https://fosstodon.org/@eslint\",",
+      "meaning": "Unknown third-party host fosstodon.org: docs link; not fetched at runtime."
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "external-endpoint",
+      "file": "docs/src/_data/further_reading_links.json",
+      "line": 93,
+      "title": "external-endpoint: gist.github.com",
+      "snippet": "\"https://gist.github.com/isaacs/357981\": {",
+      "meaning": "Network destination gist.github.com (known platform/infrastructure). Seen 3 times."
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "external-endpoint",
+      "file": "Makefile.js",
+      "line": 1007,
+      "title": "external-endpoint: github.com",
+      "snippet": "\"https://github.com/sharkdp/hyperfine?tab=readme-ov-file#installation\";",
+      "meaning": "Network destination github.com (known platform/infrastructure). Seen 123 times."
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "external-endpoint",
+      "file": "docs/src/_data/further_reading_links.json",
+      "line": 803,
+      "title": "external-endpoint: github.githubassets.com",
+      "snippet": "\"logo\": \"https://github.githubassets.com/favicons/favicon.png\",",
+      "meaning": "Unknown third-party host github.githubassets.com: docs link; not fetched at runtime. Seen 2 times."
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "external-endpoint",
+      "file": "docs/src/_data/further_reading_links.json",
+      "line": 198,
+      "title": "external-endpoint: howtonode.org",
+      "snippet": "\"https://web.archive.org/web/20220104141150/https://howtonode.org/control-flow\": {",
+      "meaning": "Unknown third-party host howtonode.org: docs link; not fetched at runtime. Seen 6 times."
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "external-endpoint",
+      "file": "docs/src/_data/further_reading_links.json",
+      "line": 362,
+      "title": "external-endpoint: inklingstatic.a.ssl.fastly.net",
+      "snippet": "\"logo\": \"https://inklingstatic.a.ssl.fastly.net/static_assets/20220214.223700z.8c5796a9.docker/images/favicon.ico\",",
+      "meaning": "Unknown third-party host inklingstatic.a.ssl.fastly.net: docs link; not fetched at runtime."
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "external-endpoint",
+      "file": "docs/src/_data/further_reading_links.json",
+      "line": 422,
+      "title": "external-endpoint: jakearchibald.com",
+      "snippet": "\"https://jakearchibald.com/2017/await-vs-return-vs-return-await/\": {",
+      "meaning": "Unknown third-party host jakearchibald.com: docs link; not fetched at runtime. Seen 3 times."
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "external-endpoint",
+      "file": "docs/src/_data/further_reading_links.json",
+      "line": 170,
+      "title": "external-endpoint: javascriptweblog.wordpress.com",
+      "snippet": "\"https://javascriptweblog.wordpress.com/2011/01/04/exploring-javascript-for-in-loops/\": {",
+      "meaning": "Unknown third-party host javascriptweblog.wordpress.com: docs link; not fetched at runtime. Seen 6 times."
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "external-endpoint",
+      "file": "docs/src/_data/further_reading_links.json",
+      "line": 408,
+      "title": "external-endpoint: johnresig.com",
+      "snippet": "\"https://johnresig.com/blog/objectgetprototypeof/\": {",
+      "meaning": "Unknown third-party host johnresig.com: docs link; not fetched at runtime. Seen 3 times."
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "external-endpoint",
+      "file": "docs/src/_data/further_reading_links.json",
+      "line": 506,
+      "title": "external-endpoint: jscs-dev.github.io",
+      "snippet": "\"https://jscs-dev.github.io/rule/requireNewlineBeforeSingleStatementsInIf\": {",
+      "meaning": "Unknown third-party host jscs-dev.github.io: docs link; not fetched at runtime. Seen 3 times."
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "external-endpoint",
+      "file": "docs/src/_data/further_reading_links.json",
+      "line": 632,
+      "title": "external-endpoint: jsdoc.app",
+      "snippet": "\"https://jsdoc.app\": {",
+      "meaning": "Unknown third-party host jsdoc.app: docs link; not fetched at runtime. Seen 2 times."
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "external-endpoint",
+      "file": "tests/bench/large.js",
+      "line": 18586,
+      "title": "external-endpoint: jshint.com",
+      "snippet": "W125: \"This line contains non-breaking spaces: https://jshint.com/docs/options/#nonbsp\",",
+      "meaning": "Unknown third-party host jshint.com: test fixture URL."
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "external-endpoint",
+      "file": "docs/src/_data/further_reading_links.json",
+      "line": 156,
+      "title": "external-endpoint: leanpub.com",
+      "snippet": "\"https://leanpub.com/understandinges6/read/#leanpub-auto-generators\": {",
+      "meaning": "Unknown third-party host leanpub.com: docs link; not fetched at runtime. Seen 6 times."
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "external-endpoint",
+      "file": "docs/src/_data/further_reading_links.json",
+      "line": 576,
+      "title": "external-endpoint: mathiasbynens.be",
+      "snippet": "\"https://mathiasbynens.be/notes/javascript-properties\": {",
+      "meaning": "Unknown third-party host mathiasbynens.be: docs link; not fetched at runtime. Seen 3 times."
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "external-endpoint",
+      "file": "docs/src/_data/further_reading_links.json",
+      "line": 810,
+      "title": "external-endpoint: media2.dev.to",
+      "snippet": "\"logo\": \"https://media2.dev.to/dynamic/image/quality=100/https://dev-to-uploads.s3.amazonaws.com/uploads/logos/resized_logo_UQww2soKuUsjaOGNB38o.png\",",
+      "meaning": "Unknown third-party host media2.dev.to: docs link; not fetched at runtime."
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "external-endpoint",
+      "file": "docs/src/_data/links.json",
+      "line": 19,
+      "title": "external-endpoint: opencollective.com",
+      "snippet": "\"openCollective\": \"https://opencollective.com/eslint\",",
+      "meaning": "Unknown third-party host opencollective.com: docs link; not fetched at runtime."
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "external-endpoint",
+      "file": "docs/src/_includes/partials/site-footer.html",
+      "line": 9,
+      "title": "external-endpoint: openjsf.org",
+      "snippet": "<p>Copyright <a href=\"https://openjsf.org\">OpenJS Foundation</a> and ESLint contributors. All rights reserved. The <a href=\"https://openjsf.org\">OpenJS Foundati",
+      "meaning": "Unknown third-party host openjsf.org: docs link; not fetched at runtime. Seen 4 times."
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "external-endpoint",
+      "file": "docs/src/_data/further_reading_links.json",
+      "line": 492,
+      "title": "external-endpoint: oreilly.com",
+      "snippet": "\"https://oreilly.com/javascript/excerpts/javascript-good-parts/bad-parts.html\": {",
+      "meaning": "Unknown third-party host oreilly.com: docs link; not fetched at runtime. Seen 2 times."
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "external-endpoint",
+      "file": "docs/src/_includes/partials/site-footer.html",
+      "line": 16,
+      "title": "external-endpoint: privacy-policy.openjsf.org",
+      "snippet": "<li><a href=\"https://privacy-policy.openjsf.org/\">Privacy Policy</a></li>",
+      "meaning": "Unknown third-party host privacy-policy.openjsf.org: docs link; not fetched at runtime."
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "external-endpoint",
+      "file": "docs/src/_data/eslintVersions.js",
+      "line": 24,
+      "title": "external-endpoint: raw.githubusercontent.com",
+      "snippet": "\"https://raw.githubusercontent.com/eslint/eslint/main/docs/src/_data/versions.json\";",
+      "meaning": "Network destination raw.githubusercontent.com (known platform/infrastructure). Seen 3 times."
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "external-endpoint",
+      "file": "tests/lib/shared/runtime-info.js",
+      "line": 94,
+      "title": "external-endpoint: registry.npmjs.org",
+      "snippet": "\"resolved\": \"https://registry.npmjs.org/eslint/-/eslint-6.16.0.tgz\"",
+      "meaning": "Network destination registry.npmjs.org (known platform/infrastructure)."
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "external-endpoint",
+      "file": "docs/src/_data/further_reading_links.json",
+      "line": 744,
+      "title": "external-endpoint: rules.sonarsource.com",
+      "snippet": "\"https://rules.sonarsource.com/javascript/RSPEC-1854/\": {",
+      "meaning": "Unknown third-party host rules.sonarsource.com: docs link; not fetched at runtime. Seen 3 times."
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "external-endpoint",
+      "file": "docs/src/_data/further_reading_links.json",
+      "line": 117,
+      "title": "external-endpoint: s0.wp.com",
+      "snippet": "\"logo\": \"https://s0.wp.com/i/webclip.png\",",
+      "meaning": "Unknown third-party host s0.wp.com: docs link; not fetched at runtime. Seen 2 times."
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "external-endpoint",
+      "file": "docs/src/_data/further_reading_links.json",
+      "line": 173,
+      "title": "external-endpoint: s1.wp.com",
+      "snippet": "\"logo\": \"https://s1.wp.com/i/favicon.ico\",",
+      "meaning": "Unknown third-party host s1.wp.com: docs link; not fetched at runtime. Seen 4 times."
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "external-endpoint",
+      "file": "docs/src/_data/further_reading_links.json",
+      "line": 380,
+      "title": "external-endpoint: spin.atomicobject.com",
+      "snippet": "\"https://spin.atomicobject.com/2011/04/10/javascript-don-t-reassign-your-function-arguments/\": {",
+      "meaning": "Unknown third-party host spin.atomicobject.com: docs link; not fetched at runtime. Seen 3 times."
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "external-endpoint",
+      "file": "docs/src/_data/further_reading_links.json",
+      "line": 387,
+      "title": "external-endpoint: stackoverflow.com",
+      "snippet": "\"https://stackoverflow.com/questions/5869216/how-to-store-node-js-deployment-settings-configuration-files\": {",
+      "meaning": "Unknown third-party host stackoverflow.com: docs link; not fetched at runtime. Seen 4 times."
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "external-endpoint",
+      "file": "docs/src/_data/further_reading_links.json",
+      "line": 257,
+      "title": "external-endpoint: static3.bocoup.com",
+      "snippet": "\"logo\": \"https://static3.bocoup.com/assets/2015/10/06163533/favicon.png\",",
+      "meaning": "Unknown third-party host static3.bocoup.com: docs link; not fetched at runtime."
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "external-endpoint",
+      "file": "docs/src/_data/further_reading_links.json",
+      "line": 366,
+      "title": "external-endpoint: tc39.es",
+      "snippet": "\"https://tc39.es/ecma262/#prod-annexB-NonOctalDecimalEscapeSequence\": {",
+      "meaning": "Unknown third-party host tc39.es: docs link; not fetched at runtime. Seen 11 times."
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "external-endpoint",
+      "file": "docs/src/_includes/partials/site-footer.html",
+      "line": 15,
+      "title": "external-endpoint: terms-of-use.openjsf.org",
+      "snippet": "<li><a href=\"https://terms-of-use.openjsf.org/\">Terms of Use</a></li>",
+      "meaning": "Unknown third-party host terms-of-use.openjsf.org: docs link; not fetched at runtime."
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "external-endpoint",
+      "file": "docs/src/_data/further_reading_links.json",
+      "line": 670,
+      "title": "external-endpoint: thomas.tuerke.net",
+      "snippet": "\"logo\": \"//thomas.tuerke.net/images/tmtlogo.ico\",",
+      "meaning": "Unknown third-party host thomas.tuerke.net: docs link; not fetched at runtime."
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "external-endpoint",
+      "file": "docs/src/_includes/partials/site-footer.html",
+      "line": 9,
+      "title": "external-endpoint: trademark-list.openjsf.org",
+      "snippet": "<p>Copyright <a href=\"https://openjsf.org\">OpenJS Foundation</a> and ESLint contributors. All rights reserved. The <a href=\"https://openjsf.org\">OpenJS Foundati",
+      "meaning": "Unknown third-party host trademark-list.openjsf.org: docs link; not fetched at runtime. Seen 3 times."
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "external-endpoint",
+      "file": "docs/src/_includes/partials/site-footer.html",
+      "line": 9,
+      "title": "external-endpoint: trademark-policy.openjsf.org",
+      "snippet": "<p>Copyright <a href=\"https://openjsf.org\">OpenJS Foundation</a> and ESLint contributors. All rights reserved. The <a href=\"https://openjsf.org\">OpenJS Foundati",
+      "meaning": "Unknown third-party host trademark-policy.openjsf.org: docs link; not fetched at runtime. Seen 2 times."
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "external-endpoint",
+      "file": "docs/src/_data/links.json",
+      "line": 3,
+      "title": "external-endpoint: twitter.com",
+      "snippet": "\"twitter\": \"https://twitter.com/geteslint\",",
+      "meaning": "Network destination twitter.com (known platform/infrastructure)."
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "external-endpoint",
+      "file": "docs/src/_data/further_reading_links.json",
+      "line": 709,
+      "title": "external-endpoint: v8.dev",
+      "snippet": "\"https://v8.dev/blog/fast-async\": {",
+      "meaning": "Unknown third-party host v8.dev: docs link; not fetched at runtime. Seen 6 times."
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "external-endpoint",
+      "file": "docs/src/_data/further_reading_links.json",
+      "line": 58,
+      "title": "external-endpoint: web.archive.org",
+      "snippet": "\"https://web.archive.org/web/20171224042620/https://docs.nodejitsu.com/articles/errors/what-are-the-error-conventions/\": {",
+      "meaning": "Unknown third-party host web.archive.org: docs link; not fetched at runtime. Seen 24 times."
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "external-endpoint",
+      "file": "docs/src/_data/further_reading_links.json",
+      "line": 758,
+      "title": "external-endpoint: wiki.sei.cmu.edu",
+      "snippet": "\"https://wiki.sei.cmu.edu/confluence/display/c/MSC13-C.+Detect+and+remove+unused+values\": {",
+      "meaning": "Unknown third-party host wiki.sei.cmu.edu: docs link; not fetched at runtime. Seen 6 times."
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "external-endpoint",
+      "file": "docs/src/_data/further_reading_links.json",
+      "line": 30,
+      "title": "external-endpoint: www.adequatelygood.com",
+      "snippet": "\"https://www.adequatelygood.com/JavaScript-Scoping-and-Hoisting.html\": {",
+      "meaning": "Unknown third-party host www.adequatelygood.com: docs link; not fetched at runtime. Seen 3 times."
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "external-endpoint",
+      "file": "docs/src/_includes/components/search.html",
+      "line": 20,
+      "title": "external-endpoint: www.algolia.com",
+      "snippet": "href=\"https://www.algolia.com/developers/?utm_source=eslint&amp;utm_medium=referral&amp;utm_content=powered_by&amp;utm_campaign=docsearch\" target=\"_blank\"",
+      "meaning": "Unknown third-party host www.algolia.com: docs link; not fetched at runtime."
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "external-endpoint",
+      "file": "docs/src/_data/further_reading_links.json",
+      "line": 79,
+      "title": "external-endpoint: www.crockford.com",
+      "snippet": "\"https://www.crockford.com/code.html\": {",
+      "meaning": "Unknown third-party host www.crockford.com: docs link; not fetched at runtime. Seen 3 times."
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "external-endpoint",
+      "file": "docs/src/_data/further_reading_links.json",
+      "line": 352,
+      "title": "external-endpoint: www.ecma-international.org",
+      "snippet": "\"https://www.ecma-international.org/ecma-262/6.0/#sec-symbol-objects\": {",
+      "meaning": "Unknown third-party host www.ecma-international.org: docs link; not fetched at runtime. Seen 6 times."
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "external-endpoint",
+      "file": "docs/src/_data/further_reading_links.json",
+      "line": 345,
+      "title": "external-endpoint: www.emacswiki.org",
+      "snippet": "\"https://www.emacswiki.org/emacs/SmartTabs\": {",
+      "meaning": "Unknown third-party host www.emacswiki.org: docs link; not fetched at runtime. Seen 3 times."
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "external-endpoint",
+      "file": "docs/src/_data/further_reading_links.json",
+      "line": 359,
+      "title": "external-endpoint: www.inkling.com",
+      "snippet": "\"https://www.inkling.com/read/javascript-definitive-guide-david-flanagan-6th/chapter-3/wrapper-objects\": {",
+      "meaning": "Unknown third-party host www.inkling.com: docs link; not fetched at runtime. Seen 2 times."
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "external-endpoint",
+      "file": "docs/src/_includes/partials/site-footer.html",
+      "line": 20,
+      "title": "external-endpoint: www.linuxfoundation.org",
+      "snippet": "<li><a href=\"https://www.linuxfoundation.org/cookies/\">Cookie Policy</a></li>",
+      "meaning": "Unknown third-party host www.linuxfoundation.org: docs link; not fetched at runtime."
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "external-endpoint",
+      "file": "docs/src/_data/further_reading_links.json",
+      "line": 450,
+      "title": "external-endpoint: www.nczonline.net",
+      "snippet": "\"https://www.nczonline.net/blog/2007/09/09/inconsistent-array-literals/\": {",
+      "meaning": "Unknown third-party host www.nczonline.net: docs link; not fetched at runtime. Seen 3 times."
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "external-endpoint",
+      "file": "docs/src/_data/sites/en.yml",
+      "line": 98,
+      "title": "external-endpoint: www.openjsf.org",
+      "snippet": "&copy; OpenJS Foundation and ESLint contributors, <a href=\"https://www.openjsf.org\">www.openjsf.org</a>. Content licensed under <a href=\"https://github.com/esli",
+      "meaning": "Unknown third-party host www.openjsf.org: docs link; not fetched at runtime."
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "external-endpoint",
+      "file": "docs/src/_data/further_reading_links.json",
+      "line": 495,
+      "title": "external-endpoint: www.oreilly.com",
+      "snippet": "\"logo\": \"https://www.oreilly.com/favicon.ico\",",
+      "meaning": "Unknown third-party host www.oreilly.com: docs link; not fetched at runtime."
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "external-endpoint",
+      "file": "docs/src/_data/further_reading_links.json",
+      "line": 268,
+      "title": "external-endpoint: www.smashingmagazine.com",
+      "snippet": "\"https://www.smashingmagazine.com/2014/01/understanding-javascript-function-prototype-bind/\": {",
+      "meaning": "Unknown third-party host www.smashingmagazine.com: docs link; not fetched at runtime. Seen 3 times."
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "external-endpoint",
+      "file": "docs/src/_data/further_reading_links.json",
+      "line": 499,
+      "title": "external-endpoint: yuiblog.com",
+      "snippet": "\"https://web.archive.org/web/20200717110117/https://yuiblog.com/blog/2006/04/11/with-statement-considered-harmful/\": {",
+      "meaning": "Unknown third-party host yuiblog.com: docs link; not fetched at runtime. Seen 3 times."
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "first-party-endpoint",
+      "file": "docs/src/_data/languages.json",
+      "line": 25,
+      "title": "first-party-endpoint: cn.eslint.org",
+      "snippet": "\"url\": \"https://cn.eslint.org\"",
+      "meaning": "Own/related domain cn.eslint.org: first-party traffic, not a third party."
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "first-party-endpoint",
+      "file": "eslint.config.js",
+      "line": 183,
+      "title": "first-party-endpoint: eslint.org",
+      "snippet": "{ pattern: \"https://eslint.org/docs/latest/rules/{{name}}\" },",
+      "meaning": "Own/related domain eslint.org: first-party traffic, not a third party. Seen 914 times."
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "first-party-endpoint",
+      "file": "docs/src/_data/links.json",
+      "line": 10,
+      "title": "first-party-endpoint: explorer.eslint.org",
+      "snippet": "\"codeExplorer\": \"https://explorer.eslint.org/\",",
+      "meaning": "Own/related domain explorer.eslint.org: first-party traffic, not a third party. Seen 2 times."
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "first-party-endpoint",
+      "file": "docs/src/_data/languages.json",
+      "line": 19,
+      "title": "first-party-endpoint: fr.eslint.org",
+      "snippet": "\"url\": \"https://fr.eslint.org\"",
+      "meaning": "Own/related domain fr.eslint.org: first-party traffic, not a third party."
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "first-party-endpoint",
+      "file": "packages/eslint-config-eslint/package.json",
+      "line": 59,
+      "title": "first-party-endpoint: github.com",
+      "snippet": "\"url\": \"https://github.com/eslint/eslint\",",
+      "meaning": "Own/related domain github.com: first-party traffic, not a third party. Seen 4 times.",
+      "package": "eslint-config-eslint",
+      "package_path": "packages/eslint-config-eslint"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "first-party-endpoint",
+      "file": "docs/src/_data/languages.json",
+      "line": 13,
+      "title": "first-party-endpoint: ja.eslint.org",
+      "snippet": "\"url\": \"https://ja.eslint.org\"",
+      "meaning": "Own/related domain ja.eslint.org: first-party traffic, not a third party."
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "third-party-cdn",
+      "file": "docs/src/_includes/layouts/base.html",
+      "line": 149,
+      "title": "third-party-cdn: unpkg.com",
+      "snippet": "<script src=\"https://unpkg.com/anchor-js@4.3.1/anchor.min.js\"></script>",
+      "meaning": "Asset requested from unpkg.com: it sees your IP and the page URL (third-party font/CDN) (docs/test reference).",
+      "remediation": "self-host the asset, or document and gate the host behind consent"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "third-party-script",
+      "file": "docs/src/_includes/layouts/base.html",
+      "line": 149,
+      "title": "third-party-script: unpkg.com",
+      "snippet": "<script src=\"https://unpkg.com/anchor-js@4.3.1/anchor.min.js\"></script>",
+      "meaning": "Loads executable script from unpkg.com: it runs with page privileges and can read cookies/DOM and beacon data.",
+      "remediation": "self-host the asset, or document and gate the host behind consent"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "third-party-media",
+      "file": "docs/src/_includes/layouts/base.html",
+      "line": 142,
+      "title": "third-party-media: cdn.jsdelivr.net",
+      "snippet": "src: url(\"https://cdn.jsdelivr.net/npm/country-flag-emoji-polyfill@0.1/dist/TwemojiCountryFlags.woff2\") format(\"woff2\");",
+      "meaning": "CSS url() asset from cdn.jsdelivr.net: it sees your IP and the page URL.",
+      "remediation": "self-host the asset, or document and gate the host behind consent"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "browser-storage",
+      "file": "docs/src/assets/js/themes.js",
+      "line": 20,
+      "title": "browser-storage: localStorage/sessionStorage",
+      "snippet": "window.localStorage.setItem(\"theme\", theme);",
+      "meaning": "Data stored in the browser: survives reloads (localStorage) and can be used to track the user.",
+      "remediation": "clear client storage on logout, or keep only non-identifying values there"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "referrer-policy",
+      "file": "docs/src/_includes/components/search.html",
+      "line": 21,
+      "title": "referrer-policy: policy",
+      "snippet": "rel=\"noopener noreferrer\">",
+      "meaning": "Referrer policy present: third parties see a reduced URL instead of the full one. Seen 17 times.",
+      "remediation": "send `Referrer-Policy: strict-origin-when-cross-origin` (or `no-referrer`)"
+    },
+    {
+      "tool": "trust",
+      "severity": "info",
+      "rule": "trust-signals",
+      "file": "(github)",
+      "line": 0,
+      "title": "trust-signals: repo 4899d old, 27656 stars, 5217 forks, 1261 contributors, owner 4752d old",
+      "snippet": "",
+      "meaning": "Context signal only; never decides the verdict alone."
+    },
+    {
+      "tool": "trust",
+      "severity": "info",
+      "rule": "commit-unsigned",
+      "file": "(github)",
+      "line": 0,
+      "title": "commit-unsigned: default-branch commit is not signed (reason: unsigned)",
+      "snippet": "",
+      "meaning": "Context signal only; never decides the verdict alone."
+    },
+    {
+      "tool": "trust",
+      "severity": "info",
+      "rule": "tag-unsigned",
+      "file": "(github)",
+      "line": 0,
+      "title": "tag-unsigned: latest tag v10.16.0 points at an unsigned commit (reason: unsigned)",
+      "snippet": "",
+      "meaning": "Context signal only; never decides the verdict alone."
+    },
+    {
+      "tool": "trust",
+      "severity": "info",
+      "rule": "release-immutable",
+      "file": "(github)",
+      "line": 0,
+      "title": "release-immutable: latest release v10.16.0 is immutable",
+      "snippet": "",
+      "meaning": "Context signal only; never decides the verdict alone."
+    }
+  ],
+  "raw_findings_count": 207,
+  "notes": [
+    "bandit: no Python files (skipped)",
+    "osv-scanner not installed (skipped)",
+    "workspace: 2 package(s) detected",
+    "AI review skipped (set BEAGLE_LLM_URL to enable; REPO_GUARD_LLM_URL also accepted)"
+  ],
+  "recommended_actions": [
+    "Read the listed findings before trusting it; most may be benign, but confirm each.",
+    "Install only in an isolated environment (container/VM/throwaway user) with no secrets present.",
+    "Don't let an AI agent auto-run its install steps or MCP servers without reviewing them."
+  ]
+}

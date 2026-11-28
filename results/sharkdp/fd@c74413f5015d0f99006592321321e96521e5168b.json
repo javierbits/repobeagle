@@ -1,0 +1,860 @@
+{
+  "version": "1.201.0",
+  "verdict": "GREEN",
+  "why": "No significant findings from any scanner",
+  "counts": {
+    "critical": 0,
+    "high": 0,
+    "medium": 0,
+    "low": 9,
+    "info": 8
+  },
+  "meta": {
+    "target": "https://github.com/sharkdp/fd.git",
+    "ref": "c74413f5015d0f99006592321321e96521e5168b",
+    "commit": "c74413f5015d0f99006592321321e96521e5168b",
+    "fetched_via": "git clone --depth 1 --filter=blob:none @ c74413f5015d0f99006592321321e96521e5168b + sparse checkout (0 archives/binaries listed, not downloaded)",
+    "mode": "docker (--network none, read-only)",
+    "profile": "balanced",
+    "files": 61,
+    "seconds": 18.9,
+    "scanned_at": "2026-11-28T14:57:18Z",
+    "tools": {
+      "gitleaks": {
+        "findings": 0,
+        "seconds": 1.0,
+        "ok": true,
+        "version": "8.30.1"
+      },
+      "semgrep": {
+        "findings": 0,
+        "seconds": 3.8,
+        "ok": true,
+        "version": "1.187.0"
+      },
+      "guarddog": {
+        "findings": 0,
+        "seconds": 0.0,
+        "ok": true,
+        "version": "3.2.0"
+      },
+      "bandit": {
+        "findings": 0,
+        "seconds": 0.0,
+        "ok": true,
+        "version": "1.9.4"
+      },
+      "agent-checks": {
+        "findings": 14,
+        "seconds": 2.5,
+        "ok": true,
+        "files": 61
+      },
+      "osv-scanner": {
+        "findings": 0,
+        "seconds": 0.0,
+        "ok": false
+      },
+      "trust": {
+        "findings": 3,
+        "seconds": 1.7,
+        "ok": true
+      }
+    },
+    "suppressed": 0,
+    "suppressions": [],
+    "pii_redacted": true,
+    "privacy_mode": "full",
+    "ruleset": "92559dde022f",
+    "complete": true,
+    "cache": "miss",
+    "capabilities": {
+      "files": 61,
+      "network": [
+        {
+          "value": "github.com",
+          "file": "CHANGELOG.md",
+          "line": 293,
+          "count": 45,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "docs.rs",
+          "file": "Cargo.toml",
+          "line": 7,
+          "count": 2,
+          "doc": false,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "learn.microsoft.com",
+          "file": "README.md",
+          "line": 689,
+          "count": 2,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "repology.org",
+          "file": "README.md",
+          "line": 557,
+          "count": 2,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "www.gnu.org",
+          "file": "README.md",
+          "line": 9,
+          "count": 2,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "aur.archlinux.org",
+          "file": "README.md",
+          "line": 615,
+          "count": 1,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "bford.info",
+          "file": "CHANGELOG.md",
+          "line": 67,
+          "count": 1,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "blog.rust-lang.org",
+          "file": "CHANGELOG.md",
+          "line": 169,
+          "count": 1,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "bugzilla.redhat.com",
+          "file": "README.md",
+          "line": 661,
+          "count": 1,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "chocolatey.org",
+          "file": "README.md",
+          "line": 684,
+          "count": 1,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "copr.fedorainfracloud.org",
+          "file": "README.md",
+          "line": 654,
+          "count": 1,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "crates.io",
+          "file": "README.md",
+          "line": 4,
+          "count": 1,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "flox.dev",
+          "file": "README.md",
+          "line": 717,
+          "count": 1,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "formulae.brew.sh",
+          "file": "README.md",
+          "line": 665,
+          "count": 1,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "gist.github.com",
+          "file": "CHANGELOG.md",
+          "line": 182,
+          "count": 1,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "img.shields.io",
+          "file": "README.md",
+          "line": 4,
+          "count": 1,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "linux.die.net",
+          "file": "README.md",
+          "line": 411,
+          "count": 1,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "nixos.org",
+          "file": "README.md",
+          "line": 710,
+          "count": 1,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "no-color.org",
+          "file": "README.md",
+          "line": 419,
+          "count": 1,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "npm.im",
+          "file": "README.md",
+          "line": 731,
+          "count": 1,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "packages.altlinux.org",
+          "file": "README.md",
+          "line": 640,
+          "count": 1,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "packages.gentoo.org",
+          "file": "README.md",
+          "line": 619,
+          "count": 1,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "packages.guix.gnu.org",
+          "file": "README.md",
+          "line": 696,
+          "count": 1,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "packages.ubuntu.com",
+          "file": "README.md",
+          "line": 563,
+          "count": 1,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "pkgs.alpinelinux.org",
+          "file": "README.md",
+          "line": 603,
+          "count": 1,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "scoop.sh",
+          "file": "README.md",
+          "line": 679,
+          "count": 1,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "software.opensuse.org",
+          "file": "README.md",
+          "line": 626,
+          "count": 1,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "tracker.debian.org",
+          "file": "README.md",
+          "line": 583,
+          "count": 1,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "vimdoc.sourceforge.net",
+          "file": "README.md",
+          "line": 24,
+          "count": 1,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "www.archlinux.org",
+          "file": "README.md",
+          "line": 611,
+          "count": 1,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "www.debian.org",
+          "file": "scripts/create-deb.sh",
+          "line": 68,
+          "count": 1,
+          "doc": false,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "www.freshports.org",
+          "file": "README.md",
+          "line": 724,
+          "count": 1,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        }
+      ],
+      "filesystem": [
+        {
+          "value": "$HOME",
+          "file": "README.md",
+          "line": 500,
+          "count": 5,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        }
+      ],
+      "processes": [
+        {
+          "value": "command::new",
+          "file": "src/main.rs",
+          "line": 414,
+          "count": 8,
+          "doc": false,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "exec(",
+          "file": "CHANGELOG.md",
+          "line": 395,
+          "count": 1,
+          "doc": true,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        }
+      ],
+      "environment": [
+        {
+          "value": "CARGO_BIN_EXE_fd",
+          "file": "tests/testenv/mod.rs",
+          "line": 78,
+          "count": 1,
+          "doc": false,
+          "test": true,
+          "verified": false,
+          "source": "static"
+        },
+        {
+          "value": "MSYSTEM",
+          "file": "src/filesystem.rs",
+          "line": 173,
+          "count": 1,
+          "doc": false,
+          "test": false,
+          "verified": false,
+          "source": "static"
+        }
+      ],
+      "storage": []
+    },
+    "coverage": {
+      "files_total": 61,
+      "files_scanned": 47,
+      "bytes_total": 610907,
+      "bytes_scanned": 398842,
+      "bytes_scanned_pct": 65.3,
+      "skipped": {
+        "archive": 0,
+        "binary": 0,
+        "oversize": 0,
+        "unreadable": 0,
+        "unsupported": 14
+      },
+      "unscanned_extensions": [
+        [
+          "(none)",
+          7
+        ],
+        [
+          ".svg",
+          2
+        ],
+        [
+          ".1",
+          1
+        ],
+        [
+          ".awk",
+          1
+        ],
+        [
+          ".fish",
+          1
+        ],
+        [
+          ".lock",
+          1
+        ],
+        [
+          ".png",
+          1
+        ]
+      ],
+      "languages": {
+        "inspected": {
+          "Rust": 25,
+          "Shell": 5
+        },
+        "no_rules": {}
+      }
+    },
+    "privacy_summary": {
+      "pii": [
+        "+1844 **** **** 0955",
+        "m***@david-peter.de",
+        "name (docs link)"
+      ],
+      "first_party": [
+        "docs.rs",
+        "github.com"
+      ],
+      "network": [
+        "www.debian.org",
+        "third-party requests with no Referrer-Policy"
+      ],
+      "retention": [
+        "data collected but no retention/expiry setting found"
+      ],
+      "uploads": [
+        "file upload",
+        "size cap"
+      ],
+      "transparency": [
+        "no privacy policy file"
+      ]
+    },
+    "privacy_profile": "Privacy profile: 0 tracker vendor(s), 1 third-party host(s), 3 PII item(s)",
+    "checks": {
+      "gha-curl-pipe-shell": {
+        "evaluated": true,
+        "files": 61,
+        "hits": 0,
+        "suppressed": 0,
+        "negative": "no workflow pipes a downloaded script into a shell",
+        "family": "agent",
+        "documented": false
+      },
+      "gha-unpinned-action": {
+        "evaluated": true,
+        "files": 61,
+        "hits": 1,
+        "suppressed": 0,
+        "negative": "no action is referenced by a moving tag/branch instead of a commit SHA",
+        "family": "agent",
+        "documented": false
+      },
+      "gha-pwn-request": {
+        "evaluated": true,
+        "files": 61,
+        "hits": 0,
+        "suppressed": 0,
+        "negative": "no pull_request_target/workflow_run workflow checks out the PR head with secrets",
+        "family": "agent",
+        "documented": false
+      },
+      "npm lifecycle script 'postinstall' runs automatically on install": {
+        "evaluated": true,
+        "files": 61,
+        "hits": 0,
+        "suppressed": 0,
+        "negative": "no npm lifecycle hook runs automatically on install",
+        "family": "agent",
+        "documented": false
+      },
+      "Download-and-execute": {
+        "evaluated": true,
+        "files": 61,
+        "hits": 0,
+        "suppressed": 0,
+        "negative": "no installer/script is downloaded and executed",
+        "family": "agent",
+        "documented": false
+      },
+      "gguf-chat-template-command": {
+        "evaluated": true,
+        "files": 61,
+        "hits": 0,
+        "suppressed": 0,
+        "negative": "no GGUF chat template makes the model print a shell command",
+        "family": "agent",
+        "documented": false
+      },
+      "Code reads secrets/credentials near a network call": {
+        "evaluated": true,
+        "files": 61,
+        "hits": 0,
+        "suppressed": 0,
+        "negative": "no credential file is read next to a network sink",
+        "family": "agent",
+        "documented": false
+      },
+      "import-time-network": {
+        "evaluated": true,
+        "files": 61,
+        "hits": 0,
+        "suppressed": 0,
+        "negative": "no network call runs at module scope",
+        "family": "privacy",
+        "documented": true
+      },
+      "third-party-script": {
+        "evaluated": true,
+        "files": 61,
+        "hits": 0,
+        "suppressed": 0,
+        "negative": "no script is loaded from a third-party host",
+        "family": "privacy",
+        "documented": true
+      },
+      "cookie-flags": {
+        "evaluated": true,
+        "files": 61,
+        "hits": 0,
+        "suppressed": 0,
+        "negative": "no cookie is written without Secure/SameSite where it matters",
+        "family": "privacy",
+        "documented": true
+      },
+      "pii-in-url": {
+        "evaluated": true,
+        "files": 61,
+        "hits": 1,
+        "suppressed": 0,
+        "negative": "no PII is placed in URL query parameters",
+        "family": "privacy",
+        "documented": true
+      }
+    },
+    "scanned_repo": "sharkdp/fd",
+    "scanned_sha": "c74413f5015d0f99006592321321e96521e5168b",
+    "index": {
+      "name": "repobeagle",
+      "version": "1.201.0",
+      "mode": "github"
+    }
+  },
+  "privacy_summary": {
+    "pii": [
+      "+1844 **** **** 0955",
+      "m***@david-peter.de",
+      "name (docs link)"
+    ],
+    "first_party": [
+      "docs.rs",
+      "github.com"
+    ],
+    "network": [
+      "www.debian.org",
+      "third-party requests with no Referrer-Policy"
+    ],
+    "retention": [
+      "data collected but no retention/expiry setting found"
+    ],
+    "uploads": [
+      "file upload",
+      "size cap"
+    ],
+    "transparency": [
+      "no privacy policy file"
+    ]
+  },
+  "ai_review": null,
+  "findings": [
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "rule": "gha-write-permissions",
+      "file": ".github/workflows/CICD.yml",
+      "line": 91,
+      "title": "gha-write-permissions: workflow token has write permissions",
+      "snippet": "id-token: write",
+      "meaning": "A compromised step can push code or publish packages.",
+      "remediation": "add a least-privilege `permissions:` block to the workflow"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "rule": "gha-write-permissions",
+      "file": ".github/workflows/CICD.yml",
+      "line": 92,
+      "title": "gha-write-permissions: workflow token has write permissions",
+      "snippet": "contents: write",
+      "meaning": "A compromised step can push code or publish packages.",
+      "remediation": "add a least-privilege `permissions:` block to the workflow"
+    },
+    {
+      "tool": "agent-checks",
+      "severity": "low",
+      "rule": "gha-unpinned-action",
+      "file": ".github/workflows/CICD.yml",
+      "line": 24,
+      "title": "gha-unpinned-action: 9 action(s) on a tag/branch, not a commit SHA",
+      "snippet": "- uses: actions/checkout@v7.0.1",
+      "meaning": "Tags can be moved to malicious code (e.g. tj-actions/changed-files, 2025).",
+      "remediation": "pin `uses:` to a full 40-character commit SHA"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "rule": "pii-phone",
+      "file": "src/filter/size.rs",
+      "line": 224,
+      "title": "pii-phone: +1844 **** **** 0955",
+      "snippet": "\"+184****9551615k\",",
+      "meaning": "Hardcoded phone number in source/config (personal data); check it is intentional. Seen 2 times.",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "rule": "insecure-endpoint",
+      "file": "scripts/create-deb.sh",
+      "line": 68,
+      "title": "insecure-endpoint: www.debian.org",
+      "snippet": "Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/",
+      "meaning": "Plaintext http:// to www.debian.org: reference URL, not a request in this line.",
+      "remediation": "use https:// / wss://"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "rule": "data-retention",
+      "file": "(repo)",
+      "line": 0,
+      "title": "data-retention: data collected but no retention/expiry setting found",
+      "snippet": "no retention/ttl/expiry/delete_after value in the repo",
+      "meaning": "Personal data is collected but nothing says when it is deleted; check the privacy policy.",
+      "remediation": "set an explicit retention period and delete the data when it ends"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "rule": "referrer-policy",
+      "file": "(repo)",
+      "line": 0,
+      "title": "referrer-policy: third-party requests with no Referrer-Policy",
+      "snippet": "no Referrer-Policy header or <meta name=referrer>",
+      "meaning": "By default the full page URL (including path and query) is sent as Referer to third parties.",
+      "remediation": "send `Referrer-Policy: strict-origin-when-cross-origin` (or `no-referrer`)"
+    },
+    {
+      "tool": "privacy",
+      "severity": "low",
+      "rule": "privacy-doc",
+      "file": "(repo)",
+      "line": 0,
+      "title": "privacy-doc: no privacy policy file",
+      "snippet": "expected PRIVACY.md or PrivacyInfo.xcprivacy",
+      "meaning": "The repo collects/transmits data but ships no privacy policy/manifest file.",
+      "remediation": "add a PRIVACY.md/policy (or link one) and state what is collected"
+    },
+    {
+      "tool": "trust",
+      "severity": "low",
+      "rule": "release-mutable",
+      "file": "(github)",
+      "line": 0,
+      "title": "release-mutable: latest release v10.5.2 is not immutable: its tag or assets can be replaced",
+      "snippet": "",
+      "meaning": "Context signal only; never decides the verdict alone."
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "pii-email",
+      "file": "Cargo.toml",
+      "line": 2,
+      "title": "pii-email: m***@david-peter.de",
+      "snippet": "authors = [\"David Peter <m***@david-peter.de>\"]",
+      "meaning": "Role mailbox (support@, noreply@, \u2026): not personal data. Seen 2 times.",
+      "remediation": "move the value to config/env, or mark it as an example so the rule can ignore it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "pii-in-url",
+      "file": "README.md",
+      "line": 603,
+      "title": "pii-in-url: name (docs link)",
+      "snippet": "You can install [the fd package](https://pkgs.alpinelinux.org/packages?name=fd)",
+      "meaning": "Example link puts personal data in the URL query: fine in docs, leaks via Referer/logs when used at runtime.",
+      "remediation": "strip the parameter before it reaches logs/referers, or use a POST body instead"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "upload-surface",
+      "file": ".github/workflows/CICD.yml",
+      "line": 247,
+      "title": "upload-surface: file upload",
+      "snippet": "- name: \"Artifact upload: tarball\"",
+      "meaning": "Accepts user-supplied files or request bodies: data enters the service. Seen 6 times.",
+      "remediation": "check where the uploaded file is stored and who can read it"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "upload-limit",
+      "file": "src/cli.rs",
+      "line": 819,
+      "title": "upload-limit: size cap",
+      "snippet": "let limit = NonZeroUsize::new(64).unwrap();",
+      "meaning": "A request/upload size cap is set (data-minimization guard). Seen 9 times.",
+      "remediation": "state and enforce the upload size/type limit"
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "first-party-endpoint",
+      "file": "Cargo.toml",
+      "line": 7,
+      "title": "first-party-endpoint: docs.rs",
+      "snippet": "documentation = \"https://docs.rs/fd-find\"",
+      "meaning": "Own/related domain docs.rs: first-party traffic, not a third party."
+    },
+    {
+      "tool": "privacy",
+      "severity": "info",
+      "rule": "first-party-endpoint",
+      "file": "Cargo.toml",
+      "line": 6,
+      "title": "first-party-endpoint: github.com",
+      "snippet": "homepage = \"https://github.com/sharkdp/fd\"",
+      "meaning": "Own/related domain github.com: first-party traffic, not a third party. Seen 5 times."
+    },
+    {
+      "tool": "trust",
+      "severity": "info",
+      "rule": "trust-signals",
+      "file": "(github)",
+      "line": 0,
+      "title": "trust-signals: repo 3489d old, 45259 stars, 1384 forks, 258 contributors, owner 4970d old",
+      "snippet": "",
+      "meaning": "Context signal only; never decides the verdict alone."
+    },
+    {
+      "tool": "trust",
+      "severity": "info",
+      "rule": "tag-unsigned",
+      "file": "(github)",
+      "line": 0,
+      "title": "tag-unsigned: latest tag v10.5.2 points at an unsigned commit (reason: unsigned)",
+      "snippet": "",
+      "meaning": "Context signal only; never decides the verdict alone."
+    }
+  ],
+  "raw_findings_count": 17,
+  "notes": [
+    "guarddog: no python/npm package manifest at repo root (skipped)",
+    "bandit: no Python files (skipped)",
+    "osv-scanner not installed (skipped)",
+    "AI review skipped (set BEAGLE_LLM_URL to enable; REPO_GUARD_LLM_URL also accepted)"
+  ],
+  "recommended_actions": [
+    "No red flags found by static analysis. Still pin versions and install in a venv/container.",
+    "Static scanning can't prove safety; it does not observe runtime behavior."
+  ]
+}
