@@ -35,6 +35,7 @@ and the `meta` facts you need to judge how much the verdict covers.
 | Unknown repo, triage | `repobeagle head <owner/repo> --json report.json` | RED: do not clone/run; YELLOW: read the findings first |
 | Before running/installing | `repobeagle scan <url\|dir> --json report.json` | RED: stop; quote the critical/high findings and the fix |
 | A package runner is about to fetch code | `repobeagle run -- npx -y <pkg>` | RED refuses automatically; YELLOW prompts (CI needs `--yes`/`--force`) |
+| Hugging Face CLI is about to download weights | `repobeagle run -- hf download <repo_id>` | scans the HF repo (model/dataset/space) before the download; RED refuses |
 | Registry/catalog listing | `repobeagle gate entries.txt` / `repobeagle batch entries.txt` | new RED fails; `unknown` entries were not verified |
 | A published badge/report | `repobeagle verify <owner/repo>` | signature invalid or stale: do not trust the colour |
 | What does this rule id mean? | `repobeagle explain <rule>` | severity, meaning, remediation and corpus examples with exact lines |

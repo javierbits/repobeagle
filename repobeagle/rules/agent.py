@@ -10,6 +10,7 @@ from pathlib import Path
 # --- cross-module imports ---
 
 from ..core import AGENT_FILE_RE, ARCHIVE_EXT, BIDI, BINARY_EXT, CODE_EXT, ConfigError, DECODE_EXEC, DOC_EXT, INJECTION_PATTERNS, PIPE_SHELL, PROSE_EXT, READ_RE, SCAN_FILE_SECONDS, SENS_RE, SINK_RE, ScanDeadline, TEST_PATH, ZW, _gitmodules_entries, _is_comment, _json_file, _line_of, _origin_host, _rule_of, _scan_alarm, _url_host, decode_tags, finding, is_tag, iter_files, load_repo_config, own_domains, parse_yaml_subset, read_text, rel, strip_invisible, zip_encrypted
+from ..modelmeta import WEIGHT_EXT, lfs_pointer, onnx_prefix_info, read_header, read_safetensors
 from ..rules.privacy import PRIVACY_DOC_NAMES, PRIVACY_DOC_RE, PRIVACY_LINK_RE, check_privacy, check_privacy_signals, check_telemetry, privacy_findings, telemetry_findings
 
 
@@ -486,6 +487,269 @@ def check_magic(root, p, findings):
     return False
 
 
+MODEL_URL_RE = re.compile(r"https?://[^\s'\"<>)\]}]+", re.I)
+
+
+# A chat template is Jinja, but the payload that matters is a shell/downloader command
+# the model is told to reproduce. Anchored on the command shapes agents and humans
+# actually run, not on every word that happens to be a program name.
+MODEL_COMMAND_RE = re.compile(r"""(?ix)
+    (?:
+        \b(?:powershell|pwsh|cmd|bash|zsh|fish|sh)\b[^\n]{0,40}\s-(?:c|command|e|enc|encodedcommand)\b
+      | \b(?:curl|wget)\b[^\n]{0,300}(?:https?://|\|\s*(?:sudo\s+)?(?:ba|z|da)?sh\b|\s-(?:o|o-|output|outfile)\b)
+      | \biwr\b[^\n]{0,300}(?:https?://|-outfile\b)
+      | \b(?:invoke-webrequest|invoke-restmethod)\b[^\n]{0,300}(?:https?://|-outfile\b)
+      | \bhttps?://\S+[^\n]{0,80}\s-outfile\b
+      | \b(?:start-process|unblock-file|iex)\b
+      | \|\s*(?:sudo\s+)?(?:ba|z|da)?sh\b
+    )
+""")
+
+
+# A system message literal prepended to the conversation: the template changes what
+# the model is told before the user's first token.
+GGUF_SYSTEM_LITERAL_RE = re.compile(
+    r"""(?sx)\{\s*['"]role['"]\s*:\s*['"]system['"]\s*,\s*['"]content['"]\s*:\s*
+        (?P<q>['"])(?P<content>.{0,4000}?)(?P=q)\s*\}""")
+GGUF_PREPEND_RE = re.compile(r"(?sx)\[\s*\{.{0,20000}?\}\s*\]\s*\+\s*(?:messages|conversation|history|prompt)\b")
+
+
+def check_gguf(root, p, findings):
+    """Read a GGUF metadata header (never the weights) and audit its chat template.
+
+    `tokenizer.chat_template` is applied automatically by llama.cpp, Ollama, LM Studio
+    and most GGUF consumers. A template that injects a system message can make the
+    model print a shell command; an agent that pastes the answer then runs it.
+    """
+    r = rel(root, p)
+    metadata, info = read_header(p)
+    if info.get("lfs"):
+        oid, size = info["lfs"]
+        findings.append(finding("agent-checks", "medium", r, 0,
+            "gguf-metadata-unavailable: GGUF weights are a Git LFS pointer, metadata not inspected",
+            f"oid sha256:{oid[:12]}… size {size}",
+            "The model card and the chat template live inside the file. Fetch the header (or scan with network access) before trusting a GREEN verdict."))
+        return
+    if metadata is None:
+        findings.append(finding("agent-checks", "medium", r, 0,
+            "gguf-metadata-unreadable: GGUF header could not be parsed",
+            info.get("error") or f"{info.get('read')} bytes read",
+            "A GGUF whose header cannot be parsed cannot be checked for an injected chat template."))
+        return
+    if not info.get("complete"):
+        findings.append(finding("agent-checks", "medium", r, 0,
+            "gguf-metadata-truncated: chat template may sit beyond the scanned prefix",
+            f"parsed {info.get('consumed')} of {info.get('size')} bytes",
+            "Raise BEAGLE_MODEL_HEADER_MAX_BYTES or scan the file directly; keys after the truncation point were not inspected."))
+    templates = {k: v for k, v in metadata.items() if "chat_template" in k.lower() and isinstance(v, str)}
+    if not templates:
+        findings.append(finding("agent-checks", "info", r, 0,
+            "gguf-metadata: GGUF header inspected (no chat template)",
+            f"{len(metadata)} metadata key(s), {info.get('consumed')} bytes read",
+            "No tokenizer.chat_template means the consumer uses its own formatting."))
+        return
+    for key, template in templates.items():
+        visible = strip_invisible(template)
+        if visible != template:
+            findings.append(finding("agent-checks", "high", r, 0,
+                "gguf-chat-template-invisible: invisible Unicode hides text in the chat template",
+                visible[:140],
+                "Zero-width/bidi/tag characters are invisible to a human reading the model card but not to the model."))
+        for pattern, title in INJECTION_PATTERNS:
+            m = re.search(pattern, visible)
+            if m:
+                findings.append(finding("agent-checks", "high", r, 0,
+                    f"gguf-chat-template-injection: {title}", m.group(0),
+                    f"The automatically applied `{key}` contains instructions aimed at the model."))
+                break
+        cmd = MODEL_COMMAND_RE.search(template)
+        if cmd:
+            findings.append(finding("agent-checks", "critical", r, 0,
+                "gguf-chat-template-command: chat template makes the model print a shell command",
+                template[cmd.start():cmd.start() + 240],
+                f"`{key}` is applied on every load. Consumers do not run it, but the model reproduces it (the template may say \"copy this line\"); an agent or a human pasting the answer runs it."))
+        literal = GGUF_SYSTEM_LITERAL_RE.search(template)
+        if literal and GGUF_PREPEND_RE.search(template):
+            content = re.sub(r"\s+", " ", literal.group("content")).strip()
+            if content:
+                findings.append(finding("agent-checks", "medium" if cmd else "high", r, 0,
+                    "gguf-chat-template-system: chat template injects a system message into every conversation",
+                    content[:140],
+                    f"`{key}` prepends its own system message before the user's messages; the model card may not mention it."))
+        urls = MODEL_URL_RE.findall(template)
+        if urls and not cmd:
+            findings.append(finding("agent-checks", "low", r, 0,
+                "gguf-chat-template-url: chat template references a remote URL",
+                urls[0],
+                "The model is told to mention this host; not a request by the scanner, but a dependency in the output."))
+        findings.append(finding("agent-checks", "info", r, 0,
+            "gguf-metadata: chat template inspected",
+            f"`{key}`: {len(template)} chars, {info.get('consumed')} header bytes read",
+            "The template is applied automatically by llama.cpp, Ollama and LM Studio. It is data, not executed by the scanner."))
+
+
+def _weight_metadata_text(root, p, findings, key, text, rule):
+    """Report arbitrary metadata text that hides instructions, commands or a remote URL."""
+    r = rel(root, p)
+    visible = strip_invisible(text)
+    if visible != text:
+        findings.append(finding("agent-checks", "high", r, 0,
+            f"{rule}-invisible: invisible Unicode hides text in {key}",
+            visible[:140],
+            "Zero-width/bidi/tag characters are invisible to a reader but not to the consumer."))
+    for pattern, title in INJECTION_PATTERNS:
+        m = re.search(pattern, visible)
+        if m:
+            findings.append(finding("agent-checks", "high", r, 0,
+                f"{rule}-injection: {title}", m.group(0),
+                f"`{key}` carries instructions aimed at an agent or the model."))
+            break
+    cmd = MODEL_COMMAND_RE.search(text)
+    if cmd:
+        findings.append(finding("agent-checks", "critical", r, 0,
+            f"{rule}-command: {key} contains a shell command",
+            text[cmd.start():cmd.start() + 240],
+            f"`{key}` is free-form metadata; an agent or a human reading it can run the command."))
+    urls = MODEL_URL_RE.findall(text)
+    if urls:
+        findings.append(finding("agent-checks", "low", r, 0,
+            f"{rule}-url: {key} references a remote URL", urls[0],
+            "The value depends on a host outside the repository."))
+
+
+def check_safetensors(root, p, findings):
+    """Audit the JSON header of a safetensors file; tensor payloads are never read."""
+    r = rel(root, p)
+    header, info = read_safetensors(p)
+    if info.get("lfs"):
+        oid, size = info["lfs"]
+        findings.append(finding("agent-checks", "medium", r, 0,
+            "weight-metadata-unavailable: safetensors weights are a Git LFS pointer, header not inspected",
+            f"oid sha256:{oid[:12]}… size {size}",
+            "Fetch the header (or scan with network access) before trusting a GREEN verdict on a model repo."))
+        return
+    if header is None:
+        findings.append(finding("agent-checks", "medium", r, 0,
+            "safetensors-header-unreadable: safetensors JSON header could not be parsed",
+            info.get("error") or f"{info.get('read')} bytes read",
+            "A header that cannot be parsed cannot be checked for injected metadata."))
+        return
+    if not info.get("complete"):
+        findings.append(finding("agent-checks", "medium", r, 0,
+            "safetensors-header-truncated: header longer than the scanned prefix",
+            f"parsed {info.get('consumed')} of {info.get('size')} bytes",
+            "Raise BEAGLE_MODEL_HEADER_MAX_BYTES or scan the file directly; metadata beyond the cut was not inspected."))
+    tensors = [k for k, v in header.items() if k != "__metadata__" and isinstance(v, dict)]
+    meta = header.get("__metadata__")
+    keys = sorted(meta) if isinstance(meta, dict) else []
+    findings.append(finding("agent-checks", "info", r, 0,
+        "safetensors-header: JSON header inspected",
+        f"{len(tensors)} tensor(s), metadata keys: {', '.join(keys[:8]) or 'none'}; {info.get('consumed')} bytes",
+        "The header names tensors, dtypes, shapes and offsets. The payload is not read."))
+    if isinstance(meta, dict):
+        for k, v in meta.items():
+            if isinstance(v, str) and v:
+                _weight_metadata_text(root, p, findings, f"__metadata__.{k}", v, "safetensors-metadata")
+
+
+def check_weight_header(root, p, findings):
+    """Sample the header of any other weight container; never decode the payload as source."""
+    r = rel(root, p)
+    try:
+        with open(p, "rb") as fh:
+            head = fh.read(4096)
+    except OSError:
+        return
+    pointer = lfs_pointer(head)
+    if pointer:
+        oid, size = pointer
+        findings.append(finding("agent-checks", "medium", r, 0,
+            "weight-metadata-unavailable: model weights are a Git LFS pointer, header not inspected",
+            f"oid sha256:{oid[:12]}… size {size}",
+            "The header (and any embedded metadata) was not read; fetch it before trusting a GREEN verdict."))
+        return
+    suffix = p.suffix.lower()
+    kind = ""
+    if head[:4] == b"PK\x03\x04":
+        kind = "ZIP container (PyTorch checkpoint / archive)"
+    elif head[:8] == b"\x89HDF\r\n\x1a\n":
+        kind = "HDF5 (Keras/TensorFlow weights)"
+    elif head[4:8] == b"TFL3":
+        kind = "TensorFlow Lite flatbuffer"
+    elif suffix == ".onnx":
+        props = onnx_prefix_info(head)
+        kind = "ONNX protobuf" + (f" (producer {props.get('producer_name')})" if props.get("producer_name") else "")
+        for key in ("producer_name", "producer_version", "domain", "doc_string"):
+            if isinstance(props.get(key), str) and props[key]:
+                _weight_metadata_text(root, p, findings, f"onnx.{key}", props[key], "onnx-metadata")
+    elif suffix in (".plan", ".engine"):
+        kind = "TensorRT engine"
+    elif suffix == ".ot":
+        kind = "Optimum/OpenVINO container"
+    elif suffix == ".mlmodel":
+        kind = "Core ML protobuf"
+    findings.append(finding("agent-checks", "info", r, 0,
+        "weight-metadata: model-weight header sampled",
+        f"{suffix or '(none)'}: {kind or 'binary container'}; {head[:16].hex()}",
+        "Only the header was read; the tensor payload is not parsed as source and cannot hide text instructions."))
+
+
+def _chat_templates_in_json(obj, out, depth=0):
+    if depth > 5:
+        return
+    if isinstance(obj, dict):
+        for k, v in obj.items():
+            if "chat_template" in str(k):
+                if isinstance(v, str):
+                    out.append(v)
+                elif isinstance(v, list):
+                    for item in v:
+                        if isinstance(item, str):
+                            out.append(item)
+                        elif isinstance(item, dict) and isinstance(item.get("template"), str):
+                            out.append(item["template"])
+            elif isinstance(v, (dict, list)):
+                _chat_templates_in_json(v, out, depth + 1)
+    elif isinstance(obj, list):
+        for v in obj:
+            if isinstance(v, (dict, list)):
+                _chat_templates_in_json(v, out, depth + 1)
+
+
+def check_chat_template(root, p, text, findings):
+    """Audit chat templates stored as text (`tokenizer_config.json`, `*.jinja`).
+
+    The same payload may live in the GGUF/safetensors metadata or beside it; a model card
+    that only mentions one copy must not hide the other.
+    """
+    ext = p.suffix.lower()
+    if ext in (".jinja", ".j2"):
+        templates = [text]
+    elif ext == ".json" and '"chat_template' in text:
+        try:
+            data = json.loads(text)
+        except ValueError:
+            return
+        templates = []
+        _chat_templates_in_json(data, templates)
+    else:
+        return
+    for template in templates:
+        if template and template.strip():
+            _weight_metadata_text(root, p, findings, "chat_template", template, "chat-template")
+
+
+def check_weight(root, p, findings):
+    """Dispatch a model-weight file to its format check. Weights are never decoded as text."""
+    suffix = p.suffix.lower()
+    if suffix == ".gguf":
+        check_gguf(root, p, findings)
+    elif suffix == ".safetensors":
+        check_safetensors(root, p, findings)
+    else:
+        check_weight_header(root, p, findings)
+
+
 def shannon(s):
     from collections import Counter
     from math import log2
@@ -795,6 +1059,24 @@ def workspace_packages(root):
     return detected[:MAX_WORKSPACE_PACKAGES], detected[MAX_WORKSPACE_PACKAGES:]
 
 
+def run_model_checks(root):
+    """(findings, files) for model-weight headers and template files only. Static and pure
+    Python, so the host can run it when the pinned container image predates these readers."""
+    findings: list[dict] = []
+    files = 0
+    for p in iter_files(root):
+        if p.suffix.lower() in WEIGHT_EXT:
+            files += 1
+            check_weight(root, p, findings)
+        elif p.suffix.lower() in (".jinja", ".j2") or (
+                p.suffix.lower() == ".json" and p.name.lower() in ("tokenizer_config.json", "chat_template.json")):
+            text = read_text(p)
+            if text is not None:
+                files += 1
+                check_chat_template(root, p, text, findings)
+    return findings, files
+
+
 def run_agent_checks(root, deadline=None, state=None):
     root = Path(root)
     """Regex/agent checks over the tree. `deadline` (monotonic) bounds the work; `state` records partial results."""
@@ -841,6 +1123,9 @@ def run_agent_checks(root, deadline=None, state=None):
             else:
                 findings.append(finding("agent-checks", "medium", r, 0, "Archive in repo (contents not scanned)", low, "Archives are never extracted; review where it came from."))
             return
+        if p.suffix.lower() in WEIGHT_EXT:
+            check_weight(root, p, findings)
+            return
         if p.suffix.lower() in BINARY_EXT:
             findings.append(finding("agent-checks", "medium", r, 0, "Prebuilt binary/compiled artifact in repo", p.suffix, "Binaries can't be reviewed as source; verify where they came from."))
             return
@@ -862,6 +1147,7 @@ def run_agent_checks(root, deadline=None, state=None):
         check_markdown_hidden(root, p, text, findings)
         check_build_hooks(root, p, text, findings)
         check_workflows(root, p, text, findings)
+        check_chat_template(root, p, text, findings)
         check_obfuscation_deps(root, p, text, findings)
         if len(text) <= 2_000_000:       # huge/minified files are generated; keep the scan cheap
             check_telemetry(root, p, text, telemetry, optouts, optouts_code)

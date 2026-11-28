@@ -217,7 +217,7 @@
     {
       "file": "web/app.js",
       "line": 32,
-      "meaning": "Cookie expires in 34 days (under a year).",
+      "meaning": "Cookie expires in 33 days (under a year).",
       "rule": "cookie-lifetime",
       "severity": "info",
       "snippet": "document.cookie = \"iso=1; expires=2027-01-01T00:00:00Z\";",
@@ -2306,6 +2306,15 @@
         "files": 23,
         "hits": 8,
         "negative": "no cookie is written without Secure/SameSite where it matters",
+        "suppressed": 0
+      },
+      "gguf-chat-template-command": {
+        "documented": false,
+        "evaluated": true,
+        "family": "agent",
+        "files": 23,
+        "hits": 0,
+        "negative": "no GGUF chat template makes the model print a shell command",
         "suppressed": 0
       },
       "gha-curl-pipe-shell": {

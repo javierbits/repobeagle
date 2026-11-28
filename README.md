@@ -13,7 +13,7 @@ You give it a git URL or a local folder and get a **GREEN / YELLOW / RED** verdi
 **RepoBeagle never runs repo code.** It never runs installs or builds, and it never extracts archives.
 
 ## Install (DGX Spark / any Linux, arm64 or x86_64)
-The scanners ship as a prebuilt **public** multi-arch image (no login needed), `ghcr.io/javierbits/repobeagle` (linux/amd64 + linux/arm64). It's built by `.github/workflows/image.yml` on every push to main, on `v*` release tags, weekly, and on manual dispatch. Release tags get `v1.166.0`-style and `stable` tags; main also gets `latest`, `sha-<commit>` and the ISO week (e.g. `2026-W42`). `install.sh` and `repobeagle` default to the image matching the `VERSION` file (currently `v1.166.0`).
+The scanners ship as a prebuilt **public** multi-arch image (no login needed), `ghcr.io/javierbits/repobeagle` (linux/amd64 + linux/arm64). It's built by `.github/workflows/image.yml` on every push to main, on `v*` release tags, weekly, and on manual dispatch. Release tags get `v1.166.0`-style and `stable` tags; main also gets `latest`, `sha-<commit>` and the ISO week (e.g. `2026-W42`). `install.sh` and `repobeagle` default to the image matching the `VERSION` file (currently `v1.201.0`).
 ```bash
 git clone https://github.com/javierbits/repobeagle && cd repobeagle
 ./install.sh                   # docker pull ghcr.io/javierbits/repobeagle:v1.166.0 + install the repobeagle wrapper
@@ -56,12 +56,13 @@ The dangerous moment is install, and `npx -y` fetches and runs code before anyon
 ```bash
 repobeagle run -- npx -y cowsay            # resolves npm -> github.com/piuccio/cowsay, scans, then runs
 repobeagle run --dry-run -- uvx ruff       # scan only, print the verdict
+repobeagle run -- hf download owner/repo   # scans the HF repo before the CLI downloads weights
 repobeagle run --repo owner/repo -- npx -y some-package   # skip the registry lookup
 ```
-- Parses `npx`, `pnpm dlx`, `yarn dlx`, `bunx` (npm), `pipx run`/`uvx` (PyPI) and `cargo install` (crates.io); the package name's registry JSON is queried for its repository URL (cached under `$XDG_CACHE_HOME/repobeagle/registry`, `BEAGLE_REGISTRY_TTL`, no package code executed). `--repo` accepts a slug, git URL or local dir when the registry has no repository.
+- Parses `npx`, `pnpm dlx`, `yarn dlx`, `bunx` (npm), `pipx run`/`uvx` (PyPI), `cargo install` (crates.io) and `hf download`/`huggingface-cli download` (Hugging Face models, datasets and spaces; `--repo-type` and `--revision` are honored). Registry packages have their JSON queried for the repository URL (cached under `$XDG_CACHE_HOME/repobeagle/registry`, `BEAGLE_REGISTRY_TTL`, no package code executed); the HF CLI target is scanned directly, so no registry lookup happens. `--repo` accepts a slug, git URL or local dir when the registry has no repository.
 - The repository is scanned through the normal pipeline (profile/persona/offline flags apply; the hardened image is used when Docker is available). `--dry-run` scans and prints without executing.
 - Policy: **GREEN** runs the command; **YELLOW** prompts on a TTY, refuses in CI unless `--yes`/`--force`; **RED** refuses unless `--force`. A scan failure or refusal exits 1 without running anything; otherwise the wrapped command's exit code passes through unchanged.
-- Limits: only those runners are understood; the scan covers the repository (default branch), not the exact published tarball; a missing scanner tool is a note as usual.
+- Limits: only those runners are understood; the scan covers the repository (default branch, or the `--revision` you pass to `hf download`), not the exact published tarball. A plain `hf download` without the `repobeagle run --` prefix is not intercepted. A missing scanner tool is a note as usual.
 
 ## Rule packs (`.repobeagle/rules/*.yml`)
 Teams can ship regex rules without editing the scanner. A pack is a versioned file, loaded automatically from the scanned tree (and fetched on the metadata `head` path), whose rules compile into the same finding shape as the built-in checks:
@@ -571,7 +572,7 @@ What this gate does **not** catch:
 Retention: the badge branch keeps every `report-<sha>.json` and per-tag copy; nothing prunes them yet, and every scan adds one blob. The baseline is always the newest `report.json`, so a long-lived badge branch accumulates objects — prune old `report-*.json` if that matters to you, or set `badge-branch: ''` (which drops the history and the gate).
 
 ## Pipeline
-1. **Fetch** always uses a filtered checkout, so huge repos stay small. It runs `git clone --depth 1 --filter=blob:none --no-checkout --no-recurse-submodules`, lists files with `git ls-tree`, then does a sparse checkout that **excludes archives and binaries**. Those files are reported as findings but never downloaded. For example, DataDog's ~44 GB malware dataset comes down as ~250 MB in about 17 s. The checkout goes into a fresh temp dir (mode 0700), with these protections: `GIT_TERMINAL_PROMPT=0`, `core.hooksPath=/dev/null`, `core.symlinks=false`, `protocol.file.allow=never`, `GIT_ALLOW_PROTOCOL=https:http:ssh`, no credential helper, and LFS smudge skipped. A local directory is copied instead, without `.git`. The copy is deleted at the end unless you pass `--keep`.
+1. **Fetch** always uses a filtered checkout, so huge repos stay small. It runs `git clone --depth 1 --filter=blob:none --no-checkout --no-recurse-submodules`, lists files with `git ls-tree`, then does a sparse checkout that **excludes archives and binaries**. Those files are reported as findings but never downloaded. For example, DataDog's ~44 GB malware dataset comes down as ~250 MB in about 17 s. Model weights (`.gguf`, `.safetensors`, `.onnx`, `.pt`/`.pth`, `.h5`/`.keras`, `.tflite`, `.plan`, …) are Git LFS pointers in most model repos; the fetch stage range-requests only a bounded header prefix (default 32 MiB, `BEAGLE_MODEL_HEADER_MAX_BYTES`, at most 8 files, `BEAGLE_MODEL_HEADER_MAX_FILES`), so metadata is audited without the multi-GB payloads. The checkout goes into a fresh temp dir (mode 0700), with these protections: `GIT_TERMINAL_PROMPT=0`, `core.hooksPath=/dev/null`, `core.symlinks=false`, `protocol.file.allow=never`, `GIT_ALLOW_PROTOCOL=https:http:ssh`, no credential helper, and LFS smudge skipped. A local directory is copied instead, without `.git`. The copy is deleted at the end unless you pass `--keep`.
 2. **Offline scanners** run in `docker run --rm --network none --read-only --cap-drop ALL --security-opt no-new-privileges --user <you, non-root>` with the clone mounted **read-only** and no home directory or credentials mounted. If Docker or the image is missing, or you pass `--no-docker`, they run locally on the temp folder.
    - **gitleaks** `detect --no-git` (redacted). Hits in test/docs paths are downgraded.
    - **Semgrep** with `rules/custom.yml` (decode-and-exec, download-and-run, child_process curl, dangerous C string functions, weak Go crypto, SQL string concatenation, Dockerfile last-USER-root).
@@ -586,6 +587,7 @@ Retention: the badge branch keeps every `report-<sha>.json` and per-tag copy; no
      - MCP/plugin manifests that grant a shell, `/` or home filesystem access, `*` or `Bash(*)` permissions, `dangerously*` flags, remote servers or `npx -y`.
      - Install hooks: npm pre/post/install, setup.py cmdclass and os.system, pyproject build hooks, devcontainer commands, VS Code folderOpen tasks, git hooks, Makefile.
      - Download-and-execute patterns: `curl|sh`, `wget|bash`, `base64 -d|sh`, eval/exec of decoded blobs, large base64 blobs.
+     - **Model-weight metadata**: reads the header of GGUF, safetensors, ONNX and other weight containers, never the payloads. For GGUF it audits `tokenizer.chat_template` (system-message injection, hidden Unicode, prompt-injection wording, or a shell/downloader command the model is told to print: `gguf-chat-template-command`, critical). Safetensors JSON headers are parsed and their free-form `__metadata__` strings audited; other containers get a bounded header sample. Chat templates stored beside the weights (`tokenizer_config.json`, `chat_template.jinja`, `*.j2`) are audited too (`chat-template-command`, critical). An unreadable/truncated header or an unmaterialized LFS pointer is a medium `gguf-metadata-*` / `safetensors-header-*` / `weight-metadata-*` finding, never a silent pass.
      - Prebuilt binaries, and archives. Archives are **never extracted**: zip headers are read to spot password-protected or encrypted samples, which are flagged as uninspectable.
      - Build-time code beyond npm: setup.cfg/build.py/hatch_build.py fetch or subprocess, `build.rs`, `//go:generate` with curl/sh, node-gyp actions, unknown pyproject `build-backend`, curl/base64/nc in Makefile/justfile.
      - GitHub Actions: pwn-request (`pull_request_target`/`workflow_run` + PR head checkout), other privileged triggers, secrets echoed, `curl|sh`, write permissions, actions not pinned to a commit SHA.
@@ -600,7 +602,7 @@ Retention: the badge branch keeps every `report-<sha>.json` and per-tag copy; no
    - The model can only **raise** the verdict: malicious with confidence ≥0.6 makes it RED, and suspicious turns GREEN into YELLOW.
    - If the variable is unset, this step is skipped cleanly.
 
-Apart from the clone, OSV/GuardDog-verify, the GitHub trust lookup and your own LLM endpoint, it makes no other network calls.
+Apart from the clone, the model-weight header range requests, OSV/GuardDog-verify, the GitHub trust lookup and your own LLM endpoint, it makes no other network calls.
 
 ## Example output (abridged)
 ```

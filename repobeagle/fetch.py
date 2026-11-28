@@ -9,7 +9,8 @@ from pathlib import Path
 
 # --- cross-module imports ---
 
-from .core import ARCHIVE_EXT, BINARY_EXT, IMAGE, VERSION, zip_encrypted
+from .core import ARCHIVE_EXT, BINARY_EXT, IMAGE, VERSION, _atomic_write, iter_files, zip_encrypted
+from .modelmeta import GGUF_MAX_BYTES, WEIGHT_EXT, lfs_pointer, parse_header
 
 
 
@@ -207,6 +208,128 @@ CONTEXT_FILES = ("package.json", "package-lock.json", "pnpm-lock.yaml", "yarn.lo
                  "composer.json", "pubspec.yaml", "CNAME", ".repobeagleignore")
 
 
+# --- Model headers: LFS weights stay undownloaded, their metadata prefix does not ----------------
+MODEL_HEADER_MAX_FILES = int(os.environ.get("BEAGLE_MODEL_HEADER_MAX_FILES")
+                             or os.environ.get("BEAGLE_GGUF_MAX_FILES") or 8)
+
+
+def _lfs_base_url(target):
+    """`https://host/owner/repo` for an http(s)/scp git URL, else ''."""
+    t = (target or "").strip()
+    if t.startswith("git@"):
+        host, _, path = t[4:].partition(":")
+        t = f"https://{host}/{path}"
+    elif t.startswith("ssh://git@"):
+        u = urllib.parse.urlsplit(t)
+        t = urllib.parse.urlunsplit(("https", u.hostname or "", u.path, "", ""))
+    if not t.startswith(("http://", "https://")):
+        return ""
+    u = urllib.parse.urlsplit(t)
+    parts = [p for p in u.path.split("/") if p]
+    if len(parts) < 2:
+        return ""
+    repo = "/".join(parts[:3] if parts[0].lower() in ("datasets", "spaces") and len(parts) >= 3 else parts[:2])
+    if repo.endswith(".git"):
+        repo = repo[:-4]
+    return urllib.parse.urlunsplit((u.scheme, u.netloc, "/" + repo, "", ""))
+
+
+def _lfs_download(base, oid, size, timeout=30):
+    """(href, headers) for one LFS object from the Git LFS batch API."""
+    body = json.dumps({"operation": "download", "transfers": ["basic"],
+                       "objects": [{"oid": oid, "size": size}]}).encode()
+    headers = {"Accept": "application/vnd.git-lfs+json", "Content-Type": "application/vnd.git-lfs+json",
+               "User-Agent": f"repobeagle/{VERSION}"}
+    host = (urllib.parse.urlsplit(base).hostname or "").lower()
+    token = ((os.environ.get("HF_TOKEN") or os.environ.get("HUGGING_FACE_HUB_TOKEN")) if host.endswith("huggingface.co")
+             else (os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN")))
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    req = urllib.request.Request(base + ".git/info/lfs/objects/batch", data=body, headers=headers)
+    with urllib.request.urlopen(req, timeout=timeout) as resp:
+        batch = json.loads(resp.read().decode("utf-8"))
+    obj = (batch.get("objects") or [{}])[0]
+    if obj.get("error"):
+        raise ValueError(str(obj["error"].get("message") or obj["error"]))
+    action = (obj.get("actions") or {}).get("download") or {}
+    if not action.get("href"):
+        raise ValueError("LFS batch returned no download action")
+    return action["href"], action.get("header") or {}
+
+
+def _lfs_prefix(href, headers, n, timeout=30):
+    h = dict(headers or {})
+    h.setdefault("User-Agent", f"repobeagle/{VERSION}")
+    h["Range"] = f"bytes=0-{max(0, n - 1)}"
+    with urllib.request.urlopen(urllib.request.Request(href, headers=h), timeout=timeout) as resp:
+        return resp.read(n)
+
+
+def materialize_model_headers(root, target):
+    """Replace model-weight LFS pointers with their metadata prefix (HTTP range, weights stay remote).
+
+    A GGUF's `tokenizer.chat_template` is metadata near the start but can sit tens of MiB in
+    after the tokenizer arrays. Safetensors headers are a length-prefixed JSON map. Fetching
+    a bounded prefix lets the static check read them without downloading a multi-GB model.
+    Other weight containers get a smaller sample for format identification. Failures leave
+    the pointer in place, and the check reports the metadata as uninspected instead of guessing.
+    """
+    if os.environ.get("BEAGLE_MODEL_HEADERS", os.environ.get("BEAGLE_GGUF_HEADERS", "1")).lower() in ("0", "false", "no", "off"):
+        return 0
+    base = _lfs_base_url(target)
+    if not base:
+        return 0
+    done = 0
+    files = [x for x in iter_files(root) if x.suffix.lower() in WEIGHT_EXT][:MODEL_HEADER_MAX_FILES]
+    for p in files:
+        try:
+            with open(p, "rb") as fh:
+                pointer = lfs_pointer(fh.read(512))
+        except OSError:
+            continue
+        if not pointer:
+            continue
+        oid, size = pointer
+        if size <= 0:
+            continue
+        try:
+            href, headers = _lfs_download(base, oid, size)
+        except Exception:
+            continue
+        limit = max(1, min(size, GGUF_MAX_BYTES))
+        suffix = p.suffix.lower()
+        try:
+            if suffix == ".safetensors":
+                head = _lfs_prefix(href, headers, min(16, limit))
+                n = int.from_bytes(head[:8], "little") if len(head) >= 8 else 0
+                want = min(8 + n, limit) if n else 16
+                buf = head[:want] if len(head) >= want else _lfs_prefix(href, headers, want)
+                _atomic_write(p, buf[:want])
+                done += 1
+                continue
+            if suffix != ".gguf":
+                want = min(1 << 20, limit)
+                _atomic_write(p, _lfs_prefix(href, headers, want))
+                done += 1
+                continue
+        except Exception:
+            continue
+        want = min(1 << 20, limit)
+        while True:
+            try:
+                buf = _lfs_prefix(href, headers, want)
+            except Exception:
+                buf = None
+                break
+            _, consumed, complete, error = parse_header(buf, GGUF_MAX_BYTES)
+            if complete or error or len(buf) < want or want >= limit:
+                _atomic_write(p, buf[:consumed] if complete else buf)
+                done += 1
+                break
+            want = min(want * 4, limit)
+    return done
+
+
 def fetch_repo(target, work, ref=None, since=None):
     dest = Path(work) / "src"
     if os.path.isfile(target):
@@ -290,12 +413,15 @@ def fetch_repo(target, work, ref=None, since=None):
         keep = [p for p in dict.fromkeys(changed + [c for c in CONTEXT_FILES if c in present]) if not binary(p)]
         for i in range(0, len(keep), 100):
             git(["checkout", "-q", tip, "--"] + keep[i:i + 100], cwd=dest)
+        headers = materialize_model_headers(dest, target)
         (Path(work) / "scope.json").write_text(json.dumps(
             {"scope": "changed", "since": since, "changed_files": len(changed), "renamed_files": renamed,
              "deleted_files": deleted, "listed_files": len(names), "checked_out": len(keep)}))
         how = (f"git clone --depth 1 --filter=blob:none @ {ref or 'HEAD'} + diff since {since} "
                f"({len(changed)} changed files, {renamed} renamed, {deleted} deleted, "
                f"{len(skipped)} archives/binaries listed, not downloaded)")
+        if headers:
+            how += f" + {headers} model header(s) fetched"
         shutil.rmtree(dest / ".git", ignore_errors=True)
         (Path(work) / "skipped.json").write_text(json.dumps(skipped))
         return dest, how, tip
@@ -304,9 +430,12 @@ def fetch_repo(target, work, ref=None, since=None):
     git(["sparse-checkout", "set", "--no-cone"] + pats, cwd=dest)
     git(["checkout", "-q", tip], cwd=dest)
     commit = git(["rev-parse", "HEAD"], cwd=dest).strip()
+    headers = materialize_model_headers(dest, target)
     shutil.rmtree(dest / ".git", ignore_errors=True)
     (Path(work) / "skipped.json").write_text(json.dumps(skipped))
     how = f"git clone --depth 1 --filter=blob:none{f' @ {ref}' if ref else ''} + sparse checkout ({len(skipped)} archives/binaries listed, not downloaded)"
+    if headers:
+        how += f" + {headers} model header(s) fetched"
     return dest, how, commit
 
 

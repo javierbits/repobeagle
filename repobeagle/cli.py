@@ -18,7 +18,7 @@ from .fetch import GITHUB_REPO_RE, VERIFY_IDENTITY, VERIFY_ISSUER, WEB_MAX_BYTES
 from .index import cmd_index
 from .release import cmd_release
 from .report import ACTIONS, _WORKDIRS, _install_cleanup, banner, collapse, color_enabled, dedupe, html_report, markdown_report, render_capabilities, render_report, sarif_report, sbom_report
-from .rules.agent import run_agent_checks, trust_signals
+from .rules.agent import run_agent_checks, run_model_checks, trust_signals
 from .rules.privacy import RULESET
 from .scanners import REGISTRY_TTL, ScanFailure, scan_json_report, _cache_root, _registry_cache_path, _registry_fetch, _run, ai_review, analysis_cache_key, cache_load, cache_store, inner, osv_db_info, osv_db_warning, run_trace, scan_capabilities, scan_coverage, scan_osv, scan_release_assets, tool_version, verify_deps
 from .service import cmd_serve
@@ -1413,13 +1413,63 @@ def cmd_head(a):
 
 
 
+HF_CLI = ("hf", "huggingface-cli")
+HF_VALUE_FLAGS = {"--repo-type", "--revision", "--include", "--exclude", "--local-dir", "--cache-dir",
+                  "--token", "--max-workers", "--endpoint"}
+HF_REPO_TYPES = {"model": "", "dataset": "datasets/", "space": "spaces/"}
+
+
+def _hf_download_spec(argv):
+    """(target, revision) for `hf download` / `huggingface-cli download`, else None.
+
+    The repo id is a Hugging Face model, dataset or space; the default is a model. The CLI's
+    value-taking flags are skipped so `--local-dir /tmp/x` is not mistaken for the repo.
+    """
+    argv = [str(x).strip() for x in argv]
+    if len(argv) < 3 or argv[0] not in HF_CLI or argv[1] != "download":
+        return None
+    args = argv[2:]
+    repo = ref = None
+    repo_type = "model"
+    i = 0
+    while i < len(args):
+        token = args[i]
+        if token.startswith("-"):
+            if token in ("--repo-type", "--revision") and i + 1 < len(args):
+                if token == "--repo-type":
+                    repo_type = args[i + 1]
+                else:
+                    ref = args[i + 1]
+                i += 2
+                continue
+            if token.startswith("--repo-type="):
+                repo_type = token.split("=", 1)[1]
+            elif token.startswith("--revision="):
+                ref = token.split("=", 1)[1]
+            i += 2 if token in HF_VALUE_FLAGS and "=" not in token and i + 1 < len(args) else 1
+            continue
+        repo = token
+        break
+    if not repo:
+        return None
+    if repo.startswith(("http://", "https://")):
+        target = repo.rstrip("/")
+    else:
+        prefix = HF_REPO_TYPES.get(str(repo_type).lower(), "")
+        target = f"https://huggingface.co/{prefix}{repo.strip('/')}"
+    return target, ref
+
+
 def parse_run_package(argv):
-    """(ecosystem, package) from a wrapped runner command (`npx`, `pnpm dlx`, `pipx run`, ...)."""
+    """(ecosystem, package) from a wrapped runner command (`npx`, `pnpm dlx`, `pipx run`, `hf download`, ...)."""
     argv = [str(x).strip() for x in argv]
     while argv and argv[0] in ("env",):
         argv = argv[1:]
     if not argv:
         return None, None
+    hf = _hf_download_spec(argv)
+    if hf:
+        return "huggingface", hf[0]
     head, rest = argv[0], argv[1:]
     if head == "npx":
         eco, args = "npm", rest
@@ -1544,24 +1594,32 @@ def cmd_run(a):
         print("run: nothing to run (use: repobeagle run -- npx -y <package>)", file=sys.stderr)
         return 1
     eco = pkg = None
+    hf_spec = None
     if not a.repo:
         eco, pkg = parse_run_package(argv)
         if not eco:
             print(f"run: cannot tell which package {argv[0]!r} runs; pass --repo <owner/repo|url|dir>", file=sys.stderr)
             return 1
-        print(f"run: {argv[0]} {pkg} -> {eco} registry lookup ...", file=sys.stderr)
-        try:
-            repo = registry_repo(eco, pkg)
-        except Exception as ex:
-            print(f"run: {eco} registry lookup for {pkg!r} failed: {type(ex).__name__}: {ex}", file=sys.stderr)
-            return 1
-        if not repo:
-            print(f"run: {eco} package {pkg!r} has no repository URL; pass --repo <owner/repo|url|dir>",
-                  file=sys.stderr)
-            return 1
+        if eco == "huggingface":
+            hf_spec = _hf_download_spec(argv) or ()
+            repo = pkg
+            print(f"run: {argv[0]} {argv[1]} {repo} -> Hugging Face repository ...", file=sys.stderr)
+        else:
+            print(f"run: {argv[0]} {pkg} -> {eco} registry lookup ...", file=sys.stderr)
+            try:
+                repo = registry_repo(eco, pkg)
+            except Exception as ex:
+                print(f"run: {eco} registry lookup for {pkg!r} failed: {type(ex).__name__}: {ex}", file=sys.stderr)
+                return 1
+            if not repo:
+                print(f"run: {eco} package {pkg!r} has no repository URL; pass --repo <owner/repo|url|dir>",
+                      file=sys.stderr)
+                return 1
     else:
         repo = a.repo
     flags = ["--json", "", "--no-color"]
+    if hf_spec and hf_spec[1]:
+        flags += ["--ref", str(hf_spec[1])]
     for flag in RUN_PASSTHROUGH:
         if getattr(a, flag, False):
             flags.append("--" + flag.replace("_", "-"))
@@ -2108,6 +2166,19 @@ def cmd_scan(a):
             notes.append(cache_note)
         if config_note:
             notes.append(config_note)
+        if use_docker and not any(str(f.get("rule") or "").startswith(("gguf-", "safetensors-", "weight-metadata", "chat-template"))
+                                  for f in findings):
+            # The pinned image may predate the model-header/template readers. Parsing is static and
+            # stdlib-only, so the host inspects the already-fetched metadata prefix. A current
+            # image emits its own model findings, which skips this fallback.
+            model_findings, model_files = run_model_checks(src)
+            if model_files:
+                findings += model_findings
+                entry = tools.get("agent-checks")
+                if isinstance(entry, dict):
+                    entry["findings"] = entry.get("findings", 0) + len(model_findings)
+                notes.append(f"Model metadata: {model_files} header/template file(s) checked on the host "
+                             "(static read, weight payloads not downloaded)")
         if repo_config and repo_config["custom_checks"]:
             custom = run_custom_checks(src, repo_config["custom_checks"])
             findings += custom
@@ -2974,7 +3045,7 @@ def main():
     rn.add_argument("--as", dest="as_persona", choices=sorted(PERSONAS), metavar="PERSONA")
     rn.add_argument("--max-seconds", type=float, metavar="SECONDS")
     rn.add_argument("--no-color", action="store_true")
-    rn.add_argument("command", nargs=argparse.REMAINDER, help="-- the wrapped command (npx/pnpm dlx/yarn dlx/bunx/pipx run/uvx/cargo install)")
+    rn.add_argument("command", nargs=argparse.REMAINDER, help="-- the wrapped command (npx/pnpm dlx/yarn dlx/bunx/pipx run/uvx/cargo install/hf download)")
     ba = sp.add_parser("batch", help="full-scan every target in a listing, one report each, in parallel")
     ba.add_argument("targets", help="targets file: one git URL, owner/repo or local dir per line (# comments) or JSON")
     ba.add_argument("--jobs", type=int, default=4, metavar="N", help="targets scanned concurrently (default 4)")

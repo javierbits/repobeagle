@@ -25,6 +25,8 @@ EVIDENCE_RULES: tuple[tuple[str, str, str], ...] = (
      "no npm lifecycle hook runs automatically on install"),
     ("Download-and-execute", "agent",
      "no installer/script is downloaded and executed"),
+    ("gguf-chat-template-command", "agent",
+     "no GGUF chat template makes the model print a shell command"),
     ("Code reads secrets/credentials near a network call", "agent",
      "no credential file is read next to a network sink"),
     ("import-time-network", "privacy",

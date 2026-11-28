@@ -33,11 +33,21 @@ def test_parse_run_package():
         (["pipx", "run", "black==24.1.0"], ("pypi", "black")),
         (["uvx", "ruff"], ("pypi", "ruff")),
         (["cargo", "install", "ripgrep", "--locked"], ("crates", "ripgrep")),
+        (["hf", "download", "owner/model"], ("huggingface", "https://huggingface.co/owner/model")),
+        (["hf", "download", "--local-dir", "/tmp/x", "owner/model"], ("huggingface", "https://huggingface.co/owner/model")),
+        (["hf", "download", "--repo-type", "dataset", "owner/data"], ("huggingface", "https://huggingface.co/datasets/owner/data")),
+        (["huggingface-cli", "download", "https://huggingface.co/spaces/a/b/"], ("huggingface", "https://huggingface.co/spaces/a/b")),
         (["python3", "-c", "pass"], (None, None)),
         (["npx"], (None, None)),
+        (["hf", "upload", "owner/model"], (None, None)),
+        (["hf", "download"], (None, None)),
     ]
     for argv, want in cases:
         assert rb.parse_run_package(argv) == want, (argv, rb.parse_run_package(argv), want)
+    assert rb._hf_download_spec(["hf", "download", "--revision", "v1.2", "owner/model"]) == \
+        ("https://huggingface.co/owner/model", "v1.2")
+    assert rb._hf_download_spec(["hf", "download", "--repo-type=dataset", "--revision=refs/pr/1", "o/d"]) == \
+        ("https://huggingface.co/datasets/o/d", "refs/pr/1")
     assert rb._repo_url("git+https://github.com/a/b.git") == "https://github.com/a/b"
     assert rb._repo_url("https://github.com/a/b/") == "https://github.com/a/b"
     assert rb._repo_url("https://gitlab.com/a/b.git") == "https://gitlab.com/a/b"

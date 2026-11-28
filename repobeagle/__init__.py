@@ -46,6 +46,7 @@ from .rules.privacy import _card_number_ok
 from .scanners import _cargo_direct_names
 from .report import _cleanup_workdirs
 from .fetch import _copy_bounded
+from .fetch import _lfs_base_url
 from .fetch import _cosign_arch
 from .core import _deadline_left
 from .scanners import _dep_norm
@@ -57,6 +58,7 @@ from .core import _expiry_days
 from .core import _explain_counts
 from .core import _explain_rule
 from .cli import _feedback_body
+from .cli import _hf_download_spec
 from .cli import _feedback_title
 from .fetch import _fetch
 from .fetch import _fetch_badge_file

@@ -73,6 +73,7 @@ python3 tests/test_personas.py || fail=1
 python3 tests/test_rule_packs.py || fail=1
 python3 tests/test_run.py || fail=1
 python3 tests/test_archives.py || fail=1
+python3 tests/test_modelmeta.py || fail=1
 python3 tests/test_workspace.py || fail=1
 python3 tests/test_fix_availability.py || fail=1
 python3 tests/test_trace.py || fail=1
