@@ -17,41 +17,41 @@
     "mode": "docker (--network none, read-only)",
     "profile": "balanced",
     "files": 245,
-    "seconds": 33.8,
+    "seconds": 28.0,
     "tools": {
       "gitleaks": {
         "findings": 0,
-        "seconds": 1.0,
+        "seconds": 0.7,
         "ok": true,
         "version": "8.30.1"
       },
       "semgrep": {
         "findings": 0,
-        "seconds": 2.0,
+        "seconds": 2.1,
         "ok": true,
         "version": "1.187.0"
       },
       "guarddog": {
         "findings": 22,
-        "seconds": 0.9,
+        "seconds": 0.7,
         "ok": true,
         "version": "3.2.0"
       },
       "bandit": {
         "findings": 631,
-        "seconds": 2.3,
+        "seconds": 1.9,
         "ok": true,
         "version": "1.9.4"
       },
       "agent-checks": {
         "findings": 436,
-        "seconds": 6.8,
+        "seconds": 4.9,
         "ok": true,
         "files": 245
       },
       "osv-scanner": {
         "findings": 12,
-        "seconds": 10.5,
+        "seconds": 11.9,
         "ok": true,
         "version": "2.7.0"
       }
@@ -1507,9 +1507,9 @@
     "coverage": {
       "files_total": 245,
       "files_scanned": 210,
-      "bytes_total": 5435635,
+      "bytes_total": 5455798,
       "bytes_scanned": 2063773,
-      "bytes_scanned_pct": 38.0,
+      "bytes_scanned_pct": 37.8,
       "skipped": {
         "archive": 3,
         "binary": 1,
@@ -1857,9 +1857,9 @@
     "image_ref": "ghcr.io/javierbits/repobeagle:v1.170.1",
     "image_digest": "ghcr.io/javierbits/repobeagle@sha256:cb348a1fe418f376ce193f0ada133aee40a1b9a9b45d217e898ebfeec4f555f2",
     "toolchain_ref": "v1.170.1",
-    "run_url": "https://github.com/javierbits/repobeagle/actions/runs/46157179618",
+    "run_url": "https://github.com/javierbits/repobeagle/actions/runs/46157546835",
     "scanned_repo": "javierbits/repobeagle",
-    "scanned_sha": "cf86783c1b3d04e787ae0ce1a194763d1ebca8e9"
+    "scanned_sha": "08adcb487af0ffa71e701bc9a7d03cfe13efd9e0"
   },
   "privacy_summary": {
     "trackers": {
@@ -11971,7 +11971,7 @@
       "severity": "low",
       "file": "(repo)",
       "line": 0,
-      "title": "Coverage-low: only 38.0% of source bytes were inspected",
+      "title": "Coverage-low: only 37.8% of source bytes were inspected",
       "snippet": "210/245 files",
       "meaning": "Large or unsupported files are skipped, so a GREEN verdict over them is not evidence of safety.",
       "rule": "Coverage-low",
