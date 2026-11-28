@@ -367,7 +367,11 @@ def fetch_repo(target, work, ref=None, since=None):
         except subprocess.TimeoutExpired:
             raise SystemExit("git timed out (set BEAGLE_CLONE_TIMEOUT to raise the limit)")
         if r.returncode != 0:
-            raise SystemExit("git failed: " + r.stderr.strip()[-400:])
+            err = r.stderr.strip()
+            if re.search(r"(could not read username|authentication failed|repository not found|terminal prompts disabled)", err, re.I):
+                err += (" (the repository may be private, gated, disabled or renamed; set HF_TOKEN / "
+                        "GITHUB_TOKEN for an authenticated fetch, or check the URL)")
+            raise SystemExit("git failed: " + err[-500:])
         return r.stdout
     def resolve(rev):
         git(["fetch", "--depth", "1", "--filter=blob:none", "--no-tags", "origin", rev], cwd=dest)
